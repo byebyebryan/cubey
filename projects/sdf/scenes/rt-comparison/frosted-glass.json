@@ -1,0 +1,49 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 3,
+  "name": "frosted-glass comparison",
+  "environment_only_gallery": true,
+  "materials": [
+    {
+      "name": "frosted-glass",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "frosted-glass",
+        "label": "Frosted glass",
+        "surface": {
+          "base_color": [
+            1,
+            1,
+            1
+          ],
+          "roughness": 0.32,
+          "optics": {
+            "transmission": 1,
+            "ior": 1.5,
+            "attenuation_color": [
+              0.95,
+              0.98,
+              0.96
+            ],
+            "attenuation_distance": 0.7
+          }
+        },
+        "library": {
+          "rough_glass": true
+        }
+      }
+    }
+  ],
+  "root": {
+    "name": "frosted-glass-sphere",
+    "type": "sphere",
+    "radius": 0.25,
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "material": "frosted-glass"
+  }
+}

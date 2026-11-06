@@ -1,6 +1,7 @@
 #include "raytracing_config.h"
 #include "raytracing_environment.h"
 #include "raytracing_material_geometry.h"
+#include "raytracing_presentation.h"
 #include "raytracing_renderer.h"
 #include <chrono>
 #include <cstdio>
@@ -81,7 +82,7 @@ class App {
         std::snprintf(recipe_path_.data(), recipe_path_.size(), "%s", recipe_path.string().c_str());
     }
     Config current() const {
-        auto c = config_;
+        auto c = sample_workshop_presentation(config_, presentation_seconds_);
         c.yaw += orbit_.yaw() + config_.orbit_speed * float(presentation_seconds_);
         c.sun_azimuth += config_.sun_speed * float(presentation_seconds_);
         c.pitch += orbit_.pitch();
@@ -111,11 +112,12 @@ class App {
     void create(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
                 VkExtent2D extent, VkFormat format) {
         if (!renderer_) {
+            const auto initial = config_.presentation == "library" ? current() : config_;
             if (config_.exercise_retry && config_.fault != "target") {
                 bool failed = false;
                 try {
                     Renderer rejected(device, gpu, scene_, slots, config_.fault, false, false,
-                                      &config_);
+                                      &initial);
                 } catch (const std::runtime_error& e) {
                     if (std::string_view(e.what()).find("owned RT creation fault:") ==
                         std::string_view::npos)
@@ -128,7 +130,7 @@ class App {
             }
             renderer_ = std::make_unique<Renderer>(
                 device, gpu, scene_, slots, config_.exercise_retry ? "none" : config_.fault,
-                dump_mode(config_) != 0, !config_.metrics.empty(), &config_);
+                dump_mode(config_) != 0, !config_.metrics.empty(), &initial);
         }
         if (config_.exercise_retry && config_.fault == "target" && !target_fault_used_) {
             bool failed = false;
@@ -509,6 +511,10 @@ class App {
         c.scene_output.clear();
         c.optics_contract = c.bsdf_contract = c.material_contract = c.dielectric_contract = false;
         c.stress_edits = 0;
+        c.presentation = "none";
+        c.presentation_time = -1;
+        c.lighting_cycle = "frozen";
+        c.orbit_degrees = 0;
         c.orbit_speed = 0;
         c.sun_speed = 0;
         c.fault = "none";
@@ -530,7 +536,10 @@ class App {
             cb.record_frame = [&](host::HeadlessPngContext& c, const host::HeadlessCaptureFrame& f,
                                   VkCommandBuffer command,
                                   const host::HeadlessRenderTarget& target) {
-                presentation_seconds_ = double(f.index) / double(std::max(config_.common.fps, 1U));
+                presentation_seconds_ =
+                    config_.presentation == "library"
+                        ? 8.0 * host::headless_capture_progress(f)
+                        : double(f.index) / double(std::max(config_.common.fps, 1U));
                 stress_edit(f.index);
                 renderer_->render(command, target, f.frame_slot, current(), false,
                                   c.profile_recorder(), f.index);

@@ -20,6 +20,7 @@ struct PbrMaterialsConfig {
         return c;
     }();
     std::string material = "gallery", specimen = "sphere", environment = "studio";
+    std::string sphere_density = "standard";
     std::filesystem::path recipe_input, recipe_output;
     float yaw = 0, pitch = .15F, distance = 1.05F, roughness = -1, pattern_scale = -1;
     float orbit_degrees = 0;
@@ -64,6 +65,11 @@ inline cubey::config::Schema pbr_materials_config_schema(PbrMaterialsConfig& con
     };
     bind(config.material, "material", "--material", cubey::config::ValueType::String);
     bind(config.specimen, "specimen", "--specimen", cubey::config::ValueType::String);
+    auto density =
+        pbr_materials_option("sphere_density", "--sphere-density", "Sphere density", "Workshop",
+                             "Opt-in comparison mesh resolution.", cubey::config::ValueType::Enum);
+    density.enum_values = {"standard", "dense"};
+    builder.bind(density, config.sphere_density);
     bind(config.environment, "environment", "--lighting", cubey::config::ValueType::String);
     bind(config.recipe_input, "recipe_input", "--recipe-input", cubey::config::ValueType::Path);
     bind(config.recipe_output, "recipe_output", "--recipe-output", cubey::config::ValueType::Path);

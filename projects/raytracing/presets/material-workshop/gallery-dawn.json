@@ -1,0 +1,22 @@
+{
+  "scene": "materials",
+  "material": "gallery",
+  "environment": "atmosphere",
+  "sphere-density": "dense",
+  "reflection-source": "environment",
+  "transmission-source": "environment",
+  "throughput-cutoff": 0,
+  "sun-elevation": 0.13962634015954636,
+  "sun-azimuth": -0.4363323129985824,
+  "shadows": false,
+  "exposure": 0,
+  "distance": 0.855,
+  "yaw": 0,
+  "pitch": 0,
+  "fov": 45,
+  "samples": 256,
+  "seed": 7,
+  "presentation": "library",
+  "lighting-cycle": "dawn",
+  "orbit-degrees": 0
+}

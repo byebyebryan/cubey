@@ -1,19 +1,15 @@
 # Ray tracing
 
 `raytracing` is Cubey's dedicated Vulkan KHR hardware ray-tracing project.
-It renders static triangle scenes with sharp scene reflections, closed clear-glass
-refraction and Cubey's shared clear-sky lighting. The original opaque first-pass
-route remains the default. Diffuse GI and a matched mesh/SDF representation and
-traversal comparison are separate follow-up work.
+It renders static triangle scenes and a shared material workshop under Cubey's
+clear-sky lighting. The original opaque first-pass route remains the default.
+Diffuse GI and a mesh-to-SDF representation/traversal study remain separate work.
 
-The [RT material workshop](../../docs/notes/raytracing-material-workshop-plan.md) is in progress:
-the same twelve recipes and groundless specimens as forward PBR and SDF under
-matched shared atmosphere. Bronze is qualified; the current checkpoint extends
-the adapter to all ten opaque recipes and prepared sphere/block/swatch/bored-block
-views with progressive sampling and environment/scene GGX routes. Opaque-library
-qualification, the two dielectrics and the final gallery/media are tracked
+The [material workshop guide](MATERIAL_WORKSHOP.md) covers all twelve canonical
+recipes, native isolated/gallery operation, clear/frosted glass, progressive
+sampling and environment/scene GGX routes. It provides opt-in matched forward,
+SDF and RT presentation presets. Qualification and final delivery are tracked
 in the [progress record](../../docs/notes/raytracing-material-workshop-progress.md).
-This checkpoint does not complete the workshop milestone.
 
 ## Build and run
 
@@ -138,7 +134,8 @@ edits reuse the acceleration structures. Resizing changes target resources.
 `transport-limit` and `environment`. Debug views bypass tone mapping. Geometric
 normals control ray offsets; interpolated vertex normals control shading.
 `--fov` is the vertical field of view in degrees; yaw/pitch/light angles use
-radians. Sampling is fixed at one centered primary ray per output pixel.
+radians. Legacy scenes use one centered primary ray per output pixel; the material
+workshop uses the bounded progressive sampling described in its guide.
 
 `--config` and `--set` use the normal typed-config conventions. Pass
 `--save-config path.json` to expose the panel's **Save view** button; headless
@@ -166,9 +163,10 @@ requires one headless PNG frame and at most 32 MiB of geometry data.
 The renderer builds static BLAS/TLAS structures on the GPU, issues primary and
 shadow rays sequentially from ray generation, then feeds an HDR result into
 Cubey's postprocessing. GPU submission completion governs resource reuse and
-destruction. There are no temporal histories, AS refits or background rebuilds.
+destruction. Legacy scenes have no sample history; the workshop owns one bounded
+FP32 history. Neither route refits AS or rebuilds geometry in the background.
 
-This pass excludes diffuse GI, caustics, area-light sampling, rough scene
+The original deterministic scenes exclude diffuse GI, caustics, area-light sampling, rough scene
 reflections, frosted transmission, dispersion, nested/overlapping media, textured
 assets, geometry animation, accumulation, denoising and an SDF loader. Centered
 single-sample primary rays retain silhouette aliasing. Legacy ambient fill and

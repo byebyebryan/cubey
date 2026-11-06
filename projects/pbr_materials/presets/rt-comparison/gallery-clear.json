@@ -1,0 +1,13 @@
+{
+  "presentation": "library",
+  "material": "gallery",
+  "environment": "clear",
+  "sphere_density": "dense",
+  "lighting_cycle": "frozen",
+  "distance": 0.855,
+  "yaw": 0,
+  "pitch": 0,
+  "pbr": {
+    "exposure": 0
+  }
+}

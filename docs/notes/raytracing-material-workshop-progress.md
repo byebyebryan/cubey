@@ -509,3 +509,40 @@ the ten conditional rough-glass trials and the original shared ray budgets.
 The measured truncation and sharp-glass faceting limits above remain explicit.
 P4 is still required for matched dense presentation, full-library gallery
 qualification/media, final integration and delivery.
+
+
+## P4 presentation implementation checkpoint
+
+The new opt-in comparison authoring tool emits a common manifest, dense forward/
+RT sphere presets, analytically traced SDF scenes with explicit local-domain
+rebasing, and clear orbit/dawn/dusk inputs for all three consumers. Existing
+assets, public material media and accepted defaults are unchanged. Dense RT
+geometry reports 65,024 closed-boundary triangles per sphere after removing pole
+degenerates, versus forward's unchanged source connectivity at the same density.
+Analytic SDF source geometry is identified separately from both triangulated and
+legacy cached-field controls.
+
+RT presentation time now follows eight times normalized output progress, matching
+forward/SDF. A frame's camera, sun, auto exposure and shared probe state are fixed
+before completing its sample target. Sample iterations never advance authored
+time. Orbit is twenty degrees linearly over eight seconds. Dawn/dusk use the
+existing shared environment transition and 30 Hz cycling probe cadence (frozen
+4 Hz). Per-output metrics expose authored time, resolved camera/light, history
+epoch and completed primary samples. Save view clears timeline controls after
+resolving the current pose/light. Cross-consumer timeline tests pass.
+
+Exploratory dense gallery captures pass all 72 material/route/seed/reference
+convergence scores with the original .005/.02 limits. Two 256-SPP seeds and an
+8192-SPP stability control are scored against independent 4096-SPP HDR per
+material, with one-pixel four-neighbor erosion of the analytic hit silhouette.
+All-pixel and unguarded errors, statuses and separate per-material budget/throughput
+statistics are retained. No invalid-medium or pending-stack-overflow flags occur.
+The 256-SPP 1080p gallery costs about .70 s environment / .89 s scene project GPU
+work in the exploratory run, below 2 s. These are pending source-pinned replay.
+
+Matched three-consumer gallery stills were visually reviewed. They preserve the
+same roster, local procedural coordinates, groundless framing and visible sky.
+Forward thickness estimates, SDF filtered central paths and sampled geometric RT
+glass intentionally differ. RT material identity is unchanged across every
+isolated capture. Native films, all-material dense timing, final retention/full
+tests and the delivered comparison report remain open.

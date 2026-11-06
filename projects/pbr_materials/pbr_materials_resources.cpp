@@ -166,11 +166,13 @@ PbrMaterialsApp::material_sampled_images() const {
 void PbrMaterialsApp::create_mesh(cubey::vulkan::GpuRuntime& gpu) {
     sphere_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
         engine_.render_resources(), meshes_, gpu, "pbr_materials.sphere",
-        render::make_material_sphere_mesh(.25F));
+        render::make_material_sphere_mesh(.25F, config_.sphere_density == "dense" ? 128 : 64,
+                                          config_.sphere_density == "dense" ? 256 : 128));
     if (config_.presentation == "library")
         library_sphere_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
             engine_.render_resources(), meshes_, gpu, "pbr_materials.library-sphere",
-            render::make_material_sphere_mesh(.075F));
+            render::make_material_sphere_mesh(.075F, config_.sphere_density == "dense" ? 128 : 64,
+                                              config_.sphere_density == "dense" ? 256 : 128));
     block_mesh_handle_ = render::create_primitive_mesh_resource(
         engine_.render_resources(), meshes_, gpu, "pbr_materials.beveled-block",
         render::make_material_beveled_block_mesh());

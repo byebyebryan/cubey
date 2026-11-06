@@ -48,7 +48,7 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
                 device,
                 {.reflection_extent = 128,
                  .reflection_mip_levels = 5,
-                 .reflection_update_hz = 4,
+                 .reflection_update_hz = c.lighting_cycle == "frozen" ? 4.F : 30.F,
                  .frame_slot_count = slots,
                  .atmosphere_textures = placeholders_->bindings(),
                  .reflection_ground_mode =
@@ -138,9 +138,15 @@ EnvironmentUniform Environment::prepare(const Config& c, VkCommandBuffer command
     if (active_) {
         atmosphere_.set_environment(state(c, eye.y));
         const auto now = std::chrono::steady_clock::now();
-        atmosphere_.advance(c.common.headless
-                                ? (c.sun_speed != 0 ? 1.0 / std::max(c.common.fps, 1U) : 0)
-                                : std::chrono::duration<double>(now - previous_).count());
+        double delta = c.common.headless ? (c.sun_speed != 0 ? 1.0 / std::max(c.common.fps, 1U) : 0)
+                                         : std::chrono::duration<double>(now - previous_).count();
+        if (c.presentation == "library" && c.lighting_cycle != "frozen") {
+            delta = previous_presentation_seconds_
+                        ? std::max(0.0, c.presentation_time - *previous_presentation_seconds_)
+                        : 0;
+            previous_presentation_seconds_ = c.presentation_time;
+        }
+        atmosphere_.advance(delta);
         previous_ = now;
         atmosphere_.record_pending_update(vulkan::CommandRecorder(command), slot);
         const auto& light = atmosphere_.lighting();

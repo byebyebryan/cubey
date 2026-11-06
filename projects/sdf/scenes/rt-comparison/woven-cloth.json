@@ -1,0 +1,61 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 3,
+  "name": "woven-cloth comparison",
+  "environment_only_gallery": true,
+  "materials": [
+    {
+      "name": "woven-cloth",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "woven-cloth",
+        "label": "Plain-weave cloth",
+        "surface": {
+          "base_color": [
+            0.11,
+            0.22,
+            0.18
+          ],
+          "roughness": 0.92,
+          "optics": {
+            "diffuse_roughness": 0.4
+          }
+        },
+        "library": {
+          "type": "weave",
+          "seed": 17,
+          "relief": 0.0007,
+          "secondary_color": [
+            0.16,
+            0.28,
+            0.22
+          ],
+          "weave": {
+            "yarn_spacing": 0.012,
+            "yarn_width": 0.83,
+            "irregularity": 0.15,
+            "fiber_strength": 0.2
+          },
+          "sheen_color": [
+            0.07,
+            0.09,
+            0.075
+          ],
+          "sheen_roughness": 0.8
+        }
+      }
+    }
+  ],
+  "root": {
+    "name": "woven-cloth-sphere",
+    "type": "sphere",
+    "radius": 0.25,
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "material": "woven-cloth"
+  }
+}

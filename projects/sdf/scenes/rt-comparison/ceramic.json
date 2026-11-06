@@ -1,0 +1,59 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 3,
+  "name": "ceramic comparison",
+  "environment_only_gallery": true,
+  "materials": [
+    {
+      "name": "ceramic",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "ceramic",
+        "label": "Ivory ceramic",
+        "surface": {
+          "base_color": [
+            0.768151147247507,
+            0.6795424696330938,
+            0.5149176653765214
+          ],
+          "roughness": 0.34,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    }
+  ],
+  "root": {
+    "name": "ceramic-sphere",
+    "type": "sphere",
+    "radius": 0.25,
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "material": "ceramic"
+  }
+}

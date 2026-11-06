@@ -26,6 +26,7 @@ def main():
     p.add_argument('--material', action='append')
     p.add_argument('--mode', choices=['quality', 'timing', 'matrix'], required=True)
     p.add_argument('--resume',action='store_true')
+    p.add_argument('--sphere-density',choices=['standard','dense'],default='standard')
     args = p.parse_args()
     args.binary = args.binary.resolve()
     out = args.output.resolve()
@@ -52,6 +53,7 @@ def main():
 
     def run(name, material, extra, validated=True, width=640, height=480):
         command = [str(args.binary),'--scene','materials','--material',material,
+                   '--sphere-density',args.sphere_density,
                    '--headless','--width',str(width),'--height',str(height),
                    '--require-validation' if validated else '--no-validation',
                    '--metrics',str(out/(name+'.json')),*extra]

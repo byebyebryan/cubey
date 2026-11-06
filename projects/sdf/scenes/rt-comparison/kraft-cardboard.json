@@ -1,0 +1,55 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 3,
+  "name": "kraft-cardboard comparison",
+  "environment_only_gallery": true,
+  "materials": [
+    {
+      "name": "kraft-cardboard",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "kraft-cardboard",
+        "label": "Kraft cardboard",
+        "surface": {
+          "base_color": [
+            0.42,
+            0.28,
+            0.15
+          ],
+          "roughness": 1,
+          "optics": {
+            "diffuse_roughness": 0.9
+          }
+        },
+        "library": {
+          "type": "paper",
+          "seed": 43,
+          "relief": 0.00065,
+          "secondary_color": [
+            0.18,
+            0.085,
+            0.025
+          ],
+          "paper": {
+            "fiber_frequency": 220,
+            "directionality": 0.9,
+            "fleck_strength": 0.08,
+            "fiber_strength": 0.75
+          }
+        }
+      }
+    }
+  ],
+  "root": {
+    "name": "kraft-cardboard-sphere",
+    "type": "sphere",
+    "radius": 0.25,
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "material": "kraft-cardboard"
+  }
+}

@@ -756,6 +756,12 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
              {"specimen", c.specimen},
              {"resident_requested_bytes", requested_bytes()},
              {"environment_generation", environment_->generation()},
+             {"authored_seconds", c.presentation_time},
+             {"yaw", c.yaw},
+             {"pitch", c.pitch},
+             {"distance", c.distance},
+             {"sun_elevation_degrees", glm::degrees(c.sun_elevation)},
+             {"sun_azimuth_degrees", shared_sun_azimuth_degrees(c.sun_azimuth)},
              {"exposure", c.exposure},
              {"sample_target", c.samples}});
     if (diagnostic_) {

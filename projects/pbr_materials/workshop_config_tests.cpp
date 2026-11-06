@@ -1,3 +1,4 @@
+#include "../raytracing/raytracing_presentation.h"
 #include "../sdf/sdf_config.h"
 #include "pbr_materials_config.h"
 #include "pbr_materials_presentation.h"
@@ -24,6 +25,10 @@ int main() {
         parse(pbr_materials::parse_pbr_materials_config,
               {"--material", "marble", "--no-pattern", "--no-bump", "--lighting", "clear"});
     require(!mesh.pattern && !mesh.bump && mesh.environment == "clear");
+    require(mesh.sphere_density == "standard");
+    const auto dense =
+        parse(pbr_materials::parse_pbr_materials_config, {"--sphere-density", "dense"});
+    require(dense.sphere_density == "dense");
     const auto sdf_defaults = parse(sdf::parse_sdf_config, {"--workshop", "sphere"});
     require(sdf_defaults.yaw == mesh.yaw && sdf_defaults.pitch == mesh.pitch &&
             sdf_defaults.distance == mesh.distance);
@@ -72,6 +77,19 @@ int main() {
                     mesh_light.sun_azimuth == sdf_light.sun_azimuth &&
                     mesh_light.cloud_seconds == sdf_light.cloud_seconds &&
                     mesh_light.exposure == sdf_light.exposure);
+            raytracing::Config rt;
+            rt.presentation = "library";
+            rt.lighting_cycle = phase;
+            rt.orbit_degrees = 20;
+            rt.yaw = 0;
+            const auto sampled = raytracing::sample_workshop_presentation(rt, frame / 30.0);
+            require(std::abs(glm::degrees(sampled.sun_elevation) - mesh_light.sun_elevation) <
+                        2e-6F &&
+                    std::abs(glm::degrees(glm::pi<float>() - sampled.sun_azimuth) -
+                             mesh_light.sun_azimuth) < 3e-5F &&
+                    sampled.exposure == mesh_light.exposure &&
+                    std::abs(sampled.yaw - glm::radians(20.F) * static_cast<float>(frame / 240.0)) <
+                        1e-7F);
         }
     require(pbr_materials::presentation_lighting("dusk", -1).sun_elevation == 14 &&
             pbr_materials::presentation_lighting("dusk", 9).sun_elevation == -1.2F);

@@ -1,0 +1,61 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 3,
+  "name": "rusted-steel comparison",
+  "environment_only_gallery": true,
+  "materials": [
+    {
+      "name": "rusted-steel",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "rusted-steel",
+        "label": "Rusted steel",
+        "surface": {
+          "base_color": [
+            0.45,
+            0.48,
+            0.5
+          ],
+          "roughness": 0.24,
+          "optics": {
+            "metallic": 1,
+            "diffuse_roughness": 0.4
+          }
+        },
+        "library": {
+          "type": "rust",
+          "seed": 31,
+          "relief": 0.0008,
+          "secondary_color": [
+            0.29,
+            0.063,
+            0.016
+          ],
+          "rust": {
+            "coverage": 0.54,
+            "patch_frequency": 14,
+            "edge_breakup": 0.6,
+            "pit_strength": 0.8
+          },
+          "rust_roughness": [
+            0.22,
+            0.95,
+            0.09
+          ]
+        }
+      }
+    }
+  ],
+  "root": {
+    "name": "rusted-steel-sphere",
+    "type": "sphere",
+    "radius": 0.25,
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "material": "rusted-steel"
+  }
+}

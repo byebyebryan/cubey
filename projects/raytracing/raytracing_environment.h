@@ -69,5 +69,6 @@ class Environment {
     double setup_ms_ = 0;
     double probe_gpu_ms_ = 0, pipeline_ms_ = 0, fallback_ms_ = 0;
     std::chrono::steady_clock::time_point previous_ = std::chrono::steady_clock::now();
+    std::optional<double> previous_presentation_seconds_;
 };
 } // namespace cubey::projects::raytracing

@@ -1,0 +1,59 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 3,
+  "name": "plain comparison",
+  "environment_only_gallery": true,
+  "materials": [
+    {
+      "name": "plain",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "plain",
+        "label": "Neutral gray",
+        "surface": {
+          "base_color": [
+            0.184474994500441,
+            0.184474994500441,
+            0.184474994500441
+          ],
+          "roughness": 0.76,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    }
+  ],
+  "root": {
+    "name": "plain-sphere",
+    "type": "sphere",
+    "radius": 0.25,
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "material": "plain"
+  }
+}

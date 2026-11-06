@@ -14,6 +14,8 @@ cubey_add_app_target(cubey_project_raytracing
 target_compile_definitions(cubey_project_raytracing PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
 
 if(BUILD_TESTING)
+    add_test(NAME raytracing_material_comparison_inputs
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/author_material_comparison.py" --check)
     add_executable(cubey_project_raytracing_material_reference raytracing_material_reference.cpp)
     target_link_libraries(cubey_project_raytracing_material_reference PRIVATE cubey::cubey cubey_project_warnings)
     add_executable(cubey_project_raytracing_tests raytracing_tests.cpp raytracing_scene.cpp raytracing_optical_scene.cpp raytracing_materials.cpp raytracing_material_geometry.cpp)

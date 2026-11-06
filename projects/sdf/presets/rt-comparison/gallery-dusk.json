@@ -1,0 +1,21 @@
+{
+  "authored-scene": "projects/sdf/scenes/rt-comparison/gallery.json",
+  "render-mode": "analytic",
+  "motion": "static",
+  "duration": 8,
+  "lighting": "material-atmosphere",
+  "lighting-cycle": "dusk",
+  "clouds": false,
+  "sun-elevation": 8,
+  "sun-azimuth": -155,
+  "exposure": 0,
+  "distance": 0.855,
+  "yaw": 0,
+  "pitch": 0,
+  "target-y": 0,
+  "shadows": 0,
+  "ground": false,
+  "glass-crossings": 16,
+  "environment-extent": 128,
+  "orbit-turns": 0
+}

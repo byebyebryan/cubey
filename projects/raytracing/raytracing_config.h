@@ -24,6 +24,9 @@ struct Config {
     std::string material = "bronze", specimen = "sphere";
     std::string sphere_density = "standard";
     std::string optical_pair = "none";
+    std::string presentation = "none", lighting_cycle = "frozen";
+    double presentation_time = -1;
+    float orbit_degrees = 0;
     std::string workshop_lighting = "combined";
     std::filesystem::path recipe_input, recipe_output;
     std::uint32_t samples = 256, seed = 7;
@@ -134,11 +137,19 @@ inline config::Schema schema(Config& c) {
     sphere_density.enum_values = {"standard", "dense"};
     auto optical_pair = opt("optical-pair", ValueType::Enum);
     optical_pair.enum_values = {"none", "index-matched", "unequal-ior"};
+    auto presentation = opt("presentation", ValueType::Enum);
+    presentation.enum_values = {"none", "library"};
+    auto cycle = opt("lighting-cycle", ValueType::Enum);
+    cycle.enum_values = {"frozen", "dawn", "dusk"};
     workshop_lighting.enum_values = {"combined", "sky", "sun", "furnace"};
     b.bind(opt("material", ValueType::String), c.material)
         .bind(specimen, c.specimen)
         .bind(sphere_density, c.sphere_density)
         .bind(optical_pair, c.optical_pair)
+        .bind(presentation, c.presentation)
+        .bind(cycle, c.lighting_cycle)
+        .bind(opt("presentation-time", ValueType::Float), c.presentation_time)
+        .bind(opt("orbit-degrees", ValueType::Float), c.orbit_degrees)
         .bind(workshop_lighting, c.workshop_lighting)
         .bind(opt("recipe-input", ValueType::Path), c.recipe_input)
         .bind(opt("recipe-output", ValueType::Path), c.recipe_output)
@@ -198,6 +209,17 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
     if (c.optical_pair != "none" &&
         (c.scene != "materials" || !c.common.headless || c.material != "gallery"))
         throw std::invalid_argument("optical pair controls require the headless materials gallery");
+    if (!std::isfinite(c.presentation_time) ||
+        (c.presentation_time < 0 && c.presentation_time != -1) || c.presentation_time > 8 ||
+        !std::isfinite(c.orbit_degrees) || std::abs(c.orbit_degrees) > 90)
+        throw std::invalid_argument("invalid material presentation time or orbit");
+    if (c.presentation == "library") {
+        if (c.scene != "materials" || c.material != "gallery" || c.optical_pair != "none" ||
+            c.orbit_speed != 0 || c.sun_speed != 0 || c.stress_edits != 0)
+            throw std::invalid_argument(
+                "library presentation requires an unmodified materials gallery timeline");
+    } else if (c.lighting_cycle != "frozen" || c.presentation_time != -1 || c.orbit_degrees != 0)
+        throw std::invalid_argument("material timeline controls require --presentation library");
     if (c.scene == "materials" && c.material == "gallery" &&
         (!c.recipe_input.empty() || !c.recipe_output.empty() || c.material_roughness != -1 ||
          c.object_scale != 1))
