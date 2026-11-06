@@ -12,7 +12,7 @@ implementation choices; an isolated math probe does not constitute a workshop.
 | P0 runnable reference | Native archived NVIDIA donor built and externally captured; source/dependencies pinned below |
 | P0 sampling arithmetic and estimator controls | Isolated native GGX probe passes independent direction, evaluation/PDF, integral/rejection and analytic sun/sky mixture controls |
 | P0 integration contracts | Choices below frozen; opt-in native configuration admission/round trips pass; record layout and history implementation checks belong to the integration |
-| P1 bronze | Pending shared recipe, environment, history, native operation and matched capture gates |
+| P1 bronze | Native recipe adapter, matched background/probe, progressive history and isolated bronze exist; component/convergence/lifecycle/cost gates are still in progress |
 | P2 ten opaque recipes | Pending |
 | P3 two dielectric recipes | Pending |
 | P4 full matched workshop and delivery | Pending |
@@ -127,9 +127,10 @@ must still pass their P1/P2 controls.
 
 ## Concrete integration choices
 
-The native schema now admits `--scene materials`. The scene fails explicitly
-until the P1 renderer adapter is installed; it never falls through to a legacy
-triangle scene. `--material bronze|<catalog-id>|gallery`
+The native schema admits `--scene materials`. The current renderer checkpoint
+supports an isolated bronze sphere; other catalog selections/specimens reject
+explicitly until their integration gates are implemented.
+`--material bronze|<catalog-id>|gallery`
 selects an isolated specimen or all twelve. `--specimen sphere|block|swatch|cut-block`
 uses existing specimen semantics; unsupported checkpoint combinations reject
 explicitly. Material import/export uses `--recipe-input`/`--recipe-output`.
@@ -204,6 +205,65 @@ sample index do not invalidate it. The renderer owns epoch/sample diagnostics;
 resize retires the entire old history generation through existing host ownership.
 No reprojection, extra queue or asynchronous scheduler is introduced.
 
+## P1 measured integration corrections
+
+These findings refine the initial contracts using native comparisons. They do
+not change accepted forward/SDF defaults, material assets or the completion gates.
+
+**Camera pose.** Forward's quaternion orbit lowers the eye for positive pitch;
+the earlier SDF/RT spherical orbit raises it. The workshop RT adapter now follows
+forward's convention. A common pitch of +0.15 therefore maps to -0.15 in an
+existing SDF preset. Match physical eye/rotation, not just the numeric pitch.
+Legacy RT keeps its original convention and floor clamp. The workshop bypasses
+that clamp and keeps the separate 2-metre atmospheric surface frame.
+
+**Visible versus reflected atmosphere.** The workshop uses the existing
+`AtmosphereBackgroundFrame` for a groundless visible sky, alongside the shared
+runtime's `Ground` reflection probe. A per-slot background texture passes that
+linear HDR result to ray generation. No second atmosphere model or cloud owner
+was added. The first native bronze environment capture completes its target
+sample count without Vulkan/sync messages.
+
+**Solar intensity convention.** The shared [sky source](../../shaders/cubey/atmosphere.glsl)
+explicitly uses renderer units without photometric calibration. Its visible
+disk uses source 22, while [CPU lighting](../../src/cubey/render/atmosphere_environment.cpp)
+supplies an independently authored analytic irradiance. Simply integrating the
+raw visible disk while omitting analytic sun specular produces a much dimmer
+highlight than the existing workshop model. The initial single-emitter
+assumption therefore did not hold for those two products.
+
+The sampled RT route now captures the shared shader's `SunDisk` component at the
+same 128-square cube faces, ground policy and probe generation. It subtracts
+that component from raw sky radiance, then replaces it with a finite solar emitter
+whose RGB radiance is `sharedDirectIrradiance/(pi*sin(radius)^2)`. The angular
+radius remains the shared 0.004675 radians. The visible sky and cached comparison
+route keep their accepted presentation. This is an adapter to the shared light's
+renderer units, not calibrated lux or per-segment atmospheric transport.
+
+The 50/50 mixture now proposes the actual solar cone, replacing the provisional
+0.15-radian visual-halo proposal. The shared analytic sun is not also added as a
+scene-specular term. `--workshop-lighting combined|sky|sun|furnace` isolates the
+inputs; full component/flux checks remain a P1 gate. The extra component capture
+uses the same shared atmosphere shader and cube-face basis and is counted in
+setup/update/resident costs.
+
+**Cutoff semantics.** Raw path weights depend on the proposal PDF. A small weight
+for a bright solar emitter is not a small radiance contribution. The legacy
+1e-4 throughput cutoff visibly clipped the sampled highlight. The new workshop
+defaults to zero and rejects nonzero raw-weight cutoffs. Event/radiance/total-ray
+limits remain 8/32/128. Legacy deterministic optics retain their prior cutoff.
+No convergence tolerance was loosened.
+
+**Solar support at float precision.** A diagnostic caught two pixels where
+re-evaluating membership in the tiny solar cone at a miss disagreed with the
+mixture denominator; one exploratory 256-sample mean contained a rare bright
+outlier of 139.8 against a 4096-sample value of 0.1222. A sampled light now carries
+its known PDF/support by construction; a BSDF proposal evaluates that support
+once and carries it through the miss. Radiance and the mixture denominator use
+the same classification. The failed probe is retained under ignored
+`bronze-solar-pdf-probe` outputs. These exploratory captures are not accepted
+milestone evidence; final qualification requires fresh source-pinned captures.
+
 ## Qualification commands
 
 The isolated BSDF control uses the existing ray-generation pipeline and bounded
@@ -221,3 +281,36 @@ the original fixed arithmetic/direction limits, numerical integrals and retained
 rejection mass. Failed early probe receipts remain in ignored outputs. A passing
 probe is preparation for integration; all P1-P4 image, operation, retention and
 cost evidence remains outstanding.
+
+## P1 implementation checkpoint
+
+The isolated bronze consumer now loads the shared catalog through a checked
+368-byte recipe record, evaluates the existing procedural library, and offers
+cached or sampled reflection. Other visual materials remain guarded until their
+stages pass. A record probe already checks all twelve entries against the separate
+shared CPU evaluator; this establishes content/layout parity, not twelve-material
+rendering support. Four 9,216-point cases (canonical, patterns off, relief off,
+and a nonidentity affine domain) passed the fixed component/normal limits, with
+maximum component error 2.08e-5 and no validation/sync messages.
+
+The stochastic GGX evaluator uses the normalized analytic distribution and
+correlated Smith visibility. The old punctual evaluator retains its denominator
+floor for legacy arithmetic. Reusing that floor in a sampled integral reduced a
+polished bronze furnace center from approximately [0.67954, 0.38643, 0.13843] to
+[0.00386, 0.00219, 0.00079]. The separate normalized evaluator fixes the estimator
+without rewriting existing punctual consumers. Independent quadrature, rejection
+mass, solar-flux and direction controls pass; the maximum direction error is
+7.10e-6 against the unchanged 1e-5 limit.
+
+Per-pixel 8-by-8 stratification and balanced BSDF/solar proposal pairs preserve
+the same marginal mixture and sample-prefix identity. Exploratory 640-by-480
+bronze comparisons at seeds 7 and 31 against independent 4096-SPP seed 19 gave
+normalized mean errors 0.002624/0.002600 and p95 errors 0.018861/0.018741. These
+meet the original 0.005/0.02 limits. Fresh committed-source replay, the 8192-SPP
+stability control, scoped timings and the remaining P1 matrix are still required.
+
+Native preview and edit checks exercised exposure-preserving history, recipe
+edit/save/load, rejected input retaining the snapshot, canonical reset and resize.
+Appearance edits retained the two original AS builds. The test uses its own Xvfb
+display and actual native controls. A 1000-edit residency stress route is available
+as --stress-edits; it is a lifecycle probe rather than a timing preset.

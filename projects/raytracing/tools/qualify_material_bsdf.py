@@ -28,7 +28,7 @@ def normalize(v):
     return v / np.linalg.norm(v, axis=-1, keepdims=True)
 
 
-def evaluate(v, l, roughness):
+def evaluate(v, l, roughness, regularized=True):
     """Correlated Smith reflection and the analytic VNDF reflection density."""
     h = normalize(v + l)
     nv, nl, nh = v[..., 2], l[..., 2], h[..., 2]
@@ -41,6 +41,10 @@ def evaluate(v, l, roughness):
     fresnel = F0 + (1-F0)*np.clip(1-np.sum(v*h, axis=-1), 0, 1)[..., None]**5
     brdf = fresnel * (distribution*visibility)[..., None]
     exact_d = alpha2 / (np.pi * (np.sum(h[..., :2]**2, axis=-1) + alpha2*nh*nh)**2)
+    if not regularized:
+        denominator = (nl*np.sqrt(nv*nv+alpha2*np.sum(v[..., :2]**2,axis=-1))+
+                       nv*np.sqrt(nl*nl+alpha2*np.sum(l[..., :2]**2,axis=-1)))
+        brdf = fresnel*(exact_d*.5/np.maximum(denominator,1e-30))[...,None]
     g1 = 2*nv / (nv + np.sqrt(nv*nv + alpha2*np.sum(v[..., :2]**2, axis=-1)))
     pdf = exact_d * g1 / (4*nv)
     valid = (nv > 0) & (nl > 0) & (nh > 0)
@@ -73,7 +77,7 @@ def gauss(order):
     return np.polynomial.legendre.leggauss(order)
 
 
-def quadrature(cosine, roughness, order=512):
+def quadrature(cosine, roughness, order=512, regularized=True):
     # dOmega = dz dPhi. Integrate azimuth [0,pi] with endpoint-clustered
     # Gauss nodes around the grazing reflected peak, and use the y symmetry
     # of the BRDF/PDF. The two sun-cone masks remain separate below.
@@ -84,7 +88,7 @@ def quadrature(cosine, roughness, order=512):
     l = np.stack(np.broadcast_arrays(sine[:, None]*np.cos(phi),
                                      sine[:, None]*np.sin(phi), z[:, None]), -1)
     v = np.array([np.sqrt(1-cosine*cosine), 0, cosine])
-    f, pdf = evaluate(v, l, roughness)
+    f, pdf = evaluate(v, l, roughness,regularized)
     measure = 2*wz[:, None]*wphi[None, :]
     energy = np.sum(f*l[..., 2, None]*measure[..., None], axis=(0, 1))
     mass = np.sum(pdf*measure)
@@ -113,6 +117,10 @@ def score(path, width, height):
     difference = np.abs(actual[..., 3, :]-expected)
     allowance = ABSOLUTE_LIMIT + RELATIVE_LIMIT*np.abs(expected)
     assert np.all(difference <= allowance), ('arithmetic', float(np.max(difference/allowance)))
+    sampled_f,sampled_pdf = evaluate(v,l,roughness,False)
+    sampled_expected = np.concatenate([sampled_f,sampled_pdf[...,None]],-1)
+    sampled_ratio = np.abs(actual[...,14,:]-sampled_expected)/(ABSOLUTE_LIMIT+RELATIVE_LIMIT*np.abs(sampled_expected))
+    assert np.all(sampled_ratio <= 1), ('normalized arithmetic',float(np.max(sampled_ratio)))
     assert np.all(actual[..., 4, :3] >= 0), 'negative throughput'
     assert np.array_equal(actual[..., 4, 3] > .5, l[..., 2] > 0), 'rejection classification'
     assert np.all(actual[..., 4, :3][l[..., 2] <= 0] == 0), 'rejected samples were renormalized'
@@ -121,6 +129,18 @@ def score(path, width, height):
     assert np.max(np.abs(np.linalg.norm(cones, axis=-1)-1)) < DIRECTION_LIMIT
     assert np.min(np.sum(cones*axis, -1)) >= .95-1e-6
     assert np.max(np.abs(actual[..., 5, 3] - 1/(2*np.pi*.05))) < 1e-5
+    strata = actual[...,9,:2]
+    assert np.all((strata > 0) & (strata < 1)), 'strata are open unit-square samples'
+    for row in range(height):
+        for begin in range(0,width,64):
+            cells = np.floor(strata[row,begin:begin+64]*8).astype(int)
+            assert len(np.unique(cells[:,0]+8*cells[:,1])) == 64, 'stratification omitted a cell'
+    assert np.max(np.abs(actual[...,10,:3]@axis-actual[...,11,1])) < 1e-6
+    assert np.max(np.abs(actual[...,11,2]-1)) < 2e-5, 'finite solar emitter irradiance'
+    assert np.max(np.abs(actual[...,13,0]-1)) < 2e-5, 'solar rim samples carry finite irradiance'
+    solar_radius = float(np.float32(.004675))
+    solar_pdf = 1/(4*np.pi*np.sin(solar_radius/2)**2)
+    assert np.max(np.abs(actual[...,10,3]-solar_pdf)/solar_pdf) < RELATIVE_LIMIT
     cases = []
     for row in range(height):
         r, cosine = float(roughness[row, 0]), float(v[row, 0, 2])
@@ -150,11 +170,27 @@ def score(path, width, height):
                           accepted=accepted, integrated_mass=mass,
                           sampled_energy=sampled_energy.tolist(), integrated_energy=control['energy'].tolist(),
                           sky=sky.tolist(), sun=sun.tolist()))
+        if regular:
+            normalized_control = quadrature(cosine,r,regularized=False)
+            normalized_sample = np.mean(actual[row,:,15,:3],axis=0)
+            assert np.max(np.abs(normalized_sample-normalized_control['energy'])) <= INTEGRAL_LIMIT, ('normalized furnace',row)
+            cases[-1].update(normalized_energy=normalized_sample.tolist(),
+                             normalized_integral=normalized_control['energy'].tolist())
+    # At normal incidence a near-delta, single-scatter conductor must approach
+    # its F0. This catches applying the punctual D floor to a full integral.
+    polished = np.mean(actual[56,:,15,:3],axis=0)
+    assert np.max(np.abs(polished-F0)) < .005, ('polished furnace',polished,F0)
     return dict(passed=True, samples=width*height, direction_error=direction_error,
                 maximum_arithmetic_tolerance_ratio=float(np.max(difference/allowance)),
+                normalized_arithmetic_tolerance_ratio=float(np.max(sampled_ratio)),
+                polished_furnace=polished.tolist(),
                 arithmetic_absolute_limit=ABSOLUTE_LIMIT, arithmetic_relative_limit=RELATIVE_LIMIT,
                 direction_limit=DIRECTION_LIMIT, integral_limit=INTEGRAL_LIMIT,
                 rejection_limit=REJECTION_LIMIT, integral_cases=cases,
+                stratified_blocks=height*(width//64),
+                solar_irradiance_error=float(np.max(np.abs(actual[...,11,2]-1))),
+                solar_rim_irradiance_error=float(np.max(np.abs(actual[...,13,0]-1))),
+                solar_rim_membership_rounding=int(np.count_nonzero(actual[...,12,3]==0)),
                 scope='Uncompensated GGX, analytic sky/cone controls; no full workshop/atmosphere qualification')
 
 
@@ -183,6 +219,7 @@ def main():
     result['source_files_sha256'] = {
         str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in
         [Path('projects/raytracing/shaders/material_bsdf.glsl'),
+         Path('projects/raytracing/shaders/material_workshop.glsl'),
          Path('projects/raytracing/shaders/trace.rgen'), Path(__file__)]}
     (output/'receipt.json').write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps({k: v for k, v in result.items() if k not in ['command', 'integral_cases']}, indent=2))

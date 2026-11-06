@@ -19,9 +19,12 @@ struct Config {
     bool exercise_retry = false;
     bool optics_contract = false;
     bool bsdf_contract = false;
+    bool material_contract = false;
     std::string material = "bronze", specimen = "sphere";
+    std::string workshop_lighting = "combined";
     std::filesystem::path recipe_input, recipe_output;
     std::uint32_t samples = 256, seed = 7;
+    std::uint32_t stress_edits = 0;
     float material_roughness = -1;
     bool pattern = true, bump = true;
     float ior = 1.5F, attenuation_red = .94F, attenuation_green = .98F, attenuation_blue = .99F;
@@ -55,7 +58,8 @@ inline config::Schema schema(Config& c) {
     auto scene = opt("scene", ValueType::Enum);
     scene.enum_values = {"triangle",           "fixture",           "dragon",
                          "reflection-fixture", "reflection-dragon", "reflection-dragon-solo",
-                         "refraction-fixture", "refraction-dragon", "slab", "materials"};
+                         "refraction-fixture", "refraction-dragon", "slab",
+                         "materials"};
     auto view = opt("view", ValueType::Enum);
     view.enum_values = {"final",       "geometric-normal", "shading-normal", "depth",
                         "instance-id", "barycentric",      "secondary-id",   "path-class",
@@ -115,14 +119,19 @@ inline config::Schema schema(Config& c) {
     b.bind(shadows, c.shadows).bind(opt("exercise-retry", ValueType::Bool), c.exercise_retry);
     b.bind(opt("optics-contract", ValueType::Bool), c.optics_contract);
     b.bind(opt("bsdf-contract", ValueType::Bool), c.bsdf_contract);
+    b.bind(opt("material-contract", ValueType::Bool), c.material_contract);
     auto specimen = opt("specimen", ValueType::Enum);
     specimen.enum_values = {"sphere", "block", "swatch", "cut-block"};
+    auto workshop_lighting = opt("workshop-lighting", ValueType::Enum);
+    workshop_lighting.enum_values = {"combined", "sky", "sun", "furnace"};
     b.bind(opt("material", ValueType::String), c.material)
         .bind(specimen, c.specimen)
+        .bind(workshop_lighting, c.workshop_lighting)
         .bind(opt("recipe-input", ValueType::Path), c.recipe_input)
         .bind(opt("recipe-output", ValueType::Path), c.recipe_output)
         .bind(opt("samples", ValueType::UInt32), c.samples)
         .bind(opt("seed", ValueType::UInt32), c.seed)
+        .bind(opt("stress-edits", ValueType::UInt32), c.stress_edits)
         .bind(opt("material-roughness", ValueType::Float), c.material_roughness);
     for (auto [name, value] : {std::pair{"pattern", &c.pattern}, {"bump", &c.bump}}) {
         auto option = opt(name, ValueType::Bool);
@@ -139,7 +148,8 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         return c;
     if (c.scene == "materials") {
         auto fallback = [&](const char* path, auto& value, auto next) {
-            if (!parsed->path_was_assigned(path)) value = next;
+            if (!parsed->path_was_assigned(path))
+                value = next;
         };
         fallback("environment", c.environment, std::string("atmosphere"));
         fallback("reflection-source", c.reflection_source, std::string("environment"));
@@ -150,16 +160,21 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         fallback("sun-elevation", c.sun_elevation, .13962634016F);
         fallback("sun-azimuth", c.sun_azimuth, -.436332312999F);
         fallback("shadows", c.shadows, false);
+        fallback("throughput-cutoff", c.throughput_cutoff, 0.F);
         if (c.environment != "atmosphere")
             throw std::invalid_argument("material workshop requires the shared atmosphere");
+        if (c.throughput_cutoff != 0)
+            throw std::invalid_argument(
+                "sampled workshop transport requires zero raw-throughput cutoff");
     }
     if (!std::isfinite(c.material_roughness) ||
         (c.material_roughness != -1 && (c.material_roughness < .05F || c.material_roughness > 1)) ||
-        c.samples < 1 || c.samples > 8192)
+        c.samples < 1 || c.samples > 8192 || c.stress_edits > 10000)
         throw std::invalid_argument("invalid workshop sample target or material roughness");
     if (c.scene == "materials" && c.material == "gallery" &&
         (!c.recipe_input.empty() || !c.recipe_output.empty() || c.material_roughness != -1))
-        throw std::invalid_argument("recipe operations and roughness override require an isolated material");
+        throw std::invalid_argument(
+            "recipe operations and roughness override require an isolated material");
     for (float value : {c.fov,
                         c.yaw,
                         c.pitch,
@@ -212,7 +227,12 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
     if (c.optics_contract && (dump_mode(c) != 2 || !c.common.headless))
         throw std::invalid_argument("optics contract requires headless --optics-output");
     if (c.bsdf_contract && (dump_mode(c) != 2 || !c.common.headless || c.optics_contract))
-        throw std::invalid_argument("BSDF contract requires headless --optics-output and no optics contract");
+        throw std::invalid_argument(
+            "BSDF contract requires headless --optics-output and no optics contract");
+    if (c.material_contract && (dump_mode(c) != 2 || !c.common.headless || c.scene != "materials" ||
+                                c.bsdf_contract || c.optics_contract))
+        throw std::invalid_argument(
+            "material contract requires the headless materials scene and --optics-output");
     if (outputs > 1)
         throw std::invalid_argument("select one raw diagnostic output");
     if (outputs && (!c.common.headless || c.common.frames > 1 || c.common.headless_render_only ||

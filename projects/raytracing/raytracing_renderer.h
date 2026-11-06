@@ -1,5 +1,6 @@
 #pragma once
 #include "raytracing_layout.h"
+#include "raytracing_materials.h"
 #include "raytracing_scene.h"
 #include <cubey/core/profiling.h>
 #include <cubey/render/hdr_post_frame.h>
@@ -49,6 +50,12 @@ class Renderer {
     void finish();
     void save_queries(const std::filesystem::path& path) const;
     [[nodiscard]] nlohmann::json metrics() const;
+    [[nodiscard]] std::uint32_t sample_count() const {
+        return history_samples_;
+    }
+    [[nodiscard]] std::uint64_t history_epoch() const {
+        return history_epochs_;
+    }
 
   private:
     void destroy() noexcept;
@@ -80,6 +87,13 @@ class Renderer {
     std::vector<std::unique_ptr<vulkan::Buffer>> uniforms_;
     std::vector<std::unique_ptr<vulkan::Buffer>> environment_uniforms_, material_buffers_;
     std::vector<OpticalMaterial> material_values_;
+    std::shared_ptr<WorkshopState> workshop_;
+    std::vector<std::unique_ptr<vulkan::Buffer>> recipe_buffers_, workshop_uniforms_;
+    std::unique_ptr<vulkan::Image> history_;
+    std::vector<std::byte> history_identity_;
+    std::uint32_t history_samples_ = 0;
+    std::uint64_t history_epochs_ = 0;
+    bool history_initialized_ = false;
     std::unique_ptr<Environment> environment_;
     std::vector<math::Vec4> glass_planes_;
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
@@ -96,6 +110,7 @@ class Renderer {
     std::vector<std::optional<std::uint64_t>> recorded_;
     profiling::ProfileRecorder* profile_ = nullptr;
     nlohmann::json timing_ = nlohmann::json::array();
+    nlohmann::json sampling_frames_ = nlohmann::json::array();
     double scene_ms_ = 0, pipeline_ms_ = 0, as_build_ms_ = 0, as_gpu_ms_ = 0;
     std::uint64_t geometry_bytes_ = 0, as_bytes_ = 0, scratch_peak_ = 0, triangle_count_ = 0;
     std::uint64_t target_generations_ = 0;

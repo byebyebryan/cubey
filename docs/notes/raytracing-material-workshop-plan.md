@@ -1,6 +1,6 @@
 # RT material workshop implementation plan
 
-Date: 2026-11-05. Status: proposed implementation contract, planning only.
+Date: 2026-11-05. Status: active implementation contract; P0 recorded, P1 in qualification.
 Source audit: `66f6882f6a1813fd270806298dbc74ee8019b8d5` on
 `raytracing-first-pass-20261104`. Current reflective-dragon runtime: `421708f9`.
 Execution is tracked in the [workshop progress and frozen contracts](raytracing-material-workshop-progress.md).
@@ -277,7 +277,7 @@ call the same ported sampler used by the GPU and label that independent evidence
 A failed material, estimator or synchronization gate is fixed before adding more
 recipes or tuning a showcase image. A checkpoint can produce review artifacts;
 it is not completion of the twelve-material milestone. A separate implementation
-request may bound execution to a checkpoint. This planning pass changes no runtime.
+request may bound execution to a checkpoint. Execution status and measured refinements are recorded in the linked progress document.
 
 ## Acceptance and measurements
 

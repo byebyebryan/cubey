@@ -1,8 +1,10 @@
 #pragma once
 #include "raytracing_config.h"
 #include <cubey/core/math.h>
+#include <memory>
 #include <vector>
 namespace cubey::projects::raytracing {
+struct WorkshopState;
 struct Vertex {
     math::Vec4 position, normal;
 };
@@ -25,6 +27,7 @@ struct alignas(16) OpticalMaterial {
 };
 static_assert(sizeof(OpticalMaterial) == 64);
 struct Scene {
+    std::shared_ptr<WorkshopState> workshop;
     std::vector<Mesh> meshes;
     std::vector<Instance> instances;
     std::vector<OpticalMaterial> materials{

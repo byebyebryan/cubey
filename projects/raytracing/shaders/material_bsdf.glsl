@@ -55,19 +55,33 @@ vec3 rtGgxReflectionEval(vec3 v, vec3 l, float roughness, vec3 f0) {
         cubey_pbr_visibility_smith_ggx_correlated(v.z, l.z, roughness);
 }
 
+vec3 rtGgxSampledEval(vec3 v,vec3 l,float roughness,vec3 f0) {
+    if(v.z<=0||l.z<=0||dot(v+l,v+l)<=1e-20) return vec3(0);
+    vec3 h=normalize(v+l);
+    float alpha=roughness*roughness,a2=alpha*alpha;
+    float denominator=l.z*sqrt(v.z*v.z+a2*dot(v.xy,v.xy))+
+        v.z*sqrt(l.z*l.z+a2*dot(l.xy,l.xy));
+    // The normalized integral shares the NDF used by the IBL sampler/LUT.
+    // The legacy punctual-light D/visibility floors above are not a PDF or a
+    // normalized rough lobe, particularly at the low-roughness end.
+    return cubey_pbr_fresnel_schlick(max(dot(v,h),0),f0)*
+        rtGgxDistribution(h,alpha)*(.5/denominator);
+}
+
 mat3 rtDirectionFrame(vec3 normal) {
     vec3 tangent = normalize(cross(abs(normal.z) < .999 ? vec3(0,0,1) : vec3(0,1,0), normal));
     return mat3(tangent, cross(normal, tangent), normal);
 }
 
 float rtConePdf(vec3 direction, vec3 axis, float oneMinusCosine) {
-    return dot(direction, axis) >= 1-oneMinusCosine
+    return length(direction-axis) <= sqrt(2*oneMinusCosine)
         ? 1/(2*CUBEY_PBR_PI*oneMinusCosine) : 0;
 }
 
 vec3 rtSampleCone(vec3 axis, float oneMinusCosine, vec2 xi) {
-    float cosine = 1-xi.x*oneMinusCosine;
-    float sine = sqrt(max(0, (1-cosine)*(1+cosine)));
+    float delta = xi.x*oneMinusCosine;
+    float cosine = 1-delta;
+    float sine = sqrt(max(0, delta*(2-delta)));
     float phi = 2*CUBEY_PBR_PI*xi.y;
     return rtDirectionFrame(axis)*vec3(sine*cos(phi), sine*sin(phi), cosine);
 }

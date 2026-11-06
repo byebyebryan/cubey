@@ -6,10 +6,13 @@ refraction and Cubey's shared clear-sky lighting. The original opaque first-pass
 route remains the default. Diffuse GI and a matched mesh/SDF representation and
 traversal comparison are separate follow-up work.
 
-The next proposed milestone is the [RT material workshop](../../docs/notes/raytracing-material-workshop-plan.md):
+The [RT material workshop](../../docs/notes/raytracing-material-workshop-plan.md) is in progress:
 the same twelve recipes and groundless specimens as forward PBR and SDF under
-matched shared atmosphere. The plan defines rough specular/material integration;
-those workshop capabilities are not implemented by the current prototype.
+matched shared atmosphere. The current checkpoint renders an isolated bronze
+sphere with shared recipe data, progressive sampling and environment/scene GGX
+routes. Its remaining qualification and the other eleven materials are tracked
+in the [progress record](../../docs/notes/raytracing-material-workshop-progress.md).
+This checkpoint does not complete the workshop milestone.
 
 ## Build and run
 

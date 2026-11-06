@@ -1,4 +1,5 @@
 #include "raytracing_scene.h"
+#include "raytracing_materials.h"
 #include <algorithm>
 #include <cmath>
 #include <cubey/asset/gltf_asset.h>
@@ -7,7 +8,7 @@
 namespace cubey::projects::raytracing {
 Scene make_scene(const Config& c) {
     if (c.scene == "materials")
-        throw std::invalid_argument("material workshop scene integration is pending; P0 provides --bsdf-contract only");
+        return make_material_scene(c);
     if (c.scene.find("reflection-") == 0 || c.scene.find("refraction-") == 0 || c.scene == "slab")
         return make_optical_scene(c);
     Scene s;

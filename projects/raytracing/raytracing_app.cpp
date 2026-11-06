@@ -1,6 +1,8 @@
 #include "raytracing_config.h"
+#include "raytracing_environment.h"
 #include "raytracing_renderer.h"
 #include <chrono>
+#include <cstdio>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
@@ -50,6 +52,11 @@ class App {
                      {"global", m.optics.w},
                      {"reflectance", {m.reflectance.x, m.reflectance.y, m.reflectance.z}}});
             data["config"] = schema(config_).template_json();
+            if (scene_.workshop) {
+                data["workshop_recipes"] = scene_.workshop->identity();
+                data["geometry_conversion"] = "shared forward sphere positions/normals/topology; "
+                                              "uint16 indices widened to uint32";
+            }
             if (config_.scene_output.has_parent_path())
                 std::filesystem::create_directories(config_.scene_output.parent_path());
             std::ofstream file(config_.scene_output);
@@ -59,6 +66,11 @@ class App {
         }
         orbit_.set_home_distance(config_.distance);
         orbit_.set_distance(config_.distance);
+        const auto recipe_path =
+            config_.recipe_output.empty()
+                ? std::filesystem::path("outputs/raytracing/material-workshop/edited-bronze.json")
+                : config_.recipe_output;
+        std::snprintf(recipe_path_.data(), recipe_path_.size(), "%s", recipe_path.string().c_str());
     }
     Config current() const {
         auto c = config_;
@@ -66,11 +78,27 @@ class App {
         c.sun_azimuth += config_.sun_speed * float(presentation_seconds_);
         c.pitch += orbit_.pitch();
         c.distance = orbit_.distance();
-        if (c.environment == "atmosphere")
+        if (c.scene == "materials") {
+            const float maximum_pitch = std::nextafter(1.5F, 0.F);
+            c.pitch = std::clamp(c.pitch, -maximum_pitch, maximum_pitch);
+        }
+        if (c.environment == "atmosphere" && c.scene != "materials")
             c.pitch = std::clamp(
                 c.pitch, std::asin(std::clamp((.05F - c.target_y) / c.distance, -.99F, .99F)),
                 1.4F);
         return c;
+    }
+    void stress_edit(std::uint64_t frame) {
+        if (!scene_.workshop || frame >= config_.stress_edits)
+            return;
+        auto& state = *scene_.workshop;
+        auto recipe = state.recipes.at(state.selected);
+        const float fraction = float(frame % 97) / 96.F;
+        if (recipe.optics.settings.y > 0 && recipe.library.optical_options.x < .5F)
+            recipe.optics.settings.z = 1.1F + fraction;
+        else
+            recipe.surface.base_roughness.w = .05F + .9F * fraction;
+        state.replace(state.selected, std::move(recipe));
     }
     void create(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
                 VkExtent2D extent, VkFormat format) {
@@ -141,7 +169,108 @@ class App {
             renderer_.reset();
         }
     }
+    void workshop_ui() {
+        auto& state = *scene_.workshop;
+        auto recipe = state.recipes.at(state.selected);
+        ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({390, 0}, ImGuiCond_FirstUseEver);
+        ImGui::Begin("RT material workshop");
+        ImGui::PushItemWidth(155);
+        ImGui::TextUnformatted(state.catalog.at(state.selected).label.c_str());
+        if (renderer_)
+            ImGui::Text("Samples %u / %u  |  History %llu", renderer_->sample_count(),
+                        config_.samples,
+                        static_cast<unsigned long long>(renderer_->history_epoch()));
+        bool changed = false;
+        changed |= ImGui::ColorEdit3("Base color", &recipe.surface.base_roughness.x);
+        changed |=
+            ImGui::SliderFloat("Perceptual roughness", &recipe.surface.base_roughness.w, .05F, 1);
+        changed |= ImGui::SliderFloat("Metallic", &recipe.optics.settings.x, 0, 1);
+        changed |= ImGui::SliderFloat("Dielectric IOR", &recipe.optics.settings.z, 1, 2.5F);
+        changed |= ImGui::ColorEdit3("Emission", &recipe.surface.emission.x,
+                                     ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+        if (changed) {
+            try {
+                state.replace(state.selected, std::move(recipe));
+                workshop_message_.clear();
+            } catch (const std::exception& e) {
+                workshop_message_ = e.what();
+            }
+        }
+        ImGui::Checkbox("Patterns", &config_.pattern);
+        ImGui::SameLine();
+        ImGui::Checkbox("Relief normals", &config_.bump);
+        const char* sources[] = {"environment", "scene"};
+        int source = config_.reflection_source == "scene";
+        if (ImGui::Combo("Optical source", &source, sources, 2)) {
+            config_.reflection_source = sources[source];
+            config_.transmission_source = sources[source];
+        }
+        ImGui::Checkbox("Shadows", &config_.shadows);
+        const char* lighting_modes[] = {"combined", "sky", "sun", "furnace"};
+        int lighting = 0;
+        for (int i = 0; i < 4; ++i)
+            if (config_.workshop_lighting == lighting_modes[i])
+                lighting = i;
+        if (ImGui::Combo("Lighting components", &lighting, lighting_modes, 4))
+            config_.workshop_lighting = lighting_modes[lighting];
+        float elevation = glm::degrees(config_.sun_elevation);
+        float azimuth = render::atmosphere_environment_wrap_signed_degrees(
+            shared_sun_azimuth_degrees(config_.sun_azimuth));
+        if (ImGui::SliderFloat("Sun elevation", &elevation, -6, 60))
+            config_.sun_elevation = glm::radians(elevation);
+        if (ImGui::SliderFloat("Sun azimuth", &azimuth, -180, 180))
+            config_.sun_azimuth = glm::pi<float>() - glm::radians(azimuth);
+        ImGui::SliderFloat("Exposure EV", &config_.exposure, -4, 4);
+        int samples = static_cast<int>(config_.samples);
+        if (ImGui::SliderInt("Sample target", &samples, 1, 8192, "%d",
+                             ImGuiSliderFlags_Logarithmic))
+            config_.samples = static_cast<std::uint32_t>(samples);
+        if (ImGui::Button("Reset material"))
+            state.replace(state.selected, state.catalog.at(state.selected).recipe);
+        ImGui::SameLine();
+        if (ImGui::Button("Reset camera"))
+            orbit_.reset();
+        if (!config_.save_config.empty()) {
+            ImGui::SameLine();
+            if (ImGui::Button("Save view"))
+                save();
+        }
+        ImGui::InputText("Recipe file", recipe_path_.data(), recipe_path_.size());
+        auto operate = [&](auto operation) {
+            try {
+                operation();
+                workshop_message_ = "Recipe operation complete";
+            } catch (const std::exception& e) {
+                workshop_message_ = e.what();
+            }
+        };
+        if (ImGui::Button("Save recipe"))
+            operate([&] {
+                asset::save_material_recipe(recipe_path_.data(), state.recipes.at(state.selected));
+            });
+        ImGui::SameLine();
+        if (ImGui::Button("Load recipe"))
+            operate([&] {
+                auto candidate = asset::load_material_recipe(recipe_path_.data());
+                if (candidate.optics.attenuation.w != 0 ||
+                    math::Vec3(candidate.library.sheen) != math::Vec3(0))
+                    throw std::invalid_argument(
+                        "rough diffuse and sheen require the opaque-library checkpoint");
+                state.replace(state.selected, std::move(candidate));
+            });
+        if (ImGui::Button("Reload catalog"))
+            operate([&] { state.reload(); });
+        if (!workshop_message_.empty())
+            ImGui::TextWrapped("%s", workshop_message_.c_str());
+        ImGui::PopItemWidth();
+        ImGui::End();
+    }
     void ui() {
+        if (scene_.workshop) {
+            workshop_ui();
+            return;
+        }
         const bool solo = config_.scene == "reflection-dragon-solo";
         const bool optical = config_.scene.find("reflection-") == 0 ||
                              config_.scene.find("refraction-") == 0 || config_.scene == "slab";
@@ -251,6 +380,7 @@ class App {
                                   VkCommandBuffer command,
                                   const host::HeadlessRenderTarget& target) {
                 presentation_seconds_ = double(f.index) / double(std::max(config_.common.fps, 1U));
+                stress_edit(f.index);
                 renderer_->render(command, target, f.frame_slot, current(), false,
                                   c.profile_recorder(), f.index);
             };
@@ -280,6 +410,7 @@ class App {
         };
         cb.draw_ui = [&](host::WindowedAppContext&) { ui(); };
         cb.record_frame = [&](host::WindowedAppContext& c, const host::WindowedRenderFrame& f) {
+            stress_edit(frame_);
             renderer_->render(f.command_buffer, f.color_target, f.frame_slot, current(), true,
                               c.profile_recorder(), frame_++);
         };
@@ -297,6 +428,8 @@ class App {
     std::uint64_t frame_ = 0;
     double presentation_seconds_ = 0;
     bool target_fault_used_ = false;
+    std::array<char, 512> recipe_path_{};
+    std::string workshop_message_;
 };
 } // namespace
 int run(const Config& config) {

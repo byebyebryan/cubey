@@ -2,6 +2,7 @@
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/immediate_commands.h>
+#include <cubey/vulkan/vk_check.h>
 #include <glm/gtc/constants.hpp>
 #include <set>
 
@@ -14,7 +15,7 @@ render::AtmosphereEnvironmentConfig state(const Config& c, float eye_y) {
     render::AtmosphereEnvironmentConfig e;
     e.sun_elevation_degrees = glm::degrees(c.sun_elevation);
     e.sun_azimuth_degrees = shared_sun_azimuth_degrees(c.sun_azimuth);
-    e.camera_altitude_km = std::max(eye_y, .05F) * .001F;
+    e.camera_altitude_km = c.scene == "materials" ? .002F : std::max(eye_y, .05F) * .001F;
     e.moon.enabled = false;
     e.render_night_sky = false;
     e.render_moon_disk = false;
@@ -27,6 +28,8 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
                          std::uint32_t slots) {
     const auto start = std::chrono::steady_clock::now();
     active_ = c.environment == "atmosphere";
+    workshop_ = c.scene == "materials";
+    slots_ = slots;
     try {
         fallback_.emplace(
             render::create_generated_pbr_environment(device, gpu,
@@ -42,14 +45,19 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
             placeholders_.emplace(
                 render::create_atmosphere_background_placeholder_textures(device, gpu));
             atmosphere_.create_resources(
-                device, {.reflection_extent = 128,
-                         .reflection_mip_levels = 5,
-                         .reflection_update_hz = 4,
-                         .frame_slot_count = slots,
-                         .atmosphere_textures = placeholders_->bindings(),
-                         .reflection_ground_mode =
-                             render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
-                         .consumer_stage_mask = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR});
+                device,
+                {.reflection_extent = 128,
+                 .reflection_mip_levels = 5,
+                 .reflection_update_hz = 4,
+                 .frame_slot_count = slots,
+                 .atmosphere_textures = placeholders_->bindings(),
+                 .reflection_ground_mode =
+                     workshop_ ? render::AtmosphereEnvironmentGroundMode::Ground
+                               : render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+                 .consumer_stage_mask = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR});
+            if (workshop_)
+                background_.create_materials(
+                    device, {.frame_slot_count = slots, .textures = placeholders_->bindings()});
             const auto pipeline_start = std::chrono::steady_clock::now();
             atmosphere_.create_pipelines(
                 device, {.atmosphere_vertex_shader = shader("atmosphere.vert.spv"),
@@ -57,6 +65,28 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
                          .reflection_prefilter_vertex_shader = shader("atmosphere.vert.spv"),
                          .reflection_prefilter_fragment_shader =
                              shader("atmosphere_reflection_prefilter.frag.spv")});
+            if (workshop_) {
+                sun_component_ = std::make_unique<render::TextureCube>(
+                    device, render::TextureCubeConfig{
+                                .extent = 128,
+                                .mip_levels = 1,
+                                .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                                .usage = render::TextureCubeUsage::ColorAttachmentSampled,
+                                .create_sampler = true,
+                                .sampler = {}});
+                for (std::uint32_t face = 0; face < 6; ++face)
+                    sun_faces_.push_back(
+                        render::create_texture_cube_face_view(device, *sun_component_, 0, face));
+                sun_background_.create_materials(
+                    device, {.frame_slot_count = slots * 6, .textures = placeholders_->bindings()});
+                const std::array stages{
+                    render::vertex_shader_file(shader("atmosphere.vert.spv")),
+                    render::fragment_shader_file(shader("atmosphere.frag.spv"))};
+                sun_background_.create_pipeline(device,
+                                                {.extent = {128, 128},
+                                                 .color_format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                 .shader_stage_files = stages});
+            }
             pipeline_ms_ = std::chrono::duration<double, std::milli>(
                                std::chrono::steady_clock::now() - pipeline_start)
                                .count();
@@ -80,6 +110,8 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
                 throw std::runtime_error("RT sky did not settle");
         }
     } catch (...) {
+        sun_background_.destroy();
+        background_.destroy();
         atmosphere_.destroy();
         throw;
     }
@@ -87,6 +119,8 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
 }
 Environment::~Environment() {
+    sun_background_.destroy();
+    background_.destroy();
     atmosphere_.destroy();
 }
 EnvironmentUniform Environment::prepare(const Config& c, VkCommandBuffer command,
@@ -121,7 +155,106 @@ EnvironmentUniform Environment::prepare(const Config& c, VkCommandBuffer command
     }
     return result;
 }
-void Environment::bind(const vulkan::Device& device, VkDescriptorSet set) const {
+void Environment::resize_background(const vulkan::Device& device, VkExtent2D extent) {
+    if (!workshop_)
+        return;
+    std::vector<BackgroundTarget> next;
+    for (std::uint32_t i = 0; i < slots_; ++i)
+        next.push_back({std::make_unique<render::Texture2D>(
+            device, render::Texture2DConfig{.extent = extent,
+                                            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                                            .usage = render::Texture2DUsage::ColorAttachmentSampled,
+                                            .create_sampler = true,
+                                            .sampler = {}})});
+    const std::array stages{render::vertex_shader_file(shader("atmosphere.vert.spv")),
+                            render::fragment_shader_file(shader("atmosphere.frag.spv"))};
+    background_.create_pipeline(device, {.extent = extent,
+                                         .color_format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                                         .shader_stage_files = stages});
+    background_targets_ = std::move(next);
+}
+void Environment::record_background(VkCommandBuffer command, render::FrameSlot slot,
+                                    const math::Mat4& inverse_view, float aspect,
+                                    float tan_half_fovy) {
+    if (!workshop_)
+        return;
+    if (sun_generation_ != generation()) {
+        auto barrier =
+            vulkan::vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+        const bool initialized = sun_generation_ != UINT64_MAX;
+        barrier.oldLayout =
+            initialized ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        barrier.srcAccessMask = initialized ? VK_ACCESS_SHADER_READ_BIT : 0;
+        barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        barrier.srcQueueFamilyIndex = barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = sun_component_->handle();
+        barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 6};
+        vkCmdPipelineBarrier(command,
+                             initialized ? VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR
+                                         : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0,
+                             nullptr, 1, &barrier);
+        auto environment = atmosphere_.environment();
+        environment.ground_mode = render::AtmosphereEnvironmentGroundMode::Ground;
+        const auto faces = render::atmosphere_reflection_probe_cube_face_view_rays();
+        for (std::uint32_t face = 0; face < 6; ++face) {
+            const render::FrameSlot face_slot{slot.index * 6 + face, slots_ * 6};
+            sun_background_.upload(
+                face_slot, render::atmosphere_environment_frame_uniforms(
+                               environment,
+                               {.view_rays = faces[face],
+                                .render_view = render::AtmosphereEnvironmentRenderView::SunDisk}));
+            sun_background_.record_pass(vulkan::CommandRecorder(command),
+                                        {{128, 128},
+                                         VK_FORMAT_R16G16B16A16_SFLOAT,
+                                         sun_component_->handle(),
+                                         sun_faces_[face].handle()},
+                                        face_slot);
+        }
+        barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 0, nullptr, 0,
+                             nullptr, 1, &barrier);
+        sun_generation_ = generation();
+    }
+    auto& target = background_targets_.at(slot.index);
+    auto& texture = *target.color;
+    render::ViewRayBasis3D rays{{math::Vec3(inverse_view[0]), aspect},
+                                {math::Vec3(inverse_view[1]), tan_half_fovy},
+                                {-math::Vec3(inverse_view[2]), 0}};
+    background_.upload(slot, atmosphere_.frame({.view_rays = rays}).background);
+    auto barrier = vulkan::vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+    barrier.oldLayout =
+        target.initialized ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier.srcAccessMask = target.initialized ? VK_ACCESS_SHADER_READ_BIT : 0;
+    barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.srcQueueFamilyIndex = barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = texture.handle();
+    barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkCmdPipelineBarrier(command,
+                         target.initialized ? VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR
+                                            : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr,
+                         1, &barrier);
+    background_.record_pass(vulkan::CommandRecorder(command),
+                            {texture.extent(), texture.format(), texture.handle(), texture.view()},
+                            slot);
+    barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                         VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 0, nullptr, 0, nullptr, 1,
+                         &barrier);
+    target.initialized = true;
+}
+void Environment::bind(const vulkan::Device& device, VkDescriptorSet set,
+                       std::uint32_t slot) const {
     const auto bindings = active_ ? atmosphere_.pbr_environment_bindings(*fallback_, false)
                                   : render::pbr_environment_texture_bindings(*fallback_);
     const auto& sky =
@@ -136,6 +269,18 @@ void Environment::bind(const vulkan::Device& device, VkDescriptorSet set) const 
                                 bindings.previous_prefiltered_layout)
         .combined_image_sampler(set, 10, bindings.brdf_lut_sampler, bindings.brdf_lut_view,
                                 bindings.brdf_lut_layout)
+        .combined_image_sampler(
+            set, 16,
+            background_targets_.empty() ? bindings.brdf_lut_sampler
+                                        : background_targets_.at(slot).color->sampler().handle(),
+            background_targets_.empty() ? bindings.brdf_lut_view
+                                        : background_targets_.at(slot).color->view(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .combined_image_sampler(set, 17,
+                                sun_component_ ? sun_component_->sampler().handle()
+                                               : bindings.prefiltered_sampler,
+                                sun_component_ ? sun_component_->view() : bindings.prefiltered_view,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         .update(device);
 }
 std::uint64_t Environment::generation() const {
@@ -144,6 +289,8 @@ std::uint64_t Environment::generation() const {
 std::uint64_t Environment::texture_allocation_bytes(const vulkan::Device& device) const {
     std::set<VkImage> images{fallback_->irradiance_cube.handle(),
                              fallback_->prefiltered_cube.handle(), fallback_->brdf_lut.handle()};
+    if (sun_component_)
+        images.insert(sun_component_->handle());
     if (active_) {
         const auto snapshot = atmosphere_.reflection_probe().snapshot();
         images.insert(atmosphere_.reflection_probe().sky_radiance_cube().handle());
@@ -166,6 +313,11 @@ std::uint64_t Environment::texture_allocation_bytes(const vulkan::Device& device
     for (auto image : images) {
         VkMemoryRequirements requirements{};
         vkGetImageMemoryRequirements(device.handle(), image, &requirements);
+        bytes += requirements.size;
+    }
+    for (const auto& target : background_targets_) {
+        VkMemoryRequirements requirements{};
+        vkGetImageMemoryRequirements(device.handle(), target.color->handle(), &requirements);
         bytes += requirements.size;
     }
     return bytes;

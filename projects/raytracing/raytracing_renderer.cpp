@@ -51,8 +51,11 @@ void build_barrier(VkCommandBuffer command) {
 } // namespace
 CameraUniform camera_uniform(const Config& c, VkExtent2D extent) {
     const math::Vec3 target{c.target_x, c.target_y, c.target_z};
-    const auto eye = target + math::Vec3{std::cos(c.pitch) * std::sin(c.yaw), std::sin(c.pitch),
-                                         std::cos(c.pitch) * std::cos(c.yaw)} *
+    // The new workshop follows forward's quaternion orbit convention (+pitch
+    // lowers the eye). Legacy RT/SDF orbit controls use the opposite sign.
+    const float pitch = c.scene == "materials" ? -c.pitch : c.pitch;
+    const auto eye = target + math::Vec3{std::cos(pitch) * std::sin(c.yaw), std::sin(pitch),
+                                         std::cos(pitch) * std::cos(c.yaw)} *
                                   c.distance;
     const auto inverse_view = glm::inverse(glm::lookAt(eye, target, math::Vec3{0, 1, 0}));
     const math::Vec3 sun{std::cos(c.sun_elevation) * std::sin(c.sun_azimuth),
@@ -122,6 +125,7 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
         dump_mode_ = dump_mode(settings);
         dump_stride_ = dump_stride(settings);
         material_values_ = scene.materials;
+        workshop_ = scene.workshop;
         environment_ = std::make_unique<Environment>(device, gpu, settings, slots);
         auto start = Clock::now();
         create_pipeline();
@@ -294,7 +298,7 @@ void Renderer::create_pipeline() {
     const VkShaderStageFlags stages = VK_SHADER_STAGE_RAYGEN_BIT_KHR |
                                       VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
                                       VK_SHADER_STAGE_MISS_BIT_KHR;
-    const std::array<vulkan::DescriptorSetBindingConfig, 13> bindings{
+    const std::array<vulkan::DescriptorSetBindingConfig, 18> bindings{
         {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, stages},
          {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
          {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stages},
@@ -307,7 +311,12 @@ void Renderer::create_pipeline() {
          {9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
          {10, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
          {11, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {12, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR}}};
+         {12, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {13, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {14, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {15, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {16, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {17, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR}}};
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device_, vulkan::DescriptorSetInfo(bindings, slots_));
     auto layout = cubey::vulkan::vk_struct<VkPipelineLayoutCreateInfo>(
@@ -386,9 +395,20 @@ void Renderer::create_pipeline() {
         material_buffers_.push_back(std::make_unique<vulkan::Buffer>(
             device_, vulkan::BufferConfig{material_values_.size() * sizeof(OpticalMaterial),
                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory}));
-        environment_->bind(device_, descriptors_->set(i));
+        recipe_buffers_.push_back(std::make_unique<vulkan::Buffer>(
+            device_,
+            vulkan::BufferConfig{(workshop_ ? workshop_->recipes.size() : 1) * sizeof(GpuRecipe),
+                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory}));
+        workshop_uniforms_.push_back(std::make_unique<vulkan::Buffer>(
+            device_, vulkan::BufferConfig{sizeof(WorkshopUniform),
+                                          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, host_memory}));
+        environment_->bind(device_, descriptors_->set(i), i);
         vulkan::DescriptorWriteBatch writes;
         writes
+            .storage_buffer(descriptors_->set(i), 13, recipe_buffers_.back()->handle(),
+                            recipe_buffers_.back()->size())
+            .uniform_buffer(descriptors_->set(i), 14, workshop_uniforms_.back()->handle(),
+                            sizeof(WorkshopUniform))
             .uniform_buffer(descriptors_->set(i), 11, environment_uniforms_.back()->handle(),
                             sizeof(EnvironmentUniform))
             .storage_buffer(descriptors_->set(i), 12, material_buffers_.back()->handle(),
@@ -420,6 +440,9 @@ void Renderer::resize(VkExtent2D extent, VkFormat format, bool fault) {
     if (!device_.supports_image_format_features(
             hdr_format, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))
         throw std::runtime_error("RT requires RGBA16F storage and sampled images");
+    if (workshop_ && !device_.supports_image_format_features(VK_FORMAT_R32G32B32A32_SFLOAT,
+                                                             VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT))
+        throw std::runtime_error("RT workshop requires RGBA32F storage history");
     std::vector<Target> next;
     for (std::uint32_t i = 0; i < slots_; ++i) {
         next.push_back(
@@ -441,20 +464,36 @@ void Renderer::resize(VkExtent2D extent, VkFormat format, bool fault) {
         render::vertex_shader_file(shader("forward_pbr_post.vert.spv")),
         render::fragment_shader_file(shader("forward_pbr_post.frag.spv"))};
     post_.create_pipeline(device_, {extent, format, shaders});
+    environment_->resize_background(device_, extent);
+    const auto history_extent = workshop_ ? extent : VkExtent2D{1, 1};
+    auto next_history = std::make_unique<vulkan::Image>(
+        device_,
+        vulkan::ImageConfig{.extent = {history_extent.width, history_extent.height, 1},
+                            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+                            .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                            .aspect = VK_IMAGE_ASPECT_COLOR_BIT});
     std::uint64_t next_bytes = 0;
     for (const auto& target : next)
         next_bytes += std::uint64_t(extent.width) * extent.height * 8 + target.queries->size();
+    next_bytes += std::uint64_t(history_extent.width) * history_extent.height * 16;
     requested_peak_ = std::max(requested_peak_, requested_bytes() + next_bytes);
     targets_ = std::move(next);
+    history_ = std::move(next_history);
+    history_initialized_ = false;
+    history_identity_.clear();
+    history_samples_ = 0;
     extent_ = extent;
     output_format_ = format;
     ++target_generations_;
-    for (std::uint32_t i = 0; i < slots_; ++i)
+    for (std::uint32_t i = 0; i < slots_; ++i) {
         vulkan::DescriptorWriteBatch{}
             .storage_image(descriptors_->set(i), 1, targets_[i].color->view())
+            .storage_image(descriptors_->set(i), 15, history_->view())
             .storage_buffer(descriptors_->set(i), 6, targets_[i].queries->handle(),
                             targets_[i].queries->size())
             .update(device_);
+        environment_->bind(device_, descriptors_->set(i), i);
+    }
 }
 void Renderer::collect(std::uint32_t slot) {
     if (!recorded_[slot])
@@ -498,7 +537,9 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     auto sun = math::Vec3(camera.sun);
     const auto environment = environment_->prepare(c, command, slot, math::Vec3(camera.eye), sun);
     camera.sun = math::Vec4(sun, 0);
-    environment_->bind(device_, descriptors_->set(slot.index));
+    environment_->record_background(command, slot, camera.inverse_view, camera.eye.w,
+                                    camera.light.z);
+    environment_->bind(device_, descriptors_->set(slot.index), slot.index);
     environment_uniforms_.at(slot.index)->upload(&environment, sizeof(environment));
     auto materials = material_values_;
     for (auto& material : materials) {
@@ -519,7 +560,20 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         ->upload(materials.data(), materials.size() * sizeof(OpticalMaterial));
     environment_timer_->end_pass(command, slot.index);
     camera.options.z = diagnostic_ ? float(dump_mode_) : 0.F;
-    camera.options.w = c.bsdf_contract ? 2.F : (c.optics_contract ? 1.F : 0.F);
+    camera.options.w =
+        c.material_contract ? 3.F : (c.bsdf_contract ? 2.F : (c.optics_contract ? 1.F : 0.F));
+    WorkshopUniform workshop_uniform;
+    if (workshop_) {
+        const auto records = workshop_->gpu_records();
+        recipe_buffers_.at(slot.index)->upload(records.data(), records.size() * sizeof(GpuRecipe));
+        workshop_uniform.options = {1, workshop_->selected, c.pattern ? 1U : 0U, c.bump ? 1U : 0U};
+        workshop_uniform.sampling = {c.seed, c.samples, 0, 0};
+        workshop_uniform.solar = {
+            environment_->solar_radius(), c.workshop_lighting == "sun" ? 0.F : 1.F,
+            c.workshop_lighting == "sky" || c.workshop_lighting == "furnace" ? 0.F : 1.F,
+            c.workshop_lighting == "furnace" ? 1.F : 0.F};
+    }
+    workshop_uniforms_.at(slot.index)->upload(&workshop_uniform, sizeof(workshop_uniform));
     uniforms_.at(slot.index)->upload(&camera, sizeof(camera));
     post_.upload(slot, render::hdr_post_uniforms(output.format, c.exposure,
                                                  c.view == "final" ? render::PbrTonemap::Aces
@@ -545,10 +599,91 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 0, nullptr, 0, nullptr, 1,
                          &barrier);
     trace_timer_->begin_pass(command, slot.index, "raytracing.trace");
+    std::vector<std::byte> identity;
+    auto append_identity = [&](const auto& value) {
+        const auto* begin = reinterpret_cast<const std::byte*>(&value);
+        identity.insert(identity.end(), begin, begin + sizeof(value));
+    };
+    append_identity(camera);
+    append_identity(environment);
+    append_identity(workshop_uniform.options);
+    append_identity(workshop_uniform.solar);
+    append_identity(c.seed);
+    if (workshop_)
+        append_identity(workshop_->revision);
+    const bool reset_history =
+        !history_initialized_ || (workshop_ && identity != history_identity_);
+    if (reset_history) {
+        history_samples_ = 0;
+        history_identity_ = std::move(identity);
+        if (workshop_)
+            ++history_epochs_;
+    }
+    auto history_barrier =
+        vulkan::vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+    history_barrier.oldLayout =
+        history_initialized_ ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_UNDEFINED;
+    history_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    history_barrier.srcAccessMask =
+        history_initialized_ ? VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT : 0;
+    history_barrier.dstAccessMask = reset_history
+                                        ? VK_ACCESS_TRANSFER_WRITE_BIT
+                                        : VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+    history_barrier.srcQueueFamilyIndex = history_barrier.dstQueueFamilyIndex =
+        VK_QUEUE_FAMILY_IGNORED;
+    history_barrier.image = history_->handle();
+    history_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vkCmdPipelineBarrier(command,
+                         history_initialized_ ? VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR
+                                              : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         reset_history ? VK_PIPELINE_STAGE_TRANSFER_BIT
+                                       : VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
+                         0, 0, nullptr, 0, nullptr, 1, &history_barrier);
+    if (reset_history) {
+        const VkClearColorValue zero{};
+        vkCmdClearColorImage(command, history_->handle(), VK_IMAGE_LAYOUT_GENERAL, &zero, 1,
+                             &history_barrier.subresourceRange);
+        history_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+        history_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        history_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 0, nullptr, 0,
+                             nullptr, 1, &history_barrier);
+    }
+    history_initialized_ = true;
     recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline_);
     recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, layout_, 0,
                                  descriptors_->set(slot.index));
-    rt_.trace(command, &raygen_, &miss_, &hit_, &callable_, extent_.width, extent_.height, 1);
+    const auto samples_before = history_samples_;
+    const auto iterations =
+        workshop_ && !c.material_contract && c.common.headless && !c.common.headless_render_only
+            ? std::max(1U, c.samples > history_samples_ ? c.samples - history_samples_ : 0U)
+            : 1U;
+    for (std::uint32_t sample = 0; sample < iterations; ++sample) {
+        if (sample > 0) {
+            auto dependency = vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
+            dependency.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            dependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
+                                 VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 1, &dependency, 0,
+                                 nullptr, 0, nullptr);
+        }
+        rt_.trace(command, &raygen_, &miss_, &hit_, &callable_, extent_.width, extent_.height, 1);
+        if (workshop_ && !c.material_contract && history_samples_ < c.samples)
+            ++history_samples_;
+    }
+    if (workshop_ && collect_metrics_ && sampling_frames_.size() < 20000)
+        sampling_frames_.push_back({{"frame", frame},
+                                    {"epoch", history_epochs_},
+                                    {"samples_before", samples_before},
+                                    {"samples_after", history_samples_},
+                                    {"new_samples", history_samples_ - samples_before},
+                                    {"recorded_dispatches", iterations},
+                                    {"material_revision", workshop_->revision},
+                                    {"resident_requested_bytes", requested_bytes()},
+                                    {"environment_generation", environment_->generation()},
+                                    {"exposure", c.exposure},
+                                    {"sample_target", c.samples}});
     if (diagnostic_) {
         auto memory = vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
         memory.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -628,12 +763,26 @@ std::uint64_t Renderer::requested_bytes() const {
         bytes += buffer->size();
     for (const auto& buffer : environment_uniforms_)
         bytes += buffer->size();
+    for (const auto& buffer : recipe_buffers_)
+        bytes += buffer->size();
+    for (const auto& buffer : workshop_uniforms_)
+        bytes += buffer->size();
+    if (history_)
+        bytes += std::uint64_t(history_->extent().width) * history_->extent().height * 16;
     return bytes;
 }
 nlohmann::json Renderer::metrics() const {
     const auto memory = device_.device_memory_budget();
     return {
         {"format", "cubey.raytracing.metrics"},
+        {"workshop_enabled", bool(workshop_)},
+        {"workshop_supported_material_ids",
+         workshop_ ? nlohmann::json::array({"bronze"}) : nlohmann::json::array()},
+        {"history_samples", history_samples_},
+        {"history_epochs", history_epochs_},
+        {"extent", {extent_.width, extent_.height}},
+        {"sampling_frames", sampling_frames_},
+        {"workshop_materials", workshop_ ? workshop_->identity() : nlohmann::json::array()},
         {"version", 2},
         {"environment_setup_ms", environment_ ? environment_->setup_ms() : 0},
         {"environment_probe_build_gpu_ms", environment_ ? environment_->probe_gpu_ms() : 0},
@@ -658,9 +807,14 @@ nlohmann::json Renderer::metrics() const {
         {"peak_simultaneous_project_requested_bytes", requested_peak_},
         {"project_memory_scope", "requested RT buffers/images including build scratch, TLAS inputs "
                                  "and resize overlap; excludes host targets, upload staging, "
-                                 "driver allocation padding, shared probe textures/uniform "
+                                 "driver allocation padding, shared environment textures/uniform "
                                  "internals and pipeline/descriptor internals"},
         {"target_bytes", std::uint64_t(extent_.width) * extent_.height * 8 * slots_},
+        {"workshop_history_bytes",
+         workshop_ && history_ ? std::uint64_t(extent_.width) * extent_.height * 16 : 0},
+        {"workshop_recipe_bytes",
+         workshop_ ? workshop_->recipes.size() * sizeof(GpuRecipe) * slots_ : 0},
+        {"workshop_uniform_bytes", sizeof(WorkshopUniform) * slots_},
         {"observed_device_local_usage_bytes",
          memory.available ? nlohmann::json(memory.device_local_usage) : nlohmann::json(nullptr)},
         {"memory_usage_scope", "VK_EXT_memory_budget estimate of current-process device-local heap "
@@ -677,6 +831,7 @@ nlohmann::json Renderer::metrics() const {
 void Renderer::destroy() noexcept {
     executor_.clear();
     targets_.clear();
+    history_.reset();
     post_.destroy();
     trace_timer_.reset();
     whole_timer_.reset();
@@ -685,6 +840,8 @@ void Renderer::destroy() noexcept {
     environment_.reset();
     environment_uniforms_.clear();
     material_buffers_.clear();
+    recipe_buffers_.clear();
+    workshop_uniforms_.clear();
     if (pipeline_)
         vkDestroyPipeline(device_.handle(), pipeline_, nullptr);
     if (layout_)
