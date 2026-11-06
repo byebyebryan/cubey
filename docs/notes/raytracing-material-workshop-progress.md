@@ -580,3 +580,49 @@ The gallery qualifier accepts an explicit preset, records completed single-frame
 and settled costs, and separates host readback/PNG-write CPU spans from project
 GPU work. Frosted furnace loss includes both the chosen single-scattering model
 and truncation; the deeper-budget difference is the measured truncation control.
+
+
+## P4 accepted runtime and media evidence
+
+The [P4 receipt](../evidence/raytracing-material-workshop-2026-11/p4.json) records
+all twelve canonical materials, matched dense forward/RT geometry, analytic SDF
+source specimens and explicit effective domains, complete frozen environment
+settings, and source/binary/shader/recipe identities. Paired RT measurements retain
+their actual clean d105c80b provenance; RT/SDF binaries remain byte-identical after
+the forward depth fix. The replayed captures/films/consumer profiles use 1c216b01;
+the shadow-preset, dense controls, final operations and clean dev gate use 17d06d71.
+
+The primary comparison and shadow-enabled scene gallery pass all 72 per-material
+seed/reference scores, retaining original .005 mean/.02 p95 limits. Worst 256-SPP
+mean is .004458 and p95 .019566. The no-local-shadow scene-source control remains
+separately recorded. All budget statistics remain bounded with no invalid-medium
+or pending-stack-overflow observations. Dense exterior furnace/rough-limit,
+sun/sky additivity, discarded-throughput and deeper-budget controls also pass.
+
+All nine native 1080p films contain 240 decoded H.264 frames at 30 fps. Each RT
+film completes 256 primary/history iterations for every authored output state,
+with 240 epochs and fixed geometry/target generations. Native gallery/stills,
+film midpoint posters and optical differences were visually reviewed. Saved
+presentation freeze/replay and gallery scene-creation failure/retry pass sync
+validation. This supplements P3's actual native edit/resize/selection controls.
+
+Seventy-eight serial 1080p paired timing runs pass with 150 completed one-primary
+iterations after 30 warmups; maximum total p95 is 8.948 ms. Additional actual-preset
+frozen and refreshing-sky repetitions include local sun shadows and all visibility
+calls. The settled 256-SPP gallery uses 0.694 seconds environment and 0.969
+seconds shadow-enabled scene project GPU work, below 2 seconds. Subprocess wall,
+setup and host readback/PNG-encoding spans are separately recorded. Forward/SDF
+single-frame profiles retain 150 completed spans using two retirement iterations.
+Memory requests, environment allocations and process-local shutdown estimates
+retain separate scopes. These are not physical peak VRAM claims.
+
+The exact dev preset passes 289/289 with zero skips at 17d06d71. The earlier
+unfiltered 322-group audit had only the guide-location policy failure and normal
+windowed skips; the corrected full dev replay is a single green invocation.
+Independent legacy RT geometry/optics and CPU/GPU material records pass. Retained
+forward and cached-SDF bronze PNGs are byte-identical; all thirteen canonical
+recipe/catalog files and eleven protected original SDF/horse files are unchanged.
+No existing public media changes, source push, merge or public-site promotion.
+
+All implementation and numerical/media gates are satisfied. Internal report
+publication and browser review are the remaining delivery step.

@@ -20,7 +20,7 @@ def main():
         copy(path,data/path.name);receipts.append(name)
     final=read(data/'p4.json');assert final['passed']
     identity=read(root/'timing/identity.json');assert identity['status']==''
-    for stage in ['gallery-quality','gallery-cost','scene-preset-quality','scene-preset-cost','stills','films','profiles','retention']:
+    for stage in ['gallery-quality','gallery-cost','environment-preset-cost','scene-preset-quality','scene-preset-cost','stills','films','profiles','retention']:
         value=read(root/stage/'receipt.json');assert value['passed']
         copy(root/stage/'receipt.json',data/(stage+'.json'));receipts.append(stage)
     entries=read(Path('assets/materials/catalog.json'))['entries']
@@ -57,6 +57,9 @@ def main():
             row[route]=max(r['gpu']['raytracing.total_frame']['p95_ms'] for r in rows)
         timings.append(row)
     scene_cost=read(root/'scene-preset-cost/cost.json')
+    environment_cost=read(root/'environment-preset-cost/cost.json')
+    actual_environment_p95=max(r['gpu']['raytracing.total_frame']['p95_ms'] for r in environment_cost if r['name'].startswith('environment-frozen-'))
+    next(r for r in timings if r['material']=='gallery')['environment']=actual_environment_p95
     actual_scene_p95=max(r['gpu']['raytracing.total_frame']['p95_ms'] for r in scene_cost if r['name'].startswith('scene-frozen-'))
     next(r for r in timings if r['material']=='gallery')['scene']=actual_scene_p95
     profiles=read(root/'profiles/receipt.json')['results']
@@ -64,9 +67,9 @@ def main():
     for renderer,label,span in [('forward','Forward PBR','material workshop whole scene'),('sdf','SDF tracing','sdf.whole_scene')]:
         costs.append(dict(label=label,value=max(r['gpu'][span]['p95_ms'] for r in profiles if r['renderer']==renderer),scope='Worst repetition p95 · one completed frame'))
     costs.append(dict(label='Hardware RT',value=next(r['environment'] for r in timings if r['material']=='gallery'),scope='Worst repetition p95 · one primary/history iteration'))
-    settled=read(root/'gallery-cost/cost.json')
+    settled=environment_cost
     env=next(r for r in settled if r['name']=='environment-settled-256');scene=next(r for r in scene_cost if r['name']=='scene-settled-256')
-    original_runs=read(root/'gallery-cost/runs.json');scene_runs=read(root/'scene-preset-cost/runs.json')
+    original_runs=read(root/'environment-preset-cost/runs.json');scene_runs=read(root/'scene-preset-cost/runs.json')
     env_wall=next(r['wall_seconds'] for r in original_runs if r['name']=='environment-settled-256')
     scene_wall=next(r['wall_seconds'] for r in scene_runs if r['name']=='scene-settled-256')
     text=(f"RT gallery at 256 primary samples: {env['gpu_ms']['raytracing.total_frame']/1000:.3f} s environment / "
@@ -83,6 +86,9 @@ def main():
         settled=text,gates=gates,receipts=receipts,
         identity=dict(rt_measurement_source=identity['source'],integration_source=final['integration_source'],binary_sha256=identity['binary_sha256'],build=identity['build'],gpu=identity['gpu'],
             environment=manifest['environment'],geometry=manifest['geometry'],sample_budget=manifest['transport']['limits'],
+            memory=final['memory'],dev_suite=final['dev_suite'],
+            host_cpu_spans_ms=dict(environment=env['host_cpu_spans_ms'],scene=scene['host_cpu_spans_ms']),
+            host_scope='headless.write_png includes completed RGBA8 readback, PNG encoding and file write; headless.record_capture includes waiting for GPU work',
             memory_scope='Requested project resources and process-local VK_EXT_memory_budget shutdown estimate are separate; neither establishes physical peak usage.'))
     template=Path(__file__).with_name('material_workshop_report.html').read_text()
     (out/'index.html').write_text(template.replace('__DATA__',json.dumps(payload).replace('</','<\\/')))
