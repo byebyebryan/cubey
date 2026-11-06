@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "report_id": "7345e2006bd6aba08a8611bdb4675bfbc65e0309c20577423f786c29f7582eed",
+  "url": "http://starship:8787/reports/7345e2006bd6aba08a8611bdb4675bfbc65e0309c20577423f786c29f7582eed/",
+  "publication_state": "published",
+  "publication_source": "2e09ebb5113bbc21257da56d7dc91601b211ca4f",
+  "export_manifest_sha256": "f14860d43cccbf87403f37805b1bcfb5ad959072f038eed26b3b1c6dd196f7fd",
+  "http_assets": {
+    "passed": true,
+    "checked_artifacts": 78,
+    "url": "http://starship:8787/reports/7345e2006bd6aba08a8611bdb4675bfbc65e0309c20577423f786c29f7582eed/",
+    "scope": "HTTP GET SHA256 equality for every exported artifact, including all films, stills, receipts and guide"
+  },
+  "browser": {
+    "passed": true,
+    "browser": "Chrome extension",
+    "viewport": [
+      1600,
+      1342
+    ],
+    "checks": [
+      "Native galleries and isolated stills load",
+      "Scene optics toggle updates RT image/caption",
+      "Frosted glass and bronze material selection update all three consumers",
+      "Orbit/dawn/dusk video sources load with duration 8 seconds and no media error",
+      "Play together advances all three videos; observed difference <=0.0001 seconds",
+      "Pause and restart; native video controls retained",
+      "13-row cost and 24-row convergence disclosures",
+      "No console errors",
+      "No horizontal overflow at tested viewport"
+    ],
+    "screenshot": "outputs/raytracing/material-workshop/p4-1c216b01/browser-review.png",
+    "screenshot_sha256": "00a73c3b45bd3e3e136a973924baaa45862a390bc886009a0af5080ae6fc5480",
+    "scope": "Automated desktop browser review; no claim of physical interaction latency or human visual acceptance"
+  },
+  "protected_original_files_unchanged": 11,
+  "source_pushed": false,
+  "merged": false,
+  "public_site_promoted": false,
+  "skill": "html-report",
+  "skill_path": "/home/bryan/.codex/skills/html-report/SKILL.md"
+}

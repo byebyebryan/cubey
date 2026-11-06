@@ -626,3 +626,23 @@ No existing public media changes, source push, merge or public-site promotion.
 
 All implementation and numerical/media gates are satisfied. Internal report
 publication and browser review are the remaining delivery step.
+
+
+## Delivery complete
+
+The [internal comparison report](http://starship:8787/reports/7345e2006bd6aba08a8611bdb4675bfbc65e0309c20577423f786c29f7582eed/) is published with all 78 exported
+artifacts verified by HTTP SHA256 equality. Browser review passes native image
+loading, scene/material selection, orbit/dawn/dusk selection, synchronized play,
+pause/restart and evidence disclosures. No console errors or horizontal overflow
+were observed at the tested 1600x1342 viewport. The live report tab is retained for
+review. The [delivery receipt](../evidence/raytracing-material-workshop-2026-11/delivery.json)
+records the actual scope and screenshot; physical interaction latency and human
+visual acceptance are not inferred from automation.
+
+P0-P4 are complete. All twelve supported recipes, per-material optical state,
+native controls, matched clear stills/films, numerical/lifecycle/cost evidence,
+reference/license provenance, operating guide and internal review delivery are
+present. The original SDF/horse worktree and existing public media remain intact.
+All commits are local; source push, merge and public-site promotion remain
+separate authorizations. Diffuse GI, clouds, nested media, caustics/dispersion,
+geometry animation, denoising and history reprojection remain deferred.
