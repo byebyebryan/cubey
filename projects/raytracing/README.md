@@ -5,7 +5,7 @@ It renders static triangle scenes and a shared material workshop under Cubey's
 clear-sky lighting. The original opaque first-pass route remains the default.
 Diffuse GI and a mesh-to-SDF representation/traversal study remain separate work.
 
-The [material workshop guide](MATERIAL_WORKSHOP.md) covers all twelve canonical
+The [material workshop guide](../../docs/notes/raytracing-material-workshop-guide.md) covers all twelve canonical
 recipes, native isolated/gallery operation, clear/frosted glass, progressive
 sampling and environment/scene GGX routes. It provides opt-in matched forward,
 SDF and RT presentation presets. Qualification and final delivery are tracked

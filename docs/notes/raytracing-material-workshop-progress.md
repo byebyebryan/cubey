@@ -564,3 +564,19 @@ synchronization fix; shaders, materials, geometry and display response are
 unchanged. RT and SDF executables retain exact pre-fix bytes. Qualified RT
 convergence/timing can therefore retain their actual d105c80b provenance; forward
 films/profiles and the final full suite will be replayed at the corrected source.
+
+
+The unfiltered 322-group integration audit at 1c216b01 found only the new guide's
+placement outside the repository documentation policy. All executed rendering,
+legacy numerical, recipe/domain, shared environment and sync tests passed;
+windowed tests retain their normal opt-in skips. The guide now lives under docs,
+and layout/documentation/CLI checks pass. The exact dev preset will be replayed
+at the corrected documentation/qualification-tool checkpoint.
+
+Paired material controls deliberately disable local sun shadows. A separate
+qualification of the actual shadow-enabled gallery-scene preset is now required
+for the final report, retaining the paired controls as separately scoped evidence.
+The gallery qualifier accepts an explicit preset, records completed single-frame
+and settled costs, and separates host readback/PNG-write CPU spans from project
+GPU work. Frosted furnace loss includes both the chosen single-scattering model
+and truncation; the deeper-budget difference is the measured truncation control.

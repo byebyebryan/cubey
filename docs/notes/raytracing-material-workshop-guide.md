@@ -28,7 +28,7 @@ rtk proxy build/dev/projects/pbr_materials/pbr_materials --config projects/pbr_m
 rtk proxy build/dev/projects/sdf/sdf --config projects/sdf/presets/rt-comparison/gallery-clear.json
 ```
 
-The [common manifest](presets/material-workshop/manifest.json) records canonical
+The [common manifest](../../projects/raytracing/presets/material-workshop/manifest.json) records canonical
 recipe SHA256s, source/effective domains, camera conversion, geometry, complete
 environment settings and film timing. SDF domains compensate for instance
 translation so all consumers evaluate corresponding local material points.
@@ -93,6 +93,8 @@ fallback sky. This is a bounded, biased estimator. In the accepted P3 control,
 neutral frosted-glass furnace mean is about .867 and default versus the deeper
 control differs by normalized mean .0148/p95 .0606. Same-budget 256-SPP convergence
 is a separate test. More samples cannot remove event/ray truncation or mesh error.
+Furnace loss includes the single-scattering rough-interface model as well as
+bounded truncation; the deeper-budget comparison measures the latter separately.
 
 Sequential disjoint closed bodies use their own IOR and Beer attenuation. Nested/
 overlapping media and a camera inside conservative glass bounds are rejected.
@@ -120,12 +122,13 @@ Use the qualification tools serially, without another owned GPU workload:
 ```sh
 rtk proxy uv run projects/raytracing/tools/qualify_material_gallery.py --mode quality --output outputs/raytracing/gallery-quality
 rtk proxy uv run projects/raytracing/tools/qualify_material_gallery.py --mode cost --output outputs/raytracing/gallery-cost
+rtk proxy uv run projects/raytracing/tools/qualify_material_gallery.py --preset projects/raytracing/presets/material-workshop/gallery-scene.json --mode cost --output outputs/raytracing/scene-gallery-cost
 rtk proxy python projects/raytracing/tools/qualify_material_presentation.py --stage films --output outputs/raytracing/workshop-films
 ```
 
 Additional tools qualify recipe records, GGX/dielectric arithmetic and independent
 quadrature, two-body Snell/Beer controls, glass energy/budget/density/lifecycle,
-native operations and isolated-material costs. The [progress record](../../docs/notes/raytracing-material-workshop-progress.md)
+native operations and isolated-material costs. The [progress record](raytracing-material-workshop-progress.md)
 links source-pinned receipts. Each capture retains commands, executable/shaders,
 recipes, validation logs and GPU observations. Raw diagnostics are separate from
 timings. Memory requests, environment allocation sizes and the process-local

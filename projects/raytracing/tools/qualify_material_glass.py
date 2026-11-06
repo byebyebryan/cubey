@@ -17,12 +17,14 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--mode',choices=['controls','density','lifecycle'],required=True)
     p.add_argument('--binary',type=Path,default=Path('build/dev/projects/raytracing/raytracing'))
+    p.add_argument('--sphere-density',choices=['standard','dense'],default='standard')
     args=p.parse_args();out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
     rows=[]
     def run(name,material,extra=(),samples=256,raw=True,width=128,height=96):
         command=[str(args.binary.resolve()),'--scene','materials','--material',material,
                  '--headless','--width',str(width),'--height',str(height),'--samples',str(samples),
                  '--require-validation','--output',str(out/(name+'.png')),'--metrics',str(out/(name+'.json')),*extra]
+        if args.mode!='density':command+=['--sphere-density',args.sphere_density]
         if raw:command+=['--optics-output' if args.mode=='controls' else '--hdr-output',str(out/(name+'.bin'))]
         result=subprocess.run(command,capture_output=True,text=True,timeout=600,
                               env=dict(os.environ,VK_LAYER_VALIDATE_SYNC='1'))

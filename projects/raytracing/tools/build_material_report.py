@@ -20,7 +20,7 @@ def main():
         copy(path,data/path.name);receipts.append(name)
     final=read(data/'p4.json');assert final['passed']
     identity=read(root/'timing/identity.json');assert identity['status']==''
-    for stage in ['gallery-quality','gallery-cost','stills','films','profiles','retention']:
+    for stage in ['gallery-quality','gallery-cost','scene-preset-quality','scene-preset-cost','stills','films','profiles','retention']:
         value=read(root/stage/'receipt.json');assert value['passed']
         copy(root/stage/'receipt.json',data/(stage+'.json'));receipts.append(stage)
     entries=read(Path('assets/materials/catalog.json'))['entries']
@@ -34,10 +34,14 @@ def main():
     copy(root/'stills/rt-gallery-scene.png',assets/'rt-gallery-scene.png')
     copy(Path('outputs/raytracing/material-workshop/p3-ff979923/native-frost/resized.png'),assets/'native-workshop.png')
     copy(Path('outputs/raytracing/material-workshop/reference/capture/materials.png'),assets/'donor-materials.png')
-    copy(Path('projects/raytracing/MATERIAL_WORKSHOP.md'),out/'operation.md')
+    guide=Path('docs/notes/raytracing-material-workshop-guide.md').read_text()
+    guide=guide.replace('(../../projects/raytracing/presets/material-workshop/manifest.json)','(data/manifest.json)')
+    guide=guide.replace('[progress record](raytracing-material-workshop-progress.md)','progress record in the checkout')
+    (out/'operation.md').write_text(guide)
     manifest=read(Path('projects/raytracing/presets/material-workshop/manifest.json'))
     copy(Path('projects/raytracing/presets/material-workshop/manifest.json'),data/'manifest.json')
-    quality=read(root/'gallery-quality/quality.json')
+    quality=[r for r in read(root/'gallery-quality/quality.json') if r['route']=='environment']
+    quality += [r for r in read(root/'scene-preset-quality/quality.json') if r['route']=='scene']
     worst=[]
     for material in ids:
         for route in ['environment','scene']:
@@ -52,26 +56,32 @@ def main():
             rows=[r for r in timing if r['material']==material and r['source']==route];assert len(rows)==3
             row[route]=max(r['gpu']['raytracing.total_frame']['p95_ms'] for r in rows)
         timings.append(row)
+    scene_cost=read(root/'scene-preset-cost/cost.json')
+    actual_scene_p95=max(r['gpu']['raytracing.total_frame']['p95_ms'] for r in scene_cost if r['name'].startswith('scene-frozen-'))
+    next(r for r in timings if r['material']=='gallery')['scene']=actual_scene_p95
     profiles=read(root/'profiles/receipt.json')['results']
     costs=[]
     for renderer,label,span in [('forward','Forward PBR','material workshop whole scene'),('sdf','SDF tracing','sdf.whole_scene')]:
         costs.append(dict(label=label,value=max(r['gpu'][span]['p95_ms'] for r in profiles if r['renderer']==renderer),scope='Worst repetition p95 · one completed frame'))
     costs.append(dict(label='Hardware RT',value=next(r['environment'] for r in timings if r['material']=='gallery'),scope='Worst repetition p95 · one primary/history iteration'))
     settled=read(root/'gallery-cost/cost.json')
-    env=next(r for r in settled if r['name']=='environment-settled-256');scene=next(r for r in settled if r['name']=='scene-settled-256')
+    env=next(r for r in settled if r['name']=='environment-settled-256');scene=next(r for r in scene_cost if r['name']=='scene-settled-256')
+    original_runs=read(root/'gallery-cost/runs.json');scene_runs=read(root/'scene-preset-cost/runs.json')
+    env_wall=next(r['wall_seconds'] for r in original_runs if r['name']=='environment-settled-256')
+    scene_wall=next(r['wall_seconds'] for r in scene_runs if r['name']=='scene-settled-256')
     text=(f"RT gallery at 256 primary samples: {env['gpu_ms']['raytracing.total_frame']/1000:.3f} s environment / "
           f"{scene['gpu_ms']['raytracing.total_frame']/1000:.3f} s scene project GPU work. "
-          f"Separate completed-app wall times: {env['total_app_wall_ms']/1000:.2f} / {scene['total_app_wall_ms']/1000:.2f} s, "
+          f"Separate subprocess wall times: {env_wall:.2f} / {scene_wall:.2f} s, "
           "including preparation, launch and readback. The fixed acceptance screen is 2 s of GPU work.")
     gates=[dict(title='P0 · Reference and contracts',text='Pinned native donor; independent GGX arithmetic, furnace and sun/sky accounting.',receipt='p0'),
         dict(title='P1/P2 · Opaque library',text='Ten recipe families, shared procedural domains, relief, rough diffuse and sheen; native operations and minification controls.',receipt='p2'),
         dict(title='P3 · Both dielectrics',text='Independent rough-interface integrals, unequal-IOR two-body Snell/Beer, energy bounds, exhaustion and 1,000-edit lifetime controls.',receipt='p3'),
-        dict(title='P4 · Gallery convergence',text='All twelve materials, both routes, two fixed 256-SPP seeds against independent 4096-SPP HDR and 8192-SPP stability controls.',receipt='gallery-quality'),
+        dict(title='P4 · Gallery convergence',text='All twelve materials: environment comparison and shadow-enabled scene optics, two fixed 256-SPP seeds against independent 4096-SPP HDR and 8192-SPP stability controls.',receipt='scene-preset-quality'),
         dict(title='P4 · Matched media',text='Three-renderer stills and nine 1080p native films. All 240 RT output states complete their requested 256 primary iterations.',receipt='films'),
         dict(title='P4 · Integration and retention',text='Final dev suite, independent legacy controls and byte-identical retained forward/SDF captures; original SDF/horse files preserved.',receipt='p4')]
     payload=dict(materials=[dict(id=e['id'],label=e.get('label',e['id'])) for e in entries],quality=worst,costs=costs,timings=timings,
         settled=text,gates=gates,receipts=receipts,
-        identity=dict(runtime_source=identity['source'],binary_sha256=identity['binary_sha256'],build=identity['build'],gpu=identity['gpu'],
+        identity=dict(rt_measurement_source=identity['source'],integration_source=final['integration_source'],binary_sha256=identity['binary_sha256'],build=identity['build'],gpu=identity['gpu'],
             environment=manifest['environment'],geometry=manifest['geometry'],sample_budget=manifest['transport']['limits'],
             memory_scope='Requested project resources and process-local VK_EXT_memory_budget shutdown estimate are separate; neither establishes physical peak usage.'))
     template=Path(__file__).with_name('material_workshop_report.html').read_text()

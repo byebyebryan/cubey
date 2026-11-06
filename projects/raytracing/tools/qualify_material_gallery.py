@@ -4,6 +4,7 @@
 # ///
 """Serial per-material gallery convergence, bounded-path statistics and GPU cost."""
 import argparse
+import csv
 import json
 import os
 from pathlib import Path
@@ -42,11 +43,13 @@ def main():
     p.add_argument('--mode',choices=['quality','cost'],required=True)
     p.add_argument('--binary',type=Path,default=Path('build/dev/projects/raytracing/raytracing'))
     p.add_argument('--resume',action='store_true')
+    p.add_argument('--preset',type=Path,default=Path(PRESET))
     a=p.parse_args();a.binary=a.binary.resolve();out=a.output.resolve();out.mkdir(parents=True,exist_ok=a.resume)
+    preset=str(a.preset)
     identity=dict(source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         status=subprocess.check_output(['git','status','--porcelain'],text=True),binary_sha256=sha(a.binary),
         shaders={f.name:sha(f) for f in sorted((a.binary.parent/'shaders').glob('*.spv'))},
-        inputs={str(f):sha(f) for f in [Path(PRESET),Path(PRESET).with_name('manifest.json'),*sorted(Path('assets/materials').glob('*.json'))]},gpu=gpu_state())
+        inputs={str(f):sha(f) for f in [a.preset,a.preset.with_name('manifest.json'),*sorted(Path('assets/materials').glob('*.json'))]},gpu=gpu_state())
     if a.resume:
         prior=json.loads((out/'identity.json').read_text())
         assert all(prior[k]==identity[k] for k in ['source','binary_sha256','shaders','inputs'])
@@ -55,7 +58,7 @@ def main():
     ids=[e['id'] for e in json.loads(Path('assets/materials/catalog.json').read_text())['entries']]
 
     def run(name,flags,validated=True,width=960,height=540):
-        command=[str(a.binary),'--config',PRESET,'--headless','--width',str(width),'--height',str(height),
+        command=[str(a.binary),'--config',preset,'--headless','--width',str(width),'--height',str(height),
             '--require-validation' if validated else '--no-validation','--metrics',str(out/(name+'.json')),*flags]
         previous=next((r for r in runs if r['name']==name),None)
         if previous:
@@ -126,14 +129,36 @@ def main():
         for route in ['environment','scene']:
             name=route+'-settled-256'
             d=run(name,['--frames','1','--samples','256','--reflection-source',route,'--transmission-source',route,
+                '--profile-output',str(out/(name+'-host')),
                 '--output',str(out/(name+'.png'))],False,1920,1080)
             assert d['history_samples']==256 and d['dropped_gpu_samples']==0
             gpu={label:sum(r['milliseconds'] for r in d['gpu_samples'] if r['pass']==label)
                  for label in ['raytracing.trace','raytracing.environment_update','raytracing.whole_scene','raytracing.total_frame']}
             assert gpu['raytracing.total_frame']>0 and gpu['raytracing.total_frame']<=2000,gpu
+            profile=out/(name+'-host.passes.csv')
+            cpu={}
+            for row in csv.DictReader(profile.open()):
+                if row['kind']=='cpu':cpu[row['label']]=cpu.get(row['label'],0)+float(row['duration_ms'])
+            assert cpu['headless.write_png']>0
             results.append(dict(name=name,gpu_ms=gpu,limit_ms=2000,passed=True,scope='256-SPP GPU project work; launch/setup/readback are separate',
                 total_app_wall_ms=d['total_app_wall_ms'],scene_prepare_ms=d['cpu_scene_prepare_ms'],pipeline_ms=d['pipeline_setup_ms'],
+                host_cpu_spans_ms=cpu,host_profile_sha256=sha(profile),
+                readback_scope='headless.write_png includes completed RGBA8 readback, PNG encoding and file write',
                 requested_bytes=d['resident_requested_bytes'] if 'resident_requested_bytes' in d else d['sampling_frames'][-1]['resident_requested_bytes']))
+            for repetition in range(3):
+                frame_name=f'{route}-frozen-{repetition}'
+                frame=run(frame_name,['--frames','180','--samples','8192','--headless-render-only',
+                    '--reflection-source',route,'--transmission-source',route],False,1920,1080)
+                assert frame['history_samples']==180 and frame['dropped_gpu_samples']==0
+                assert all(j['new_samples']==1 for j in frame['sampling_frames'])
+                spans={}
+                for label in ['raytracing.trace','raytracing.environment_update','raytracing.whole_scene','raytracing.total_frame']:
+                    selected=[r for r in frame['gpu_samples'] if r['pass']==label and r['frame']>=30]
+                    assert len(selected)==150 and len({r['frame'] for r in selected})==150
+                    values=[r['milliseconds'] for r in selected]
+                    spans[label]=dict(p50_ms=quantile(values,.5),p95_ms=quantile(values,.95),samples=150)
+                assert spans['raytracing.total_frame']['p95_ms']<=16.7
+                results.append(dict(name=frame_name,gpu=spans,shadows=frame['config']['shadows'],passed=True))
         for repetition in range(3):
             name=f'refresh-{repetition}'
             d=run(name,['--frames','180','--samples','8192','--sun-speed','.2','--headless-render-only'],False,1920,1080)
