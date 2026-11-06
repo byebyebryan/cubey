@@ -589,8 +589,12 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         ->upload(materials.data(), materials.size() * sizeof(OpticalMaterial));
     environment_timer_->end_pass(command, slot.index);
     camera.options.z = diagnostic_ ? float(dump_mode_) : 0.F;
-    camera.options.w =
-        c.material_contract ? 3.F : (c.bsdf_contract ? 2.F : (c.optics_contract ? 1.F : 0.F));
+    const bool contract_probe =
+        c.material_contract || c.bsdf_contract || c.optics_contract || c.dielectric_contract;
+    camera.options.w = c.dielectric_contract ? 4.F
+                       : c.material_contract
+                           ? 3.F
+                           : (c.bsdf_contract ? 2.F : (c.optics_contract ? 1.F : 0.F));
     WorkshopUniform workshop_uniform;
     if (workshop_) {
         const auto records = workshop_->gpu_records();
@@ -644,6 +648,8 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     append_identity(workshop_uniform.solar);
     append_identity(c.seed);
     if (workshop_)
+        append_identity(environment_->generation());
+    if (workshop_)
         for (char ch : c.specimen)
             append_identity(ch);
     if (workshop_)
@@ -693,7 +699,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                                  descriptors_->set(slot.index));
     const auto samples_before = history_samples_;
     const auto iterations =
-        workshop_ && !c.material_contract && c.common.headless && !c.common.headless_render_only
+        workshop_ && !contract_probe && c.common.headless && !c.common.headless_render_only
             ? std::max(1U, c.samples > history_samples_ ? c.samples - history_samples_ : 0U)
             : 1U;
     for (std::uint32_t sample = 0; sample < iterations; ++sample) {
@@ -706,7 +712,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                                  nullptr, 0, nullptr);
         }
         rt_.trace(command, &raygen_, &miss_, &hit_, &callable_, extent_.width, extent_.height, 1);
-        if (workshop_ && !c.material_contract && history_samples_ < c.samples)
+        if (workshop_ && !contract_probe && history_samples_ < c.samples)
             ++history_samples_;
     }
     if (workshop_ && collect_metrics_ && sampling_frames_.size() < 20000)

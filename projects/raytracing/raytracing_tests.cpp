@@ -138,6 +138,15 @@ int main() {
         rejects([] { (void)parse({"--attenuation-red", "0"}); });
         rejects([] { (void)parse({"--optics-contract"}); });
         rejects([] { (void)parse({"--bsdf-contract"}); });
+        rejects([] { (void)parse({"--dielectric-contract"}); });
+        rejects([] {
+            (void)parse({"--headless", "--dielectric-contract", "--bsdf-contract",
+                         "--optics-output", "probe.bin"});
+        });
+        require(parse({"--headless", "--dielectric-contract", "--width", "512", "--height", "256",
+                       "--optics-output", "probe.bin"})
+                    .dielectric_contract,
+                "isolated dielectric probe admission");
         rejects([] {
             (void)parse({"--headless", "--bsdf-contract", "--optics-contract", "--optics-output",
                          "probe.bin"});

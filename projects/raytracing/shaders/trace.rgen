@@ -4,6 +4,7 @@
 #include "rt_common.glsl"
 #include "cubey/pbr.glsl"
 #include "material_bsdf.glsl"
+#include "material_dielectric.glsl"
 layout(rgba16f,set=0,binding=1) uniform writeonly image2D outputImage;
 layout(location=0) rayPayloadEXT Hit hit;
 layout(location=1) rayPayloadEXT bool occluded;
@@ -150,7 +151,46 @@ void bsdfContractProbe(){
  for(uint i=0;i<16;++i)queries[pixel*16+i]=observation[i];
  imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(observation[4].rgb,1));
 }
+void dielectricContractProbe() {
+ for(int i=0;i<16;++i)observation[i]=vec4(0);
+ float roughnesses[8]=float[8](0,.05,.1,.2,.32,.5,.8,1);
+ float cosines[4]=float[4](.1,.4,.8,1);
+ float iors[4]=float[4](1,1.1,1.5,2.5);
+ uint row=gl_LaunchIDEXT.y,x=gl_LaunchIDEXT.x;
+ float roughness=roughnesses[row%8u],cosine=cosines[(row/8u)%4u],ior=iors[(row/32u)%4u];
+ bool inside=row>=128u;
+ float eta=inside?1/ior:ior;
+ vec3 v=vec3(sqrt(max(0,1-cosine*cosine)),0,cosine);
+ randomKey=rtHash(row+31u);
+ vec3 xi=vec3(rtStratified(x,41u),rtStratified(x,43u).x);
+ vec3 h=roughness<=0||eta==1?vec3(0,0,1):rtVisibleGgxNormal(v,roughness*roughness,xi.xy);
+ RtDielectricSample sampled=rtSampleDielectric(v,roughness,eta,xi);
+ uint flags=(sampled.transmitted?1u:0u)|(sampled.valid?2u:0u)|(sampled.tir?4u:0u)|(sampled.delta?8u:0u);
+ observation[0]=vec4(v,roughness);observation[1]=vec4(h,ior);
+ observation[2]=vec4(sampled.direction,sampled.pdf);
+ observation[3]=vec4(sampled.value,sampled.weight,rtDielectricFresnel(dot(v,h),eta),eta);
+ observation[4]=vec4(xi,float(flags));
+ observation[5]=vec4(rtGgxDistribution(h,max(roughness*roughness,.000001)),rtGgxG1(v,max(roughness*roughness,.000001)),dot(v,h),0);
+ float z=2*(float(x)+.5)/float(gl_LaunchSizeEXT.x)-1;
+ float phi=2*CUBEY_PBR_PI*fract(float(row)*.6180339887+float(x)*.1414213562);
+ vec3 l=vec3(sqrt(1-z*z)*cos(phi),sqrt(1-z*z)*sin(phi),z);
+ vec2 response=rtDielectricEvalPdf(v,l,roughness,eta);
+ observation[8]=vec4(l,response.x);observation[9]=vec4(response.y,0,0,0);
+ vec4 moments=vec4(0),partitions=vec4(0);
+ for(uint j=0u;j<64u;++j) {
+  uint index=x*64u+j;
+  vec3 u=vec3(rtStratified(index,47u),rtStratified(index,53u).x);
+  RtDielectricSample s=rtSampleDielectric(v,roughness,eta,u);
+  moments+=vec4(s.valid?s.weight:0,s.valid?1:0,s.valid&&!s.transmitted?1:0,s.valid&&s.transmitted?1:0);
+  partitions+=vec4(s.valid&&!s.transmitted?s.weight:0,s.valid&&s.transmitted?s.weight:0,s.tir?1:0,1);
+ }
+ observation[12]=moments/64;observation[13]=partitions/64;
+ uint pixel=x+row*gl_LaunchSizeEXT.x;
+ for(uint i=0u;i<16u;++i)queries[pixel*16u+i]=observation[i];
+ imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(sampled.weight,sampled.pdf,0,1));
+}
 void main(){
+ if(camera.options.w>3.5){dielectricContractProbe();return;}
  if(camera.options.w>2.5){materialContractProbe();return;}
  if(camera.options.w>1.5){bsdfContractProbe();return;}
  if(camera.options.w>.5){contractProbe();return;}

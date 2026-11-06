@@ -20,6 +20,7 @@ struct Config {
     bool optics_contract = false;
     bool bsdf_contract = false;
     bool material_contract = false;
+    bool dielectric_contract = false;
     std::string material = "bronze", specimen = "sphere";
     std::string workshop_lighting = "combined";
     std::filesystem::path recipe_input, recipe_output;
@@ -123,6 +124,7 @@ inline config::Schema schema(Config& c) {
     b.bind(opt("optics-contract", ValueType::Bool), c.optics_contract);
     b.bind(opt("bsdf-contract", ValueType::Bool), c.bsdf_contract);
     b.bind(opt("material-contract", ValueType::Bool), c.material_contract);
+    b.bind(opt("dielectric-contract", ValueType::Bool), c.dielectric_contract);
     auto specimen = opt("specimen", ValueType::Enum);
     specimen.enum_values = {"sphere", "block", "swatch", "cut-block"};
     auto workshop_lighting = opt("workshop-lighting", ValueType::Enum);
@@ -234,6 +236,12 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         throw std::invalid_argument("--exercise-retry requires --fault scene|pipeline|target");
     const auto outputs =
         int(!c.query_output.empty()) + int(!c.optics_output.empty()) + int(!c.hdr_output.empty());
+    if (int(c.optics_contract) + int(c.bsdf_contract) + int(c.material_contract) +
+            int(c.dielectric_contract) >
+        1)
+        throw std::invalid_argument("select one contract probe");
+    if (c.dielectric_contract && (dump_mode(c) != 2 || !c.common.headless))
+        throw std::invalid_argument("dielectric contract requires headless --optics-output");
     if (c.optics_contract && (dump_mode(c) != 2 || !c.common.headless))
         throw std::invalid_argument("optics contract requires headless --optics-output");
     if (c.bsdf_contract && (dump_mode(c) != 2 || !c.common.headless || c.optics_contract))

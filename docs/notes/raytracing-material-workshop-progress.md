@@ -391,3 +391,41 @@ validation, fixed residency and eight prepared AS builds. Focused RT tests pass
 comparison against the old private builders proves exact PbrVertex/index bytes
 for block, swatch and bored block. All ten cached-RT sphere captures were visually
 reviewed. P3/P4 remain required; these are bounded frozen-clear-light results.
+
+## P3 dielectric math preparation
+
+The new isolated `--dielectric-contract` probe audits rough interfaces before
+visual glass admission. It uses the qualified visible-GGX mapping, exact
+unpolarized Fresnel, correlated Smith, the reflection/refraction Jacobians and
+radiance-mode eta weights. V1 remains a delta interface; index-matched IOR=1 is
+also delta. Rejected microfacets keep their null probability. The implementation
+follows [PBRT 4e dielectric equations](https://www.pbr-book.org/4ed/Reflection_Models/Dielectric_BSDF),
+with the project conventions above; it does not import another renderer layer.
+
+The first probe exposed critical-angle cancellation. Fresnel now compensates
+`cosine² + eta² - 1`; transmitted evaluation uses both known interface cosines
+and a direct transmittance expression. The CPU oracle independently uses the two
+polarized reflection coefficients. Arithmetic compares the actual recorded float
+operands, as in the opaque probe: normalizing them again in double precision
+changes the input of a sharp grazing lobe. Angular quadrature is separate and
+never calls the ported sampler. Original tolerances remain unchanged.
+
+Exploratory controls pass 131,072 arithmetic inputs, 208 angular integral cases
+with 32,768 sampled events per row, and 32 rough-to-delta energy controls at
+roughness .05. Maximum direction error is 2.29e-6 and scalar Fresnel error 1.88e-7.
+Evaluation/PDF error uses at most 0.344 of the allowed absolute-plus-relative
+limit. Integral energy error is at most .01951 against .02; rejection-mass error
+is at most .00846 against .025. Two quadrature orders agree within .000192 on
+nine harder controls. The rough-limit energy difference is at most .00632.
+
+The predeclared regular arithmetic region excludes `abs(1-sin²(thetaT)) <= 1e-5`
+or an outgoing cosine at most 1e-4. These boundary observations are reported,
+retained in estimator sums and never retried. A single interior interface can
+amplify radiance by eta scaling; the <=1.02 exterior furnace gate applies to
+outside interfaces and, later, complete closed bodies. None of these isolated
+checks establishes geometry admission, two-body transport, glass convergence or
+complete workshop support. Fresh committed-source replay remains required.
+
+The history key now explicitly includes the shared probe generation, in addition
+to environment uniforms. Contract probes dispatch once and do not increment
+progressive sample counts, including when launched on the materials scene.
