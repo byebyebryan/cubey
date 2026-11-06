@@ -424,7 +424,7 @@ retained in estimator sums and never retried. A single interior interface can
 amplify radiance by eta scaling; the <=1.02 exterior furnace gate applies to
 outside interfaces and, later, complete closed bodies. None of these isolated
 checks establishes geometry admission, two-body transport, glass convergence or
-complete workshop support. Fresh committed-source replay remains required.
+complete workshop support. The [committed-source math receipt](../evidence/raytracing-material-workshop-2026-11/p3-math.json) records the passing replay at cd0c523d.
 
 The history key now explicitly includes the shared probe generation, in addition
 to environment uniforms. Contract probes dispatch once and do not increment
