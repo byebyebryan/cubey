@@ -429,3 +429,58 @@ complete workshop support. The [committed-source math receipt](../evidence/raytr
 The history key now explicitly includes the shared probe generation, in addition
 to environment uniforms. Contract probes dispatch once and do not increment
 progressive sample counts, including when launched on the materials scene.
+
+
+## P3 integrated implementation checkpoint
+
+All twelve canonical recipes now have prepared isolated and gallery routes.
+Glass uses each intersected body's IOR, Beer attenuation and optical distance;
+legacy global optics remain confined to legacy scenes. Preparation welds seam/
+pole topology within 1e-7 times max(1, bounds diagonal), snaps those positions,
+removes duplicate-index pole triangles, and requires closed balanced edges and
+positive signed volume. Supplied opaque shading normals are retained. Glass uses
+geometric boundary normals. Conservative disjoint AABBs reject overlap and a
+camera inside glass bounds; this deliberately also rejects some empty cavities.
+Five meshes and five TLAS routes are prepared once (ten AS builds). Appearance
+edits, family selection and gallery switching reuse those resources.
+
+The integrated rough-glass estimator uses separate solar next-event estimation
+with balance MIS on solar misses, BSDF continuation, Fresnel splitting at the
+first two event depths, and ten conditional secondary trials sharing one primary
+jitter/hit. All branches/trials share the unchanged 8-event/32-radiance/128-total
+budget of one primary sample. SPP therefore counts camera/history iterations,
+not ten independent primary samples. Delta interfaces retain exact directions.
+Secondary glass misses use the same physical-sun transport sky adapter as scene
+reflection, including the environment comparison route. The primary visible sky
+and existing forward/SDF response are unchanged. Empty exterior space after an
+isolated convex sphere/block/swatch is resolved without redundant trace calls;
+bored blocks and the gallery still trace. Homogeneous optical recipes bypass
+procedural work that the shared validator forbids for glass.
+
+A repeated proposal parity at every depth was found to bias joint path choices.
+Depth-indexed digital proposal bits and conditional indices now cover joint
+combinations. New independent component-PDF, solar-MIS and split-energy controls
+extend the dielectric math probe. Null microfacet events remain unnormalized.
+Integrated diagnostics accumulate calls, statuses, discarded throughput and
+terminated branches; last-trunk interface observations retain separate semantics.
+
+Exploratory runtime checks pass two-body unequal-IOR Snell traversal and combined
+Beer attenuation while deliberately supplying conflicting legacy global optics;
+position errors are below 6e-6 m, direction errors below 1.2e-7, and absorption
+relative error below 4e-7. Both glasses pass exterior finite/nonnegative furnace
+upper bounds and the rough-to-sharp complete-body limit. Exhaustion returns black
+residual with an explicit status, never fallback sky. Sun plus sky additivity is
+within 5.3e-7. Each glass survives 1,000 appearance edits with fixed requested
+residency, ten AS builds and one target generation; moving-sun history resets.
+
+The fixed budget is a biased truncation: neutral frosted-glass furnace mean is
+about .867, and the default-versus-12/64/256 control has normalized mean .0148,
+p95 .0606. This is reported separately from same-budget convergence; no budget
+or acceptance limit was silently revised. Standard (64/128) versus dense
+(128/256) controls expose sharp-glass horizon faceting; their normalized mean
+image difference is .0368 (frosted .00430), including finite-sample noise. Dense
+geometry is opt-in, with recorded costs, and does not change accepted defaults.
+P4 will use a matched dense comparison mesh for the presentation.
+
+These are implementation observations, pending the committed-source P3 replay.
+P4 matched media, final gallery qualification and full integration remain open.

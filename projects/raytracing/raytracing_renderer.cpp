@@ -102,7 +102,23 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
         properties_.pNext = &as_properties_;
         vkGetPhysicalDeviceProperties2(device.physical_device(), &p);
         create_scene(gpu, scene);
+        if (scene.workshop) {
+            workshop_routes_ = scene.routes;
+            workshop_volumes_ = workshop_volumes(scene);
+            for (const auto& mesh : scene.meshes)
+                geometry_admission_.push_back(mesh_admission_identity(mesh));
+            for (const auto& route : scene.routes) {
+                std::uint64_t triangles = 0;
+                for (std::size_t i = route.first; i < route.first + route.count; ++i)
+                    triangles += scene.meshes.at(scene.instances.at(i).mesh).indices.size() / 3;
+                route_identity_[route.name] = {{"first_instance", route.first},
+                                               {"instances", route.count},
+                                               {"triangles", triangles}};
+            }
+        }
         for (const auto& instance : scene.instances) {
+            if (scene.workshop)
+                break;
             if (scene.materials.at(instance.material).optics.x != 2)
                 continue;
             if (!glass_planes_.empty())
@@ -123,6 +139,8 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
             throw std::runtime_error("owned RT creation fault: scene");
         const Config fallback_config;
         const auto& settings = config ? *config : fallback_config;
+        if (scene.workshop)
+            active_route_ = workshop_route(settings);
         dump_mode_ = dump_mode(settings);
         dump_stride_ = dump_stride(settings);
         material_values_ = scene.materials;
@@ -532,8 +550,9 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     collect(slot.index);
     profile_ = profile;
     if (workshop_) {
+        active_route_ = workshop_route(c);
         auto route = std::find_if(routes_.begin(), routes_.end(),
-                                  [&](const auto& r) { return r.first == c.specimen; });
+                                  [&](const auto& r) { return r.first == workshop_route(c); });
         if (route == routes_.end())
             throw std::invalid_argument("unprepared workshop specimen");
         auto acceleration = vulkan::vk_struct<VkWriteDescriptorSetAccelerationStructureKHR>(
@@ -550,6 +569,9 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         vkUpdateDescriptorSets(device_.handle(), 1, &write, 0, nullptr);
     }
     auto camera = camera_uniform(c, extent_);
+    if (workshop_)
+        validate_workshop_view(workshop_volumes_, workshop_routes_, *workshop_, c,
+                               math::Vec3(camera.eye));
     if (!glass_planes_.empty() &&
         std::all_of(glass_planes_.begin(), glass_planes_.end(), [&](auto p) {
             return glm::dot(p, math::Vec4(math::Vec3(camera.eye), 1)) <= 1e-6F;
@@ -579,7 +601,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                 material.reflectance = {c.red, c.green, c.blue, 1};
             }
         }
-        if (material.optics.x == 2) {
+        if (material.optics.x == 2 && !workshop_) {
             material.optics.y = c.ior;
             material.optics.z = c.attenuation_distance;
             material.attenuation = {c.attenuation_red, c.attenuation_green, c.attenuation_blue, 1};
@@ -599,12 +621,18 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     if (workshop_) {
         const auto records = workshop_->gpu_records();
         recipe_buffers_.at(slot.index)->upload(records.data(), records.size() * sizeof(GpuRecipe));
-        workshop_uniform.options = {1, workshop_->selected, c.pattern ? 1U : 0U, c.bump ? 1U : 0U};
+        workshop_uniform.options = {c.optical_pair != "none"  ? 3U
+                                    : c.material == "gallery" ? 2U
+                                                              : 1U,
+                                    workshop_->selected, c.pattern ? 1U : 0U, c.bump ? 1U : 0U};
         const std::array<std::string_view, 4> shapes{"sphere", "block", "swatch", "cut-block"};
         workshop_uniform.sampling = {
             c.seed, c.samples,
-            static_cast<std::uint32_t>(std::find(shapes.begin(), shapes.end(), c.specimen) -
-                                       shapes.begin()),
+            c.optical_pair != "none" ? 4U
+            : c.material == "gallery"
+                ? 0U
+                : static_cast<std::uint32_t>(std::find(shapes.begin(), shapes.end(), c.specimen) -
+                                             shapes.begin()),
             0};
         workshop_uniform.solar = {
             environment_->solar_radius(), c.workshop_lighting == "sun" ? 0.F : 1.F,
@@ -821,19 +849,42 @@ nlohmann::json Renderer::metrics() const {
     auto supported = nlohmann::json::array();
     if (workshop_)
         for (const auto& entry : workshop_->catalog)
-            if (entry.recipe.optics.settings.y == 0)
-                supported.push_back(entry.id);
+            supported.push_back(entry.id);
     const auto memory = device_.device_memory_budget();
     return {
         {"format", "cubey.raytracing.metrics"},
         {"workshop_enabled", bool(workshop_)},
+        {"workshop_sampling",
+         {{"primary_samples", history_samples_},
+          {"rough_glass_secondary_trials", 10},
+          {"fresnel_split_depths", 2},
+          {"budget_scope", "all branches and trials of one primary sample"}}},
         {"workshop_supported_material_ids", supported},
         {"history_samples", history_samples_},
         {"history_epochs", history_epochs_},
         {"extent", {extent_.width, extent_.height}},
         {"sampling_frames", sampling_frames_},
         {"workshop_materials", workshop_ ? workshop_->identity() : nlohmann::json::array()},
-        {"version", 2},
+        {"geometry_admission", geometry_admission_},
+        {"scene_routes", route_identity_},
+        {"active_route", active_route_},
+        {"active_triangles", workshop_ ? route_identity_.at(active_route_).at("triangles")
+                                       : nlohmann::json(triangle_count_)},
+        {"version", workshop_ ? 3 : 2},
+        {"workshop_optics_dump_statistics",
+         {{"scope", "path optics-output only; standalone contract probes use their own layouts"},
+          {"1.w", "last sample trunk boundary events"},
+          {"2.w", "terminated branches sum"},
+          {"3.w", "rejected continuations sum"},
+          {"10.w", "total queries sum"},
+          {"11.rgb", "discarded throughput sum"},
+          {"11.w", "status bitwise OR"},
+          {"14.z", "root conditional trials sum"},
+          {"14.w", "primary samples with transport status"},
+          {"15.x", "radiance queries sum"},
+          {"15.y", "maximum depth"},
+          {"15.z", "primary samples sum"},
+          {"15.w", "visibility queries sum"}}},
         {"environment_setup_ms", environment_ ? environment_->setup_ms() : 0},
         {"environment_probe_build_gpu_ms", environment_ ? environment_->probe_gpu_ms() : 0},
         {"environment_pipeline_setup_ms", environment_ ? environment_->pipeline_ms() : 0},

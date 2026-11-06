@@ -1,4 +1,5 @@
 #include "raytracing_materials.h"
+#include "raytracing_material_geometry.h"
 #include "raytracing_scene.h"
 #include <cubey/render/material_specimen_mesh.h>
 #include <stdexcept>
@@ -11,11 +12,18 @@ std::filesystem::path catalog_path() {
 bool glass(const asset::MaterialRecipe& r) {
     return r.optics.settings.y > 0;
 }
+void validate_workshop_recipe(const asset::MaterialRecipe& r) {
+    asset::validate_material_recipe(r);
+    if (glass(r) && (r.optics.settings.x != 0 || r.optics.settings.y != 1))
+        throw std::invalid_argument(
+            "workshop glass requires full dielectric transmission and no metallic lobe");
+}
 } // namespace
 WorkshopState::WorkshopState(const Config& c)
     : catalog(asset::load_material_catalog(catalog_path())) {
     bool found = false;
     for (std::size_t i = 0; i < catalog.size(); ++i) {
+        validate_workshop_recipe(catalog[i].recipe);
         recipes.push_back(catalog[i].recipe);
         if (catalog[i].id == c.material) {
             selected = static_cast<std::uint32_t>(i);
@@ -35,7 +43,7 @@ WorkshopState::WorkshopState(const Config& c)
         asset::save_material_recipe(c.recipe_output, recipes.at(selected));
 }
 void WorkshopState::replace(std::size_t index, asset::MaterialRecipe candidate) {
-    asset::validate_material_recipe(candidate);
+    validate_workshop_recipe(candidate);
     if (glass(candidate) != glass(catalog.at(index).recipe))
         throw std::invalid_argument("select a matching opaque or glass workshop slot");
     recipes.at(index) = std::move(candidate);
@@ -47,6 +55,7 @@ void WorkshopState::reload() {
         throw std::invalid_argument("catalog roster change requires restart");
     std::vector<asset::MaterialRecipe> next;
     for (std::size_t i = 0; i < candidate.size(); ++i) {
+        validate_workshop_recipe(candidate[i].recipe);
         if (candidate[i].id != catalog[i].id ||
             glass(candidate[i].recipe) != glass(catalog[i].recipe))
             throw std::invalid_argument("catalog identity or routing change requires restart");
@@ -83,44 +92,75 @@ nlohmann::json WorkshopState::identity() const {
     return result;
 }
 Scene make_material_scene(const Config& c) {
-    if (c.material == "gallery")
-        throw std::invalid_argument("the complete gallery requires the dielectric checkpoint");
     Scene scene;
     scene.workshop = std::make_shared<WorkshopState>(c);
-    const auto& selected = scene.workshop->recipes.at(scene.workshop->selected);
-    if (glass(selected))
-        throw std::invalid_argument("glass requires the dielectric checkpoint");
+    if (c.optical_pair != "none") {
+        for (std::size_t i = 0; i < scene.workshop->catalog.size(); ++i) {
+            const auto& id = scene.workshop->catalog[i].id;
+            if (id != "glass" && id != "frosted-glass")
+                continue;
+            auto recipe = scene.workshop->recipes[i];
+            recipe.surface.base_roughness.w = .05F;
+            recipe.library.optical_options.x = 0;
+            const bool first = id == "glass";
+            if (c.optical_pair == "index-matched") {
+                recipe.optics.settings.z = 1;
+                recipe.optics.settings.w = first ? .3F : .2F;
+                recipe.optics.attenuation =
+                    first ? math::Vec4(.8F, .9F, .98F, 0) : math::Vec4(.94F, .7F, .85F, 0);
+            } else {
+                recipe.optics.settings.z = first ? 1.33F : 1.8F;
+                recipe.optics.settings.w = 1;
+                recipe.optics.attenuation = {1, 1, 1, 0};
+            }
+            scene.workshop->replace(i, std::move(recipe));
+        }
+    }
     const std::array<std::string, 4> shapes{"sphere", "block", "swatch", "cut-block"};
     for (const auto& shape : shapes) {
         const auto source =
-            shape == "sphere" ? render::make_material_sphere_mesh(.25F)
+            shape == "sphere"
+                ? render::make_material_sphere_mesh(.25F, c.sphere_density == "dense" ? 128 : 64,
+                                                    c.sphere_density == "dense" ? 256 : 128)
             : shape == "swatch"
                 ? render::make_material_beveled_block_mesh({.25F, .20F, .018F}, .012F)
             : shape == "cut-block" ? render::make_material_cut_block_mesh()
                                    : render::make_material_beveled_block_mesh();
-        Mesh mesh;
-        for (const auto& v : source.vertices)
-            mesh.vertices.push_back({{v.position, 1}, {v.normal, 0}});
-        for (std::size_t j = 0; j < source.indices.size(); j += 3) {
-            auto a = source.indices[j], b = source.indices[j + 1], d = source.indices[j + 2];
-            const auto cross =
-                glm::cross(source.vertices[b].position - source.vertices[a].position,
-                           source.vertices[d].position - source.vertices[a].position);
-            const auto normal =
-                source.vertices[a].normal + source.vertices[b].normal + source.vertices[d].normal;
-            // Forward's private specimens supplied shading normals without a
-            // uniform boundary winding. Preserve positions/normals; orient RT
-            // triangles consistently with those supplied outward normals.
-            if (glm::dot(cross, normal) < 0)
-                std::swap(b, d);
-            mesh.indices.insert(mesh.indices.end(), {a, b, d});
-        }
+        auto mesh = prepare_workshop_mesh(source);
         const auto index = static_cast<std::uint32_t>(scene.meshes.size());
         scene.meshes.push_back(std::move(mesh));
         scene.routes.push_back({shape, index, 1});
         auto world = math::Mat4(1);
         world[0][0] = world[1][1] = world[2][2] = c.object_scale;
         scene.instances.push_back({index, world, {1, 1, 1, 1}, scene.workshop->selected});
+    }
+    const auto gallery_mesh = static_cast<std::uint32_t>(scene.meshes.size());
+    scene.meshes.push_back(prepare_workshop_mesh(render::make_material_sphere_mesh(
+        .075F, c.sphere_density == "dense" ? 128 : 64, c.sphere_density == "dense" ? 256 : 128)));
+    const auto first = static_cast<std::uint32_t>(scene.instances.size());
+    for (std::size_t i = 0; i < scene.workshop->catalog.size(); ++i) {
+        auto world = math::Mat4(1);
+        world[3] = math::Vec4((float(i % 4) - 1.5F) * .252F, (1 - float(i / 4)) * .195F, 0, 1);
+        scene.instances.push_back(
+            {gallery_mesh, world, {1, 1, 1, 1}, static_cast<std::uint32_t>(i)});
+    }
+    scene.routes.push_back(
+        {"gallery", first, static_cast<std::uint32_t>(scene.workshop->catalog.size())});
+    if (c.optical_pair != "none") {
+        const auto mesh = static_cast<std::uint32_t>(scene.meshes.size());
+        scene.meshes.push_back(prepare_workshop_mesh(
+            render::make_material_beveled_block_mesh({.12F, .12F, .025F}, .005F)));
+        const auto start = static_cast<std::uint32_t>(scene.instances.size());
+        for (const std::string id : {"glass", "frosted-glass"}) {
+            const auto item =
+                std::find_if(scene.workshop->catalog.begin(), scene.workshop->catalog.end(),
+                             [&](const auto& entry) { return entry.id == id; });
+            const auto slot = static_cast<std::uint32_t>(item - scene.workshop->catalog.begin());
+            auto world = math::Mat4(1);
+            world[3].z = id == "glass" ? .1F : -.1F;
+            scene.instances.push_back({mesh, world, {1, 1, 1, 1}, slot});
+        }
+        scene.routes.push_back({"optical-pair", start, 2});
     }
     scene.materials.clear();
     for (const auto& recipe : scene.workshop->recipes)
@@ -129,6 +169,13 @@ Scene make_material_scene(const Config& c) {
              {glass(recipe) ? 2.F : 0.F, recipe.optics.settings.z, recipe.optics.settings.w, 0},
              recipe.optics.attenuation,
              {1, 1, 1, 1}});
+    const auto target = math::Vec3(c.target_x, c.target_y, c.target_z);
+    const float pitch = -c.pitch;
+    const auto eye = target + math::Vec3(std::cos(pitch) * std::sin(c.yaw), std::sin(pitch),
+                                         std::cos(pitch) * std::cos(c.yaw)) *
+                                  c.distance;
+    const auto volumes = workshop_volumes(scene);
+    validate_workshop_view(volumes, scene.routes, *scene.workshop, c, eye);
     return scene;
 }
 } // namespace cubey::projects::raytracing

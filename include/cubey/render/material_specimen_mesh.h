@@ -7,10 +7,13 @@
 // Existing material-workshop specimen geometry, shared without changing the
 // forward vertex/index construction. Consumers may adapt index width/winding.
 namespace cubey::render {
-[[nodiscard]] inline PrimitiveMeshData<PbrVertex> make_material_sphere_mesh(float radius) {
+[[nodiscard]] inline PrimitiveMeshData<PbrVertex>
+make_material_sphere_mesh(float radius, std::uint32_t latitude_segments = 64,
+                          std::uint32_t longitude_segments = 128) {
     const PrimitiveMeshData<VertexPositionColorNormalUv> cube =
-        make_uv_sphere_position_color_normal_uv_mesh(
-            {.radius = radius, .latitude_segments = 64, .longitude_segments = 128});
+        make_uv_sphere_position_color_normal_uv_mesh({.radius = radius,
+                                                      .latitude_segments = latitude_segments,
+                                                      .longitude_segments = longitude_segments});
 
     PrimitiveMeshData<PbrVertex> result;
     result.vertices.reserve(cube.vertices.size());

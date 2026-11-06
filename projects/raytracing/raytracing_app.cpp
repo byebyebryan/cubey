@@ -1,5 +1,6 @@
 #include "raytracing_config.h"
 #include "raytracing_environment.h"
+#include "raytracing_material_geometry.h"
 #include "raytracing_renderer.h"
 #include <chrono>
 #include <cstdio>
@@ -31,6 +32,8 @@ class App {
                     m["normals"].push_back({v.normal.x, v.normal.y, v.normal.z});
                 }
                 m["indices"] = mesh.indices;
+                if (scene_.workshop)
+                    m["admission"] = mesh_admission_identity(mesh);
                 data["meshes"].push_back(m);
             }
             for (const auto& i : scene_.instances) {
@@ -55,8 +58,9 @@ class App {
             if (scene_.workshop) {
                 data["workshop_recipes"] = scene_.workshop->identity();
                 data["geometry_conversion"] =
-                    "shared forward specimen positions/normals; uint16 indices widened to uint32; "
-                    "opaque triangles oriented against supplied outward normals";
+                    "shared forward specimen builders; uint16 indices widened; boundary winding "
+                    "aligned with supplied normals; seam/pole positions snapped within each "
+                    "recorded bound and degenerate triangles removed";
             }
             if (config_.scene_output.has_parent_path())
                 std::filesystem::create_directories(config_.scene_output.parent_path());
@@ -65,11 +69,14 @@ class App {
                 throw std::runtime_error("cannot write RT scene identity");
             file << data.dump(2);
         }
+        if (scene_.workshop)
+            orbit_.set_distance_limits(config_.common.headless ? .05F : .6F * config_.object_scale,
+                                       std::nextafter(100.F, 0.F));
         orbit_.set_home_distance(config_.distance);
         orbit_.set_distance(config_.distance);
         const auto recipe_path =
             config_.recipe_output.empty()
-                ? std::filesystem::path("outputs/raytracing/material-workshop/edited-bronze.json")
+                ? std::filesystem::path("outputs/raytracing/material-workshop/edited-material.json")
                 : config_.recipe_output;
         std::snprintf(recipe_path_.data(), recipe_path_.size(), "%s", recipe_path.string().c_str());
     }
@@ -185,13 +192,22 @@ class App {
                         config_.samples,
                         static_cast<unsigned long long>(renderer_->history_epoch()));
         bool changed = false;
+        const bool glass = recipe.optics.settings.y > 0;
+        ImGui::BeginDisabled(glass);
         changed |= ImGui::ColorEdit3("Base color", &recipe.surface.base_roughness.x);
+        ImGui::EndDisabled();
+        ImGui::BeginDisabled(glass && recipe.library.optical_options.x < .5F);
         changed |=
             ImGui::SliderFloat("Perceptual roughness", &recipe.surface.base_roughness.w, .05F, 1);
+        ImGui::EndDisabled();
+        ImGui::BeginDisabled(glass);
         changed |= ImGui::SliderFloat("Metallic", &recipe.optics.settings.x, 0, 1);
+        ImGui::EndDisabled();
         changed |= ImGui::SliderFloat("Dielectric IOR", &recipe.optics.settings.z, 1, 2.5F);
+        ImGui::BeginDisabled(glass);
         changed |= ImGui::ColorEdit3("Emission", &recipe.surface.emission.x,
                                      ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+        ImGui::EndDisabled();
         if (changed) {
             try {
                 state.replace(state.selected, recipe);
@@ -266,8 +282,7 @@ class App {
                 workshop_family_ = "all";
             std::vector<std::string> families;
             for (const auto& item : state.catalog) {
-                if (item.recipe.optics.settings.y > 0 ||
-                    std::find(families.begin(), families.end(), item.family) != families.end())
+                if (std::find(families.begin(), families.end(), item.family) != families.end())
                     continue;
                 families.push_back(item.family);
                 if (ImGui::Selectable(item.family.c_str(), workshop_family_ == item.family))
@@ -278,12 +293,12 @@ class App {
         if (ImGui::BeginCombo("Material", state.catalog.at(state.selected).label.c_str())) {
             for (std::size_t i = 0; i < state.catalog.size(); ++i) {
                 const auto& item = state.catalog[i];
-                if (item.recipe.optics.settings.y > 0 ||
-                    (workshop_family_ != "all" && item.family != workshop_family_))
+                if (workshop_family_ != "all" && item.family != workshop_family_)
                     continue;
                 if (ImGui::Selectable(item.label.c_str(), i == state.selected)) {
                     state.selected = static_cast<std::uint32_t>(i);
-                    config_.material = item.id;
+                    if (config_.material != "gallery")
+                        config_.material = item.id;
                 }
             }
             ImGui::EndCombo();
@@ -293,12 +308,46 @@ class App {
         for (int i = 0; i < 4; ++i)
             if (config_.specimen == shapes[i])
                 shape = i;
+        bool gallery = config_.material == "gallery";
+        ImGui::BeginDisabled(gallery);
         if (ImGui::Combo("Specimen", &shape, shapes, 4))
             config_.specimen = shapes[shape];
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(config_.object_scale != 1);
+        if (ImGui::Checkbox("Gallery", &gallery)) {
+            config_.material = gallery ? "gallery" : state.catalog.at(state.selected).id;
+            config_.yaw = 0;
+            config_.pitch = gallery ? 0 : .15F;
+            config_.distance = gallery ? .855F : 1.05F;
+            orbit_.set_home_distance(config_.distance);
+            orbit_.reset();
+            orbit_.set_distance(config_.distance);
+        }
+        ImGui::EndDisabled();
         recipe = state.recipes.at(state.selected);
         if (ImGui::CollapsingHeader("Recipe detail")) {
             bool detail = false;
-            detail |= ImGui::SliderFloat("Diffuse roughness", &recipe.optics.attenuation.w, 0, 1);
+            if (recipe.optics.settings.y > 0) {
+                detail |= ImGui::ColorEdit3("Attenuation", &recipe.optics.attenuation.x);
+                for (int channel = 0; channel < 3; ++channel)
+                    recipe.optics.attenuation[channel] =
+                        std::max(recipe.optics.attenuation[channel], .0001F);
+                detail |= ImGui::SliderFloat("Optical distance", &recipe.optics.settings.w, .001F,
+                                             10, "%.3f", ImGuiSliderFlags_Logarithmic);
+                if (recipe.version >= 2) {
+                    bool rough = recipe.library.optical_options.x > .5F;
+                    if (ImGui::Checkbox("Rough interfaces", &rough)) {
+                        recipe.library.optical_options.x = rough ? 1.F : 0.F;
+                        if (!rough)
+                            recipe.surface.base_roughness.w = .05F;
+                        detail = true;
+                    }
+                } else
+                    ImGui::TextUnformatted("Sharp interfaces");
+            } else
+                detail |=
+                    ImGui::SliderFloat("Diffuse roughness", &recipe.optics.attenuation.w, 0, 1);
             if (recipe.pattern.settings.x > 0) {
                 detail |= ImGui::SliderFloat("Pattern scale", &recipe.pattern.settings.z, .25F, 64);
                 detail |= ImGui::SliderFloat("Pattern strength", &recipe.pattern.settings.w, 0, 1);
@@ -447,12 +496,19 @@ class App {
     }
     void save() {
         auto c = current();
+        if (c.scene == "materials" && c.material == "gallery") {
+            c.recipe_input.clear();
+            c.recipe_output.clear();
+            c.material_roughness = -1;
+        }
         c.save_config.clear();
         c.metrics.clear();
         c.query_output.clear();
         c.optics_output.clear();
         c.hdr_output.clear();
         c.scene_output.clear();
+        c.optics_contract = c.bsdf_contract = c.material_contract = c.dielectric_contract = false;
+        c.stress_edits = 0;
         c.orbit_speed = 0;
         c.sun_speed = 0;
         c.fault = "none";

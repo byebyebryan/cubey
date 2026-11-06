@@ -36,9 +36,12 @@ vec2 rtDielectricEvalPdf(vec3 v,vec3 l,float roughness,float eta) {
     float vh=dot(v,h),lh=dot(l,h);
     if(vh<=0||lh*l.z<=0||h.z<=0) return vec2(0);
     float alpha=roughness*roughness,d=rtGgxDistribution(h,alpha);
-    float g=rtDielectricG2(v,l,alpha),f=rtDielectricFresnel(vh,eta);
+    float g=rtDielectricG2(v,l,alpha);
     float normalPdf=d*rtGgxG1(v,alpha)*vh/v.z;
-    if(reflection) return vec2(d*g*f/(4*v.z*l.z),normalPdf*f/(4*vh));
+    if(reflection) {
+        float f=rtDielectricFresnel(vh,eta);
+        return vec2(d*g*f/(4*v.z*l.z),normalPdf*f/(4*vh));
+    }
     float denominator=lh+vh/eta,denominator2=denominator*denominator;
     if(denominator2<=1e-30) return vec2(0);
     float jacobian=abs(lh)/denominator2;
@@ -55,6 +58,19 @@ struct RtDielectricSample {
     float value,pdf,weight;
     bool transmitted,valid,tir,delta;
 };
+float rtDielectricComponentPdf(vec3 v,vec3 l,float roughness,float eta) {
+    if(v.z<=0||l.z==0||roughness<=0||eta==1)return 0;
+    bool reflection=l.z>0;
+    vec3 sum=v+(reflection?1:eta)*l;
+    if(dot(sum,sum)<=1e-30)return 0;
+    vec3 h=normalize(sum);if(h.z<0)h=-h;
+    float vh=dot(v,h),lh=dot(l,h);
+    if(vh<=0||lh*l.z<=0||h.z<=0)return 0;
+    float alpha=roughness*roughness;
+    float normalPdf=rtGgxDistribution(h,alpha)*rtGgxG1(v,alpha)*vh/v.z;
+    float denominator=lh+vh/eta;
+    return reflection?normalPdf/(4*vh):normalPdf*abs(lh)/(denominator*denominator);
+}
 RtDielectricSample rtSampleDielectric(vec3 v,float roughness,float eta,vec3 xi) {
     RtDielectricSample result=RtDielectricSample(vec3(0),0,0,0,false,false,false,roughness<=0||eta==1);
     if(v.z<=0) return result;

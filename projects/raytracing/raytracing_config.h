@@ -22,6 +22,8 @@ struct Config {
     bool material_contract = false;
     bool dielectric_contract = false;
     std::string material = "bronze", specimen = "sphere";
+    std::string sphere_density = "standard";
+    std::string optical_pair = "none";
     std::string workshop_lighting = "combined";
     std::filesystem::path recipe_input, recipe_output;
     std::uint32_t samples = 256, seed = 7;
@@ -128,9 +130,15 @@ inline config::Schema schema(Config& c) {
     auto specimen = opt("specimen", ValueType::Enum);
     specimen.enum_values = {"sphere", "block", "swatch", "cut-block"};
     auto workshop_lighting = opt("workshop-lighting", ValueType::Enum);
+    auto sphere_density = opt("sphere-density", ValueType::Enum);
+    sphere_density.enum_values = {"standard", "dense"};
+    auto optical_pair = opt("optical-pair", ValueType::Enum);
+    optical_pair.enum_values = {"none", "index-matched", "unequal-ior"};
     workshop_lighting.enum_values = {"combined", "sky", "sun", "furnace"};
     b.bind(opt("material", ValueType::String), c.material)
         .bind(specimen, c.specimen)
+        .bind(sphere_density, c.sphere_density)
+        .bind(optical_pair, c.optical_pair)
         .bind(workshop_lighting, c.workshop_lighting)
         .bind(opt("recipe-input", ValueType::Path), c.recipe_input)
         .bind(opt("recipe-output", ValueType::Path), c.recipe_output)
@@ -159,9 +167,13 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
             if (!parsed->path_was_assigned(path))
                 value = next;
         };
+        if (c.optical_pair != "none")
+            fallback("material", c.material, std::string("gallery"));
         fallback("environment", c.environment, std::string("atmosphere"));
-        fallback("reflection-source", c.reflection_source, std::string("environment"));
-        fallback("transmission-source", c.transmission_source, std::string("environment"));
+        fallback("reflection-source", c.reflection_source,
+                 std::string(c.optical_pair == "none" ? "environment" : "scene"));
+        fallback("transmission-source", c.transmission_source,
+                 std::string(c.optical_pair == "none" ? "environment" : "scene"));
         fallback("yaw", c.yaw, 0.F);
         fallback("pitch", c.pitch, c.material == "gallery" ? 0.F : .15F);
         fallback("distance", c.distance, c.material == "gallery" ? .855F : 1.05F);
@@ -183,8 +195,12 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         (c.material_roughness != -1 && (c.material_roughness < .05F || c.material_roughness > 1)) ||
         c.samples < 1 || c.samples > 8192 || c.stress_edits > 10000)
         throw std::invalid_argument("invalid workshop sample target or material roughness");
+    if (c.optical_pair != "none" &&
+        (c.scene != "materials" || !c.common.headless || c.material != "gallery"))
+        throw std::invalid_argument("optical pair controls require the headless materials gallery");
     if (c.scene == "materials" && c.material == "gallery" &&
-        (!c.recipe_input.empty() || !c.recipe_output.empty() || c.material_roughness != -1))
+        (!c.recipe_input.empty() || !c.recipe_output.empty() || c.material_roughness != -1 ||
+         c.object_scale != 1))
         throw std::invalid_argument(
             "recipe operations and roughness override require an isolated material");
     for (float value : {c.fov,

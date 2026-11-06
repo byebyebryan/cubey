@@ -2,7 +2,7 @@ cubey_add_app_target(cubey_project_raytracing
     OUTPUT_NAME raytracing
     SHADER_DEFINE CUBEY_RAYTRACING_SHADER_DIR
     SHADER_TARGET_ENV vulkan1.3
-    SOURCES main.cpp raytracing_app.cpp raytracing_scene.cpp raytracing_renderer.cpp raytracing_environment.cpp raytracing_optical_scene.cpp raytracing_materials.cpp
+    SOURCES main.cpp raytracing_app.cpp raytracing_scene.cpp raytracing_renderer.cpp raytracing_environment.cpp raytracing_optical_scene.cpp raytracing_materials.cpp raytracing_material_geometry.cpp
     SHADERS shaders/trace.rgen shaders/primary.rchit shaders/primary.rmiss shaders/shadow.rmiss
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
@@ -16,7 +16,7 @@ target_compile_definitions(cubey_project_raytracing PRIVATE CUBEY_MATERIAL_RECIP
 if(BUILD_TESTING)
     add_executable(cubey_project_raytracing_material_reference raytracing_material_reference.cpp)
     target_link_libraries(cubey_project_raytracing_material_reference PRIVATE cubey::cubey cubey_project_warnings)
-    add_executable(cubey_project_raytracing_tests raytracing_tests.cpp raytracing_scene.cpp raytracing_optical_scene.cpp raytracing_materials.cpp)
+    add_executable(cubey_project_raytracing_tests raytracing_tests.cpp raytracing_scene.cpp raytracing_optical_scene.cpp raytracing_materials.cpp raytracing_material_geometry.cpp)
     target_compile_definitions(cubey_project_raytracing_tests PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
     target_link_libraries(cubey_project_raytracing_tests PRIVATE cubey::cubey cubey::host cubey_project_warnings)
     add_test(NAME raytracing_config_and_layout COMMAND cubey_project_raytracing_tests)
@@ -42,6 +42,12 @@ if(BUILD_TESTING)
     foreach(stage pipeline target)
         cubey_add_png_capture_test(raytracing_materials_retry_${stage} cubey_project_raytracing
             "${CMAKE_CURRENT_BINARY_DIR}/materials-retry-${stage}.png" 128 96 --require-validation --scene materials --samples 8 --fault ${stage} --exercise-retry)
+    endforeach()
+    foreach(material glass frosted-glass gallery)
+        cubey_add_png_capture_test(raytracing_materials_${material} cubey_project_raytracing
+            "${CMAKE_CURRENT_BINARY_DIR}/materials-${material}.png" 128 96 --require-validation --scene materials --material ${material} --samples 8)
+        set_tests_properties(raytracing_materials_${material} PROPERTIES LABELS "gpu;headless;sky;material"
+            SKIP_REGULAR_EXPRESSION "no compatible Vulkan 1.3 hardware ray-tracing device")
     endforeach()
     add_test(NAME raytracing_sky_refresh
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_refresh.py"

@@ -1,9 +1,11 @@
 #include "raytracing_config.h"
 #include "raytracing_environment.h"
 #include "raytracing_layout.h"
+#include "raytracing_material_geometry.h"
 #include "raytracing_materials.h"
 #include "raytracing_scene.h"
 #include <array>
+#include <cubey/render/material_specimen_mesh.h>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -102,9 +104,12 @@ int main() {
                     bronze_source,
                 "atomic catalog reload restores source values");
         const auto specimens = make_scene(workshop);
-        require(specimens.routes.size() == 4 && specimens.meshes.size() == 4,
+        require(specimens.routes.size() == 5 && specimens.meshes.size() == 5,
                 "prepared opaque specimen routes");
         for (const auto& mesh : specimens.meshes) {
+            require(mesh.admission.closed && mesh.admission.signed_volume > 0 &&
+                        mesh.admission.maximum_position_snap < 1.1e-7,
+                    "closed prepared workshop bodies");
             for (std::size_t j = 0; j < mesh.indices.size(); j += 3) {
                 const auto& a = mesh.vertices.at(mesh.indices[j]);
                 const auto& b = mesh.vertices.at(mesh.indices[j + 1]);
@@ -116,6 +121,23 @@ int main() {
                         "RT specimens orient geometric normals consistently");
             }
         }
+        auto damaged = cubey::render::make_material_beveled_block_mesh();
+        damaged.indices.resize(damaged.indices.size() - 3);
+        rejects([&] { (void)prepare_workshop_mesh(damaged); });
+        auto glass_view = workshop;
+        glass_view.material = "glass";
+        glass_view.distance = .1F;
+        rejects([&] { (void)make_scene(glass_view); });
+        const auto library_scene = make_scene(gallery);
+        require(library_scene.instances.size() == 16,
+                "four isolated instances and twelve gallery instances");
+        auto overlapping = workshop_volumes(library_scene);
+        overlapping[15].minimum = overlapping[10].minimum;
+        overlapping[15].maximum = overlapping[10].maximum;
+        rejects([&] {
+            validate_workshop_view(overlapping, library_scene.routes, *library_scene.workshop,
+                                   gallery, {0, 0, .855F});
+        });
         for (float azimuth : {-3.F, -.6F, 0.F, .6F, 3.F}) {
             for (float elevation : {-.1F, .3F, 1.2F}) {
                 const auto shared = cubey::render::atmosphere_environment_direction_from_alt_az(

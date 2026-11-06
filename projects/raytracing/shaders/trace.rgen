@@ -176,15 +176,41 @@ void dielectricContractProbe() {
  vec3 l=vec3(sqrt(1-z*z)*cos(phi),sqrt(1-z*z)*sin(phi),z);
  vec2 response=rtDielectricEvalPdf(v,l,roughness,eta);
  observation[8]=vec4(l,response.x);observation[9]=vec4(response.y,0,0,0);
- vec4 moments=vec4(0),partitions=vec4(0);
+ uint proposalPattern=0u;
+ for(uint d=0u;d<8u;++d)if(rtBsdfProposal(x,row,d))proposalPattern|=1u<<d;
+ observation[10]=vec4(float(proposalPattern),float(rtProposalIndex(x,row%8u)),0,0);
+ observation[11]=vec4(rtDielectricComponentPdf(v,sampled.direction,roughness,eta),rtDielectricComponentPdf(v,l,roughness,eta),0,0);
+ vec4 moments=vec4(0),partitions=vec4(0),estimates=vec4(0);
+ vec3 axis=normalize(vec3(.3,.4,.85));float coneSize=.05,conePdf=1/(2*CUBEY_PBR_PI*coneSize);
  for(uint j=0u;j<64u;++j) {
   uint index=x*64u+j;
   vec3 u=vec3(rtStratified(index,47u),rtStratified(index,53u).x);
   RtDielectricSample s=rtSampleDielectric(v,roughness,eta,u);
   moments+=vec4(s.valid?s.weight:0,s.valid?1:0,s.valid&&!s.transmitted?1:0,s.valid&&s.transmitted?1:0);
   partitions+=vec4(s.valid&&!s.transmitted?s.weight:0,s.valid&&s.transmitted?s.weight:0,s.tir?1:0,1);
+  bool delta=roughness<=0||eta==1;
+  float singleSun=0,splitSun=0,splitEnergy=0;
+  if(s.valid&&rtConePdf(s.direction,axis,coneSize)>0)
+      singleSun=s.weight*3*(delta?1:s.pdf/(s.pdf+conePdf));
+  for(int event=0;event<2;++event) {
+      RtDielectricSample branch=rtSampleDielectric(v,roughness,eta,vec3(u.xy,event==0?0:1));
+      if(!branch.valid||branch.transmitted!=(event==1))continue;
+      float componentPdf=rtDielectricComponentPdf(v,branch.direction,roughness,eta);
+      float weight=delta?branch.weight*branch.pdf:branch.value*abs(branch.direction.z)/max(componentPdf,1e-30);
+      splitEnergy+=weight;
+      if(rtConePdf(branch.direction,axis,coneSize)>0)
+          splitSun+=weight*3*(delta?1:componentPdf/(componentPdf+conePdf));
+  }
+  if(!delta) {
+      vec3 light=rtSampleCone(axis,coneSize,rtStratified(index,59u));
+      vec2 response=rtDielectricEvalPdf(v,light,roughness,eta);
+      singleSun+=response.x*light.z*3/(conePdf+response.y);
+      splitSun+=response.x*light.z*3/(conePdf+rtDielectricComponentPdf(v,light,roughness,eta));
+  }
+  estimates+=vec4(singleSun,splitSun,splitEnergy,0);
  }
  observation[12]=moments/64;observation[13]=partitions/64;
+ observation[14]=estimates/64;
  uint pixel=x+row*gl_LaunchSizeEXT.x;
  for(uint i=0u;i<16u;++i)queries[pixel*16u+i]=observation[i];
  imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(sampled.weight,sampled.pdf,0,1));

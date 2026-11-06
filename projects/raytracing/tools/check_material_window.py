@@ -14,6 +14,9 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--exercise', action='store_true')
     p.add_argument('--catalog-exercise',action='store_true')
+    p.add_argument('--gallery-exercise',action='store_true')
+    p.add_argument('--optics-exercise',action='store_true')
+    p.add_argument('--material',default='bronze')
     args = p.parse_args()
     if os.environ.get('CUBEY_RT_PRIVATE_XVFB') != '1':
         raise RuntimeError('Use an owned xvfb-run with CUBEY_RT_PRIVATE_XVFB=1')
@@ -23,6 +26,7 @@ def main():
     D, W, U, I = C.c_void_p, C.c_ulong, C.c_uint, C.c_int
     bindings = [
         (x,'XOpenDisplay',[C.c_char_p],D),(x,'XDefaultRootWindow',[D],W),
+        (x,'XDisplayWidth',[D,I],I),(x,'XDisplayHeight',[D,I],I),
         (x,'XQueryTree',[D,W,C.POINTER(W),C.POINTER(W),C.POINTER(C.POINTER(W)),C.POINTER(U)],I),
         (x,'XFetchName',[D,W,C.POINTER(C.c_char_p)],I),(x,'XFree',[D],I),
         (x,'XSetInputFocus',[D,W,I,W],I),(x,'XSync',[D,I],I),
@@ -40,10 +44,13 @@ def main():
     display = x.XOpenDisplay(None)
     if not display:
         raise RuntimeError('Owned display unavailable')
+    if x.XDisplayWidth(display,0)<1200 or x.XDisplayHeight(display,0)<820:
+        x.XCloseDisplay(display)
+        raise RuntimeError('Owned Xvfb must cover 1200x820; use -s "-screen 0 1600x1200x24"')
     root,window = x.XDefaultRootWindow(display),None
     env = dict(os.environ,XDG_SESSION_TYPE='x11',VK_LAYER_VALIDATE_SYNC='1')
     env.pop('WAYLAND_DISPLAY',None)
-    command = [str(args.binary.resolve()),'--scene','materials','--samples','32',
+    command = [str(args.binary.resolve()),'--scene','materials','--material',args.material,'--samples','32',
                '--width','1000','--height','760','--require-validation',
                '--metrics',str(out/'metrics.json'),'--recipe-output',str(out/'edited-recipe.json'),
                '--save-config',str(out/'view.json')]
@@ -92,13 +99,35 @@ def main():
                     x.XSync(display,0)
                     time.sleep(.1)
 
+            # The OS window exists before pipelines and the swapchain finish.
+            # Wait for the host's actual rendering-ready receipt before input.
+            deadline = time.monotonic()+120
+            while 'windowed_render_ready:' not in log.read_text():
+                if process.poll() is not None:
+                    raise RuntimeError(log.read_text())
+                if time.monotonic()>deadline:
+                    raise TimeoutError('Workshop rendering readiness')
+                time.sleep(.1)
             time.sleep(3)
             capture('initial')
             edited_roughness = None
+            if args.gallery_exercise:
+                click(280,677)
+                time.sleep(3)
+                capture('gallery')
+                click(310,489)
+            if args.optics_exercise:
+                click(140,189)
+                time.sleep(3)
+                click(70,549)
+                edited=json.loads((out/'edited-recipe.json').read_text())
+                assert 1.8<edited['surface']['optics']['ior']<2.4,edited
+                capture('ior-edited')
             if args.catalog_exercise:
                 click(110,616)
                 key('Home')
-                for _ in range(7):
+                families={e['family'] for e in json.loads(Path('assets/materials/catalog.json').read_text())['entries']}
+                for _ in range(len(families)):
                     key('Down')
                 key('Return')
                 click(110,646)
@@ -186,27 +215,37 @@ def main():
             assert metrics['history_samples'] == 32,metrics
             if args.exercise:
                 assert metrics['history_epochs'] == 6,metrics['history_epochs']
-                assert metrics['as_builds'] == 8 and metrics['target_generations'] == 2,metrics
+                assert metrics['as_builds'] == 10 and metrics['target_generations'] == 2,metrics
                 assert metrics['config']['reflection-source'] == 'scene',metrics['config']
                 assert metrics['extent'] == [1200,820],metrics['extent']
                 journal = metrics['sampling_frames']
                 assert len({f['exposure'] for f in journal if f['epoch']==1}) >= 2, 'exposure reset history'
                 assert {f['material_revision'] for f in journal} == {1,2,3,4}
-                bronze = next(m for m in metrics['workshop_materials'] if m['catalog_id']=='bronze')
-                assert bronze['source_fingerprint'] == bronze['resolved_fingerprint'], 'reset lost recipe identity'
+                selected = next(m for m in metrics['workshop_materials'] if m['catalog_id']==args.material)
+                assert selected['source_fingerprint'] == selected['resolved_fingerprint'], 'reset lost recipe identity'
             elif args.catalog_exercise:
                 assert metrics['config']['material']=='woven-cloth' and metrics['config']['specimen']=='swatch',metrics['config']
-                assert metrics['as_builds']==8 and metrics['target_generations']==1
+                assert metrics['as_builds']==10 and metrics['target_generations']==1
                 assert metrics['history_epochs']==4,metrics['history_epochs']
                 assert len({f['resident_requested_bytes'] for f in metrics['sampling_frames']})==1
+            elif args.gallery_exercise:
+                assert metrics['config']['material']=='gallery' and metrics['history_epochs']==2
+                assert abs(metrics['config']['distance']-.855)<1e-6
+                assert metrics['as_builds']==10 and metrics['target_generations']==1
+                saved=json.loads((out/'view.json').read_text())
+                assert saved['recipe-input']=='' and saved['recipe-output']==''
+            elif args.optics_exercise:
+                assert metrics['history_epochs']==2 and metrics['as_builds']==10
+                selected=next(m for m in metrics['workshop_materials'] if m['catalog_id']==args.material)
+                assert selected['resolved_recipe']['surface']['optics']['ior']>1.8
             else:
                 assert metrics['history_epochs'] == 1,metrics
             (out/'receipt.json').write_text(json.dumps(dict(
-                command=command,exit=code,validation_clean=True,preview=not (args.exercise or args.catalog_exercise),catalog=args.catalog_exercise,
+                command=command,exit=code,validation_clean=True,preview=not (args.exercise or args.catalog_exercise or args.gallery_exercise or args.optics_exercise),catalog=args.catalog_exercise,gallery=args.gallery_exercise,optics=args.optics_exercise,
                 edited_roughness=edited_roughness,
                 samples=metrics['history_samples'],epochs=metrics['history_epochs'],
                 as_builds=metrics['as_builds']),indent=2)+'\n')
-            print('Native workshop '+('edit/reload/resize' if args.exercise else 'catalog selection' if args.catalog_exercise else 'preview')+' passed:',out)
+            print('Native workshop '+('edit/reload/resize' if args.exercise else 'catalog selection' if args.catalog_exercise else 'gallery' if args.gallery_exercise else 'optics edit' if args.optics_exercise else 'preview')+' passed:',out)
         finally:
             if process.poll() is None:
                 process.terminate()

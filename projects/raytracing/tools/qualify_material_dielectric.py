@@ -68,6 +68,18 @@ def response(v,l,r,eta):
     return np.where(valid,value,0),np.where(valid,pdf,0)
 
 
+def component_pdf(v,l,r,eta):
+    reflection=l[...,2]>0
+    h=normalize(v+np.where(reflection,1,eta)[...,None]*l)
+    h=np.where((h[...,2]<0)[...,None],-h,h)
+    vh=np.sum(v*h,axis=-1);lh=np.sum(l*h,axis=-1);a=r*r
+    d=a*a/(np.pi*np.maximum(np.sum(h[...,:2]**2,axis=-1)+a*a*h[...,2]**2,1e-150)**2)
+    normal=d*vh/np.maximum(v[...,2]*(1+lambda_ggx(v,a)),1e-150)
+    pdf=np.where(reflection,normal/np.maximum(4*vh,1e-150),normal*np.abs(lh)/np.maximum((lh+vh/eta)**2,1e-150))
+    valid=(v[...,2]>0)&(l[...,2]!=0)&(vh>0)&(lh*l[...,2]>0)&(h[...,2]>0)&(r>0)&(eta!=1)
+    return np.where(valid,pdf,0)
+
+
 @lru_cache(maxsize=3)
 def normal_quadrature(order):
     x,w=np.polynomial.legendre.leggauss(order)
@@ -81,7 +93,9 @@ def normal_quadrature(order):
 def integral(v,r,eta,order=512):
     if r==0 or eta==1:
         f=float(fresnel(v[2],eta))
-        return dict(energy=f+(1-f)/(eta*eta),mass=1.0,normal_mass=1.0)
+        reflected=np.array([-v[0],-v[1],v[2]])
+        sun=3*f if np.dot(reflected,normalize(np.array([.3,.4,.85])))>=.95 else 0
+        return dict(energy=f+(1-f)/(eta*eta),mass=1.0,normal_mass=1.0,sun=sun)
     h,measure=normal_quadrature(order)
     vh=np.sum(v*h,axis=-1)
     a=r*r
@@ -98,13 +112,23 @@ def integral(v,r,eta,order=512):
     t_mass=np.where(transmission_valid,1-f,0)
     gr=1/(1+lambda_ggx(v,a)+lambda_ggx(reflected,a))
     gt=1/(1+lambda_ggx(v,a)+lambda_ggx(transmitted,a))
+    sun_mask=np.sum(reflected*normalize(np.array([.3,.4,.85])),axis=-1)>=.95
     return dict(energy=float(np.sum(measure*p*(r_mass*gr/g1+t_mass*gt/g1/(eta*eta)))),
-                mass=float(np.sum(measure*p*(r_mass+t_mass))),normal_mass=float(np.sum(measure*p)))
+                mass=float(np.sum(measure*p*(r_mass+t_mass))),normal_mass=float(np.sum(measure*p)),
+                sun=float(np.sum(measure*p*r_mass*gr/g1*sun_mask*3)))
 
 
 def score(path,integrals=True):
     raw=np.fromfile(path,dtype='<f4').reshape(256,512,16,4).astype(float)
     assert np.isfinite(raw).all(),'nonfinite GPU dielectric observations'
+    for row in range(256):
+        patterns=raw[row,:,10,0].astype(int)
+        for start in [0,256]:
+            assert np.array_equal(np.sort(patterns[start:start+256]),np.arange(256)),('joint proposal coverage',row,start)
+        indices=raw[row,:,10,1].astype(int)
+        for bit in [0,1]:
+            selected=((patterns>>(row%8))&1)==bit
+            assert np.array_equal(np.sort(indices[selected]),np.arange(256)),('conditional proposal indices',row,bit)
     v,r=raw[...,0,:3],raw[...,0,3]
     h=raw[...,1,:3]
     l=raw[...,2,:3]
@@ -145,13 +169,19 @@ def score(path,integrals=True):
     arbitrary_cosine=np.abs(np.sum(v*arbitrary_h,axis=-1))
     arbitrary_regular=(np.abs(1-(1-arbitrary_cosine**2)/(eta*eta))>1e-5)&(np.abs(arbitrary[...,2])>1e-4)
     arbitrary_maximum=float(np.max(arbitrary_ratio[arbitrary_regular]))
+    components=np.stack([component_pdf(v,l,r,eta),component_pdf(v,arbitrary,r,eta)],-1)
+    component_actual=raw[...,11,:2]
+    component_ratio=np.abs(component_actual-components)/(1e-6+1e-4*np.abs(components))
+    component_maximum=float(max(np.max(component_ratio[...,0][arithmetic_regular]),np.max(component_ratio[...,1][arbitrary_regular])))
     worst=np.unravel_index(np.argmax(np.where(arithmetic_regular[...,None],ratio,0)),ratio.shape)
-    result=dict(passed=direction_error<=1e-5 and fresnel_error<=1e-5 and classification==0 and maximum_ratio<=1 and arbitrary_maximum<=1,
+    result=dict(passed=direction_error<=1e-5 and fresnel_error<=1e-5 and classification==0 and maximum_ratio<=1 and arbitrary_maximum<=1 and component_maximum<=1,
                 direction_error=direction_error,fresnel_error=fresnel_error,classification_mismatches=classification,
                 arithmetic_tolerance_ratio=maximum_ratio,arbitrary_tolerance_ratio=arbitrary_maximum,
+                component_pdf_tolerance_ratio=component_maximum,
                 critical_or_grazing_observations=int(np.count_nonzero(~regular)),
                 arbitrary_critical_or_grazing_observations=int(np.count_nonzero(~arbitrary_regular)),
                 arithmetic_observations=256*512,integral_samples_per_row=512*64,
+                joint_proposal_blocks=512,conditional_proposal_index_cases=512,
                 all_direction_error=float(np.max(np.linalg.norm(l-expected,axis=-1))),
                 direction_limit=1e-5,arithmetic_absolute_limit=1e-6,arithmetic_relative_limit=1e-4,
                 energy_integral_limit=.02,mass_integral_limit=.025,
@@ -167,17 +197,22 @@ def score(path,integrals=True):
             continue
         control=integral(view,roughness,relative_eta)
         observed=np.mean(raw[row,:,12],axis=0)
+        estimates=np.mean(raw[row,:,14],axis=0)
         energy_error=abs(float(observed[0])-control['energy'])
         mass_error=abs(float(observed[1])-control['mass'])
         passed=energy_error<=.02 and mass_error<=.025 and abs(control['normal_mass']-1)<=.005
+        nee_error=max(abs(float(estimates[0])-control['sun']),abs(float(estimates[1])-control['sun']))
+        split_error=abs(float(estimates[2])-control['energy'])
+        passed=passed and nee_error<=.02 and split_error<=.02
         if relative_eta>=1:
             passed=passed and float(observed[0])<=1.02 and control['energy']<=1.02
         case=dict(row=row,roughness=roughness,eta=relative_eta,cosine=float(view[2]),
                   observed_energy=float(observed[0]),observed_mass=float(observed[1]),
                   control=control,energy_error=energy_error,mass_error=mass_error,passed=bool(passed))
+        case.update(sun_estimates=estimates[:2].tolist(),split_energy=float(estimates[2]),sun_error=nee_error,split_energy_error=split_error)
         if row in [163,164,167,227,228,231,235,236,239]:
             finer=integral(view,roughness,relative_eta,768)
-            stability=max(abs(control[k]-finer[k]) for k in ['energy','mass','normal_mass'])
+            stability=max(abs(control[k]-finer[k]) for k in ['energy','mass','normal_mass','sun'])
             case.update(finer_control=finer,quadrature_stability=stability)
             passed=passed and stability<=.005
             case['passed']=bool(passed)

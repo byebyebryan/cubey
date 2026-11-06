@@ -11,6 +11,12 @@ struct Vertex {
 struct Mesh {
     std::vector<Vertex> vertices;
     std::vector<std::uint32_t> indices;
+    struct Admission {
+        math::Vec3 minimum{}, maximum{};
+        std::uint32_t welded_vertices = 0, removed_triangles = 0, snapped_positions = 0;
+        double signed_volume = 0, maximum_position_snap = 0;
+        bool closed = false;
+    } admission;
 };
 struct Instance {
     std::uint32_t mesh;

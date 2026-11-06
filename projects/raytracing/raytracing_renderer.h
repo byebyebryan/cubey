@@ -1,5 +1,6 @@
 #pragma once
 #include "raytracing_layout.h"
+#include "raytracing_material_geometry.h"
 #include "raytracing_materials.h"
 #include "raytracing_scene.h"
 #include <cubey/core/profiling.h>
@@ -84,6 +85,11 @@ class Renderer {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR);
     std::vector<Acceleration> accelerations_;
     std::vector<std::pair<std::string, std::size_t>> routes_;
+    std::vector<Scene::Route> workshop_routes_;
+    std::vector<WorkshopVolume> workshop_volumes_;
+    nlohmann::json geometry_admission_ = nlohmann::json::array();
+    nlohmann::json route_identity_ = nlohmann::json::object();
+    std::string active_route_ = "legacy";
     std::unique_ptr<vulkan::Buffer> vertices_, indices_, instances_, sbt_;
     std::vector<std::unique_ptr<vulkan::Buffer>> uniforms_;
     std::vector<std::unique_ptr<vulkan::Buffer>> environment_uniforms_, material_buffers_;
