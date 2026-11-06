@@ -546,3 +546,21 @@ Forward thickness estimates, SDF filtered central paths and sampled geometric RT
 glass intentionally differ. RT material identity is unchanged across every
 isolated capture. Native films, all-material dense timing, final retention/full
 tests and the delivered comparison report remain open.
+
+
+## P4 multi-frame forward depth correction
+
+The first full-length forward orbit exposed a synchronization validation hazard
+at d105c80b: the persistent scene-depth image was imported as undefined on every
+frame, losing the prior late-fragment depth-store access. Single-frame captures
+and timing without validation did not qualify this reuse. The failed film/log
+remain under p4-d105c80b/films and are not accepted media.
+
+The forward owner now carries an explicit scene-depth layout/access state across
+recorded frames, publishes a known attachment final state (sampled for linear
+output), and resets that state with target recreation. Opaque and transmission
+four-frame sync-validation regression captures pass. This is a shared-owner
+synchronization fix; shaders, materials, geometry and display response are
+unchanged. RT and SDF executables retain exact pre-fix bytes. Qualified RT
+convergence/timing can therefore retain their actual d105c80b provenance; forward
+films/profiles and the final full suite will be replayed at the corrected source.

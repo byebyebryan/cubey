@@ -277,6 +277,8 @@ struct ForwardPbrRenderer3D::Impl {
         std::optional<render::FrameUniformMaterialInstance<render::PbrSceneUniforms>>
             transmission_scene_material{};
         VkExtent2D target_extent{};
+        render::RenderGraphTextureState scene_depth_state =
+            render::render_graph_undefined_texture_state();
         bool shadow_depth_is_sampled = false;
     };
 

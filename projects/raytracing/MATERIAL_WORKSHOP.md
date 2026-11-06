@@ -69,7 +69,7 @@ prepared once, including isolated and gallery routes.
 slot. A live edited recipe is saved separately from **Save view**. To replay both,
 load the saved view and pass `--recipe-input` with the exported recipe. A saved
 gallery view clears single-slot recipe paths/roughness overrides. Save view
-freezes the resolved camera/light state and clears animation, probes and outputs;
+freezes the resolved camera/light state and clears animation, probes and diagnostic output paths;
 it does not serialize all live edited materials into a scene snapshot.
 
 ## Sampling and limits

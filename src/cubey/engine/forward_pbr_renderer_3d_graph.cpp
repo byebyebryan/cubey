@@ -13,6 +13,16 @@
 namespace cubey {
 namespace {
 
+render::RenderGraphTextureState scene_depth_final_state(bool linear_output) {
+    if (linear_output)
+        return render::render_graph_sampled_depth_texture_state();
+    return {.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            .access_mask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                           VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .stage_mask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT};
+}
+
 using DeformationBufferMap =
     std::unordered_map<render::MeshHandle, render::RenderGraphBufferHandle, render::MeshHandleHash>;
 
@@ -242,6 +252,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         terrain->runtime->complete_frame();
     }
     swapchain_.shadow_depth_is_sampled = true;
+    swapchain_.scene_depth_state = scene_depth_final_state(settings.opaque_linear_output);
 }
 
 ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_render_graph(
@@ -276,11 +287,11 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                   .format = config_.scene_color_format,
                   .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
               });
+    // Persistent depth imports carry prior access/layout even when this frame
+    // clears the attachment contents.
     const render::RenderGraphTextureHandle scene_depth = graph.import_depth_target(
-        "scene depth", render::depth_target_view(depth_attachment()),
-        render::render_graph_undefined_texture_state(),
-        opaque_linear_output ? std::optional{render::render_graph_sampled_depth_texture_state()}
-                             : std::nullopt);
+        "scene depth", render::depth_target_view(depth_attachment()), swapchain_.scene_depth_state,
+        scene_depth_final_state(opaque_linear_output));
     render::RenderGraphTextureHandle post_scene_color = scene_color;
     render::RenderGraphTextureHandle cloud_scene_color{};
     render::CloudLayerRuntimeFrame cloud_frame{};

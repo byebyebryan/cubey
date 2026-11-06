@@ -511,6 +511,7 @@ void ForwardPbrRenderer3D::Impl::reset_swapchain_resources() {
     global_.atmosphere_background.destroy_pipeline();
     swapchain_.skybox_pipeline.reset();
     swapchain_.depth_attachment.reset();
+    swapchain_.scene_depth_state = render::render_graph_undefined_texture_state();
     swapchain_.target_extent = {};
     swapchain_.shadow_depth_is_sampled = false;
 }
