@@ -17,6 +17,12 @@ implementation choices; an isolated math probe does not constitute a workshop.
 | P3 two dielectric recipes | Pending |
 | P4 full matched workshop and delivery | Pending |
 
+P0 source checkpoint: `0cdbb8ab`. The [compact P0 receipt](../evidence/raytracing-material-workshop-2026-11/p0.json)
+pins the reference, native executable/shader, numerical results and capture hashes.
+Focused RT checks pass 10/10 and documentation checks pass 7/7. The original
+eleven protected SDF/horse files retain their saved hashes. No full workshop
+qualification or public-site promotion has occurred.
+
 ## Reproduced reference and provenance
 
 The preferred modern sample uses Slang. The compatible archived visual candidate
