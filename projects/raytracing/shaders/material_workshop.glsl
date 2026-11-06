@@ -21,6 +21,7 @@ vec3 transportSky(vec3 direction,float solarPdf) {
 }
 
 uint randomKey;
+float rtRoughDiffuse(float nl,float nv,float lv,float roughness);
 uint rtHash(uint x) { x^=x>>16; x*=0x7feb352du; x^=x>>15; x*=0x846ca68bu; return x^(x>>16); }
 vec2 rtStratified(uint index,uint dimension) {
     // Each independent block covers all 8x8 cells. An odd affine permutation
@@ -48,6 +49,12 @@ void materialContractProbe() {
     record[3]=vec4(value.material.emission.rgb,value.height);
     record[4]=value.sheen;record[5]=vec4(value.rough_glass,r.optics.yzw);
     record[6]=vec4(perturbed,0);record[7]=r.attenuation;record[8]=vec4(r.routing);
+    float nv=.1+.89*(x*.5+.5),nl=.1+.89*fract(float(row)*.173);
+    vec3 v=vec3(sqrt(1-nv*nv),0,nv),l=normalize(vec3(.6*sqrt(1-nl*nl),.8*sqrt(1-nl*nl),nl));
+    float nh=normalize(v+l).z,lv=dot(v,l);
+    record[9]=vec4(nv,nl,nh,lv);
+    record[10]=vec4(rtRoughDiffuse(nl,nv,lv,r.attenuation.w),rtRoughDiffuse(1,1,1,r.attenuation.w),0,0);
+    record[11]=vec4(cubey_pbr_sheen_direct(value.sheen.rgb,value.sheen.w,nv,nl,nh),0);
     for(uint i=0u;i<16u;++i)queries[pixel*16u+i]=record[i];
     imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(value.material.base_roughness.rgb,1));
 }
@@ -58,7 +65,8 @@ vec3 filteredSky(vec3 direction,float roughness) {
 }
 struct RecipeSurface {
     vec3 base, emission, normal, f0;
-    float roughness, metallic;
+    float roughness, metallic, diffuseRoughness, objectScale;
+    vec4 sheen;
 };
 RecipeSurface recipeSurface(Surface s,float footprint) {
     Instance inst=instances[s.id];
@@ -68,8 +76,12 @@ RecipeSurface recipeSurface(Surface s,float footprint) {
         objectPoint+=vertices[indices[start+i]+inst.offsets.x].position.xyz*s.bary[i];
     Recipe r=recipes[workshop.options.y];
     mat3 inverseLinear=mat3(inverse(inst.world));
-    float objectScale=inverseLinear==mat3(1)?1:sqrt(dot(inverseLinear[0],inverseLinear[0])+
-        dot(inverseLinear[1],inverseLinear[1])+dot(inverseLinear[2],inverseLinear[2]));
+    // sqrt(||A||_1 ||A||_infinity) bounds the operator norm and is exact
+    // for uniform/axis scale, avoiding an unnecessary sqrt(3) blur jump.
+    mat3 absolute=mat3(abs(inverseLinear[0]),abs(inverseLinear[1]),abs(inverseLinear[2]));
+    vec3 columnSums=vec3(dot(absolute[0],vec3(1)),dot(absolute[1],vec3(1)),dot(absolute[2],vec3(1)));
+    vec3 rowSums=absolute*vec3(1);
+    float objectScale=sqrt(max(max(columnSums.x,columnSums.y),columnSums.z)*max(max(rowSums.x,rowSums.y),rowSums.z));
     MaterialSample value=librarySurfaceDomain(r.surface,r.pattern,r.library,r.domain,
                                               objectPoint,footprint*objectScale,workshop.options.z!=0u);
     vec3 normal=workshop.options.w!=0u?materialShadingNormal(s.n,mat3(inst.normalWorld)*value.height_gradient):s.n;
@@ -77,7 +89,14 @@ RecipeSurface recipeSurface(Surface s,float footprint) {
     float roughness=value.material.base_roughness.w;
     vec3 base=value.material.base_roughness.rgb;
     vec3 f0=cubey_pbr_f0(base,metallic,vec3(cubey_pbr_f0_from_ior(r.optics.z)));
-    return RecipeSurface(base,value.material.emission.rgb,normal,f0,roughness,metallic);
+    return RecipeSurface(base,value.material.emission.rgb,normal,f0,roughness,metallic,r.attenuation.w,objectScale,value.sheen);
+}
+// Same Oren-Nayar direct/A-only environment approximation as the shared
+// workshop consumers. This does not add a sampled diffuse transport lobe.
+float rtRoughDiffuse(float nl,float nv,float lv,float roughness) {
+    float sigma=roughness*(CUBEY_PBR_PI*.5),s2=sigma*sigma;
+    float a=1-.5*s2/(s2+.33),b=.45*s2/(s2+.09);
+    return a+b*max(0,lv-nl*nv)/max(max(nl,nv),.001);
 }
 void traceWorkshop() {
     ivec2 pixel=ivec2(gl_LaunchIDEXT.xy);
@@ -96,6 +115,7 @@ void traceWorkshop() {
     vec3 origin=camera.eye.xyz;
     vec3 direction=normalize(mat3(camera.inverseView)*vec3(screen.x*camera.eye.w*camera.light.z,-screen.y*camera.light.z,-1));
     vec3 weight=vec3(1),color=vec3(0);
+    vec3 diffuseContribution=vec3(0),sheenContribution=vec3(0),emissionContribution=vec3(0);
     float priorSolarPdf=-1;
     float width=0,spread=2*camera.light.z/float(gl_LaunchSizeEXT.y);
     int view=int(camera.options.y+.5);
@@ -122,22 +142,40 @@ void traceWorkshop() {
         vec3 f=cubey_pbr_fresnel_schlick(max(dot(v,h),0),m.f0);
         vec3 fv=cubey_pbr_fresnel_schlick(nv,m.f0);
         vec3 visibility=nl>0?shadowVisibility(s,l):vec3(1);
-        vec3 local=m.emission+(1-max(max(f.r,f.g),f.b))*diffuse/CUBEY_PBR_PI*environment.directColor.rgb*nl*visibility*workshop.solar.z;
-        local+=(1-max(max(fv.r,fv.g),fv.b))*diffuse*(workshop.solar.w>.5?vec3(1):irradiance(n)/CUBEY_PBR_PI)*workshop.solar.y;
+        vec3 directDiffuse=(1-max(max(f.r,f.g),f.b))*diffuse/CUBEY_PBR_PI*environment.directColor.rgb*nl*visibility*workshop.solar.z;
+        vec3 diffuseEnvironment=(1-max(max(fv.r,fv.g),fv.b))*diffuse*(workshop.solar.w>.5?vec3(1):irradiance(n)/CUBEY_PBR_PI)*workshop.solar.y;
+        if(m.diffuseRoughness>0) {
+            directDiffuse*=rtRoughDiffuse(nl,nv,dot(l,v),m.diffuseRoughness);
+            diffuseEnvironment*=rtRoughDiffuse(1,1,1,m.diffuseRoughness);
+        }
+        float sheenMaximum=max(max(m.sheen.r,m.sheen.g),m.sheen.b);
+        float sheenEnergy=textureLod(brdfLut,vec2(nv,m.sheen.w),0).a;
+        float viewScale=clamp(1-sheenMaximum*sheenEnergy,0,1);
+        float directScale=min(viewScale,clamp(1-sheenMaximum*textureLod(brdfLut,vec2(nl,m.sheen.w),0).a,0,1));
+        vec3 sheenDirect=cubey_pbr_sheen_direct(m.sheen.rgb,m.sheen.w,nv,nl,max(dot(n,h),0))*environment.directColor.rgb*nl*visibility*workshop.solar.z;
+        vec3 reflected=reflect(direction,n);
+        vec3 sheenEnvironment=(workshop.solar.w>.5?vec3(1):filteredSky(reflected,m.sheen.w))*m.sheen.rgb*sheenEnergy*workshop.solar.y*
+            cubey_pbr_horizon_specular_occlusion(reflected,faceforward(s.outward,direction,s.outward));
+        vec3 local=m.emission+directDiffuse*directScale+diffuseEnvironment*viewScale+sheenDirect+sheenEnvironment;
+        diffuseContribution+=weight*(directDiffuse*directScale+diffuseEnvironment*viewScale);
+        sheenContribution+=weight*(sheenDirect+sheenEnvironment);
+        emissionContribution+=weight*m.emission;
         vec3 dfg=textureLod(brdfLut,vec2(nv,m.roughness),0).rgb;
         vec3 compensation=cubey_pbr_energy_compensation(m.f0,dfg.b);
         if(depth==0) {
             observation[0]=vec4(s.t,float(s.id),float(s.primitive),1);
             observation[1]=vec4(faceforward(s.outward,direction,s.outward),0);
             observation[2]=vec4(n,0);observation[3]=vec4(s.bary,0);
+            observation[13]=vec4(m.base,m.roughness);
+            observation[14]=vec4(m.metallic,footprint,sheenMaximum,m.diffuseRoughness);
         }
         mat3 frame=rtDirectionFrame(n);
         vec3 localV=transpose(frame)*v,localL=transpose(frame)*l;
         if(environment.transport.x<.5) {
-            local+=rtGgxReflectionEval(localV,localL,m.roughness,m.f0)*compensation*environment.directColor.rgb*nl*visibility*workshop.solar.z;
+            local+=rtGgxReflectionEval(localV,localL,m.roughness,m.f0)*compensation*environment.directColor.rgb*nl*visibility*workshop.solar.z*directScale;
             vec3 reflection=reflect(direction,n);
             local+=(workshop.solar.w>.5?vec3(1):filteredSky(reflection,m.roughness))*workshop.solar.y*cubey_pbr_indirect_specular(m.f0,vec3(1),dfg)*
-                cubey_pbr_horizon_specular_occlusion(reflection,faceforward(s.outward,direction,s.outward));
+                cubey_pbr_horizon_specular_occlusion(reflection,faceforward(s.outward,direction,s.outward))*viewScale;
             color+=weight*local;
             break;
         }
@@ -157,9 +195,11 @@ void traceWorkshop() {
         priorSolarPdf=bsdfProposal?rtConePdf(next,l,solarConeSize()):1/(2*CUBEY_PBR_PI*solarConeSize());
         float pdf=.5*rtGgxReflectionPdf(localV,localNext,m.roughness)+.5*priorSolarPdf;
         if(pdf<=0) break;
-        weight*=rtGgxSampledEval(localV,localNext,m.roughness,m.f0)*compensation*localNext.z/pdf;
+        float incomingScale=min(viewScale,clamp(1-sheenMaximum*textureLod(brdfLut,vec2(localNext.z,m.sheen.w),0).a,0,1));
+        weight*=rtGgxSampledEval(localV,localNext,m.roughness,m.f0)*compensation*localNext.z/pdf*incomingScale;
         if(max(max(weight.r,weight.g),weight.b)<=environment.glass.z) {discarded+=weight;status|=8u;break;}
-        spread+=2*m.roughness*m.roughness+2*width/.25;
+        float curvature=workshop.sampling.z==0u?4:workshop.sampling.z==1u?1/.045:workshop.sampling.z==2u?1/.012:1/.065;
+        spread+=2*m.roughness*m.roughness+2*width*curvature*m.objectScale;
         origin=offsetOrigin(s,next);direction=next;
     }
     if(view==1)color=observation[1].rgb*.5+.5;
@@ -171,6 +211,13 @@ void traceWorkshop() {
     if(view==7)color=observation[0].y<0?vec3(0):vec3(.15);
     if(view==8)color=vec3(float(maximumDepth)/float(environment.limits.x));
     if(view==9)color=vec3((status&~8u)!=0u?1:0,(status&8u)!=0u?.5:0,0);
+    if(view==11)color=observation[13].rgb;
+    if(view==12)color=vec3(observation[13].w);
+    if(view==13)color=vec3(observation[14].x);
+    if(view==14)color=vec3(observation[14].y);
+    if(view==15)color=diffuseContribution;
+    if(view==16)color=max(color-diffuseContribution-sheenContribution-emissionContribution,vec3(0));
+    if(view==17)color=sheenContribution;
     history+=vec4(color,1);
     imageStore(sampleHistory,pixel,history);
     vec3 average=history.rgb/history.w;

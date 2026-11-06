@@ -13,6 +13,7 @@ def main():
     p.add_argument('--binary', type=Path, default=Path('build/dev/projects/raytracing/raytracing'))
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--exercise', action='store_true')
+    p.add_argument('--catalog-exercise',action='store_true')
     args = p.parse_args()
     if os.environ.get('CUBEY_RT_PRIVATE_XVFB') != '1':
         raise RuntimeError('Use an owned xvfb-run with CUBEY_RT_PRIVATE_XVFB=1')
@@ -31,6 +32,7 @@ def main():
         (t,'XTestFakeMotionEvent',[D,I,I,I,W],I),
         (x,'XResizeWindow',[D,W,U,U],I),(x,'XCloseDisplay',[D],I),
         (x,'XTranslateCoordinates',[D,W,W,I,I,C.POINTER(I),C.POINTER(I),C.POINTER(W)],I),
+        (x,'XInternAtom',[D,C.c_char_p,I],W),(x,'XSendEvent',[D,W,I,C.c_long,D],I),
     ]
     for lib,name,parameters,result in bindings:
         f = getattr(lib,name)
@@ -93,6 +95,31 @@ def main():
             time.sleep(3)
             capture('initial')
             edited_roughness = None
+            if args.catalog_exercise:
+                click(110,616)
+                key('Home')
+                for _ in range(7):
+                    key('Down')
+                key('Return')
+                click(110,646)
+                key('Home')
+                key('Down')
+                key('Return')
+                click(110,677)
+                key('Home')
+                key('Down')
+                key('Down')
+                key('Return')
+                time.sleep(3)
+                capture('cloth-swatch')
+                click(140,129)
+                time.sleep(3)
+                click(70,549)
+                exported=json.loads((out/'edited-recipe.json').read_text())
+                assert exported['id']=='woven-cloth',exported['id']
+                edited_roughness=exported['surface']['roughness']
+                click(310,489)
+                capture('cloth-edited')
             if args.exercise:
                 # Fixed coordinates were inspected in the native 1000x760 UI.
                 click(150,428)  # Exposure changes only the display resolve.
@@ -132,7 +159,24 @@ def main():
                 x.XSync(display,0)
                 time.sleep(3)
                 capture('resized')
-            key('Escape')
+            # Native keyboard navigation can consume Escape while editing.
+            # Request the normal window close protocol, preserving teardown.
+            class ClientData(C.Union):
+                _fields_=[('l',C.c_long*5),('b',C.c_char*20)]
+            class ClientMessage(C.Structure):
+                _fields_=[('type',I),('serial',W),('send_event',I),('display',D),
+                          ('window',W),('message_type',W),('format',I),('data',ClientData)]
+            class Event(C.Union):
+                _fields_=[('client',ClientMessage),('pad',C.c_long*24)]
+            event=Event()
+            event.client.type=33
+            event.client.display=display
+            event.client.window=window
+            event.client.message_type=x.XInternAtom(display,b'WM_PROTOCOLS',0)
+            event.client.format=32
+            event.client.data.l[0]=x.XInternAtom(display,b'WM_DELETE_WINDOW',0)
+            x.XSendEvent(display,window,0,0,C.byref(event))
+            x.XSync(display,0)
             code = process.wait(timeout=20)
             stream.flush()
             text = log.read_text()
@@ -142,7 +186,7 @@ def main():
             assert metrics['history_samples'] == 32,metrics
             if args.exercise:
                 assert metrics['history_epochs'] == 6,metrics['history_epochs']
-                assert metrics['as_builds'] == 2 and metrics['target_generations'] == 2,metrics
+                assert metrics['as_builds'] == 8 and metrics['target_generations'] == 2,metrics
                 assert metrics['config']['reflection-source'] == 'scene',metrics['config']
                 assert metrics['extent'] == [1200,820],metrics['extent']
                 journal = metrics['sampling_frames']
@@ -150,14 +194,19 @@ def main():
                 assert {f['material_revision'] for f in journal} == {1,2,3,4}
                 bronze = next(m for m in metrics['workshop_materials'] if m['catalog_id']=='bronze')
                 assert bronze['source_fingerprint'] == bronze['resolved_fingerprint'], 'reset lost recipe identity'
+            elif args.catalog_exercise:
+                assert metrics['config']['material']=='woven-cloth' and metrics['config']['specimen']=='swatch',metrics['config']
+                assert metrics['as_builds']==8 and metrics['target_generations']==1
+                assert metrics['history_epochs']==4,metrics['history_epochs']
+                assert len({f['resident_requested_bytes'] for f in metrics['sampling_frames']})==1
             else:
                 assert metrics['history_epochs'] == 1,metrics
             (out/'receipt.json').write_text(json.dumps(dict(
-                command=command,exit=code,validation_clean=True,preview=not args.exercise,
+                command=command,exit=code,validation_clean=True,preview=not (args.exercise or args.catalog_exercise),catalog=args.catalog_exercise,
                 edited_roughness=edited_roughness,
                 samples=metrics['history_samples'],epochs=metrics['history_epochs'],
                 as_builds=metrics['as_builds']),indent=2)+'\n')
-            print('Native workshop '+('edit/reload/resize' if args.exercise else 'preview')+' passed:',out)
+            print('Native workshop '+('edit/reload/resize' if args.exercise else 'catalog selection' if args.catalog_exercise else 'preview')+' passed:',out)
         finally:
             if process.poll() is None:
                 process.terminate()

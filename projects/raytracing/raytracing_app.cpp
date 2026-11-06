@@ -54,8 +54,9 @@ class App {
             data["config"] = schema(config_).template_json();
             if (scene_.workshop) {
                 data["workshop_recipes"] = scene_.workshop->identity();
-                data["geometry_conversion"] = "shared forward sphere positions/normals/topology; "
-                                              "uint16 indices widened to uint32";
+                data["geometry_conversion"] =
+                    "shared forward specimen positions/normals; uint16 indices widened to uint32; "
+                    "opaque triangles oriented against supplied outward normals";
             }
             if (config_.scene_output.has_parent_path())
                 std::filesystem::create_directories(config_.scene_output.parent_path());
@@ -170,10 +171,12 @@ class App {
         }
     }
     void workshop_ui() {
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         auto& state = *scene_.workshop;
         auto recipe = state.recipes.at(state.selected);
         ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize({390, 0}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({390, std::min(720.F, ImGui::GetIO().DisplaySize.y - 24)},
+                                 ImGuiCond_FirstUseEver);
         ImGui::Begin("RT material workshop");
         ImGui::PushItemWidth(155);
         ImGui::TextUnformatted(state.catalog.at(state.selected).label.c_str());
@@ -191,7 +194,7 @@ class App {
                                      ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
         if (changed) {
             try {
-                state.replace(state.selected, std::move(recipe));
+                state.replace(state.selected, recipe);
                 workshop_message_.clear();
             } catch (const std::exception& e) {
                 workshop_message_ = e.what();
@@ -253,14 +256,106 @@ class App {
         if (ImGui::Button("Load recipe"))
             operate([&] {
                 auto candidate = asset::load_material_recipe(recipe_path_.data());
-                if (candidate.optics.attenuation.w != 0 ||
-                    math::Vec3(candidate.library.sheen) != math::Vec3(0))
-                    throw std::invalid_argument(
-                        "rough diffuse and sheen require the opaque-library checkpoint");
                 state.replace(state.selected, std::move(candidate));
             });
         if (ImGui::Button("Reload catalog"))
             operate([&] { state.reload(); });
+        ImGui::Separator();
+        if (ImGui::BeginCombo("Family", workshop_family_.c_str())) {
+            if (ImGui::Selectable("all", workshop_family_ == "all"))
+                workshop_family_ = "all";
+            std::vector<std::string> families;
+            for (const auto& item : state.catalog) {
+                if (item.recipe.optics.settings.y > 0 ||
+                    std::find(families.begin(), families.end(), item.family) != families.end())
+                    continue;
+                families.push_back(item.family);
+                if (ImGui::Selectable(item.family.c_str(), workshop_family_ == item.family))
+                    workshop_family_ = item.family;
+            }
+            ImGui::EndCombo();
+        }
+        if (ImGui::BeginCombo("Material", state.catalog.at(state.selected).label.c_str())) {
+            for (std::size_t i = 0; i < state.catalog.size(); ++i) {
+                const auto& item = state.catalog[i];
+                if (item.recipe.optics.settings.y > 0 ||
+                    (workshop_family_ != "all" && item.family != workshop_family_))
+                    continue;
+                if (ImGui::Selectable(item.label.c_str(), i == state.selected)) {
+                    state.selected = static_cast<std::uint32_t>(i);
+                    config_.material = item.id;
+                }
+            }
+            ImGui::EndCombo();
+        }
+        const char* shapes[]{"sphere", "block", "swatch", "cut-block"};
+        int shape = 0;
+        for (int i = 0; i < 4; ++i)
+            if (config_.specimen == shapes[i])
+                shape = i;
+        if (ImGui::Combo("Specimen", &shape, shapes, 4))
+            config_.specimen = shapes[shape];
+        recipe = state.recipes.at(state.selected);
+        if (ImGui::CollapsingHeader("Recipe detail")) {
+            bool detail = false;
+            detail |= ImGui::SliderFloat("Diffuse roughness", &recipe.optics.attenuation.w, 0, 1);
+            if (recipe.pattern.settings.x > 0) {
+                detail |= ImGui::SliderFloat("Pattern scale", &recipe.pattern.settings.z, .25F, 64);
+                detail |= ImGui::SliderFloat("Pattern strength", &recipe.pattern.settings.w, 0, 1);
+                detail |= ImGui::ColorEdit3("Pattern secondary", &recipe.pattern.secondary.x);
+                detail |= ImGui::SliderFloat("Pattern relief", &recipe.pattern.detail.x, 0, .005F,
+                                             "%.5f");
+            }
+            auto& library = recipe.library;
+            if (library.settings.x > 0) {
+                detail |= ImGui::SliderFloat("Library scale", &library.settings.z, .1F, 16);
+                detail |=
+                    ImGui::SliderFloat("Relief height", &library.settings.w, 0, .005F, "%.5f");
+                detail |= ImGui::ColorEdit3("Library secondary", &library.secondary.x);
+                if (library.settings.x == 1) {
+                    detail |=
+                        ImGui::SliderFloat("Ring frequency", &library.wood.ring_frequency, 1, 100);
+                    detail |=
+                        ImGui::SliderFloat("Growth distortion", &library.wood.distortion, 0, 2);
+                    detail |= ImGui::SliderFloat("Fiber frequency", &library.wood.grain_frequency,
+                                                 20, 600);
+                    detail |=
+                        ImGui::SliderFloat("Pore strength", &library.wood.pore_strength, 0, 1);
+                } else if (library.settings.x == 2) {
+                    detail |= ImGui::SliderFloat("Rust coverage", &library.rust.coverage, 0, 1);
+                    detail |=
+                        ImGui::SliderFloat("Patch frequency", &library.rust.patch_frequency, 1, 64);
+                    detail |= ImGui::SliderFloat("Edge breakup", &library.rust.edge_breakup, 0, 1);
+                    detail |= ImGui::SliderFloat("Pitting", &library.rust.pit_strength, 0, 1);
+                    detail |=
+                        ImGui::SliderFloat("Steel roughness", &library.rust_roughness.x, .05F, 1);
+                    detail |=
+                        ImGui::SliderFloat("Oxide roughness", &library.rust_roughness.y, .05F, 1);
+                } else if (library.settings.x == 3) {
+                    detail |= ImGui::SliderFloat("Yarn spacing", &library.weave.yarn_spacing, .003F,
+                                                 .06F, "%.4f");
+                    detail |=
+                        ImGui::SliderFloat("Yarn width", &library.weave.yarn_width, .3F, .95F);
+                    detail |= ImGui::SliderFloat("Yarn irregularity", &library.weave.irregularity,
+                                                 0, .5F);
+                    detail |=
+                        ImGui::SliderFloat("Fine fibers", &library.weave.fiber_strength, 0, 1);
+                    detail |= ImGui::ColorEdit3("Sheen color", &library.sheen.x);
+                    detail |= ImGui::SliderFloat("Sheen roughness", &library.sheen.w, .05F, 1);
+                } else {
+                    detail |= ImGui::SliderFloat("Fiber frequency", &library.paper.fiber_frequency,
+                                                 40, 1000);
+                    detail |= ImGui::SliderFloat("Fiber directionality",
+                                                 &library.paper.directionality, 0, 1);
+                    detail |=
+                        ImGui::SliderFloat("Pulp flecks", &library.paper.fleck_strength, 0, 1);
+                    detail |=
+                        ImGui::SliderFloat("Fiber relief", &library.paper.fiber_strength, 0, 1);
+                }
+            }
+            if (detail)
+                operate([&] { state.replace(state.selected, recipe); });
+        }
         if (!workshop_message_.empty())
             ImGui::TextWrapped("%s", workshop_message_.c_str());
         ImGui::PopItemWidth();
@@ -429,6 +524,7 @@ class App {
     double presentation_seconds_ = 0;
     bool target_fault_used_ = false;
     std::array<char, 512> recipe_path_{};
+    std::string workshop_family_ = "all";
     std::string workshop_message_;
 };
 } // namespace

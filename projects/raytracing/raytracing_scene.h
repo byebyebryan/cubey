@@ -27,6 +27,11 @@ struct alignas(16) OpticalMaterial {
 };
 static_assert(sizeof(OpticalMaterial) == 64);
 struct Scene {
+    struct Route {
+        std::string name;
+        std::uint32_t first, count;
+    };
+    std::vector<Route> routes;
     std::shared_ptr<WorkshopState> workshop;
     std::vector<Mesh> meshes;
     std::vector<Instance> instances;

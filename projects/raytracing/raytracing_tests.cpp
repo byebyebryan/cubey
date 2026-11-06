@@ -101,6 +101,21 @@ int main() {
         require(cubey::asset::material_recipe_fingerprint(content.recipes.at(content.selected)) ==
                     bronze_source,
                 "atomic catalog reload restores source values");
+        const auto specimens = make_scene(workshop);
+        require(specimens.routes.size() == 4 && specimens.meshes.size() == 4,
+                "prepared opaque specimen routes");
+        for (const auto& mesh : specimens.meshes) {
+            for (std::size_t j = 0; j < mesh.indices.size(); j += 3) {
+                const auto& a = mesh.vertices.at(mesh.indices[j]);
+                const auto& b = mesh.vertices.at(mesh.indices[j + 1]);
+                const auto& c = mesh.vertices.at(mesh.indices[j + 2]);
+                const auto winding = glm::cross(cubey::math::Vec3(b.position - a.position),
+                                                cubey::math::Vec3(c.position - a.position));
+                require(glm::dot(winding, cubey::math::Vec3(a.normal + b.normal + c.normal)) >=
+                            -1e-10F,
+                        "RT specimens orient geometric normals consistently");
+            }
+        }
         for (float azimuth : {-3.F, -.6F, 0.F, .6F, 3.F}) {
             for (float elevation : {-.1F, .3F, 1.2F}) {
                 const auto shared = cubey::render::atmosphere_environment_direction_from_alt_az(

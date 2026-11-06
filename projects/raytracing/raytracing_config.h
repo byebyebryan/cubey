@@ -26,6 +26,7 @@ struct Config {
     std::uint32_t samples = 256, seed = 7;
     std::uint32_t stress_edits = 0;
     float material_roughness = -1;
+    float object_scale = 1;
     bool pattern = true, bump = true;
     float ior = 1.5F, attenuation_red = .94F, attenuation_green = .98F, attenuation_blue = .99F;
     float attenuation_distance = 1.F, throughput_cutoff = .0001F;
@@ -61,9 +62,11 @@ inline config::Schema schema(Config& c) {
                          "refraction-fixture", "refraction-dragon", "slab",
                          "materials"};
     auto view = opt("view", ValueType::Enum);
-    view.enum_values = {"final",       "geometric-normal", "shading-normal", "depth",
-                        "instance-id", "barycentric",      "secondary-id",   "path-class",
-                        "path-events", "transport-limit",  "environment"};
+    view.enum_values = {
+        "final",       "geometric-normal", "shading-normal", "depth",       "instance-id",
+        "barycentric", "secondary-id",     "path-class",     "path-events", "transport-limit",
+        "environment", "base-color",       "roughness",      "metallic",    "footprint",
+        "diffuse",     "specular",         "sheen"};
     auto fault = opt("fault", ValueType::Enum);
     fault.enum_values = {"none", "scene", "pipeline", "target"};
     b.bind(scene, c.scene).bind(view, c.view).bind(fault, c.fault);
@@ -133,6 +136,7 @@ inline config::Schema schema(Config& c) {
         .bind(opt("seed", ValueType::UInt32), c.seed)
         .bind(opt("stress-edits", ValueType::UInt32), c.stress_edits)
         .bind(opt("material-roughness", ValueType::Float), c.material_roughness);
+    b.bind(opt("object-scale", ValueType::Float), c.object_scale);
     for (auto [name, value] : {std::pair{"pattern", &c.pattern}, {"bump", &c.bump}}) {
         auto option = opt(name, ValueType::Bool);
         option.negative_cli_name = "--no-" + std::string(name);
@@ -147,6 +151,8 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
     if (parsed->write_config_template_path)
         return c;
     if (c.scene == "materials") {
+        if (!std::isfinite(c.object_scale) || c.object_scale < .1F || c.object_scale > 10)
+            throw std::invalid_argument("workshop object scale must be in [0.1,10]");
         auto fallback = [&](const char* path, auto& value, auto next) {
             if (!parsed->path_was_assigned(path))
                 value = next;
@@ -167,6 +173,10 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
             throw std::invalid_argument(
                 "sampled workshop transport requires zero raw-throughput cutoff");
     }
+    if (c.scene != "materials" &&
+        (c.view == "base-color" || c.view == "roughness" || c.view == "metallic" ||
+         c.view == "footprint" || c.view == "diffuse" || c.view == "specular" || c.view == "sheen"))
+        throw std::invalid_argument("material component views require --scene materials");
     if (!std::isfinite(c.material_roughness) ||
         (c.material_roughness != -1 && (c.material_roughness < .05F || c.material_roughness > 1)) ||
         c.samples < 1 || c.samples > 8192 || c.stress_edits > 10000)

@@ -8,9 +8,10 @@ traversal comparison are separate follow-up work.
 
 The [RT material workshop](../../docs/notes/raytracing-material-workshop-plan.md) is in progress:
 the same twelve recipes and groundless specimens as forward PBR and SDF under
-matched shared atmosphere. The current checkpoint renders an isolated bronze
-sphere with shared recipe data, progressive sampling and environment/scene GGX
-routes. Its remaining qualification and the other eleven materials are tracked
+matched shared atmosphere. Bronze is qualified; the current checkpoint extends
+the adapter to all ten opaque recipes and prepared sphere/block/swatch/bored-block
+views with progressive sampling and environment/scene GGX routes. Opaque-library
+qualification, the two dielectrics and the final gallery/media are tracked
 in the [progress record](../../docs/notes/raytracing-material-workshop-progress.md).
 This checkpoint does not complete the workshop milestone.
 

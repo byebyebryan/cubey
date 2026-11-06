@@ -13,7 +13,7 @@ implementation choices; an isolated math probe does not constitute a workshop.
 | P0 sampling arithmetic and estimator controls | Isolated native GGX probe passes independent direction, evaluation/PDF, integral/rejection and analytic sun/sky mixture controls |
 | P0 integration contracts | Choices below frozen; opt-in native configuration admission/round trips pass; record layout and history implementation checks belong to the integration |
 | P1 bronze | Passed at 74f42e3c; matched three-way stills, two-seed convergence, reference stability, furnace/component, native lifecycle and serial 1080p costs recorded |
-| P2 ten opaque recipes | Pending |
+| P2 ten opaque recipes | Runtime and native controls implemented; component/minification/convergence/cost qualification in progress |
 | P3 two dielectric recipes | Pending |
 | P4 full matched workshop and delivery | Pending |
 
@@ -334,3 +334,35 @@ Vulkan/sync validation. Matched forward/SDF/cached-RT bronze stills were visuall
 reviewed at the common physical camera pose. Sampled RT shows its finite-sample
 noise without changing the canonical bronze. The original eleven protected
 SDF/horse files remain unchanged. P2-P4 remain required.
+
+## P2 opaque implementation checkpoint
+
+All ten opaque recipe families now use the same RT adapter and procedural
+evaluator. Oren-Nayar direct diffuse/A-only sky approximation, Charlie sheen and
+the shared sheen-energy attenuation extend the bronze model without changing
+assets or the accepted forward/SDF helpers. The actual recipe-record probe also
+checks rough-diffuse and sheen terms against separate double-precision formulas.
+The library/component/minification/operation/cost gates remain in qualification.
+
+Existing forward sphere, beveled block, swatch and bored-block builders now live
+in the narrow shared material_specimen_mesh header. Forward construction is
+unchanged; its matched bronze PNG retains SHA256
+989cf2505b36ea1ac6af15111f40fb103896ee52fd704a675878de3e3c279e02.
+RT widens indices and orients opaque triangles against supplied outward normals.
+Four BLAS and four single-specimen TLAS routes are prepared once. Selection and
+appearance edits use the retired slot descriptor/recipe table and do not build
+AS. Glass and the full gallery remain explicitly guarded for P3.
+
+The ray-cone transform now uses sqrt(matrix-one-norm times matrix-infinity-norm),
+a conservative operator bound that is exact for uniform and axis scale. This
+avoids a sqrt(3) filtering jump on a uniformly scaled mesh. Shared recipe-domain
+filtering keeps its existing Frobenius policy. The opt-in object-scale control
+prepares a positive uniform transform at startup; recipes stay in local geometry
+coordinates and optical segments stay in world geometry units. Secondary angular
+spread uses the specimen curvature (sphere, bevel, swatch bevel or bored hole)
+and the world-to-object scale bound. It remains an engineering cone policy, not
+a bound on the unbounded GGX tail.
+
+Native family/material/specimen selection, recipe detail controls and keyboard
+navigation are available in the existing workshop panel. Base color, roughness,
+metallic, footprint, diffuse/specular and sheen views expose component evidence.

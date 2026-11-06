@@ -10,6 +10,7 @@ host; they cannot establish uninterrupted exclusive hardware access.
 import argparse
 import json
 import os
+import shlex
 from pathlib import Path
 import subprocess
 import time
@@ -24,27 +25,41 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--material', action='append')
     p.add_argument('--mode', choices=['quality', 'timing', 'matrix'], required=True)
+    p.add_argument('--resume',action='store_true')
     args = p.parse_args()
     args.binary = args.binary.resolve()
     out = args.output.resolve()
-    out.mkdir(parents=True, exist_ok=False)
+    out.mkdir(parents=True, exist_ok=args.resume)
     materials = args.material or ['bronze']
     patch = subprocess.check_output(['git', 'diff', 'HEAD', '--binary'])
     (out/'source.patch').write_bytes(patch)
+    compilation=json.loads(Path('build/dev/compile_commands.json').read_text())
+    entry=next(c for c in compilation if c['file'].endswith('raytracing_app.cpp'))
+    tokens=shlex.split(entry['command'])
+    build=dict(compiler=tokens[0],flags=[t for t in tokens if t.startswith(('-O','-g','-std=','-DNDEBUG','-DGLM'))],compiler_version=subprocess.check_output([tokens[0],'--version'],text=True).splitlines()[0])
     identity = dict(source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
                     status=subprocess.check_output(['git','status','--porcelain'],text=True),
                     binary_sha256=sha(args.binary),
                     shaders={f.name:sha(f) for f in sorted((args.binary.parent/'shaders').glob('*.spv'))},
                     recipes={f.name:sha(f) for f in sorted(Path('assets/materials').glob('*.json'))},
-                    gpu=gpu_state(), scope=__doc__)
-    (out/'identity.json').write_text(json.dumps(identity,indent=2)+'\n')
-    runs = []
+                    gpu=gpu_state(), build=build, scope=__doc__)
+    if args.resume:
+        previous=json.loads((out/'identity.json').read_text())
+        assert all(previous[k]==identity[k] for k in ['source','binary_sha256','shaders','recipes']), 'Resume requires identical inputs'
+    else:
+        (out/'identity.json').write_text(json.dumps(identity,indent=2)+'\n')
+    runs = json.loads((out/'runs.json').read_text()) if args.resume and (out/'runs.json').exists() else []
 
     def run(name, material, extra, validated=True, width=640, height=480):
         command = [str(args.binary),'--scene','materials','--material',material,
                    '--headless','--width',str(width),'--height',str(height),
                    '--require-validation' if validated else '--no-validation',
                    '--metrics',str(out/(name+'.json')),*extra]
+        prior=next((r for r in runs if r['name']==name),None)
+        if prior:
+            assert prior['command']==command
+            assert all(sha(Path(f))==digest for f,digest in prior['artifacts'].items())
+            return json.loads((out/(name+'.json')).read_text()),prior
         start = time.monotonic()
         before = gpu_state()
         native = subprocess.run(command,capture_output=True,text=True,timeout=900,
@@ -55,6 +70,8 @@ def main():
             ['vuid-','hazard detected','vulkan validation error']),log
         record = dict(name=name,command=command,before=before,after=gpu_state(),
                       wall_seconds=time.monotonic()-start)
+        record['artifacts']={command[i+1]:sha(Path(command[i+1])) for i,flag in enumerate(command)
+                             if flag in ['--output','--hdr-output','--metrics']}
         runs.append(record)
         (out/'runs.json').write_text(json.dumps(runs,indent=2)+'\n')
         return json.loads((out/(name+'.json')).read_text()),record

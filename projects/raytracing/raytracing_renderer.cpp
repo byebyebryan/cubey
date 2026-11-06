@@ -61,10 +61,11 @@ CameraUniform camera_uniform(const Config& c, VkExtent2D extent) {
     const math::Vec3 sun{std::cos(c.sun_elevation) * std::sin(c.sun_azimuth),
                          std::sin(c.sun_elevation),
                          std::cos(c.sun_elevation) * std::cos(c.sun_azimuth)};
-    const std::array<std::string_view, 11> views{
-        "final",       "geometric-normal", "shading-normal", "depth",
-        "instance-id", "barycentric",      "secondary-id",   "path-class",
-        "path-events", "transport-limit",  "environment"};
+    const std::array<std::string_view, 18> views{
+        "final",       "geometric-normal", "shading-normal", "depth",       "instance-id",
+        "barycentric", "secondary-id",     "path-class",     "path-events", "transport-limit",
+        "environment", "base-color",       "roughness",      "metallic",    "footprint",
+        "diffuse",     "specular",         "sheen"};
     return {inverse_view,
             {eye, float(extent.width) / float(extent.height)},
             {sun, 0},
@@ -175,7 +176,7 @@ void Renderer::create_scene(vulkan::GpuRuntime& gpu, const Scene& scene) {
     instances_ = upload(shading.data(), shading.size() * sizeof(GpuInstance),
                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     geometry_bytes_ = vertices_->size() + indices_->size() + instances_->size();
-    accelerations_.reserve(scene.meshes.size() + 1);
+    accelerations_.reserve(scene.meshes.size() + std::max(std::size_t(1), scene.routes.size()));
     gpu.submit(
            "raytracing.build-static-scene",
            [&](vulkan::GpuOwnerContext& context) {
@@ -261,34 +262,44 @@ void Renderer::create_scene(vulkan::GpuRuntime& gpu, const Scene& scene) {
                    t.indexData.deviceAddress = indices_->device_address() + o.y * 4;
                    build_one(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, geometry, o.w);
                }
-               std::vector<VkAccelerationStructureInstanceKHR> data;
-               for (std::size_t n = 0; n < scene.instances.size(); ++n) {
-                   const auto& i = scene.instances[n];
-                   VkAccelerationStructureInstanceKHR instance{};
-                   for (int r = 0; r < 3; ++r)
-                       for (int c = 0; c < 4; ++c)
-                           instance.transform.matrix[r][c] = i.transform[c][r];
-                   instance.instanceCustomIndex = static_cast<std::uint32_t>(n);
-                   instance.mask = scene.materials.at(i.material).optics.x == 2 ? 2 : 1;
-                   instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-                   instance.accelerationStructureReference = accelerations_.at(i.mesh).address;
-                   data.push_back(instance);
+               auto routes = scene.routes;
+               if (routes.empty())
+                   routes.push_back(
+                       {"legacy", 0, static_cast<std::uint32_t>(scene.instances.size())});
+               for (const auto& route : routes) {
+                   std::vector<VkAccelerationStructureInstanceKHR> data;
+                   for (std::size_t n = route.first; n < route.first + route.count; ++n) {
+                       const auto& i = scene.instances[n];
+                       VkAccelerationStructureInstanceKHR instance{};
+                       for (int r = 0; r < 3; ++r)
+                           for (int c = 0; c < 4; ++c)
+                               instance.transform.matrix[r][c] = i.transform[c][r];
+                       instance.instanceCustomIndex = static_cast<std::uint32_t>(n);
+                       instance.mask = scene.workshop
+                                           ? 255
+                                           : (scene.materials.at(i.material).optics.x == 2 ? 2 : 1);
+                       instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+                       instance.accelerationStructureReference = accelerations_.at(i.mesh).address;
+                       data.push_back(instance);
+                   }
+                   vulkan::Buffer instance_data(
+                       device_,
+                       {data.size() * sizeof(data[0]),
+                        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                            address_usage,
+                        host_memory});
+                   instance_data.upload(data.data(), instance_data.size());
+                   transient_instance_bytes = instance_data.size();
+                   auto geometry = cubey::vulkan::vk_struct<VkAccelerationStructureGeometryKHR>(
+                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR);
+                   geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+                   geometry.geometry.instances.sType =
+                       VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+                   geometry.geometry.instances.data.deviceAddress = instance_data.device_address();
+                   build_one(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, geometry,
+                             static_cast<std::uint32_t>(data.size()));
+                   routes_.emplace_back(route.name, accelerations_.size() - 1);
                }
-               vulkan::Buffer instance_data(
-                   device_, {data.size() * sizeof(data[0]),
-                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
-                                 address_usage,
-                             host_memory});
-               instance_data.upload(data.data(), instance_data.size());
-               transient_instance_bytes = instance_data.size();
-               auto geometry = cubey::vulkan::vk_struct<VkAccelerationStructureGeometryKHR>(
-                   VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR);
-               geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-               geometry.geometry.instances.sType =
-                   VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-               geometry.geometry.instances.data.deviceAddress = instance_data.device_address();
-               build_one(VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, geometry,
-                         static_cast<std::uint32_t>(data.size()));
                as_build_ms_ = elapsed(build_start);
            })
         .get();
@@ -520,6 +531,24 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                       profiling::ProfileRecorder* profile, std::uint64_t frame) {
     collect(slot.index);
     profile_ = profile;
+    if (workshop_) {
+        auto route = std::find_if(routes_.begin(), routes_.end(),
+                                  [&](const auto& r) { return r.first == c.specimen; });
+        if (route == routes_.end())
+            throw std::invalid_argument("unprepared workshop specimen");
+        auto acceleration = vulkan::vk_struct<VkWriteDescriptorSetAccelerationStructureKHR>(
+            VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR);
+        acceleration.accelerationStructureCount = 1;
+        acceleration.pAccelerationStructures = &accelerations_.at(route->second).handle;
+        auto write =
+            vulkan::vk_struct<VkWriteDescriptorSet>(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
+        write.pNext = &acceleration;
+        write.dstSet = descriptors_->set(slot.index);
+        write.dstBinding = 0;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        vkUpdateDescriptorSets(device_.handle(), 1, &write, 0, nullptr);
+    }
     auto camera = camera_uniform(c, extent_);
     if (!glass_planes_.empty() &&
         std::all_of(glass_planes_.begin(), glass_planes_.end(), [&](auto p) {
@@ -567,7 +596,12 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         const auto records = workshop_->gpu_records();
         recipe_buffers_.at(slot.index)->upload(records.data(), records.size() * sizeof(GpuRecipe));
         workshop_uniform.options = {1, workshop_->selected, c.pattern ? 1U : 0U, c.bump ? 1U : 0U};
-        workshop_uniform.sampling = {c.seed, c.samples, 0, 0};
+        const std::array<std::string_view, 4> shapes{"sphere", "block", "swatch", "cut-block"};
+        workshop_uniform.sampling = {
+            c.seed, c.samples,
+            static_cast<std::uint32_t>(std::find(shapes.begin(), shapes.end(), c.specimen) -
+                                       shapes.begin()),
+            0};
         workshop_uniform.solar = {
             environment_->solar_radius(), c.workshop_lighting == "sun" ? 0.F : 1.F,
             c.workshop_lighting == "sky" || c.workshop_lighting == "furnace" ? 0.F : 1.F,
@@ -609,6 +643,9 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     append_identity(workshop_uniform.options);
     append_identity(workshop_uniform.solar);
     append_identity(c.seed);
+    if (workshop_)
+        for (char ch : c.specimen)
+            append_identity(ch);
     if (workshop_)
         append_identity(workshop_->revision);
     const bool reset_history =
@@ -673,17 +710,20 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
             ++history_samples_;
     }
     if (workshop_ && collect_metrics_ && sampling_frames_.size() < 20000)
-        sampling_frames_.push_back({{"frame", frame},
-                                    {"epoch", history_epochs_},
-                                    {"samples_before", samples_before},
-                                    {"samples_after", history_samples_},
-                                    {"new_samples", history_samples_ - samples_before},
-                                    {"recorded_dispatches", iterations},
-                                    {"material_revision", workshop_->revision},
-                                    {"resident_requested_bytes", requested_bytes()},
-                                    {"environment_generation", environment_->generation()},
-                                    {"exposure", c.exposure},
-                                    {"sample_target", c.samples}});
+        sampling_frames_.push_back(
+            {{"frame", frame},
+             {"epoch", history_epochs_},
+             {"samples_before", samples_before},
+             {"samples_after", history_samples_},
+             {"new_samples", history_samples_ - samples_before},
+             {"recorded_dispatches", iterations},
+             {"material_revision", workshop_->revision},
+             {"selected_material", workshop_->catalog.at(workshop_->selected).id},
+             {"specimen", c.specimen},
+             {"resident_requested_bytes", requested_bytes()},
+             {"environment_generation", environment_->generation()},
+             {"exposure", c.exposure},
+             {"sample_target", c.samples}});
     if (diagnostic_) {
         auto memory = vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
         memory.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -772,12 +812,16 @@ std::uint64_t Renderer::requested_bytes() const {
     return bytes;
 }
 nlohmann::json Renderer::metrics() const {
+    auto supported = nlohmann::json::array();
+    if (workshop_)
+        for (const auto& entry : workshop_->catalog)
+            if (entry.recipe.optics.settings.y == 0)
+                supported.push_back(entry.id);
     const auto memory = device_.device_memory_budget();
     return {
         {"format", "cubey.raytracing.metrics"},
         {"workshop_enabled", bool(workshop_)},
-        {"workshop_supported_material_ids",
-         workshop_ ? nlohmann::json::array({"bronze"}) : nlohmann::json::array()},
+        {"workshop_supported_material_ids", supported},
         {"history_samples", history_samples_},
         {"history_epochs", history_epochs_},
         {"extent", {extent_.width, extent_.height}},

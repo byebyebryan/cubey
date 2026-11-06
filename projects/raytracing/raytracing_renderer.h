@@ -83,6 +83,7 @@ class Renderer {
         vulkan::vk_struct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>(
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR);
     std::vector<Acceleration> accelerations_;
+    std::vector<std::pair<std::string, std::size_t>> routes_;
     std::unique_ptr<vulkan::Buffer> vertices_, indices_, instances_, sbt_;
     std::vector<std::unique_ptr<vulkan::Buffer>> uniforms_;
     std::vector<std::unique_ptr<vulkan::Buffer>> environment_uniforms_, material_buffers_;

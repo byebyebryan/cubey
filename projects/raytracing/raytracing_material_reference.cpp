@@ -8,6 +8,32 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 
+namespace {
+double rough_diffuse(double nl, double nv, double lv, double roughness) {
+    const double sigma = roughness * std::acos(-1.0) * .5, s2 = sigma * sigma;
+    return 1 - .5 * s2 / (s2 + .33) +
+           .45 * s2 / (s2 + .09) * std::max(0.0, lv - nl * nv) / std::max({nl, nv, .001});
+}
+double sheen_lambda(double cosine, double alpha) {
+    const double t = (1 - alpha) * (1 - alpha);
+    auto helper = [&](double x) {
+        const double a = std::lerp(21.5473, 25.3245, t), b = std::lerp(3.82987, 3.32435, t),
+                     c = std::lerp(.19823, .16801, t), d = std::lerp(-1.97760, -1.27393, t),
+                     e = std::lerp(-4.32054, -4.85967, t);
+        return a / (1 + b * std::pow(x, c)) + d * x + e;
+    };
+    return std::exp(cosine < .5 ? helper(cosine) : 2 * helper(.5) - helper(1 - cosine));
+}
+double sheen_brdf(double nv, double nl, double nh, double roughness) {
+    const double alpha = std::pow(std::max(roughness, .000001), 2), inverse = 1 / alpha;
+    const double distribution =
+        (2 + inverse) * std::pow(std::max(1 - nh * nh, 0.0), inverse * .5) / (2 * std::acos(-1.0));
+    const double denominator =
+        (1 + sheen_lambda(nv, alpha) + sheen_lambda(nl, alpha)) * 4 * nv * nl;
+    return distribution * std::clamp(1 / std::max(denominator, .000001), 0.0, 1.0);
+}
+} // namespace
+
 // CPU reference for GPU records decoded from the actual RT recipe SSBO.
 // Inputs are the GPU's recorded float points/footprints, not reconstructed
 // trigonometry; evaluation uses the separate shared CPU implementation.
@@ -72,6 +98,21 @@ int main(int argc, char** argv) {
                         component_error[slot], std::abs(double(actual[offsets[field]][channel]) -
                                                         expected[field][channel]));
                 }
+            const auto angles = actual[9];
+            const std::array<double, 5> lobes{
+                rough_diffuse(angles.y, angles.x, angles.w, r.optics.attenuation.w),
+                rough_diffuse(1, 1, 1, r.optics.attenuation.w),
+                value.sheen.r * sheen_brdf(angles.x, angles.y, angles.z, value.sheen.w),
+                value.sheen.g * sheen_brdf(angles.x, angles.y, angles.z, value.sheen.w),
+                value.sheen.b * sheen_brdf(angles.x, angles.y, angles.z, value.sheen.w)};
+            for (std::size_t channel = 0; channel < lobes.size(); ++channel) {
+                const double observed = channel < 2 ? actual[10][static_cast<int>(channel)]
+                                                    : actual[11][static_cast<int>(channel - 2)];
+                if (!std::isfinite(observed) || !std::isfinite(lobes[channel]))
+                    throw std::runtime_error("nonfinite surface lobe");
+                component_error[slot] =
+                    std::max(component_error[slot], std::abs(observed - lobes[channel]));
+            }
             const auto normal = glm::normalize(math::Vec3(.3F, .8F, .2F));
             const auto expected_normal =
                 bump ? procedural::material_shading_normal(normal, value.height_gradient) : normal;
