@@ -12,7 +12,7 @@ implementation choices; an isolated math probe does not constitute a workshop.
 | P0 runnable reference | Native archived NVIDIA donor built and externally captured; source/dependencies pinned below |
 | P0 sampling arithmetic and estimator controls | Isolated native GGX probe passes independent direction, evaluation/PDF, integral/rejection and analytic sun/sky mixture controls |
 | P0 integration contracts | Choices below frozen; opt-in native configuration admission/round trips pass; record layout and history implementation checks belong to the integration |
-| P1 bronze | Native recipe adapter, matched background/probe, progressive history and isolated bronze exist; component/convergence/lifecycle/cost gates are still in progress |
+| P1 bronze | Passed at 74f42e3c; matched three-way stills, two-seed convergence, reference stability, furnace/component, native lifecycle and serial 1080p costs recorded |
 | P2 ten opaque recipes | Pending |
 | P3 two dielectric recipes | Pending |
 | P4 full matched workshop and delivery | Pending |
@@ -314,3 +314,23 @@ edit/save/load, rejected input retaining the snapshot, canonical reset and resiz
 Appearance edits retained the two original AS builds. The test uses its own Xvfb
 display and actual native controls. A 1000-edit residency stress route is available
 as --stress-edits; it is a lifecycle probe rather than a timing preset.
+
+## P1 accepted evidence
+
+The [P1 receipt](../evidence/raytracing-material-workshop-2026-11/p1.json) pins
+74f42e3c, binary/shaders, unchanged recipes and the scoped results. Two 256-SPP
+scene seeds pass the fixed mean/p95 gates; the independent 8192-SPP control has
+mean 0.000811 and p95 0.005308 against the 4096-SPP reference. Eight furnace
+roughness controls remain finite/nonnegative; center agreement with shared DFG
+is within 0.00934, below 0.02. Combined sun/sky additivity passes. Three serial
+1080p repetitions per optical route retain exactly 150 completed one-sample
+iterations after 30 warmups. Total-frame p95 is at most 0.975 ms cached and
+0.996 ms sampled. Setup, validation and raw readback are outside those timings.
+
+Native scene selection/edit/save/load/rejection/reset/resize passes. Exposure
+preserves history. One thousand edits produce 1000 epochs, fixed requested
+residency of 1,890,400 bytes, two AS builds and one target generation with clean
+Vulkan/sync validation. Matched forward/SDF/cached-RT bronze stills were visually
+reviewed at the common physical camera pose. Sampled RT shows its finite-sample
+noise without changing the canonical bronze. The original eleven protected
+SDF/horse files remain unchanged. P2-P4 remain required.
