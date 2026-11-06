@@ -13,3 +13,11 @@ It is downloaded explicitly and is not included in this code package.
 The bounded ray-generation scheduling follows the ray_tracing_reflection
 example at the same Khronos revision. Copyright (c) 2021-2025 NVIDIA CORPORATION,
 with SPDX copyright 2014-2025 NVIDIA CORPORATION. Apache License, Version 2.0.
+
+Visible GGX normal sampling in shaders/material_bsdf.glsl is adapted from
+nvpro-samples/nvpro_core2, nvshaders/pbr_ggx_microfacet.h.slang,
+revision 8746c6d36bebe652516b9a1bf3cce46422413bf7.
+Copyright (c) 2022-2026 NVIDIA CORPORATION. Apache License, Version 2.0.
+https://github.com/nvpro-samples/nvpro_core2
+The donor's uncorrelated BRDF/layer stack is not imported; Cubey's existing
+correlated Smith, RGB metallic Fresnel and energy compensation remain explicit.

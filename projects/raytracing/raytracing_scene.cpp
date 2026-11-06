@@ -6,6 +6,8 @@
 #include <stdexcept>
 namespace cubey::projects::raytracing {
 Scene make_scene(const Config& c) {
+    if (c.scene == "materials")
+        throw std::invalid_argument("material workshop scene integration is pending; P0 provides --bsdf-contract only");
     if (c.scene.find("reflection-") == 0 || c.scene.find("refraction-") == 0 || c.scene == "slab")
         return make_optical_scene(c);
     Scene s;

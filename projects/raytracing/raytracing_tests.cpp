@@ -40,6 +40,27 @@ int main() {
         rejects([] { (void)sbt_stride(32, 32, 64, 32); });
         rejects([] { (void)align_address(UINT64_MAX, 64); });
         require(parse({}).scene == "fixture", "default generated fixture");
+        auto workshop = parse({"--scene", "materials"});
+        require(workshop.material == "bronze" && workshop.environment == "atmosphere" &&
+                    workshop.reflection_source == "environment" && !workshop.shadows &&
+                    workshop.yaw == 0 && workshop.pitch == .15F && workshop.distance == 1.05F &&
+                    workshop.samples == 256 && workshop.seed == 7,
+                "opt-in workshop has matched defaults");
+        auto gallery = parse({"--scene", "materials", "--material", "gallery"});
+        require(gallery.pitch == 0 && gallery.distance == .855F, "gallery camera defaults");
+        Config workshop_copy;
+        schema(workshop_copy).apply_json(schema(workshop).template_json());
+        require(schema(workshop_copy).template_json() == schema(workshop).template_json(),
+                "workshop schema roundtrip");
+        require(parse({"--scene", "materials", "--pitch", "-.2", "--samples", "4096",
+                       "--reflection-source", "scene", "--shadows", "--no-bump"}).pitch == -.2F,
+                "explicit workshop overrides survive defaults");
+        rejects([] { (void)parse({"--samples", "0"}); });
+        rejects([] { (void)parse({"--samples", "8193"}); });
+        rejects([] { (void)parse({"--scene", "materials", "--environment", "legacy"}); });
+        rejects([] { (void)parse({"--material-roughness", "nan"}); });
+        rejects([] { (void)parse({"--scene", "materials", "--material", "gallery",
+                                    "--recipe-input", "bronze.json"}); });
         for (float azimuth : {-3.F, -.6F, 0.F, .6F, 3.F}) {
             for (float elevation : {-.1F, .3F, 1.2F}) {
                 const auto shared = cubey::render::atmosphere_environment_direction_from_alt_az(
@@ -61,6 +82,13 @@ int main() {
         rejects([] { (void)parse({"--max-total-rays", "257"}); });
         rejects([] { (void)parse({"--attenuation-red", "0"}); });
         rejects([] { (void)parse({"--optics-contract"}); });
+        rejects([] { (void)parse({"--bsdf-contract"}); });
+        rejects([] { (void)parse({"--headless", "--bsdf-contract", "--optics-contract",
+                                    "--optics-output", "probe.bin"}); });
+        require(parse({"--headless", "--width", "32", "--height", "16", "--bsdf-contract",
+                       "--optics-output", "probe.bin"})
+                    .bsdf_contract,
+                "isolated BSDF contract admission");
         for (const char* name : {"reflection-fixture", "refraction-fixture", "slab"}) {
             Config fixture;
             fixture.scene = name;

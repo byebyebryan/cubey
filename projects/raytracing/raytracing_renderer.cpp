@@ -519,7 +519,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         ->upload(materials.data(), materials.size() * sizeof(OpticalMaterial));
     environment_timer_->end_pass(command, slot.index);
     camera.options.z = diagnostic_ ? float(dump_mode_) : 0.F;
-    camera.options.w = c.optics_contract ? 1.F : 0.F;
+    camera.options.w = c.bsdf_contract ? 2.F : (c.optics_contract ? 1.F : 0.F);
     uniforms_.at(slot.index)->upload(&camera, sizeof(camera));
     post_.upload(slot, render::hdr_post_uniforms(output.format, c.exposure,
                                                  c.view == "final" ? render::PbrTonemap::Aces

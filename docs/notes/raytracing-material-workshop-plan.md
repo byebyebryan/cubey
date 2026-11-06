@@ -3,6 +3,7 @@
 Date: 2026-11-05. Status: proposed implementation contract, planning only.
 Source audit: `66f6882f6a1813fd270806298dbc74ee8019b8d5` on
 `raytracing-first-pass-20261104`. Current reflective-dragon runtime: `421708f9`.
+Execution is tracked in the [workshop progress and frozen contracts](raytracing-material-workshop-progress.md).
 
 ## Intended result
 

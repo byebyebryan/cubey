@@ -3,6 +3,7 @@
 #extension GL_GOOGLE_include_directive : require
 #include "rt_common.glsl"
 #include "cubey/pbr.glsl"
+#include "material_bsdf.glsl"
 layout(rgba16f,set=0,binding=1) uniform writeonly image2D outputImage;
 layout(location=0) rayPayloadEXT Hit hit;
 layout(location=1) rayPayloadEXT bool occluded;
@@ -102,7 +103,39 @@ void contractProbe(){
  for(uint i=0;i<16;++i)queries[pixel*16+i]=observation[i];
  imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(b.fresnel,b.tir?1:0,0,1));
 }
+void bsdfContractProbe(){
+ for(int i=0;i<16;++i)observation[i]=vec4(0);
+ float roughnesses[8]=float[8](.05,.1,.2,.32,.5,.7,.9,1);
+ float cosines[8]=float[8](.05,.15,.3,.5,.7,.85,.95,1);
+ uint row=gl_LaunchIDEXT.y;
+ float roughness=roughnesses[row%8u],cosine=cosines[(row/8u)%8u];
+ vec3 v=vec3(sqrt(max(0,1-cosine*cosine)),0,cosine);
+ float x=float(gl_LaunchIDEXT.x),width=float(gl_LaunchSizeEXT.x);
+ vec2 xi=vec2((x+.5)/width,mod(x*37+.5,width)/width);
+ vec3 h=rtVisibleGgxNormal(v,roughness*roughness,xi);
+ vec3 l=rtSampleReflection(v,roughness,xi);
+ vec3 f0=vec3(.6795424696,.3864294338,.1384316150);
+ observation[0]=vec4(v,roughness);observation[1]=vec4(h,xi.x);
+ observation[2]=vec4(l,xi.y);
+ observation[3]=vec4(rtGgxReflectionEval(v,l,roughness,f0),rtGgxReflectionPdf(v,l,roughness));
+ observation[4]=vec4(l.z>0?observation[3].rgb*l.z/max(observation[3].w,1e-30):vec3(0),l.z>0?1:0);
+ vec3 axis=normalize(vec3(.3,.4,.85));
+ vec3 cone=rtSampleCone(axis,.05,xi);
+ observation[5]=vec4(cone,rtConePdf(cone,axis,.05));
+ float halfWidth=width*.5,index=floor(x*.5);
+ vec2 mixedXi=vec2((index+.5)/halfWidth,mod(index*37+.5,halfWidth)/halfWidth);
+ vec3 mixedDirection=(gl_LaunchIDEXT.x%2u)==0u?rtSampleReflection(v,roughness,mixedXi):rtSampleCone(axis,.05,mixedXi);
+ float mixedPdf=.5*rtGgxReflectionPdf(v,mixedDirection,roughness)+.5*rtConePdf(mixedDirection,axis,.05);
+ vec3 weight=mixedDirection.z>0?rtGgxReflectionEval(v,mixedDirection,roughness,f0)*mixedDirection.z/max(mixedPdf,1e-30):vec3(0);
+ observation[6]=vec4(mixedDirection,mixedPdf);
+ observation[7]=vec4(weight*vec3(.2,.3,.4),0);
+ observation[8]=vec4(weight*(dot(mixedDirection,axis)>=.95?3:0),0);
+ uint pixel=gl_LaunchIDEXT.x+gl_LaunchIDEXT.y*gl_LaunchSizeEXT.x;
+ for(uint i=0;i<16;++i)queries[pixel*16+i]=observation[i];
+ imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(observation[4].rgb,1));
+}
 void main(){
+ if(camera.options.w>1.5){bsdfContractProbe();return;}
  if(camera.options.w>.5){contractProbe();return;}
  if(environment.options.z<.5&&environment.transport.w<.5&&camera.options.z<1.5&&camera.options.y<5.5){traceLegacy();return;}
  for(int i=0;i<16;++i)observation[i]=vec4(0);
