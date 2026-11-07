@@ -30,6 +30,9 @@ the architecture and project guides remain current authority.
 - [RT material workshop plan](raytracing-material-workshop-plan.md): proposed
   shared twelve-recipe forward/SDF/RT workshop under matched clear atmosphere,
   with rough specular transport, per-material optics and bounded sampling.
+- [Forward glass transmission research](forward-transmission-research-plan.md):
+  measured sphere geometry and camera/environment direction mismatch, pinned
+  renderer references and a proposed environment-transmission comparison pass.
 - [Ray tracing reflective dragon](raytracing-reflective-dragon.md): separate primitive
   optical proofs, then a reflective dragon alone on a small base.
 - [Ray tracing contained scene](raytracing-contained-scene.md): a compact shaped

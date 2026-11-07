@@ -1,0 +1,14 @@
+{
+  "inspected_commit": "87b7f61560205de9e1f1b061024234e12ac357ba",
+  "shader_ab_performed": false,
+  "gpu_radiance_validation_performed": false,
+  "source_sha256": {
+    "shaders/cubey/forward_pbr/forward_pbr.frag": "d3c657c76e1f7fe1e201975b0a86275d66fd9260849a44200f55d911a0d451b5",
+    "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp": "e828081ed04f0ea0d1de3058e8120e347c59906d6136198c921ee2652f065974",
+    "projects/pbr_materials/pbr_materials_workshop.cpp": "f38f1ee9e23ff588f7bac6e3394757ff30eb756e0e44a5dceeb37ecd67685fe6",
+    "projects/pbr_materials/pbr_materials_environment.cpp": "9e857c97cb5945d5d17f01f157d5a67b007782052235e53869b8dca897584036",
+    "assets/materials/glass.json": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537",
+    "assets/materials/frosted-glass.json": "18dbb3c951418635ada6944ef44284ff2fdf5305ab27d1b5620295a6266957cb"
+  },
+  "oracle_sha256": "28188ab7f163bda2102f2e389c1d6378396f710e675de7f78dee529482ced2d9"
+}

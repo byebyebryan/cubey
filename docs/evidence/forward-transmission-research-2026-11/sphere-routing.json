@@ -1,0 +1,290 @@
+{
+  "schema": "cubey.forward_transmission_research.v1",
+  "source_commit": "87b7f61560205de9e1f1b061024234e12ac357ba",
+  "kind": "CPU ideal-sphere geometry and direction-routing control; not a GPU render or radiance validation",
+  "assumptions": [
+    "1920x1080 pixel centers, 45 degree vertical field of view, camera looking along -Z",
+    "Smooth sphere normals, diameter-matched thickness, unit model scale",
+    "One entry and one exit only; no Fresnel weights, roughness, radiance, internal reflection chains or other bodies",
+    "Frosted-position control measures only smooth geometry at that location; not rough-glass transport",
+    "Screen sky direction reconstructed from projected exit and camera; UV vertical sign does not alter world direction"
+  ],
+  "cases": {
+    "gallery-glass-ior-1.0": {
+      "center_m": [
+        0.126,
+        0,
+        0
+      ],
+      "radius_m": 0.075,
+      "camera_distance_m": 0.855,
+      "ior": 1.0,
+      "pixel_count": 41858,
+      "helper_max_exit_position_error_m": 1.3496516774049005e-13,
+      "helper_max_path_length_error_m": 1.3497026846859272e-13,
+      "helper_max_direction_vector_error": 3.69559209608848e-14,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 6.621210164025294e-08,
+        "p50": 0.0,
+        "p95": 8.537736462515939e-07,
+        "max": 1.2074182697257333e-06
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 0.0,
+      "minimum_exit_snell_discriminant": 1.0853320549508716e-05
+    },
+    "gallery-glass-ior-1.33": {
+      "center_m": [
+        0.126,
+        0,
+        0
+      ],
+      "radius_m": 0.075,
+      "camera_distance_m": 0.855,
+      "ior": 1.33,
+      "pixel_count": 41858,
+      "helper_max_exit_position_error_m": 2.5010285098215567e-15,
+      "helper_max_path_length_error_m": 2.4980018054066022e-15,
+      "helper_max_direction_vector_error": 1.8039235032396507e-12,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 26.80081877269941,
+        "p50": 24.104338107742546,
+        "p95": 56.886194942759715,
+        "max": 78.14340772346323
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 1.0,
+      "minimum_exit_snell_discriminant": 1.0853320549619738e-05
+    },
+    "gallery-glass-ior-1.5": {
+      "center_m": [
+        0.126,
+        0,
+        0
+      ],
+      "radius_m": 0.075,
+      "camera_distance_m": 0.855,
+      "ior": 1.5,
+      "pixel_count": 41858,
+      "helper_max_exit_position_error_m": 2.506021815018217e-15,
+      "helper_max_path_length_error_m": 2.525757381022231e-15,
+      "helper_max_direction_vector_error": 1.873249540400448e-12,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 34.10991475967199,
+        "p50": 31.496798513217787,
+        "p95": 69.06949503714591,
+        "max": 90.92710188503041
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 0.9993788523101916,
+      "minimum_exit_snell_discriminant": 1.0853320549841783e-05
+    },
+    "gallery-glass-ior-2.5": {
+      "center_m": [
+        0.126,
+        0,
+        0
+      ],
+      "radius_m": 0.075,
+      "camera_distance_m": 0.855,
+      "ior": 2.5,
+      "pixel_count": 41858,
+      "helper_max_exit_position_error_m": 2.7359399609830694e-15,
+      "helper_max_path_length_error_m": 2.7478019859472624e-15,
+      "helper_max_direction_vector_error": 1.8776066748091776e-12,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 54.898168947267216,
+        "p50": 53.080658944987434,
+        "p95": 101.49285568684823,
+        "max": 124.64651602161675
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 0.0,
+      "minimum_exit_snell_discriminant": 1.085332054973076e-05
+    },
+    "gallery-frosted-position-ior-1.0": {
+      "center_m": [
+        0.378,
+        -0.195,
+        0
+      ],
+      "radius_m": 0.075,
+      "camera_distance_m": 0.855,
+      "ior": 1.0,
+      "pixel_count": 46274,
+      "helper_max_exit_position_error_m": 1.5282555548547895e-13,
+      "helper_max_path_length_error_m": 1.5282523510573576e-13,
+      "helper_max_direction_vector_error": 1.487129133215956e-14,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 9.089782692088263e-08,
+        "p50": 0.0,
+        "p95": 8.537736462515939e-07,
+        "max": 1.4787793334710982e-06
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 0.0,
+      "minimum_exit_snell_discriminant": 1.3709973132547404e-05
+    },
+    "gallery-frosted-position-ior-1.33": {
+      "center_m": [
+        0.378,
+        -0.195,
+        0
+      ],
+      "radius_m": 0.075,
+      "camera_distance_m": 0.855,
+      "ior": 1.33,
+      "pixel_count": 46274,
+      "helper_max_exit_position_error_m": 3.1914084536294408e-15,
+      "helper_max_path_length_error_m": 3.191891195797325e-15,
+      "helper_max_direction_vector_error": 2.013820014645757e-12,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 26.95341494916052,
+        "p50": 24.26575659250748,
+        "p95": 57.124623906113555,
+        "max": 78.44986011003412
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 0.28344210571811385,
+      "minimum_exit_snell_discriminant": 1.3709973133102515e-05
+    },
+    "gallery-frosted-position-ior-1.5": {
+      "center_m": [
+        0.378,
+        -0.195,
+        0
+      ],
+      "radius_m": 0.075,
+      "camera_distance_m": 0.855,
+      "ior": 1.5,
+      "pixel_count": 46274,
+      "helper_max_exit_position_error_m": 3.2044169659229723e-15,
+      "helper_max_path_length_error_m": 3.191891195797325e-15,
+      "helper_max_direction_vector_error": 2.0059865537077446e-12,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 34.31586521630549,
+        "p50": 31.71354902092076,
+        "p95": 69.39462170946237,
+        "max": 91.33015773776168
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 0.3430436098024809,
+      "minimum_exit_snell_discriminant": 1.3709973133102515e-05
+    },
+    "gallery-frosted-position-ior-2.5": {
+      "center_m": [
+        0.378,
+        -0.195,
+        0
+      ],
+      "radius_m": 0.075,
+      "camera_distance_m": 0.855,
+      "ior": 2.5,
+      "pixel_count": 46274,
+      "helper_max_exit_position_error_m": 3.490808494335792e-15,
+      "helper_max_path_length_error_m": 3.497202527569243e-15,
+      "helper_max_direction_vector_error": 2.086842190567406e-12,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 55.262451715249234,
+        "p50": 53.465424841912686,
+        "p95": 102.05889741825516,
+        "max": 125.30037633360217
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 0.4319272161472965,
+      "minimum_exit_snell_discriminant": 1.3709973132769449e-05
+    },
+    "isolated-sphere-ior-1.0": {
+      "center_m": [
+        0,
+        0,
+        0
+      ],
+      "radius_m": 0.25,
+      "camera_distance_m": 1.05,
+      "ior": 1.0,
+      "pixel_count": 320856,
+      "helper_max_exit_position_error_m": 3.557401486497794e-13,
+      "helper_max_path_length_error_m": 3.557432126655158e-13,
+      "helper_max_direction_vector_error": 3.5176253769938114e-14,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 1.1742901130994922e-07,
+        "p50": 0.0,
+        "p95": 8.537736462515939e-07,
+        "max": 1.2074182697257333e-06
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 0.0,
+      "minimum_exit_snell_discriminant": 9.984746396352051e-06
+    },
+    "isolated-sphere-ior-1.33": {
+      "center_m": [
+        0,
+        0,
+        0
+      ],
+      "radius_m": 0.25,
+      "camera_distance_m": 1.05,
+      "ior": 1.33,
+      "pixel_count": 320856,
+      "helper_max_exit_position_error_m": 1.0547361250057833e-15,
+      "helper_max_path_length_error_m": 1.0547118733938987e-15,
+      "helper_max_direction_vector_error": 1.3828041114062734e-12,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 24.643417102603845,
+        "p50": 22.05880048135219,
+        "p95": 52.729171437598495,
+        "max": 72.4364802530062
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 1.0,
+      "minimum_exit_snell_discriminant": 9.98474639679614e-06
+    },
+    "isolated-sphere-ior-1.5": {
+      "center_m": [
+        0,
+        0,
+        0
+      ],
+      "radius_m": 0.25,
+      "camera_distance_m": 1.05,
+      "ior": 1.5,
+      "pixel_count": 320856,
+      "helper_max_exit_position_error_m": 1.055099832292865e-15,
+      "helper_max_path_length_error_m": 1.0547118733938987e-15,
+      "helper_max_direction_vector_error": 1.4188794212994773e-12,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 31.189816734307662,
+        "p50": 28.709127175683175,
+        "p95": 63.53320988954682,
+        "max": 83.69837680919356
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 1.0,
+      "minimum_exit_snell_discriminant": 9.984746396685118e-06
+    },
+    "isolated-sphere-ior-2.5": {
+      "center_m": [
+        0,
+        0,
+        0
+      ],
+      "radius_m": 0.25,
+      "camera_distance_m": 1.05,
+      "ior": 2.5,
+      "pixel_count": 320856,
+      "helper_max_exit_position_error_m": 1.1320609229382828e-15,
+      "helper_max_path_length_error_m": 1.1102230246251565e-15,
+      "helper_max_direction_vector_error": 1.1927639484747199e-12,
+      "screen_vs_exit_angle_degrees": {
+        "mean": 49.66412412566811,
+        "p50": 47.96706084118137,
+        "p95": 92.04048125083058,
+        "max": 113.27047515324978
+      },
+      "projected_exit_full_screen_weight_fraction": 1.0,
+      "opposite_vertical_hemisphere_fraction": 0.22326526541501485,
+      "minimum_exit_snell_discriminant": 9.984746396241029e-06
+    }
+  }
+}

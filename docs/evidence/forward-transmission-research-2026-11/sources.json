@@ -1,0 +1,61 @@
+{
+  "fetched_at_utc": "2026-11-07T21:58:50.833970+00:00",
+  "sources": [
+    {
+      "repo": "google/filament",
+      "commit": "e8669b688a9381beb4f7470df828e1932d78efa6",
+      "path": "shaders/src/surface_light_indirect.fs",
+      "url": "https://github.com/google/filament/blob/e8669b688a9381beb4f7470df828e1932d78efa6/shaders/src/surface_light_indirect.fs",
+      "sha256": "fc66901ed1756bb8faf28a626ea62f0ea4ec0ca098b7daf3757d1584533fc900"
+    },
+    {
+      "repo": "google/filament",
+      "commit": "e8669b688a9381beb4f7470df828e1932d78efa6",
+      "path": "docs/Materials.md.html",
+      "url": "https://github.com/google/filament/blob/e8669b688a9381beb4f7470df828e1932d78efa6/docs/Materials.md.html",
+      "sha256": "7c28618e8a7771a2a4f3e08403226bf87e4869a39d24e1291f3d23ab051705ae"
+    },
+    {
+      "repo": "KhronosGroup/glTF",
+      "commit": "9ec408bd03f6c622a026a8989d24257a83311835",
+      "path": "extensions/2.0/Khronos/KHR_materials_volume/README.md",
+      "url": "https://github.com/KhronosGroup/glTF/blob/9ec408bd03f6c622a026a8989d24257a83311835/extensions/2.0/Khronos/KHR_materials_volume/README.md",
+      "sha256": "390b9d9d8fdd86d9b612de41e65c293df07df3c050084942bfc62822d47415e9"
+    },
+    {
+      "repo": "KhronosGroup/glTF-Sample-Renderer",
+      "commit": "93d0a94da6728ba36090f2526f212e11c26183aa",
+      "path": "source/Renderer/shaders/pbr.frag",
+      "url": "https://github.com/KhronosGroup/glTF-Sample-Renderer/blob/93d0a94da6728ba36090f2526f212e11c26183aa/source/Renderer/shaders/pbr.frag",
+      "sha256": "49bcdd2a3a0652d505b5b0b534a10918c19b0a3f25c07f1f02c2a5e85764f2c4"
+    },
+    {
+      "repo": "KhronosGroup/glTF-Sample-Renderer",
+      "commit": "93d0a94da6728ba36090f2526f212e11c26183aa",
+      "path": "source/Renderer/shaders/functions.glsl",
+      "url": "https://github.com/KhronosGroup/glTF-Sample-Renderer/blob/93d0a94da6728ba36090f2526f212e11c26183aa/source/Renderer/shaders/functions.glsl",
+      "sha256": "2458b24dcfb12399ca791a902960baa3acfbd9a26412c29a2225e796b94286aa"
+    },
+    {
+      "repo": "Unity-Technologies/Graphics",
+      "commit": "0efc28ea742b1966b9dd9cc4489e58b986a13faf",
+      "path": "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/Lit.hlsl",
+      "url": "https://github.com/Unity-Technologies/Graphics/blob/0efc28ea742b1966b9dd9cc4489e58b986a13faf/Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/Lit.hlsl",
+      "sha256": "2818148948833e2605dc3321ffd9bf1f69cfc2a784fdd6567a5da84565fcf004"
+    },
+    {
+      "repo": "KhronosGroup/glTF-Sample-Renderer",
+      "commit": "93d0a94da6728ba36090f2526f212e11c26183aa",
+      "path": "source/Renderer/shaders/ibl.glsl",
+      "url": "https://github.com/KhronosGroup/glTF-Sample-Renderer/blob/93d0a94da6728ba36090f2526f212e11c26183aa/source/Renderer/shaders/ibl.glsl",
+      "sha256": "8e50b16e8f487c2e044f3e7b44a473d11ba8f7cf82c85a97527e881fb898bb4e"
+    },
+    {
+      "repo": "KhronosGroup/glTF-Sample-Renderer",
+      "commit": "93d0a94da6728ba36090f2526f212e11c26183aa",
+      "path": "source/Renderer/shaders/punctual.glsl",
+      "url": "https://github.com/KhronosGroup/glTF-Sample-Renderer/blob/93d0a94da6728ba36090f2526f212e11c26183aa/source/Renderer/shaders/punctual.glsl",
+      "sha256": "a1b4990877dc76f57fa0984c1fe7dc8158a409a0384873e4b8c3e7edac6946c8"
+    }
+  ]
+}
