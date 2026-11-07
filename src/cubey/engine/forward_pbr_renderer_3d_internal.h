@@ -179,7 +179,8 @@ struct ForwardPbrRenderer3D::Impl {
                          const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
                          const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
                          const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean,
-                         const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output);
+                         const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output,
+                         const std::optional<ForwardPbrRenderer3DSceneReadback>& readback);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,

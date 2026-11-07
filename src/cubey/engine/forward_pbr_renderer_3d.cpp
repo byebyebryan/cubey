@@ -83,6 +83,14 @@ void validate_forward_pbr_renderer_3d_render_request(
     if (request.scene_resources.meshes == nullptr || request.scene_resources.materials == nullptr) {
         throw std::runtime_error("forward PBR render request requires scene resources");
     }
+    if (request.settings.transmission_source != ForwardPbrTransmissionSource::Screen &&
+        request.settings.transmission_source != ForwardPbrTransmissionSource::Environment)
+        throw std::runtime_error("unknown forward transmission source");
+    if (request.scene_readback && (request.scene_readback->buffer == VK_NULL_HANDLE ||
+                                   request.scene_readback->byte_size <
+                                       VkDeviceSize{request.target.color_target.extent.width} *
+                                           request.target.color_target.extent.height * 8U))
+        throw std::runtime_error("scene HDR readback requires a complete RGBA16F buffer");
     if (request.settings.opaque_linear_output &&
         ((request.target.color_target.format != VK_FORMAT_R16G16B16A16_SFLOAT &&
           request.target.color_target.format != VK_FORMAT_R32G32B32A32_SFLOAT) ||
@@ -220,7 +228,7 @@ forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInf
             {
                 info.environment.diffuse_irradiance_sh_enabled ? 1.0F : 0.0F,
                 info.environment_blend,
-                0.0F,
+                static_cast<float>(info.transmission_source),
                 0.0F,
             },
         .backdrop_reflection_radiance_strength = {info.backdrop_reflection.radiance,

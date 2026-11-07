@@ -152,8 +152,10 @@ struct LastBufferAccess {
 
 [[nodiscard]] bool needs_texture_barrier(RenderGraphTextureUsage previous,
                                          RenderGraphTextureUsage next) {
+    // Read-only uses can still require different layouts (sample, storage,
+    // transfer). Only consecutive reads with the same usage can omit a barrier.
     return detail::render_graph_texture_usage_traits(previous).writes ||
-           detail::render_graph_texture_usage_traits(next).writes;
+           detail::render_graph_texture_usage_traits(next).writes || previous != next;
 }
 
 [[nodiscard]] bool needs_buffer_barrier(RenderGraphBufferUsage previous,

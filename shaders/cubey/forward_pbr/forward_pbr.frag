@@ -109,6 +109,9 @@ const uint CUBEY_PBR_DEBUG_EMISSIVE = 7u;
 const uint CUBEY_PBR_DEBUG_SHADOW = 8u;
 const uint CUBEY_PBR_DEBUG_ALPHA = 9u;
 const uint CUBEY_PBR_DEBUG_UV0 = 10u;
+const uint CUBEY_PBR_DEBUG_TRANSMISSION_RAY = 11u;
+const uint CUBEY_PBR_DEBUG_TRANSMISSION_EXIT = 12u;
+const uint CUBEY_PBR_DEBUG_TRANSMISSION_RADIANCE = 13u;
 
 bool cubey_pbr_has_material_texture(uint flag) {
     return (uint(material.material_model.w + 0.5) & flag) != 0u;
@@ -189,6 +192,13 @@ float cubey_pbr_transmission_environment_lod(float perceptual_roughness,
 
 vec3 cubey_pbr_transmission_radiance_at_lod(vec2 screen_uv, vec3 fallback_direction,
                                            float pyramid_lod, float environment_lod) {
+    // Explicit environment transport uses the outgoing ray, independently of
+    // whether the estimated exit projects inside the camera image. Keep the
+    // legacy screen path below unchanged, including its radiance conventions.
+    if (scene.environment_options.z > 0.5) {
+        return cubey_pbr_prefiltered_environment(fallback_direction, environment_lod) *
+               scene.environment_intensity_mip_count.x;
+    }
     vec2 extent = vec2(textureSize(refraction_radiance, 0));
     vec3 screen_radiance =
         textureLod(refraction_radiance, clamp(screen_uv, 0.0, 1.0), pyramid_lod).rgb;
@@ -709,6 +719,27 @@ void main() {
     vec3 emissive =
         texture(emissive_texture, cubey_pbr_transformed_uv(material.emissive_transform)).rgb *
         material.emissive_alpha_cutoff.rgb;
+    if (debug_view >= CUBEY_PBR_DEBUG_TRANSMISSION_RAY &&
+        debug_view <= CUBEY_PBR_DEBUG_TRANSMISSION_RADIANCE) {
+        CubeyPbrVolumeTransmissionRay ray = cubey_pbr_volume_transmission_ray(
+            normal, view_direction, volume_thickness, material.material_model.x,
+            frag_model_scale);
+        bool valid = transmission > 0.0;
+        if (volume_thickness <= 0.0) ray.fallback_direction = -view_direction;
+        if (debug_view == CUBEY_PBR_DEBUG_TRANSMISSION_RADIANCE) {
+            vec2 uv = gl_FragCoord.xy / vec2(textureSize(refraction_radiance, 0));
+            if (ray.world_path_distance > 0.0)
+                uv = cubey_pbr_project_refraction_exit(frag_world_position + ray.world_offset);
+            out_color = vec4(valid ? cubey_pbr_transmission_radiance_at_lod(
+                uv, ray.fallback_direction, 0.0, 0.0) : vec3(0.0), 1.0);
+            return;
+        }
+        out_color = !valid ? vec4(0.0)
+                    : debug_view == CUBEY_PBR_DEBUG_TRANSMISSION_RAY
+                        ? vec4(ray.fallback_direction, ray.world_path_distance)
+                    : vec4(frag_world_position + ray.world_offset, 1.0);
+        return;
+    }
     if (debug_view != CUBEY_PBR_DEBUG_FINAL) {
         out_color = cubey_pbr_debug_output(debug_view, base_color, metallic, roughness,
                                            geometric_normal, normal, occlusion, emissive,

@@ -545,6 +545,32 @@ void test_render_graph_declares_compute_storage_buffer_flow() {
             "storage buffer read usage should be preserved");
 }
 
+void test_render_graph_transitions_read_only_texture_layouts() {
+    cubey::render::RenderGraphBuilder graph;
+    const auto texture = graph.create_texture(color_texture_desc("HDR scene"));
+    graph.add_pass("write", RenderGraphQueueDomain::Graphics).write_color(texture);
+    graph.add_pass("sample", RenderGraphQueueDomain::Graphics).read_texture(texture);
+    graph.add_pass("copy", RenderGraphQueueDomain::Transfer).transfer_read_texture(texture);
+    graph.add_pass("storage", RenderGraphQueueDomain::Compute).read_storage_texture(texture);
+    graph.add_pass("sample again", RenderGraphQueueDomain::Graphics).read_texture(texture);
+    graph.add_pass("same layout", RenderGraphQueueDomain::Graphics).read_texture(texture);
+    const auto compiled = graph.compile();
+    const std::array expected{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
+                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    for (std::size_t i = 0; i < expected.size(); ++i) {
+        const auto& barriers = compiled.passes()[i + 1].before_texture_barriers;
+        require(barriers.size() == 1, "different read-only layouts require a transition");
+        require(barriers.front().destination_state.layout == expected[i],
+                "read-only transition must match the next consumer layout");
+        if (i > 0)
+            require(barriers.front().source_state.layout == expected[i - 1],
+                    "read-only transition must retain the prior layout");
+    }
+    require(compiled.passes()[5].before_texture_barriers.empty(),
+            "same-usage consecutive reads still omit barriers");
+}
+
 void test_render_graph_preserves_material_pass_metadata() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle target =

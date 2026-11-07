@@ -73,6 +73,15 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     require_global_resources();
     require_swapchain_resources();
     validate_forward_pbr_renderer_3d_render_request(request);
+    if (request.scene_readback) {
+        const bool full = config_.scene_color_format == VK_FORMAT_R32G32B32A32_SFLOAT;
+        if ((!full && config_.scene_color_format != VK_FORMAT_R16G16B16A16_SFLOAT) ||
+            request.scene_readback->byte_size <
+                VkDeviceSize{request.target.color_target.extent.width} *
+                    request.target.color_target.extent.height * (full ? 16U : 8U))
+            throw std::runtime_error(
+                "scene HDR readback requires a complete RGBA16F/RGBA32F buffer");
+    }
 
     ForwardPbrRenderer3DFrameMetrics* const metrics = request.metrics;
     if (metrics != nullptr) {
@@ -156,6 +165,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         .environment_rotation_degrees = settings.environment_rotation_degrees,
         .debug_view = settings.debug_view,
         .backdrop_reflection = backdrop_reflection,
+        .transmission_source = settings.transmission_source,
     });
     scene_material().upload(target.frame_slot, scene_uniforms);
     if (draw_plan.has_transmission()) {
@@ -204,7 +214,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         target.color_final_state, frame_plans, *resources.meshes, resources.frame_meshes,
         resources.deformation_commands, *resources.materials, settings.debug_view,
         settings.background_mode, settings.atmosphere_clouds, terrain, ocean, draw_plan,
-        settings.opaque_linear_output);
+        settings.opaque_linear_output, request.scene_readback);
     const Clock::time_point render_graph_end =
         metrics != nullptr ? Clock::now() : Clock::time_point{};
     if (metrics != nullptr) {
@@ -268,7 +278,8 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
     const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
     const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean,
-    const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output) {
+    const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output,
+    const std::optional<ForwardPbrRenderer3DSceneReadback>& readback) {
     if (frame_plans.shadow == nullptr || frame_plans.scene == nullptr) {
         throw std::runtime_error("forward PBR render graph requires shadow and scene plans");
     }
@@ -467,6 +478,31 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                     render::resolved_color_target_view(context, post_scene_color);
                 record_scene_alpha_pass(context.recorder(), target, scene_plan, frame_slot,
                                         mesh_resolver, materials, draw_plan);
+            });
+    }
+    if (readback) {
+        const auto buffer = graph.import_buffer(
+            {.label = "scene HDR readback", .byte_size = readback->byte_size}, readback->buffer,
+            render::RenderGraphBufferState{.access_mask = VK_ACCESS_HOST_READ_BIT,
+                                           .stage_mask = VK_PIPELINE_STAGE_HOST_BIT},
+            render::RenderGraphBufferState{.access_mask = VK_ACCESS_HOST_READ_BIT,
+                                           .stage_mask = VK_PIPELINE_STAGE_HOST_BIT});
+        graph.add_pass("scene HDR readback", render::RenderGraphQueueDomain::Transfer)
+            .transfer_read_texture(post_scene_color)
+            .transfer_write_buffer(buffer)
+            .execute([post_scene_color, buffer, extent = color_target.extent](
+                         const render::RenderGraphExecutionContext& context) {
+                const VkBufferImageCopy copy{
+                    .bufferOffset = 0,
+                    .bufferRowLength = 0,
+                    .bufferImageHeight = 0,
+                    .imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+                    .imageOffset = {0, 0, 0},
+                    .imageExtent = {extent.width, extent.height, 1}};
+                vkCmdCopyImageToBuffer(context.recorder().handle(),
+                                       context.resolved_texture(post_scene_color).image,
+                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                       context.resolved_buffer(buffer).buffer, 1, &copy);
             });
     }
     if (!opaque_linear_output)

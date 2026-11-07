@@ -70,6 +70,11 @@ struct ForwardPbrRenderer3DTargetResourcesInfo {
     const render::PbrMaterialTable* materials = nullptr;
 };
 
+enum class ForwardPbrTransmissionSource : std::uint32_t {
+    Screen = 0,
+    Environment = 1,
+};
+
 struct ForwardPbrRenderer3DSceneUniformInfo {
     math::Mat4 view_projection{1.0F};
     math::Mat4 light_view_projection{1.0F};
@@ -82,6 +87,7 @@ struct ForwardPbrRenderer3DSceneUniformInfo {
     float environment_rotation_degrees = 0.0F;
     render::PbrDebugView debug_view = render::PbrDebugView::Final;
     BackdropReflection backdrop_reflection{};
+    ForwardPbrTransmissionSource transmission_source = ForwardPbrTransmissionSource::Screen;
 };
 
 struct ForwardPbrRenderer3DSkyboxUniformInfo {
@@ -161,6 +167,9 @@ struct ForwardPbrRenderer3DSettings {
     // be linear scene HDR; retains sampled depth and omits the display pass.
     // Alpha/transmission/cloud composition is deliberately not accepted here.
     bool opaque_linear_output = false;
+    // Screen retains the legacy projected-exit lookup and edge fallback.
+    // Environment resolves the estimated exit direction against the shared probe.
+    ForwardPbrTransmissionSource transmission_source = ForwardPbrTransmissionSource::Screen;
 };
 
 // Caller-owned per-frame renderer evidence. The renderer fills this snapshot
@@ -191,12 +200,21 @@ struct ForwardPbrRenderer3DSceneTargetInfo {
     VkFormat depth_format = VK_FORMAT_UNDEFINED;
 };
 
+// Optional diagnostic export of same-frame, pre-display RGBA16F/RGBA32F scene data.
+// Caller owns a TRANSFER_DST buffer sized for the configured scene color format,
+// retires prior uses before recording, and waits for completion before reading.
+struct ForwardPbrRenderer3DSceneReadback {
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkDeviceSize byte_size = 0;
+};
+
 struct ForwardPbrRenderer3DRenderRequest {
     ForwardPbrRenderer3DTargetInfo target{};
     ForwardPbrRenderer3DViewInfo view{};
     ForwardPbrRenderer3DSceneResources scene_resources{};
     ForwardPbrRenderer3DSettings settings{};
     ForwardPbrRenderer3DFrameMetrics* metrics = nullptr;
+    std::optional<ForwardPbrRenderer3DSceneReadback> scene_readback{};
 };
 
 struct ForwardPbrRenderer3DFramePlans {

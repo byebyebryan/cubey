@@ -47,6 +47,11 @@ enum class PbrDebugView : std::uint32_t {
     Shadow = 8,
     Alpha = 9,
     Uv0 = 10,
+    // Raw pre-display diagnostics: outgoing xyz and Beer path length in w;
+    // estimated world exit xyz and validity in w. Prefer scene HDR readback.
+    TransmissionRay = 11,
+    TransmissionExit = 12,
+    TransmissionRadiance = 13,
 };
 
 enum class PbrMaterialTextureFlag : std::uint32_t {

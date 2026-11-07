@@ -278,6 +278,12 @@ std::string_view pbr_debug_view_name(PbrDebugView view) {
         return "alpha";
     case PbrDebugView::Uv0:
         return "uv0";
+    case PbrDebugView::TransmissionRay:
+        return "transmission-ray";
+    case PbrDebugView::TransmissionExit:
+        return "transmission-exit";
+    case PbrDebugView::TransmissionRadiance:
+        return "transmission-radiance";
     }
     return "final";
 }
@@ -290,7 +296,8 @@ PbrDebugView pbr_debug_view_from_name(std::string_view name) {
          {PbrDebugView::Final, PbrDebugView::BaseColor, PbrDebugView::Normal,
           PbrDebugView::GeometricNormal, PbrDebugView::Roughness, PbrDebugView::Metallic,
           PbrDebugView::Occlusion, PbrDebugView::Emissive, PbrDebugView::Shadow,
-          PbrDebugView::Alpha, PbrDebugView::Uv0}) {
+          PbrDebugView::Alpha, PbrDebugView::Uv0, PbrDebugView::TransmissionRay,
+          PbrDebugView::TransmissionExit, PbrDebugView::TransmissionRadiance}) {
         if (name == pbr_debug_view_name(view)) {
             return view;
         }
@@ -321,6 +328,9 @@ PbrDebugView next_pbr_debug_view(PbrDebugView view) {
     case PbrDebugView::Alpha:
         return PbrDebugView::Uv0;
     case PbrDebugView::Uv0:
+    case PbrDebugView::TransmissionRay:
+    case PbrDebugView::TransmissionExit:
+    case PbrDebugView::TransmissionRadiance:
         return PbrDebugView::Final;
     }
     return PbrDebugView::Final;

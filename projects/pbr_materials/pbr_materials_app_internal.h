@@ -130,6 +130,9 @@ class PbrMaterialsApp {
     render::ViewRayBasis3D view_rays(VkExtent2D) const;
     std::string ui_error_;
     char recipe_path_[512] = "outputs/material-recipe.json";
+    char view_path_[512] = "outputs/forward-material-view.json";
+    std::optional<vulkan::Buffer> hdr_readback_;
+    void save_view(const std::filesystem::path& path) const;
     void draw_ui();
     void refresh_specimens();
     void leave_presentation();

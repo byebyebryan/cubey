@@ -6,6 +6,26 @@
 #include <iostream>
 
 namespace cubey::projects::pbr_materials::detail {
+void PbrMaterialsApp::save_view(const std::filesystem::path& path) const {
+    auto saved = config_;
+    saved.yaw += orbit_controller_.yaw();
+    saved.pitch = orbit_controller_.pitch();
+    saved.distance = orbit_controller_.distance();
+    saved.debug_view = render::pbr_debug_view_name(debug_view_);
+    saved.orbit_degrees = 0;
+    saved.presentation_time = config_.presentation.empty() ? -1 : presentation_seconds_;
+    saved.common = {};
+    saved.hdr_output.clear();
+    saved.view_output.clear();
+    saved.recipe_output.clear();
+    saved.stress_edits = 0;
+    if (selected_ >= 0)
+        saved.material = catalog_.at(static_cast<std::size_t>(selected_)).id;
+    else
+        saved.material = "gallery";
+    pbr_materials_config_schema(saved).write_template(path);
+}
+
 render::PbrMaterialDefinition PbrMaterialsApp::material_definition(std::size_t i) const {
     std::string_view shape = config_.specimen;
     if (!config_.presentation.empty())
@@ -247,6 +267,10 @@ void PbrMaterialsApp::draw_ui() {
             if (environment == 0)
                 config_.lighting_cycle = "frozen";
         }
+        const char* sources[]{"Screen", "Environment"};
+        int source = config_.transmission_source == "environment" ? 1 : 0;
+        if (ImGui::Combo("Transmission source", &source, sources, 2))
+            config_.transmission_source = source == 1 ? "environment" : "screen";
         const char* shapes[]{"sphere", "block", "swatch", "cut-block"};
         int shape = config_.specimen == "block"       ? 1
                     : config_.specimen == "swatch"    ? 2
@@ -398,6 +422,15 @@ void PbrMaterialsApp::draw_ui() {
         }
         if (!ui_error_.empty())
             ImGui::TextWrapped("%s", ui_error_.c_str());
+        ImGui::InputText("View path", view_path_, sizeof(view_path_));
+        if (ImGui::Button("Save view")) {
+            try {
+                save_view(view_path_);
+                ui_error_.clear();
+            } catch (const std::exception& e) {
+                ui_error_ = e.what();
+            }
+        }
     }
     ImGui::End();
 }

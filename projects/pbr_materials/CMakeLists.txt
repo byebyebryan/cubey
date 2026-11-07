@@ -30,6 +30,19 @@ cubey_add_app_target(
 target_compile_definitions(cubey_project_pbr_materials PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
 
 if(BUILD_TESTING)
+    cubey_add_png_capture_test(pbr_materials_environment_transmission_depth_reuse
+        cubey_project_pbr_materials "${CMAKE_CURRENT_BINARY_DIR}/environment-depth-reuse.png"
+        128 96 --require-validation --frames 4 --material gallery --lighting clear
+        --transmission-source environment)
+    cubey_add_png_capture_test(pbr_materials_transmission_hdr_readback
+        cubey_project_pbr_materials "${CMAKE_CURRENT_BINARY_DIR}/transmission-hdr-readback.png"
+        128 96 --require-validation --frames 1 --material glass --lighting clear
+        --debug-view transmission-ray
+        --hdr-output "${CMAKE_CURRENT_BINARY_DIR}/transmission-hdr-readback.f32")
+    set_tests_properties(pbr_materials_environment_transmission_depth_reuse
+        pbr_materials_transmission_hdr_readback PROPERTIES
+        ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1"
+        FAIL_REGULAR_EXPRESSION "vulkan validation error")
     foreach(material plain gallery)
         cubey_add_png_capture_test(pbr_materials_depth_reuse_${material} cubey_project_pbr_materials
             "${CMAKE_CURRENT_BINARY_DIR}/depth-reuse-${material}.png" 128 96

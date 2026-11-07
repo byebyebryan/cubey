@@ -1,5 +1,7 @@
 #include "pbr_materials_app_internal.h"
 #include <algorithm>
+#include <fstream>
+#include <iostream>
 
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
@@ -15,9 +17,7 @@ using cubey::host::FrameStatsSample;
 PbrMaterialsApp::PbrMaterialsApp(PbrMaterialsConfig config)
     : config_(std::move(config)),
       debug_view_(render::pbr_debug_view_from_name(config_.debug_view)) {
-    orbit_controller_.set_home_distance(
-        config_.material == "gallery" && config_.presentation.empty() ? kCameraDistance
-                                                                      : config_.distance);
+    orbit_controller_.set_home_distance(config_.distance);
     orbit_controller_.set_pitch(config_.pitch);
     if (config_.specimen != "sphere" && config_.specimen != "block" &&
         config_.specimen != "swatch" && config_.specimen != "cut-block")
@@ -37,6 +37,8 @@ PbrMaterialsApp::PbrMaterialsApp(PbrMaterialsConfig config)
             "lighting cycle requires a presentation with clear/clouds lighting");
     if (config_.presentation_time >= 0)
         orbit_controller_.toggle_pause();
+    if (!config_.hdr_output.empty() && (!config_.common.headless || config_.common.frames != 1))
+        throw std::invalid_argument("HDR diagnostic output requires headless, one-frame capture");
 }
 
 int PbrMaterialsApp::run() {
@@ -133,6 +135,10 @@ int PbrMaterialsApp::run_headless() {
             cubey::host::headless_capture_frame_slot_count(config_.common));
         create_swapchain_resources(ctx.device(), ctx.render_target().extent,
                                    ctx.render_target().format);
+        if (!config_.hdr_output.empty())
+            hdr_readback_.emplace(ctx.device(), vulkan::readback_buffer_config(
+                                                    VkDeviceSize{ctx.render_target().extent.width} *
+                                                    ctx.render_target().extent.height * 16U));
         update_scene_transform({});
     };
     callbacks.record_frame = [this](cubey::host::HeadlessPngContext& ctx,
@@ -151,7 +157,23 @@ int PbrMaterialsApp::run_headless() {
                      f.index);
         config_.yaw = saved_yaw;
     };
-    callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_all_resources(); };
+    callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
+        if (hdr_readback_) {
+            std::vector<std::byte> bytes(static_cast<std::size_t>(hdr_readback_->size()));
+            hdr_readback_->download(bytes.data(), hdr_readback_->size());
+            if (config_.hdr_output.has_parent_path())
+                std::filesystem::create_directories(config_.hdr_output.parent_path());
+            std::ofstream file(config_.hdr_output, std::ios::binary);
+            file.write(reinterpret_cast<const char*>(bytes.data()),
+                       static_cast<std::streamsize>(bytes.size()));
+            if (!file)
+                throw std::runtime_error("failed to write scene HDR diagnostic output");
+            hdr_readback_.reset();
+        }
+        if (!config_.view_output.empty())
+            save_view(config_.view_output);
+        destroy_all_resources();
+    };
     return cubey::host::HeadlessPngHost(
                {.run_config = config_.common, .output_format = VK_FORMAT_R8G8B8A8_UNORM},
                std::move(callbacks))

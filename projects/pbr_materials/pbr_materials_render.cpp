@@ -42,6 +42,9 @@ void PbrMaterialsApp::record_frame(const cubey::vulkan::Device& device, VkComman
                                                      config_.pbr.environment_rotation_degrees,
                                                  .exposure = config_.pbr.exposure,
                                                  .debug_view = debug_view_};
+    settings.transmission_source = config_.transmission_source == "environment"
+                                       ? ForwardPbrTransmissionSource::Environment
+                                       : ForwardPbrTransmissionSource::Screen;
     if (config_.environment != "studio") {
         forward_pbr_renderer().update_environment_frame(
             device, slot,
@@ -89,6 +92,10 @@ void PbrMaterialsApp::record_frame(const cubey::vulkan::Device& device, VkComman
                 .materials = &materials_.at(slot.index),
             },
         .settings = settings,
+        .scene_readback = hdr_readback_ ? std::optional{ForwardPbrRenderer3DSceneReadback{
+                                              .buffer = hdr_readback_->handle(),
+                                              .byte_size = hdr_readback_->size()}}
+                                        : std::nullopt,
     });
     whole.reset();
     if (present)

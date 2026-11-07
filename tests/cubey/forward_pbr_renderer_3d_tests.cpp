@@ -1029,6 +1029,12 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
             "forward PBR scene uniforms should enable diffuse SH only when requested");
     require(uniforms.environment_options.y == 0.35F,
             "forward PBR scene uniforms should pack the environment crossfade");
+    require(uniforms.environment_options.z == 0.0F,
+            "existing consumers retain projected-screen transmission");
+    const auto environment_transmission = cubey::forward_pbr_renderer_3d_scene_uniforms(
+        {.transmission_source = cubey::ForwardPbrTransmissionSource::Environment});
+    require(environment_transmission.environment_options.z == 1.0F,
+            "environment transmission is an explicit frame setting");
     require(uniforms.backdrop_reflection_radiance_strength ==
                 cubey::math::Vec4{0.21F, 0.18F, 0.15F, 0.72F},
             "forward PBR scene uniforms should pack backdrop reflection radiance and strength");

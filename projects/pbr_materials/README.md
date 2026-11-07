@@ -66,6 +66,15 @@ for the selected specimen: 0.5 units for sphere/block, 0.036 for the swatch and
 shared glass remains plain neutral, roughness 0.05, with editable IOR and
 attenuation. It does not introduce a new transport solver.
 
+`--transmission-source environment` resolves the distant probe along the
+estimated exit ray; `screen` retains the default camera-image lookup with edge
+fallback. The [RT comparison presets](presets/rt-comparison/gallery-clear.json)
+explicitly select environment transmission under the shared clear atmosphere.
+The UI source selector and **Save view** (`--view-output` for headless captures)
+retain this choice without changing recipes. See the
+[shared workshop guide](../../docs/notes/raytracing-material-workshop-guide.md)
+for replay, raw HDR diagnostics and optical limits.
+
 Live edits use one preallocated opt-in material table per retired frame slot.
 Each holds one permanent handle per catalog entry; selecting opaque/glass switches
 handles. Routing changes within a handle are rejected before publication.

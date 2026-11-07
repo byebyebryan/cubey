@@ -20,9 +20,12 @@
 namespace cubey::projects::pbr_materials::detail {
 namespace {
 
-cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
+cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config(bool diagnostics) {
     return cubey::forward_pbr_renderer_3d_config_from_shader_directory(
-        CUBEY_PBR_MATERIALS_SHADER_DIR, {.shadow_extent = kShadowMapSize});
+        CUBEY_PBR_MATERIALS_SHADER_DIR,
+        {.shadow_extent = kShadowMapSize,
+         .scene_color_format =
+             diagnostics ? VK_FORMAT_R32G32B32A32_SFLOAT : VK_FORMAT_R16G16B16A16_SFLOAT});
 }
 
 } // namespace
@@ -47,12 +50,14 @@ void PbrMaterialsApp::create_global_resources_if_needed(const cubey::vulkan::Dev
     create_ibl_resources(device, gpu);
     create_environment(device, gpu, frame_slot_count);
     create_scene();
+    std::cout << "pbr_materials: transmission_source=" << config_.transmission_source
+              << " hdr_output_format=" << (config_.hdr_output.empty() ? "none" : "RGBA32F") << '\n';
     if (!config_.common.profile_output_prefix.empty()) {
         whole_profiler_.emplace(device, frame_slot_count, 1);
         pass_profiler_.emplace(device, frame_slot_count, 32);
     }
-    forward_pbr_renderer_ =
-        &engine_.renderers().create_forward_pbr_renderer_3d(forward_pbr_renderer_3d_config());
+    forward_pbr_renderer_ = &engine_.renderers().create_forward_pbr_renderer_3d(
+        forward_pbr_renderer_3d_config(!config_.hdr_output.empty()));
     forward_pbr_renderer().create_global_resources(
         device,
         {.environment_textures = config_.environment == "studio"

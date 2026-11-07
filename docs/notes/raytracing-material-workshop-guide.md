@@ -42,11 +42,36 @@ The scene route traces GGX specular chains and neighboring bodies with local
 visibility. It retains shared diffuse lighting but launches no diffuse GI rays.
 Cached and traced specular contributions are not added together.
 
-Forward glass estimates thickness and uses filtered environment optics. SDF
+The forward comparison presets explicitly select `--transmission-source environment`:
+glass resolves the shared probe along its estimated sphere exit ray. Ordinary
+forward/glTF consumers retain `screen`, the projected camera-image lookup with
+an environment fallback at viewport edges. Neither mode traces neighboring
+objects. Forward glass estimates thickness and uses filtered environment optics. SDF
 measures central-path segments with its existing filtered optical model. RT uses
 geometric interfaces, sharp V1 glass and explicitly rough V2 transmission.
 Procedural footprint conservatism also differs; compare component evidence and
 local coordinates before attributing a whole-image difference to material data.
+
+The [forward transmission research](forward-transmission-research-plan.md) and
+[execution record](forward-transmission-progress.md) explain this distinction.
+Forward's estimated ray remains sensitive to its shading normal and approximate
+shape. The RGBA8 default normal texture tilts the normal by about .318 degrees;
+the source-selection change preserves that legacy behavior. Rough probe LODs
+remain an approximation of dielectric transmission, not a sampled rough BTDF.
+
+Forward's **Transmission source** control changes this frame setting without
+editing recipes. **Save view** and `--view-output path.json` retain it with the
+camera and frozen presentation time; reload using `--config`. Recipe changes
+still need a separate recipe export. A view does not serialize all edited
+materials or a family-filtered subset of the gallery.
+
+For component qualification only, forward `--hdr-output file.f32 --headless --frames 1`
+exports tightly packed little-endian RGBA32F before the display pass. This opts
+the diagnostic scene and refraction pyramid into full precision; ordinary runs
+retain RGBA16F. `--debug-view transmission-ray` stores outgoing direction xyz
+and Beer path length w, `transmission-exit` stores estimated exit xyz and validity
+w, and `transmission-radiance` isolates the selected source at mip zero. These
+raw signed diagnostics are for numerical inspection, not final-color PNGs.
 
 ## Native operation and recipes
 

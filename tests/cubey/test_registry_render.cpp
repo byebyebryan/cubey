@@ -118,6 +118,7 @@ void test_render_graph_frame_resources_reject_invalid_slots();
 void test_render_graph_frame_resources_replace_one_slot_without_disturbing_another();
 void test_render_graph_imports_color_and_depth_targets();
 void test_render_graph_omits_read_after_read_barriers();
+void test_render_graph_transitions_read_only_texture_layouts();
 void test_render_graph_preserves_material_pass_metadata();
 void test_render_graph_recorder_access_rejects_recorderless_execution();
 void test_render_graph_rejects_attachment_usage_outside_graphics_pass();
@@ -247,6 +248,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_compiled_reports_structure_metrics),
         CUBEY_TEST(test_render_graph_compiled_precomputes_resource_usage_signature),
         CUBEY_TEST(test_render_graph_omits_read_after_read_barriers),
+        CUBEY_TEST(test_render_graph_transitions_read_only_texture_layouts),
         CUBEY_TEST(test_render_graph_storage_read_write_initializes_transient_buffers),
         CUBEY_TEST(test_render_graph_storage_read_write_initializes_transient_textures),
         CUBEY_TEST(test_render_graph_preserves_material_pass_metadata),

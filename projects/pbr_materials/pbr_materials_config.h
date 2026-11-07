@@ -21,6 +21,8 @@ struct PbrMaterialsConfig {
     }();
     std::string material = "gallery", specimen = "sphere", environment = "studio";
     std::string sphere_density = "standard";
+    std::string transmission_source = "screen";
+    std::filesystem::path hdr_output, view_output;
     std::filesystem::path recipe_input, recipe_output;
     float yaw = 0, pitch = .15F, distance = 1.05F, roughness = -1, pattern_scale = -1;
     float orbit_degrees = 0;
@@ -70,6 +72,14 @@ inline cubey::config::Schema pbr_materials_config_schema(PbrMaterialsConfig& con
                              "Opt-in comparison mesh resolution.", cubey::config::ValueType::Enum);
     density.enum_values = {"standard", "dense"};
     builder.bind(density, config.sphere_density);
+    auto source = pbr_materials_option(
+        "transmission_source", "--transmission-source", "Transmission source", "Workshop",
+        "Projected screen radiance with edge fallback, or distant environment along the exit ray.",
+        cubey::config::ValueType::Enum);
+    source.enum_values = {"screen", "environment"};
+    builder.bind(source, config.transmission_source);
+    bind(config.hdr_output, "hdr_output", "--hdr-output", cubey::config::ValueType::Path);
+    bind(config.view_output, "view_output", "--view-output", cubey::config::ValueType::Path);
     bind(config.environment, "environment", "--lighting", cubey::config::ValueType::String);
     bind(config.recipe_input, "recipe_input", "--recipe-input", cubey::config::ValueType::Path);
     bind(config.recipe_output, "recipe_output", "--recipe-output", cubey::config::ValueType::Path);
@@ -99,6 +109,8 @@ inline PbrMaterialsConfig parse_pbr_materials_config(int argc, char** argv,
     cubey::config::ParseResult parsed;
     auto c = cubey::host::parse_configured_app<PbrMaterialsConfig>(
         argc, argv, pbr_materials_config_schema, &parsed);
+    if (c.material == "gallery" && c.presentation.empty() && !parsed.path_was_assigned("distance"))
+        c.distance = 3.3F;
     if (!c.presentation.empty()) {
         if (!parsed.path_was_assigned("distance"))
             c.distance = 2;

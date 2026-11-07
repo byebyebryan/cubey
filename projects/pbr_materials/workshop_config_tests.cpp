@@ -26,6 +26,28 @@ int main() {
               {"--material", "marble", "--no-pattern", "--no-bump", "--lighting", "clear"});
     require(!mesh.pattern && !mesh.bump && mesh.environment == "clear");
     require(mesh.sphere_density == "standard");
+    require(mesh.transmission_source == "screen");
+    const auto environment_source =
+        parse(pbr_materials::parse_pbr_materials_config, {"--transmission-source", "environment"});
+    require(environment_source.transmission_source == "environment");
+    auto source_copy = pbr_materials::PbrMaterialsConfig{};
+    auto source_document = environment_source;
+    const auto document =
+        pbr_materials::pbr_materials_config_schema(source_document).template_json();
+    pbr_materials::pbr_materials_config_schema(source_copy).apply_json(document);
+    require(source_copy.transmission_source == "environment");
+    bool invalid_source = false;
+    try {
+        (void)parse(pbr_materials::parse_pbr_materials_config,
+                    {"--transmission-source", "automatic"});
+    } catch (const std::runtime_error&) {
+        invalid_source = true;
+    }
+    require(invalid_source);
+    require(parse(pbr_materials::parse_pbr_materials_config, {}).distance == 3.3F);
+    require(parse(pbr_materials::parse_pbr_materials_config,
+                  {"--material", "gallery", "--distance", "1.7"})
+                .distance == 1.7F);
     const auto dense =
         parse(pbr_materials::parse_pbr_materials_config, {"--sphere-density", "dense"});
     require(dense.sphere_density == "dense");

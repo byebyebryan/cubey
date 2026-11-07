@@ -124,7 +124,8 @@ void ForwardPbrRenderer3D::Impl::record_scene_pass(
         },
         [this, &scene_plan, mesh_resolver, &materials, &draw_plan, debug_view, frame_slot,
          background_mode, terrain, ocean](const vulkan::CommandRecorder& pass_recorder) {
-            if (debug_view == render::PbrDebugView::Final &&
+            if ((debug_view == render::PbrDebugView::Final ||
+                 debug_view == render::PbrDebugView::TransmissionRadiance) &&
                 background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
                 render::record_fullscreen_pipeline_draw(
                     pass_recorder,
@@ -133,7 +134,8 @@ void ForwardPbrRenderer3D::Impl::record_scene_pass(
                         .descriptor_set = global_.atmosphere_background.material().set(frame_slot),
                         .descriptor_set_index = 0,
                     });
-            } else if (debug_view == render::PbrDebugView::Final) {
+            } else if ((debug_view == render::PbrDebugView::Final ||
+                        debug_view == render::PbrDebugView::TransmissionRadiance)) {
                 render::record_fullscreen_pipeline_draw(
                     pass_recorder, render::FullscreenPipelineDrawInfo{
                                        .pipeline = &skybox_pipeline(),
@@ -182,7 +184,8 @@ void ForwardPbrRenderer3D::Impl::record_scene_opaque_pass(
         },
         [this, &scene_plan, mesh_resolver, &materials, &draw_plan, debug_view, frame_slot,
          background_mode, terrain, ocean](const vulkan::CommandRecorder& pass_recorder) {
-            if (debug_view == render::PbrDebugView::Final &&
+            if ((debug_view == render::PbrDebugView::Final ||
+                 debug_view == render::PbrDebugView::TransmissionRadiance) &&
                 background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
                 render::record_fullscreen_pipeline_draw(
                     pass_recorder,
@@ -191,7 +194,8 @@ void ForwardPbrRenderer3D::Impl::record_scene_opaque_pass(
                         .descriptor_set = global_.atmosphere_background.material().set(frame_slot),
                         .descriptor_set_index = 0,
                     });
-            } else if (debug_view == render::PbrDebugView::Final) {
+            } else if ((debug_view == render::PbrDebugView::Final ||
+                        debug_view == render::PbrDebugView::TransmissionRadiance)) {
                 render::record_fullscreen_pipeline_draw(
                     pass_recorder, render::FullscreenPipelineDrawInfo{
                                        .pipeline = &skybox_pipeline(),

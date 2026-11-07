@@ -3,6 +3,7 @@
   "material": "gallery",
   "environment": "clear",
   "sphere_density": "dense",
+  "transmission_source": "environment",
   "lighting_cycle": "frozen",
   "distance": 0.855,
   "yaw": 0,

@@ -44,7 +44,7 @@ def documents():
            'throughput-cutoff':0,'sun-elevation':.13962634015954636,'sun-azimuth':-.4363323129985824,
            'shadows':False,'exposure':0,'distance':.855,'yaw':0,'pitch':0,'fov':45,'samples':256,'seed':7})
     pbr = dict(presentation='library',material='gallery',environment='clear',sphere_density='dense',
-               lighting_cycle='frozen',distance=.855,yaw=0,pitch=0,pbr=dict(exposure=0))
+               transmission_source='environment',lighting_cycle='frozen',distance=.855,yaw=0,pitch=0,pbr=dict(exposure=0))
     sdf = {'authored-scene':f'{SCENES}/gallery.json','render-mode':'analytic',
            'motion':'static','duration':8,'lighting':'material-atmosphere','lighting-cycle':'frozen',
            'clouds':False,'sun-elevation':8,'sun-azimuth':-155,'exposure':0,
@@ -88,7 +88,7 @@ def documents():
             rt_sampling='Freeze authored state, complete 256 primary/history iterations, resolve once; then advance output time'),
         transport=dict(comparison='No local specimen shadows; environment after body exit',
             scene='Separate RT-only scene-reflection/refraction preset with local visibility',
-            forward='Estimated thickness and shared filtered environment optics',
+            forward='Explicit environment transmission along estimated sphere exit; shared filtered probe, legacy screen route available',
             sdf='Measured central paths and shared filtered environment optics; environment after exit',
             rt='Geometric interfaces, sampled rough transmission; ten conditional rough-glass trials per primary, bounded Fresnel chains',
             limits=[8,32,128],diffuse_gi=False))
