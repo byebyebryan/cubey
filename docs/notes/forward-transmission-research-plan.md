@@ -5,6 +5,10 @@ in `cubey-raytracing-first-pass`. This records investigation and a proposal;
 the renderer changes below are pending. The completed RT workshop remains the
 baseline. No GPU shader A/B was performed in this research pass.
 
+The subsequent authorized goal loop is complete; see the
+[implementation results](forward-transmission-results.md). This dated research
+checkpoint retains its original hypotheses and proposed gates.
+
 The strongest explanation for the glass mismatch is the forward radiance lookup.
 It usually samples the camera image at the projected volume exit, including when
 that image contains sky. The tracers resolve the environment along the bent exit

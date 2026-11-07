@@ -20,7 +20,8 @@ cloud RT remain deferred. No push or public-site promotion.
   Raw evidence: `outputs/raytracing/forward-transmission/f0-r4`.
 - F1 implemented: typed source setting, CLI/UI/view persistence, explicit
   comparison presets and diagnostics. Existing consumers default to screen.
-- F2 pending: consumer retention, lifecycle, media, costs and internal report.
+- F2 complete: consumer retention, native lifecycle, pinned glTF checks, matched
+  media, costs and internal delivery. See [results](forward-transmission-results.md).
 
 ## Decisions during execution
 

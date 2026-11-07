@@ -33,6 +33,9 @@ the architecture and project guides remain current authority.
 - [Forward glass transmission research](forward-transmission-research-plan.md):
   measured sphere geometry and camera/environment direction mismatch, pinned
   renderer references and a proposed environment-transmission comparison pass.
+- [Forward transmission results](forward-transmission-results.md): qualified
+  environment lookup, retained current-session screen controls, native/glTF
+  checks, matched media and remaining optical/retention limits.
 - [Ray tracing reflective dragon](raytracing-reflective-dragon.md): separate primitive
   optical proofs, then a reflective dragon alone on a small base.
 - [Ray tracing contained scene](raytracing-contained-scene.md): a compact shaped

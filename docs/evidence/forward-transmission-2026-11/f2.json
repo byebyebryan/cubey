@@ -1,0 +1,138 @@
+{
+  "format": "cubey.forward_transmission.qualification",
+  "version": 1,
+  "passed": true,
+  "raw_evidence": "outputs/raytracing/forward-transmission",
+  "runtime_source": "90b6caaa2484897a431cd30f8ccd9f475b4d5783",
+  "source_scopes": {
+    "full_suite": "66e75372",
+    "matched_rendering": "30bfad78",
+    "integration_and_cost": "7fc6c96a",
+    "native_and_final_focus": "90b6caaa"
+  },
+  "qualified_fragment_sha256": "aa71e2a5a9373a6dd4eb826801d764cf4a4afb06905caf9e0dc6c26e8769969c",
+  "final_binary_sha256": "56a37b231a0e501bafdf2a346b847b1d79f037cd2c40ef434786d75b984bbc22",
+  "tests": {
+    "full_suite": {
+      "passed": 291,
+      "total": 291,
+      "skipped": 0
+    },
+    "final_focused": {
+      "passed": 6,
+      "total": 6,
+      "skipped": 0
+    },
+    "gltf_native_assets": 8,
+    "gltf_semantic_cases": [
+      "gltf-transmission-roughness-test",
+      "gltf-transmission-thinwall-test",
+      "gltf-transmission-order-test",
+      "gltf-dispersion-test",
+      "gltf-attenuation-test"
+    ]
+  },
+  "presentation": {
+    "stills": 58,
+    "films": 12,
+    "width": 1920,
+    "height": 1080,
+    "frames": 240,
+    "fps": 30,
+    "duration_seconds": 8,
+    "rt_frozen_states": 720,
+    "primary_iterations_per_rt_state": 256
+  },
+  "retention": {
+    "current_session_1080p": {
+      "passed": true,
+      "results": [
+        {
+          "name": "gallery",
+          "sha256": "54264f09eef7767798aff1715d6e44de900e0f0deb2990f873a681bca3b82a9e",
+          "passed": true
+        },
+        {
+          "name": "glass",
+          "sha256": "815e7a561974e93da3315bada5c1462686ae8ad09230ecfc23f7678f2b067f82",
+          "passed": true
+        },
+        {
+          "name": "frosted-glass",
+          "sha256": "fe7b9d9711d9f939e8971fb37bba3e90ddacae98f268565b19af6022b638e51d",
+          "passed": true
+        },
+        {
+          "name": "bronze",
+          "sha256": "c58ddb6d5a65e43047d83e5d0fac994289a9abad514bb70404aba692a49bbc1c",
+          "passed": true
+        },
+        {
+          "name": "studio-glass",
+          "sha256": "da4fbe0112f2c42fb8b07daff7d3371901eb2900b55aae0845000e64e87c15f2",
+          "passed": true
+        }
+      ]
+    },
+    "original_protected_files": 11,
+    "historical_byte_gate_passed": false,
+    "historical_residual": "One 8-bit code in one pixel at 640x480; exact historical fragment SPIR-V produces the same current image as the new shader; broader runtime cause unestablished.",
+    "shader_ablation": {
+      "baseline_shader_sha256": "62e80fa4b9327d21a6b9b482d1d835e41a6c88e35e5cbc300457cf2dfe1bd6ef",
+      "historical_image_sha256": "989cf2505b36ea1ac6af15111f40fb103896ee52fd704a675878de3e3c279e02",
+      "baseline_shader_image_sha256": "86c1b141534d57a8caf8bbdae6f4805dff66e9ba9e8e68e84870c2c4dd588e6e",
+      "new_shader_image_sha256": "86c1b141534d57a8caf8bbdae6f4805dff66e9ba9e8e68e84870c2c4dd588e6e",
+      "scope": "Exact historical fragment SPIR-V reproduces the same present image as the new shader. Historical one-pixel residual remains unexplained; all five current-session 1080p baseline controls are byte-identical."
+    }
+  },
+  "costs": {
+    "screen": {
+      "worst_repetition_p95_ms": 1.6718895999999999,
+      "repetitions": 3,
+      "warmups": 30,
+      "completed_samples_per_repetition": 150
+    },
+    "environment": {
+      "worst_repetition_p95_ms": 1.6690416,
+      "repetitions": 3,
+      "warmups": 30,
+      "completed_samples_per_repetition": 150
+    }
+  },
+  "cost_scope": "Serial frozen 1080p forward whole-scene GPU time; difference within measurement noise. Mode reuses existing images/descriptors; no physical peak-memory claim.",
+  "optical_limits": {
+    "original_ideal_sphere_gate_passed": false,
+    "shading_normal_tilt_degrees": 0.3178,
+    "ideal_direction_p99_degrees_at_ior_1_5": 0.514,
+    "observed_normal_arithmetic_passed": true,
+    "rough_btdf_parity_established": false,
+    "local_scene_refraction": false,
+    "diffuse_gi": false,
+    "rt_clouds": false
+  },
+  "delivery": {
+    "report_id": "be78531d34c70c602e0febcd7defc684183d90d51f5c10fa363e81c2acbcf10e",
+    "url": "http://starship:8787/reports/be78531d34c70c602e0febcd7defc684183d90d51f5c10fa363e81c2acbcf10e/",
+    "files_verified": 88,
+    "bytes": 68994397,
+    "browser_errors": [],
+    "maximum_observed_playback_skew_seconds": 0.003,
+    "all_sequences_seek_verified": true
+  },
+  "artifact_sha256": {
+    "f2/stills/receipt.json": "a125b03e176ea6523266e0c68f293f0b858a723c0523d067f87e1bdd13a1601c",
+    "f2/films/receipt.json": "10a6706ca92a9f0c6611993b5695d6fcd91a82f1f9f3e37d78073607e4f7edd7",
+    "f2/integration/receipt.json": "4452d78c44c1f0d2ecd946fc9e8e450f5e8cc8d607aa7cddd72cfea384c59666",
+    "f2/native/receipt.json": "d59319c7e3ea286b9e8b90ef2a02ef0bbea2dd12172d90ff859a767357732e57",
+    "f2/browser.json": "3f41930695bbc67962986b382e01f6e96a485e1d45fa6e21221777aaade9f306",
+    "f2/http-assets.json": "6a14b2795dc98848398103d2f5a9b7c89a81a8eea13ca9db85e6820d49235df6",
+    "f2/browser-review.png": "cff50685e6000c8d31d0ca66efc02482428ef1de6aca71343aed3968b7843d2a",
+    "f2/dev-suite.log": "f4eb93b0764b721a4c695ab7733be5decb2e2985f1543af418134158946fec18",
+    "f2/final-retention/focused-tests.log": "e975b038c456d4259109a97b76870ea50c60c2d38beffed3eed760d132198fed"
+  },
+  "authorization": {
+    "local_only": true,
+    "pushed": false,
+    "public_showcase_changed": false
+  }
+}
