@@ -158,20 +158,27 @@ int PbrMaterialsApp::run_headless() {
         config_.yaw = saved_yaw;
     };
     callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
-        if (hdr_readback_) {
-            std::vector<std::byte> bytes(static_cast<std::size_t>(hdr_readback_->size()));
-            hdr_readback_->download(bytes.data(), hdr_readback_->size());
-            if (config_.hdr_output.has_parent_path())
-                std::filesystem::create_directories(config_.hdr_output.parent_path());
-            std::ofstream file(config_.hdr_output, std::ios::binary);
-            file.write(reinterpret_cast<const char*>(bytes.data()),
-                       static_cast<std::streamsize>(bytes.size()));
-            if (!file)
-                throw std::runtime_error("failed to write scene HDR diagnostic output");
+        try {
+            if (hdr_readback_) {
+                std::vector<std::byte> bytes(static_cast<std::size_t>(hdr_readback_->size()));
+                hdr_readback_->download(bytes.data(), hdr_readback_->size());
+                if (config_.hdr_output.has_parent_path())
+                    std::filesystem::create_directories(config_.hdr_output.parent_path());
+                std::ofstream file(config_.hdr_output, std::ios::binary);
+                file.write(reinterpret_cast<const char*>(bytes.data()),
+                           static_cast<std::streamsize>(bytes.size()));
+                if (!file)
+                    throw std::runtime_error("failed to write scene HDR diagnostic output");
+                hdr_readback_.reset();
+            }
+            if (!config_.view_output.empty())
+                save_view(config_.view_output);
+        } catch (...) {
+            // Export failures must retire GPU objects before the host device.
             hdr_readback_.reset();
+            destroy_all_resources();
+            throw;
         }
-        if (!config_.view_output.empty())
-            save_view(config_.view_output);
         destroy_all_resources();
     };
     return cubey::host::HeadlessPngHost(

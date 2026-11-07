@@ -23,6 +23,8 @@ void PbrMaterialsApp::save_view(const std::filesystem::path& path) const {
         saved.material = catalog_.at(static_cast<std::size_t>(selected_)).id;
     else
         saved.material = "gallery";
+    if (path.has_parent_path())
+        std::filesystem::create_directories(path.parent_path());
     pbr_materials_config_schema(saved).write_template(path);
 }
 
