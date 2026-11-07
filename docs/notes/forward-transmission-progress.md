@@ -17,7 +17,7 @@ cloud RT remain deferred. No push or public-site promotion.
   mean error falls from .23495 to .003005 (about 78x), IOR-1 source difference
   p99 is 5.31e-5, and the constant environment matches exactly. Production
   arithmetic versus observed-normal controls passes .1-degree/.5% gates.
-  Raw evidence: `outputs/raytracing/forward-transmission/f0-r3`.
+  Raw evidence: `outputs/raytracing/forward-transmission/f0-r4`.
 - F1 implemented: typed source setting, CLI/UI/view persistence, explicit
   comparison presets and diagnostics. Existing consumers default to screen.
 - F2 pending: consumer retention, lifecycle, media, costs and internal report.
@@ -51,3 +51,24 @@ The completed F0 matrix measures a .3178-degree shading-normal tilt and about
 reported failures of the original ideal-normal target. Observed-normal
 arithmetic p99 direction error is at most .000288 degrees across the four IORs;
 the two-pixel silhouette band excludes 1.238% of ideal sphere coverage.
+
+## Historical retention investigation
+
+The 291-test integration suite passed at `66e75372`. Its historical 640×480
+forward bronze byte check then failed: one pixel differs by one code value.
+Compiling the exact baseline shader reproduced its historical SPIR-V SHA256
+`62e80fa4...`, but swapping that shader into the current runtime produced the
+same current image as the new shader. The discrepancy is therefore not resolved
+by restoring the historical fragment module. Its broader runtime cause is not
+established, and the historical byte gate remains recorded as failed.
+
+All five 1080p captures made immediately before implementation in this session
+(gallery, clear glass, frosted glass, bronze and studio glass) remain byte-identical
+in screen mode. Use these as the measured retention baseline for this pass;
+retain the historical residual and shader-ablation evidence alongside them.
+Do not overwrite historical captures or describe the historical byte check as
+passed. Raw controls: `outputs/raytracing/forward-transmission/retention-analysis`.
+
+The new optical diagnostic is contained inside the existing component-view
+branch. F0 was rerun after this control-flow cleanup and retains the same
+qualified optical results. No original lighting or material arithmetic was tuned.

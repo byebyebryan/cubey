@@ -719,28 +719,28 @@ void main() {
     vec3 emissive =
         texture(emissive_texture, cubey_pbr_transformed_uv(material.emissive_transform)).rgb *
         material.emissive_alpha_cutoff.rgb;
-    if (debug_view >= CUBEY_PBR_DEBUG_TRANSMISSION_RAY &&
-        debug_view <= CUBEY_PBR_DEBUG_TRANSMISSION_RADIANCE) {
-        CubeyPbrVolumeTransmissionRay ray = cubey_pbr_volume_transmission_ray(
-            normal, view_direction, volume_thickness, material.material_model.x,
-            frag_model_scale);
-        bool valid = transmission > 0.0;
-        if (volume_thickness <= 0.0) ray.fallback_direction = -view_direction;
-        if (debug_view == CUBEY_PBR_DEBUG_TRANSMISSION_RADIANCE) {
-            vec2 uv = gl_FragCoord.xy / vec2(textureSize(refraction_radiance, 0));
-            if (ray.world_path_distance > 0.0)
-                uv = cubey_pbr_project_refraction_exit(frag_world_position + ray.world_offset);
-            out_color = vec4(valid ? cubey_pbr_transmission_radiance_at_lod(
-                uv, ray.fallback_direction, 0.0, 0.0) : vec3(0.0), 1.0);
+    if (debug_view != CUBEY_PBR_DEBUG_FINAL) {
+        if (debug_view >= CUBEY_PBR_DEBUG_TRANSMISSION_RAY &&
+            debug_view <= CUBEY_PBR_DEBUG_TRANSMISSION_RADIANCE) {
+            CubeyPbrVolumeTransmissionRay ray = cubey_pbr_volume_transmission_ray(
+                normal, view_direction, volume_thickness, material.material_model.x,
+                frag_model_scale);
+            bool valid = transmission > 0.0;
+            if (volume_thickness <= 0.0) ray.fallback_direction = -view_direction;
+            if (debug_view == CUBEY_PBR_DEBUG_TRANSMISSION_RADIANCE) {
+                vec2 uv = gl_FragCoord.xy / vec2(textureSize(refraction_radiance, 0));
+                if (ray.world_path_distance > 0.0)
+                    uv = cubey_pbr_project_refraction_exit(frag_world_position + ray.world_offset);
+                out_color = vec4(valid ? cubey_pbr_transmission_radiance_at_lod(
+                    uv, ray.fallback_direction, 0.0, 0.0) : vec3(0.0), 1.0);
+                return;
+            }
+            out_color = !valid ? vec4(0.0)
+                        : debug_view == CUBEY_PBR_DEBUG_TRANSMISSION_RAY
+                            ? vec4(ray.fallback_direction, ray.world_path_distance)
+                        : vec4(frag_world_position + ray.world_offset, 1.0);
             return;
         }
-        out_color = !valid ? vec4(0.0)
-                    : debug_view == CUBEY_PBR_DEBUG_TRANSMISSION_RAY
-                        ? vec4(ray.fallback_direction, ray.world_path_distance)
-                    : vec4(frag_world_position + ray.world_offset, 1.0);
-        return;
-    }
-    if (debug_view != CUBEY_PBR_DEBUG_FINAL) {
         out_color = cubey_pbr_debug_output(debug_view, base_color, metallic, roughness,
                                            geometric_normal, normal, occlusion, emissive,
                                            visibility);

@@ -2,9 +2,9 @@
   "passed": true,
   "stage": "F0",
   "identity": {
-    "source_commit": "7255cbc3d3657e7c33b8454bf1c06a01478fba47",
-    "source_diff_sha256": "8617df64f255924d9d208306d75706664bb67fab3fc77db39851267d20db6231",
-    "binary_sha256": "a1e9e1bbefa56fad480ece549edce7aab1d0f699757b69e4ee3115a6c74c0105",
+    "source_commit": "66e75372d89bac59c87b08ba58a659642519e102",
+    "source_diff_sha256": "68a2dcef4c9a981c1ed9044a7f2fafb477fb2234f703f5a87c4daf0e863d9f64",
+    "binary_sha256": "49950f791fa1eab1d60214a09ff9a0b0bfcf296d1008583f8f6efb7c038c7ab8",
     "shader_sha256": {
       "atmosphere.frag.spv": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b",
       "atmosphere.vert.spv": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87",
@@ -20,7 +20,7 @@
       "cloud_temporal.comp.spv": "077dbccfc31d8cdc0baa5c52d6ca758d657c91c1ce32b5b090c3748017c47759",
       "cloud_weather.comp.spv": "e6e398c73d09d8e09b1d1c8a6b556f881f59bd6696bfb5464291c60c5db92ef0",
       "cloud_worley.comp.spv": "00e93d590387242acba1b386144e33a5395c5901ca9f5abaefb5b6823fcdfac0",
-      "forward_pbr.frag.spv": "f61ed001bf5490c6bd9c7436d3c3172ce6408058be7ba37b9c765465486d0775",
+      "forward_pbr.frag.spv": "aa71e2a5a9373a6dd4eb826801d764cf4a4afb06905caf9e0dc6c26e8769969c",
       "forward_pbr.vert.spv": "f67cb5ccbc74393dbb4514f75ab1a7e3623799702aeb323ac86fce7413b33ab6",
       "forward_pbr_post.frag.spv": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526",
       "forward_pbr_post.vert.spv": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c",
@@ -272,6 +272,6 @@
     "maximum": 0.07642757787739227
   },
   "scope": "Conditional geometry oracle uses observed production shading normals; ideal-sphere differences retained separately. No rough-BTDF/GI truth claim.",
-  "raw_evidence": "outputs/raytracing/forward-transmission/f0-r3",
+  "raw_evidence": "outputs/raytracing/forward-transmission/f0-r4",
   "initial_ideal_sphere_gate_passed": false
 }
