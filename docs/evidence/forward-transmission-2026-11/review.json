@@ -1,0 +1,143 @@
+{
+  "format": "cubey.forward_transmission.review",
+  "version": 1,
+  "date": "2026-11-07",
+  "passed": true,
+  "reviewed_range": "7255cbc3..a58549c1",
+  "review_base": "a58549c197e688d7ddc3ce7929bc295d993aa578",
+  "scope": [
+    "forward transmission source and legacy defaults",
+    "shared uniform ABI and shader routing",
+    "HDR readback and render-graph synchronization",
+    "export failure cleanup and view persistence",
+    "comparison presets, qualification tools and report delivery"
+  ],
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Headless orbit view export lost the final camera yaw",
+      "trigger": "Capture two frames with --orbit-degrees 30 --view-output, then replay the saved view.",
+      "before": "Saved yaw omitted the capture offset; replay PNG differed from the captured final frame.",
+      "resolution": "Keep capture yaw offset as camera state and include it in Save View.",
+      "resolved": true,
+      "regression_failed_before_fix": true
+    }
+  ],
+  "remaining_code_findings": [],
+  "source_sha256": {
+    "projects/pbr_materials/CMakeLists.txt": "c84328ca79b633d9bc66bdb323307836fe558983309cb5598fb6aec783d835a3",
+    "projects/pbr_materials/pbr_materials_app.cpp": "1712da12c69b2010e65450746027e174b79be3051b32690d4aef341a781fb33e",
+    "projects/pbr_materials/pbr_materials_app_internal.h": "f482fc37b2c1dd175ba746699f321f10144a8bdaed5b4ff19e200652ff1ca84c",
+    "projects/pbr_materials/pbr_materials_scene.cpp": "673f282c2fff9c15b41447695aa4ba9e5636a3194b755400d3cbb156f328e08c",
+    "projects/pbr_materials/pbr_materials_workshop.cpp": "b0037a9c3d37d46548da73b5da090ce66f94f72f35dc82eb463a4431bc4c7977",
+    "projects/pbr_materials/tools/test_view_replay.py": "40e7cefa816d8933294e12e373b68f44084f6c82abf7e2ff2dc043c8b2b0f77e"
+  },
+  "binary_sha256": "a6c580b0a21deebbabb36bee7e5b73101aa2f4be8cdf10becb7c408329aea5c5",
+  "fragment_sha256": "aa71e2a5a9373a6dd4eb826801d764cf4a4afb06905caf9e0dc6c26e8769969c",
+  "tests": {
+    "focused": {
+      "passed": 7,
+      "total": 7,
+      "skipped": 0
+    },
+    "replay": {
+      "passed": true,
+      "cases": [
+        {
+          "name": "screen-workshop",
+          "passed": true,
+          "yaw": 0.6935988068580627,
+          "sha256": "cbe2230c6384fa96fe8d731dc11820ef2a148f329a38d6631571c8516bf3eba3"
+        },
+        {
+          "name": "screen-presentation",
+          "passed": true,
+          "yaw": 0.6935988068580627,
+          "sha256": "eefcae216c22f50ba5894ae56cb8143d4b85aa445b6b60c784b05240158f1db0"
+        },
+        {
+          "name": "environment-workshop",
+          "passed": true,
+          "yaw": 0.6935988068580627,
+          "sha256": "8928fc5c39abb6c3240e4dd770b81809429ab2dbbed14930fb06bebdef3054c7"
+        },
+        {
+          "name": "environment-presentation",
+          "passed": true,
+          "yaw": 0.6935988068580627,
+          "sha256": "adf7c0b7840f5a04e3f929e3c90b827e3a4d3086d5f4f687d1d9ecce7663f194"
+        }
+      ]
+    },
+    "current_session_retention": {
+      "passed": true,
+      "cases": [
+        {
+          "name": "gallery",
+          "sha256": "54264f09eef7767798aff1715d6e44de900e0f0deb2990f873a681bca3b82a9e",
+          "passed": true
+        },
+        {
+          "name": "glass",
+          "sha256": "815e7a561974e93da3315bada5c1462686ae8ad09230ecfc23f7678f2b067f82",
+          "passed": true
+        },
+        {
+          "name": "frosted-glass",
+          "sha256": "fe7b9d9711d9f939e8971fb37bba3e90ddacae98f268565b19af6022b638e51d",
+          "passed": true
+        },
+        {
+          "name": "bronze",
+          "sha256": "c58ddb6d5a65e43047d83e5d0fac994289a9abad514bb70404aba692a49bbc1c",
+          "passed": true
+        },
+        {
+          "name": "studio-glass",
+          "sha256": "da4fbe0112f2c42fb8b07daff7d3371901eb2900b55aae0845000e64e87c15f2",
+          "passed": true
+        }
+      ]
+    },
+    "documentation": {
+      "passed": 9,
+      "total": 9,
+      "skipped": 0
+    }
+  },
+  "preservation": {
+    "passed": true,
+    "protected_files": {
+      "projects/sdf/README.md": true,
+      "docs/notes/sdf-horse-field-study.md": true,
+      "projects/sdf/tools/horse_field_study.py": true,
+      "projects/sdf/tools/test_horse_field_study.py": true,
+      "projects/sdf/tools/horse_field_report.py": true,
+      "projects/sdf/tools/horse_field_report.html": true,
+      "docs/evidence/sdf-horse-field-study-2026-11/report.json": true,
+      "docs/evidence/sdf-horse-field-study-2026-11/results.json": true,
+      "docs/evidence/sdf-horse-field-study-2026-11/verification.json": true,
+      "docs/evidence/sdf-horse-field-study-2026-11/retention.json": true,
+      "projects/sdf/scenes/horse-field-study/source.json": true
+    },
+    "shader": "build/dev/projects/pbr_materials/shaders/forward_pbr.frag.spv",
+    "qualified_fragment_sha256": "aa71e2a5a9373a6dd4eb826801d764cf4a4afb06905caf9e0dc6c26e8769969c",
+    "prior_f2_artifacts_unchanged": 9
+  },
+  "unchanged_limits": [
+    "original ideal-normal accuracy gate remains unmet",
+    "historical 640x480 byte gate retains one code value in one pixel",
+    "rough-transmission parity and local scene refraction remain unestablished"
+  ],
+  "defaults_changed": false,
+  "published_report_changed": false,
+  "pushed": false,
+  "raw_evidence": "outputs/raytracing/forward-transmission/review-20261107",
+  "artifact_sha256": {
+    "focused-tests.log": "49c92853cf76c2290208dce41fe2c2f8a4eecfa417ddd738606e71e1aa5ee3ba",
+    "after/receipt.json": "ccc72f1d86340e116e49f306389bb0f46f3f034c2f23967bcc92b164361461f1",
+    "retention/receipt.json": "cfd8a759d23282befc6fca023b3692fe7f38c972ef69ffe2e93ccc4bffbd0012",
+    "preservation.json": "49d23c340d22acc97dd916603145a9704290912dd39544e59dafb37c50fd9fd2",
+    "docs-tests.log": "fba5ff1ee7e16ea20ced3a576f0659538c853e01dfd9c5d4e3de9351776f8115"
+  }
+}

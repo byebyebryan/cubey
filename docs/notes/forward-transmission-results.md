@@ -114,3 +114,25 @@ and no console errors. No shared server changes were needed.
 [execution record](forward-transmission-progress.md) and
 [operation guide](raytracing-material-workshop-guide.md) retain detailed scope.
 Raw captures and commands remain under `outputs/raytracing/forward-transmission/`.
+
+## Review closeout
+
+The 2026-11-07 review covered `7255cbc3..a58549c1`: source selection, shared
+uniforms and shader routing, readback synchronization and cleanup, view export,
+comparison presets, qualification tools and report delivery. It found one
+reproducible defect: `--view-output` lost the final headless `--orbit-degrees`
+camera offset because the authored yaw was restored before exporting the view.
+Capture motion now has explicit camera state, which Save View includes.
+
+The new `pbr_materials_view_replay` regression failed before the fix and passes
+after it. Four pairs cover screen/environment sources in the ordinary workshop
+and a frozen library presentation; every replay is byte-identical to its final
+capture. Seven focused tests pass, and all five 1080p screen retention controls
+remain byte-identical. The qualified fragment SPIR-V, nine recorded F2 artifacts
+and eleven protected files in the original worktree remain unchanged.
+
+The [review receipt](../evidence/forward-transmission-2026-11/review.json) records
+the finding, source identities and checks. No further code defects were found
+within that scope; the optical and historical retention limits above remain
+open. The proposed general workshop startup-default change is separate; this
+closeout retains the existing defaults and published comparison snapshot.

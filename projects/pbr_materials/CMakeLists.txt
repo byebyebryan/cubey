@@ -30,6 +30,13 @@ cubey_add_app_target(
 target_compile_definitions(cubey_project_pbr_materials PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
 
 if(BUILD_TESTING)
+    add_test(NAME pbr_materials_view_replay
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_view_replay.py"
+            --binary "$<TARGET_FILE:cubey_project_pbr_materials>"
+            --output "${CMAKE_CURRENT_BINARY_DIR}/view-replay")
+    set_tests_properties(pbr_materials_view_replay PROPERTIES
+        TIMEOUT 120 SKIP_RETURN_CODE 77 LABELS "headless;gpu;artifact"
+        ENVIRONMENT "LSAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/cmake/lsan.supp")
     cubey_add_png_capture_test(pbr_materials_environment_transmission_depth_reuse
         cubey_project_pbr_materials "${CMAKE_CURRENT_BINARY_DIR}/environment-depth-reuse.png"
         128 96 --require-validation --frames 4 --material gallery --lighting clear

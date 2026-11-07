@@ -145,17 +145,15 @@ int PbrMaterialsApp::run_headless() {
                                     const cubey::host::HeadlessCaptureFrame& f, VkCommandBuffer cmd,
                                     const cubey::host::HeadlessRenderTarget& target) {
         // Capture motion derives from frame progress, never wall time.
-        const auto saved_yaw = config_.yaw;
         if (!config_.presentation.empty())
             presentation_seconds_ = config_.presentation_time >= 0
                                         ? config_.presentation_time
                                         : 8.0 * cubey::host::headless_capture_progress(f);
-        config_.yaw +=
+        capture_yaw_offset_ =
             glm::radians(config_.orbit_degrees) * cubey::host::headless_capture_progress(f);
         update_scene_transform(f.timing);
         record_frame(ctx.device(), cmd, target, f.frame_slot, false, ctx.profile_recorder(),
                      f.index);
-        config_.yaw = saved_yaw;
     };
     callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
         try {

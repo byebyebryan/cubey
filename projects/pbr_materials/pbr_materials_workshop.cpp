@@ -8,7 +8,7 @@
 namespace cubey::projects::pbr_materials::detail {
 void PbrMaterialsApp::save_view(const std::filesystem::path& path) const {
     auto saved = config_;
-    saved.yaw += orbit_controller_.yaw();
+    saved.yaw += orbit_controller_.yaw() + capture_yaw_offset_;
     saved.pitch = orbit_controller_.pitch();
     saved.distance = orbit_controller_.distance();
     saved.debug_view = render::pbr_debug_view_name(debug_view_);

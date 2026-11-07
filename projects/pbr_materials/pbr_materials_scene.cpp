@@ -87,7 +87,7 @@ void PbrMaterialsApp::create_scene() {
 cubey::Transform3D PbrMaterialsApp::camera_transform() const {
     return cubey::orbit_camera_transform(cubey::OrbitCameraState{
         .distance = orbit_controller_.distance(),
-        .yaw = config_.yaw + orbit_controller_.yaw() +
+        .yaw = config_.yaw + orbit_controller_.yaw() + capture_yaw_offset_ +
                (config_.presentation.empty() || config_.presentation == "library"
                     ? 0
                     : presentation_yaw(presentation_seconds_)),

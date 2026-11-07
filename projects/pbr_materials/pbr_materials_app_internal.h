@@ -101,6 +101,7 @@ class PbrMaterialsApp {
     cubey::Entity light_camera_entity_{};
     cubey::Entity light_entity_{};
     OrbitController orbit_controller_;
+    float capture_yaw_offset_ = 0;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
     cubey::render::MeshHandle sphere_mesh_handle_{};
     std::optional<cubey::render::MeshHandle> library_sphere_mesh_handle_;
