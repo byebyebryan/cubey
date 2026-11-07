@@ -271,6 +271,9 @@ void PbrMaterialsApp::draw_ui() {
         }
         const char* sources[]{"Screen", "Environment"};
         int source = config_.transmission_source == "environment" ? 1 : 0;
+        ImGui::SetNextItemWidth(std::max(80.0F, ImGui::GetContentRegionAvail().x -
+                                                  ImGui::CalcTextSize("Transmission source").x -
+                                                  ImGui::GetStyle().ItemInnerSpacing.x));
         if (ImGui::Combo("Transmission source", &source, sources, 2))
             config_.transmission_source = source == 1 ? "environment" : "screen";
         const char* shapes[]{"sphere", "block", "swatch", "cut-block"};
