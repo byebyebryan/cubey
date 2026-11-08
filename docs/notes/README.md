@@ -30,6 +30,19 @@ the architecture and project guides remain current authority.
 - [RT material workshop plan](raytracing-material-workshop-plan.md): proposed
   shared twelve-recipe forward/SDF/RT workshop under matched clear atmosphere,
   with rough specular transport, per-material optics and bounded sampling.
+- [Dragon glass research and plan](raytracing-dragon-glass-plan.md) and
+  [mesh audit evidence](../evidence/raytracing-dragon-glass-research-2026-11/README.md):
+  optical-volume requirements, model preparation and staged glass qualification.
+- [Dragon optical preparation results](raytracing-dragon-glass-g0-results.md) and
+  [repair evidence](../evidence/raytracing-dragon-optical-preparation-2026-11/README.md):
+  local repair trials, measured shape changes and subsequent model acceptance.
+- [Certified dragon glass first pass](raytracing-dragon-glass-first-pass.md) and
+  [native/transport evidence](../evidence/raytracing-dragon-glass-first-pass-2026-11/README.md):
+  full-scene glass under shared atmosphere, independent marble support and
+  remaining motion, filtering and illumination limits.
+- [Dragon glass review fixes](raytracing-dragon-glass-review-fixes.md) and
+  [regression evidence](../evidence/raytracing-dragon-glass-review-fixes-2026-11/README.md):
+  complete adjacency-memory accounting and enforced preset transport acceptance.
 - [Forward glass transmission research](forward-transmission-research-plan.md):
   measured sphere geometry and camera/environment direction mismatch, pinned
   renderer references and a proposed environment-transmission comparison pass.

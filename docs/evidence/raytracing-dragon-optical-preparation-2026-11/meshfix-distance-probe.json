@@ -1,0 +1,29 @@
+{
+  "new_coordinates": 435045,
+  "directions": [
+    {
+      "direction": "original-to-candidate",
+      "changed_faces": 871306,
+      "samples": 1306851,
+      "max_metres": 0.013536763109776596,
+      "p95_metres": 4.4480996881968163e-07,
+      "worst_point": [
+        0.19971005618572235,
+        -0.26275349656740826,
+        0.09715024630228679
+      ]
+    },
+    {
+      "direction": "candidate-to-original",
+      "changed_faces": 870308,
+      "samples": 1305356,
+      "max_metres": 0.0003181234419778206,
+      "p95_metres": 4.437052382155625e-07,
+      "worst_point": [
+        0.24077266454696655,
+        -0.21626800298690796,
+        0.11178600043058395
+      ]
+    }
+  ]
+}

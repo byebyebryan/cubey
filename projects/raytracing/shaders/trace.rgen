@@ -22,7 +22,9 @@ layout(std430,set=0,binding=12) readonly buffer Materials { Material materials[]
 struct Query { vec4 hit; vec4 geometric; vec4 shading; vec4 bary; };
 #include "legacy_trace.glsl"
 #include "optics.glsl"
-struct Surface { vec3 p; vec3 outward; vec3 n; vec3 bary; float t; int id; uint material; uint primitive; };
+#include "nvidia_self_intersection.glsl"
+layout(std430,set=0,binding=18) readonly buffer EdgeNeighbors { uvec4 edgeNeighbors[]; };
+struct Surface { vec3 p; vec3 outward; vec3 n; vec3 bary; float t; int id; uint material; uint primitive; float spawnOffset; vec3 spawnNormal; };
 struct Path { vec3 origin; vec3 direction; vec3 weight; int medium; int depth; bool environmentOnly; int tag; bool trunk; };
 vec4 observation[16];
 int totalQueries=0,radianceQueries=0,shadowQueries=0,maximumDepth=0,stackPeak=0,tirEvents=0;
@@ -35,22 +37,62 @@ vec3 irradiance(vec3 n) {
  vec3 result=vec3(0);for(int i=0;i<9;++i)result+=b[i]*environment.irradiance[i].xyz;return max(result,0);
 }
 float epsilon(vec3 p){return max(.00002,2e-6*max(max(abs(p.x),abs(p.y)),abs(p.z)));}
-vec3 offsetOrigin(Surface s,vec3 d){return s.p+s.outward*(dot(d,s.outward)>=0?1:-1)*epsilon(s.p);}
-Surface surfaceRay(vec3 origin,vec3 direction,uint mask) {
- Surface s=Surface(vec3(0),vec3(0),vec3(0),vec3(0),-1,-1,0u,0u);
+vec3 offsetOrigin(Surface s,vec3 d){
+ if(environment.glass.w>.5)return safeSpawnPoint(s.p,s.spawnNormal,(dot(d,s.outward)>=0?1:-1)*s.spawnOffset);
+ return s.p+s.outward*(dot(d,s.outward)>=0?1:-1)*epsilon(s.p);
+}
+Surface surfaceRayMedium(vec3 origin,vec3 direction,uint mask,int medium) {
+ Surface s=Surface(vec3(0),vec3(0),vec3(0),vec3(0),-1,-1,0u,0u,0,vec3(0));
  if(totalQueries>=environment.limits.z){status|=1u;return s;}
  ++totalQueries;hit.t=-1;
- traceRayEXT(scene,gl_RayFlagsOpaqueEXT,mask,0,0,0,origin,.000001,direction,100,0);
+ if(environment.glass.w>1.5)mask&=1u; // prepared opaque base only: IOR=1 reference
+ uint flags=gl_RayFlagsOpaqueEXT;
+ // On this certified closed solid, outside rays seek entries and inside rays
+ // seek exits. This also resolves sub-ULP front/back hit-distance ties.
+ if(environment.glass.w>.5)flags|=medium>=0?gl_RayFlagsCullFrontFacingTrianglesEXT:gl_RayFlagsCullBackFacingTrianglesEXT;
+ traceRayEXT(scene,flags,mask,0,0,0,origin,environment.glass.w>.5?0:.000001,direction,100,0);
  if(hit.t<0)return s;
  Instance inst=instances[hit.instance];uint start=inst.offsets.y+3*hit.primitive;
  Vertex a=vertices[indices[start]+inst.offsets.x],b=vertices[indices[start+1]+inst.offsets.x],c=vertices[indices[start+2]+inst.offsets.x];
  vec3 bary=vec3(1-hit.bary.x-hit.bary.y,hit.bary);
  vec3 wa=(inst.world*a.position).xyz,wb=(inst.world*b.position).xyz,wc=(inst.world*c.position).xyz;
  vec3 outward=normalize(cross(wb-wa,wc-wa));
+ vec3 position=origin+direction*hit.t;float spawn=0;vec3 spawnNormal=outward;
+ if(environment.glass.w>.5) {
+  vec3 objectPosition,objectNormal;
+  safeSpawnOffset(objectPosition,position,objectNormal,outward,spawn,
+                  a.position.xyz,b.position.xyz,c.position.xyz,hit.bary,
+                  mat4x3(inst.world),mat4x3(transpose(inst.normalWorld)));
+  spawnNormal=outward;
+  uvec3 neighbors=edgeNeighbors[inst.offsets.w+hit.primitive].xyz;
+  if(neighbors.x!=0xffffffffu) {
+   vec3 edgeLengths=vec3(length(c.position.xyz-b.position.xyz),length(a.position.xyz-c.position.xyz),length(b.position.xyz-a.position.xyz));
+   float twiceArea=length(cross(b.position.xyz-a.position.xyz,c.position.xyz-a.position.xyz));
+   vec3 distances=bary*twiceArea/edgeLengths;
+   vec3 normals[3];bool closeEdge[3];vec3 sum=outward;bool nearEdge=false;
+   for(int e=0;e<3;++e) {
+    uint first=inst.offsets.y+3*neighbors[e];
+    vec3 v0=vertices[indices[first]+inst.offsets.x].position.xyz;
+    vec3 v1=vertices[indices[first+1]+inst.offsets.x].position.xyz;
+    vec3 v2=vertices[indices[first+2]+inst.offsets.x].position.xyz;
+    normals[e]=normalize(mat3(inst.normalWorld)*cross(v1-v0,v2-v0));
+    float cosine=clamp(dot(outward,normals[e]),-1,1);
+    float sine=length(cross(outward,normals[e]));
+    // Near a folded crease, distance to the neighboring plane can be much
+    // smaller than distance to the shared edge. Test that plane clearance.
+    closeEdge[e]=distances[e]<4*spawn || (cosine<0 && distances[e]*sine<4*spawn);
+    if(closeEdge[e]) {nearEdge=true;sum+=normals[e];}
+   }
+   vec3 candidate=normalize(sum);float projection=dot(candidate,outward);
+   for(int e=0;e<3;++e)if(closeEdge[e])projection=min(projection,dot(candidate,normals[e]));
+   if(nearEdge&&projection>.001) {spawnNormal=candidate;spawn*=2/projection;}
+  }
+ }
  vec3 n=normalize(mat3(inst.normalWorld)*(a.normal.xyz*bary.x+b.normal.xyz*bary.y+c.normal.xyz*bary.z));
  if(dot(n,faceforward(outward,direction,outward))<0)n=-n;
- return Surface(origin+direction*hit.t,outward,n,bary,hit.t,int(hit.instance),inst.offsets.z,hit.primitive);
+ return Surface(position,outward,n,bary,hit.t,int(hit.instance),inst.offsets.z,hit.primitive,spawn,spawnNormal);
 }
+Surface surfaceRay(vec3 origin,vec3 direction,uint mask) {return surfaceRayMedium(origin,direction,mask,-1);}
 vec3 shadowVisibility(Surface receiver,vec3 light) {
  if(camera.options.x<.5)return vec3(1);
  if(environment.transport.z<.5){

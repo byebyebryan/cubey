@@ -4,6 +4,7 @@
 #include "raytracing_layout.h"
 #include "raytracing_material_geometry.h"
 #include "raytracing_materials.h"
+#include "raytracing_optical_asset.h"
 #include "raytracing_scene.h"
 #include <array>
 #include <cubey/render/material_specimen_mesh.h>
@@ -168,6 +169,58 @@ int main() {
                 {"--scene", "materials", "--material", "gallery", "--recipe-input", "bronze.json"});
         });
         WorkshopState content(workshop);
+        // Admission is explicit and asset-bound; config tests need no downloaded mesh.
+        const auto existing_file =
+            (std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "glass.json").string();
+        auto optics_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str()});
+        require(optics_config.material == "glass" && optics_config.max_events == 128 &&
+                    optics_config.max_path_rays == 1024 && optics_config.max_total_rays == 4096 &&
+                    optics_config.reflection_source == "scene" &&
+                    optics_config.transmission_source == "scene",
+                "optical dragon uses full-scene sharp glass defaults");
+        require(parse({"--scene", "dragon-optics", "--model", existing_file.c_str(), "--max-events",
+                       "256", "--max-path-rays", "2048", "--max-total-rays", "8192"})
+                        .max_events == 256,
+                "deep budget is isolated to optical dragon");
+        rejects([&] {
+            (void)parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                         "--reflection-source", "environment"});
+        });
+        rejects([] { (void)parse({"--hide-dragon"}); });
+        Mesh unqualified;
+        rejects([&] { admit_optical_dragon(unqualified, existing_file); });
+        WorkshopState optics(optics_config);
+        require(optics.sharp_only && !optics.opaque_only,
+                "optical policy is independent of opaque dragon");
+        std::size_t sharp_supported = 0;
+        for (std::size_t i = 0; i < optics.catalog.size(); ++i)
+            sharp_supported += optics.supports(i);
+        require(sharp_supported == 11, "optical dragon excludes only rough-interface glass");
+        const auto last_good =
+            cubey::asset::serialize_material_recipe(optics.recipes.at(optics.selected));
+        auto rough_interface = optics.recipes.at(optics.selected);
+        rough_interface.library.optical_options.x = 1;
+        rejects([&] { optics.replace(optics.selected, rough_interface); });
+        require(cubey::asset::serialize_material_recipe(optics.recipes.at(optics.selected)) ==
+                    last_good,
+                "unsupported interface edit preserves last valid recipe");
+        std::vector<WorkshopVolume> optical_volumes{
+            {{-1, 0, -1}, {1, 1, 1}, 0, Instance::RecipeRole::Selected},
+            {{-1, -.1F, -1},
+             {1, -.01F, 1},
+             static_cast<std::uint32_t>(optics.recipes.size()),
+             Instance::RecipeRole::Support}};
+        const std::vector<Scene::Route> optical_routes{{"dragon", 0, 2}};
+        validate_workshop_view(optical_volumes, optical_routes, optics, optics_config, {0, 2, 2});
+        rejects([&] {
+            validate_workshop_view(optical_volumes, optical_routes, optics, optics_config,
+                                   {0, .5F, 0});
+        });
+        optical_volumes[1].maximum.y = .01F;
+        rejects([&] {
+            validate_workshop_view(optical_volumes, optical_routes, optics, optics_config,
+                                   {0, 2, 2});
+        });
         Config sampled_config;
         sampled_config.scene = "dragon-materials";
         WorkshopState sampled(sampled_config);
@@ -240,6 +293,16 @@ int main() {
         require(specimens.routes.size() == 5 && specimens.meshes.size() == 5,
                 "prepared opaque specimen routes");
         for (const auto& mesh : specimens.meshes) {
+            const auto adjacent = optical_edge_neighbors(mesh);
+            require(adjacent.size() == mesh.indices.size() / 3, "edge table covers each face");
+            for (std::size_t face = 0; face < adjacent.size(); ++face)
+                for (int edge = 0; edge < 3; ++edge) {
+                    const auto other = adjacent[face][edge];
+                    require(other < adjacent.size() && other != face &&
+                                (adjacent[other].x == face || adjacent[other].y == face ||
+                                 adjacent[other].z == face),
+                            "closed edge adjacency is reciprocal");
+                }
             require(mesh.admission.closed && mesh.admission.signed_volume > 0 &&
                         mesh.admission.maximum_position_snap < 1.1e-7,
                     "closed prepared workshop bodies");
@@ -257,6 +320,9 @@ int main() {
         auto damaged = cubey::render::make_material_beveled_block_mesh();
         damaged.indices.resize(damaged.indices.size() - 3);
         rejects([&] { (void)prepare_workshop_mesh(damaged); });
+        auto open_boundary = specimens.meshes.at(0);
+        open_boundary.indices.resize(open_boundary.indices.size() - 3);
+        rejects([&] { (void)optical_edge_neighbors(open_boundary); });
         auto glass_view = workshop;
         glass_view.material = "glass";
         glass_view.distance = .1F;

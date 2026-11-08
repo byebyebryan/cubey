@@ -1,0 +1,37 @@
+{
+  "package": "cgal",
+  "package_version": "5.6.post202402071826",
+  "analysis_boundary_sha256": "0703f47dc38fb5971c49fc7caf1041e874db9b242434759d3e48d284eb6f5c6b",
+  "vertices": 435545,
+  "facets": 871306,
+  "halfedges": 2613918,
+  "valid_polyhedron": true,
+  "closed": true,
+  "pure_triangle": true,
+  "self_intersects": true,
+  "self_intersection_pairs": 201,
+  "outward_oriented": true,
+  "signed_volume": 0.05560572364144924,
+  "controls": {
+    "tetrahedron": {
+      "valid": true,
+      "closed": true,
+      "self_intersects": false,
+      "facets": 4
+    },
+    "crossing_closed_tetrahedra": {
+      "valid": true,
+      "closed": true,
+      "self_intersects": true,
+      "facets": 8
+    }
+  },
+  "load_seconds": 0.7574170540028717,
+  "predicate_seconds": 0.6336274279965437,
+  "input_policy": "analysis-only exact-position topology and nonzero faces; original GLB preserved",
+  "not_established": [
+    "medium traversal correctness",
+    "offset robustness",
+    "glass image quality"
+  ]
+}

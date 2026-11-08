@@ -1,0 +1,8 @@
+{
+  "projects/raytracing/tools/qualify_dragon_glass.py": "45fcb034b1e665b3563d41c19c38c7e3b6462e6684c7d2edfba00ff8a258d038",
+  "projects/raytracing/tools/dragon_glass_acceptance.py": "e97e62e07aac8220cddfda94a4c72b23ae8c6aac17e815c7ea34c42be4031af5",
+  "projects/raytracing/tools/test_dragon_glass_acceptance.py": "d9c01774cad262fb964c1e702561d95a5885201913775d8d4d8015591e1d0d6e",
+  "projects/raytracing/raytracing_renderer.cpp": "10cc1e322f45a2e2c86b93632b876afac017875c97b8a2eb5390ca2805ef58bf",
+  "projects/raytracing/CMakeLists.txt": "1f55e3f02539812f9b46ad1dd47d67c72ea54af7ed7e781ac39c76090902c155",
+  "build/dev/projects/raytracing/raytracing": "595eadd25151cbfbb2b0e6214a3fafb2944919d6436ad7bc338876227646bd80"
+}

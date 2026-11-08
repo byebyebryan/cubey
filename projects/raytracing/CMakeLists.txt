@@ -2,7 +2,7 @@ cubey_add_app_target(cubey_project_raytracing
     OUTPUT_NAME raytracing
     SHADER_DEFINE CUBEY_RAYTRACING_SHADER_DIR
     SHADER_TARGET_ENV vulkan1.3
-    SOURCES main.cpp raytracing_app.cpp raytracing_scene.cpp raytracing_renderer.cpp raytracing_environment.cpp raytracing_optical_scene.cpp raytracing_dragon_support.cpp raytracing_materials.cpp raytracing_material_geometry.cpp
+    SOURCES main.cpp raytracing_app.cpp raytracing_scene.cpp raytracing_renderer.cpp raytracing_environment.cpp raytracing_optical_scene.cpp raytracing_dragon_support.cpp raytracing_materials.cpp raytracing_material_geometry.cpp raytracing_optical_asset.cpp
     SHADERS shaders/trace.rgen shaders/primary.rchit shaders/primary.rmiss shaders/shadow.rmiss
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
@@ -12,14 +12,18 @@ cubey_add_app_target(cubey_project_raytracing
     SHADER_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
 )
 target_compile_definitions(cubey_project_raytracing PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
+target_compile_definitions(cubey_project_raytracing PRIVATE CUBEY_RAYTRACING_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
 
 if(BUILD_TESTING)
+    add_test(NAME raytracing_dragon_glass_acceptance
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_dragon_glass_acceptance.py")
     add_test(NAME raytracing_material_comparison_inputs
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/author_material_comparison.py" --check)
     add_executable(cubey_project_raytracing_material_reference raytracing_material_reference.cpp)
     target_link_libraries(cubey_project_raytracing_material_reference PRIVATE cubey::cubey cubey_project_warnings)
-    add_executable(cubey_project_raytracing_tests raytracing_tests.cpp raytracing_scene.cpp raytracing_optical_scene.cpp raytracing_dragon_support.cpp raytracing_materials.cpp raytracing_material_geometry.cpp)
+    add_executable(cubey_project_raytracing_tests raytracing_tests.cpp raytracing_scene.cpp raytracing_optical_scene.cpp raytracing_dragon_support.cpp raytracing_materials.cpp raytracing_material_geometry.cpp raytracing_optical_asset.cpp)
     target_compile_definitions(cubey_project_raytracing_tests PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
+    target_compile_definitions(cubey_project_raytracing_tests PRIVATE CUBEY_RAYTRACING_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
     target_link_libraries(cubey_project_raytracing_tests PRIVATE cubey::cubey cubey::host cubey_project_warnings)
     add_test(NAME raytracing_config_and_layout COMMAND cubey_project_raytracing_tests)
     add_executable(cubey_project_raytracing_device_tests raytracing_device_tests.cpp)

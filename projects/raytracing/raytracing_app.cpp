@@ -17,6 +17,10 @@ namespace {
 class App {
   public:
     explicit App(Config c) : config_(std::move(c)), scene_(make_scene(config_)) {
+        if (scene_.optical_dragon) {
+            optical_volumes_ = workshop_volumes(scene_);
+            last_valid_optical_view_ = config_;
+        }
         cpu_scene_ms_ =
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start_)
                 .count();
@@ -65,7 +69,10 @@ class App {
             if (scene_.workshop) {
                 data["workshop_recipes"] = scene_.workshop->identity();
                 data["geometry_conversion"] =
-                    scene_.material_layout == Scene::MaterialLayout::Dragon
+                    scene_.optical_dragon
+                        ? "certified optical main-shell dragon; original corner attributes "
+                          "retained; geometric glass interfaces; independent opaque marble slab"
+                    : scene_.material_layout == Scene::MaterialLayout::Dragon
                         ? "preserved prepared dragon and convex slab; no optical repair or glass "
                           "admission"
                         : "shared forward specimen builders; uint16 indices widened; boundary "
@@ -105,6 +112,27 @@ class App {
             c.pitch = std::clamp(
                 c.pitch, std::asin(std::clamp((.05F - c.target_y) / c.distance, -.99F, .99F)),
                 1.4F);
+        if (scene_.optical_dragon && !c.common.headless) {
+            const auto eye = math::Vec3(c.target_x, c.target_y, c.target_z) +
+                             math::Vec3(std::cos(c.pitch) * std::sin(c.yaw), std::sin(c.pitch),
+                                        std::cos(c.pitch) * std::cos(c.yaw)) *
+                                 c.distance;
+            try {
+                validate_workshop_view(optical_volumes_, scene_.routes, *scene_.workshop, c, eye);
+                last_valid_optical_view_ = c;
+            } catch (const std::invalid_argument&) {
+                ++optical_camera_rejections_;
+                // Reject an interactive orbit/dolly into the reserved glass
+                // bounds before render submission, retaining the last valid pose.
+                const auto& previous = *last_valid_optical_view_;
+                c.yaw = previous.yaw;
+                c.pitch = previous.pitch;
+                c.distance = previous.distance;
+                c.target_x = previous.target_x;
+                c.target_y = previous.target_y;
+                c.target_z = previous.target_z;
+            }
+        }
         return c;
     }
     void stress_edit(std::uint64_t frame) {
@@ -174,6 +202,7 @@ class App {
                 std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start_)
                     .count();
             auto completed_config = current();
+            data["optical_camera_rejected_updates"] = optical_camera_rejections_;
             data["config"] = schema(completed_config).template_json();
             if (!config_.metrics.empty()) {
                 if (config_.metrics.has_parent_path())
@@ -197,7 +226,9 @@ class App {
         ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize({390, std::min(720.F, ImGui::GetIO().DisplaySize.y - 24)},
                                  ImGuiCond_FirstUseEver);
-        ImGui::Begin(dragon ? "RT dragon materials" : "RT material workshop");
+        ImGui::Begin(scene_.optical_dragon ? "RT dragon optics"
+                     : dragon              ? "RT dragon materials"
+                                           : "RT material workshop");
         ImGui::PushItemWidth(155);
         ImGui::TextUnformatted(state.catalog.at(state.selected).label.c_str());
         if (dragon)
@@ -236,7 +267,9 @@ class App {
         ImGui::Checkbox("Relief normals", &config_.bump);
         const char* sources[] = {"environment", "scene"};
         int source = config_.reflection_source == "scene";
-        if (ImGui::Combo("Optical source", &source, sources, 2)) {
+        if (scene_.optical_dragon)
+            ImGui::TextUnformatted("Full scene reflections and refraction");
+        else if (ImGui::Combo("Optical source", &source, sources, 2)) {
             config_.reflection_source = sources[source];
             config_.transmission_source = sources[source];
         }
@@ -297,7 +330,7 @@ class App {
                 workshop_family_ = "all";
             std::vector<std::string> families;
             for (const auto& item : state.catalog) {
-                if (dragon && item.recipe.optics.settings.y > 0)
+                if (state.opaque_only && item.recipe.optics.settings.y > 0)
                     continue;
                 if (std::find(families.begin(), families.end(), item.family) != families.end())
                     continue;
@@ -356,7 +389,7 @@ class App {
                         std::max(recipe.optics.attenuation[channel], .0001F);
                 detail |= ImGui::SliderFloat("Optical distance", &recipe.optics.settings.w, .001F,
                                              10, "%.3f", ImGuiSliderFlags_Logarithmic);
-                if (recipe.version >= 2) {
+                if (recipe.version >= 2 && !state.sharp_only) {
                     bool rough = recipe.library.optical_options.x > .5F;
                     if (ImGui::Checkbox("Rough interfaces", &rough)) {
                         recipe.library.optical_options.x = rough ? 1.F : 0.F;
@@ -624,6 +657,9 @@ class App {
     Config config_;
     Scene scene_;
     OrbitController orbit_;
+    std::vector<WorkshopVolume> optical_volumes_;
+    mutable std::optional<Config> last_valid_optical_view_;
+    mutable std::uint64_t optical_camera_rejections_ = 0;
     std::unique_ptr<Renderer> renderer_;
     std::uint64_t frame_ = 0;
     double presentation_seconds_ = 0;

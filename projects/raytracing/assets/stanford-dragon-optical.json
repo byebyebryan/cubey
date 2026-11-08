@@ -1,0 +1,125 @@
+{
+  "format": "cubey.raytracing.optical-model",
+  "version": 1,
+  "source_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+  "candidate_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+  "cgal": "5.6.post202402071826",
+  "numpy": "2.4.6",
+  "kernel": "Exact_predicates_inexact_constructions_kernel (CGAL SWIG Polyhedron_3)",
+  "source_intersection_pairs": 201,
+  "affected_faces": 190,
+  "source_topology": {
+    "active_vertices": 435545,
+    "triangles": 871306,
+    "edges": 1306959,
+    "all_edges_two_faces": true,
+    "consistent_winding": true,
+    "non_disk_vertex_links": 0,
+    "connected_components": 1,
+    "euler_characteristic": -108,
+    "component_details": [
+      {
+        "triangles": 871306,
+        "signed_volume": 0.05560572364145141
+      }
+    ],
+    "genus": 55
+  },
+  "removed_nonzero_faces": 855,
+  "added_faces": 63,
+  "keep_main_shell": true,
+  "discarded_detached_shell_triangles": 400,
+  "removed_faces_outside_original_one_ring": 387,
+  "removed_source_zero_area_faces": 108,
+  "hole_fill_triangle_counts": [
+    2,
+    9,
+    8,
+    14,
+    2,
+    3,
+    4,
+    7,
+    2,
+    3,
+    6,
+    16
+  ],
+  "operation": "erase intersection faces plus one vertex ring; triangulate each boundary",
+  "serialized_boundary": {
+    "active_vertices": 435155,
+    "triangles": 870514,
+    "edges": 1305771,
+    "all_edges_two_faces": true,
+    "consistent_winding": true,
+    "non_disk_vertex_links": 0,
+    "connected_components": 1,
+    "euler_characteristic": -102,
+    "component_details": [
+      {
+        "triangles": 870514,
+        "signed_volume": 0.05560572365811315
+      }
+    ],
+    "genus": 52,
+    "self_intersection_pairs": 0,
+    "valid": true,
+    "closed": true,
+    "cgal_is_outward_oriented_predicate": true,
+    "signed_volume": 0.055605723658110943
+  },
+  "original_vertex_attribute_prefix_bit_identical": true,
+  "normal_policy": "original corners retained; new patch corners use flat geometric normals",
+  "added_triangle_geometric_vs_shading_normal_degrees": {
+    "0": 0.0,
+    "50": 8.537736462515939e-07,
+    "95": 1.4787793334710982e-06,
+    "100": 2.091309789151873e-06
+  },
+  "changed_face_minimum_y": -0.3322542905807495,
+  "contact_band_maximum_y": -0.33749000787734984,
+  "contact_band_faces_unchanged": true,
+  "surface_deviation_trial_budget_metres": 0.0001,
+  "distance_samples": [
+    {
+      "direction": "original-to-candidate",
+      "changed_faces": 855,
+      "samples": 1326,
+      "maximum_sample_distance_metres": 0.013536557633534042,
+      "p95_sample_distance_metres": 0.013290537345924367,
+      "worst_sample": [
+        0.19971005618572235,
+        -0.26275349656740826,
+        0.09715024630228679
+      ]
+    },
+    {
+      "direction": "candidate-to-original",
+      "changed_faces": 63,
+      "samples": 144,
+      "maximum_sample_distance_metres": 0.00037105584436496035,
+      "p95_sample_distance_metres": 0.00010265806178125838,
+      "worst_sample": [
+        0.2416761169830958,
+        -0.21545857191085815,
+        0.11206945528586705
+      ]
+    }
+  ],
+  "distance_samples_are_not_a_hausdorff_upper_bound": true,
+  "trial_fidelity_budget_met": false,
+  "optical_admission": true,
+  "model_id": "stanford-dragon-optical-v1",
+  "render_vertices": 437834,
+  "glb_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+  "geometry_payload_sha256": "4284cac599c2191e5a611fb76caeaaad2f31d4e8cd501c10d1570ef2e4886eb4",
+  "appearance_acceptance": {
+    "by": "user",
+    "date": "2026-11-08",
+    "policy": "accept selected main-shell geometry and topology changes for the optical model; supersede proposed 0.1 mm trial hold"
+  },
+  "one_connected_embedded_boundary_checks_passed": true,
+  "trial_note": "sampled surface distance exceeds the superseded 0.1 mm trial budget",
+  "additional_rejection_reasons": [],
+  "original_asset_unchanged": true
+}

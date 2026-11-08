@@ -90,12 +90,13 @@ class Renderer {
     nlohmann::json geometry_admission_ = nlohmann::json::array();
     nlohmann::json route_identity_ = nlohmann::json::object();
     std::string active_route_ = "legacy";
-    std::unique_ptr<vulkan::Buffer> vertices_, indices_, instances_, sbt_;
+    std::unique_ptr<vulkan::Buffer> vertices_, indices_, instances_, sbt_, edge_neighbors_;
     std::vector<std::unique_ptr<vulkan::Buffer>> uniforms_;
     std::vector<std::unique_ptr<vulkan::Buffer>> environment_uniforms_, material_buffers_;
     std::vector<OpticalMaterial> material_values_;
     std::shared_ptr<WorkshopState> workshop_;
     bool sampled_dragon_ = false;
+    bool optical_dragon_ = false;
     std::optional<asset::MaterialRecipe> support_recipe_;
     std::vector<std::unique_ptr<vulkan::Buffer>> recipe_buffers_, workshop_uniforms_;
     std::unique_ptr<vulkan::Image> history_;

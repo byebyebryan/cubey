@@ -1,0 +1,6 @@
+{
+  "scope": "Elevated camera, 960x540 / 256SPP versus 1920x1080 / 256SPP 2x2 linear-HDR box average. Includes independent sampling variance, silhouettes and interface jumps; not an isolated footprint error bound.",
+  "whole_image_rmse": 0.6823676824569702,
+  "lower_body_base_rectangle_rmse": 1.3395346403121948,
+  "relief_off_difference_rectangle_rmse": 0.0
+}

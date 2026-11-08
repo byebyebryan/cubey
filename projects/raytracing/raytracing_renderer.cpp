@@ -102,13 +102,14 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
         properties_.pNext = &as_properties_;
         vkGetPhysicalDeviceProperties2(device.physical_device(), &p);
         sampled_dragon_ = scene.material_layout == Scene::MaterialLayout::Dragon;
+        optical_dragon_ = scene.optical_dragon;
         create_scene(gpu, scene);
         if (scene.workshop) {
             workshop_routes_ = scene.routes;
-            if (!sampled_dragon_)
+            if (!sampled_dragon_ || optical_dragon_)
                 workshop_volumes_ = workshop_volumes(scene);
             for (const auto& mesh : scene.meshes) {
-                if (sampled_dragon_)
+                if (sampled_dragon_ && !optical_dragon_)
                     geometry_admission_.push_back({{"optical_volume_qualified", false},
                                                    {"policy", "preserved opaque geometry"},
                                                    {"vertices", mesh.vertices.size()},
@@ -191,19 +192,35 @@ void Renderer::create_scene(vulkan::GpuRuntime& gpu, const Scene& scene) {
     };
     vertices_ = upload(vertices.data(), vertices.size() * sizeof(Vertex), geometry_usage);
     indices_ = upload(indices.data(), indices.size() * 4, geometry_usage);
+    std::vector<glm::uvec4> neighbors;
+    if (scene.optical_dragon)
+        for (const auto& mesh : scene.meshes) {
+            if (!mesh.admission.certificate_id.empty()) {
+                const auto local = optical_edge_neighbors(mesh);
+                neighbors.insert(neighbors.end(), local.begin(), local.end());
+            } else
+                neighbors.resize(neighbors.size() + mesh.indices.size() / 3,
+                                 glm::uvec4(0xffffffffU));
+        }
+    if (neighbors.empty())
+        neighbors.push_back(glm::uvec4(0xffffffffU));
+    edge_neighbors_ = upload(neighbors.data(), neighbors.size() * sizeof(glm::uvec4),
+                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     std::vector<GpuInstance> shading;
     for (const auto& i : scene.instances) {
         auto geometry = offsets.at(i.mesh);
         if (i.material >= scene.materials.size())
             throw std::invalid_argument("invalid RT material index");
         geometry.z = i.material;
+        geometry.w = offsets.at(i.mesh).y / 3;
         shading.push_back(
             {i.transform, glm::transpose(glm::inverse(i.transform)), geometry, i.color});
         triangle_count_ += offsets.at(i.mesh).w;
     }
     instances_ = upload(shading.data(), shading.size() * sizeof(GpuInstance),
                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    geometry_bytes_ = vertices_->size() + indices_->size() + instances_->size();
+    geometry_bytes_ =
+        vertices_->size() + indices_->size() + instances_->size() + edge_neighbors_->size();
     accelerations_.reserve(scene.meshes.size() + std::max(std::size_t(1), scene.routes.size()));
     gpu.submit(
            "raytracing.build-static-scene",
@@ -303,10 +320,16 @@ void Renderer::create_scene(vulkan::GpuRuntime& gpu, const Scene& scene) {
                            for (int c = 0; c < 4; ++c)
                                instance.transform.matrix[r][c] = i.transform[c][r];
                        instance.instanceCustomIndex = static_cast<std::uint32_t>(n);
-                       instance.mask = scene.workshop
-                                           ? 255
-                                           : (scene.materials.at(i.material).optics.x == 2 ? 2 : 1);
-                       instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+                       instance.mask =
+                           scene.optical_dragon
+                               ? (i.recipe_role == Instance::RecipeRole::Selected ? 2 : 1)
+                           : scene.workshop
+                               ? 255
+                               : (scene.materials.at(i.material).optics.x == 2 ? 2 : 1);
+                       instance.flags =
+                           scene.optical_dragon
+                               ? 0
+                               : VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                        instance.accelerationStructureReference = accelerations_.at(i.mesh).address;
                        data.push_back(instance);
                    }
@@ -337,7 +360,7 @@ void Renderer::create_pipeline() {
     const VkShaderStageFlags stages = VK_SHADER_STAGE_RAYGEN_BIT_KHR |
                                       VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
                                       VK_SHADER_STAGE_MISS_BIT_KHR;
-    const std::array<vulkan::DescriptorSetBindingConfig, 18> bindings{
+    const std::array<vulkan::DescriptorSetBindingConfig, 19> bindings{
         {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, stages},
          {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
          {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stages},
@@ -355,7 +378,8 @@ void Renderer::create_pipeline() {
          {14, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
          {15, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
          {16, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {17, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR}}};
+         {17, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {18, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR}}};
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device_, vulkan::DescriptorSetInfo(bindings, slots_));
     auto layout = cubey::vulkan::vk_struct<VkPipelineLayoutCreateInfo>(
@@ -447,6 +471,8 @@ void Renderer::create_pipeline() {
         environment_->bind(device_, descriptors_->set(i), i);
         vulkan::DescriptorWriteBatch writes;
         writes
+            .storage_buffer(descriptors_->set(i), 18, edge_neighbors_->handle(),
+                            edge_neighbors_->size())
             .storage_buffer(descriptors_->set(i), 13, recipe_buffers_.back()->handle(),
                             recipe_buffers_.back()->size())
             .uniform_buffer(descriptors_->set(i), 14, workshop_uniforms_.back()->handle(),
@@ -582,12 +608,20 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         vkUpdateDescriptorSets(device_.handle(), 1, &write, 0, nullptr);
     }
     auto camera = camera_uniform(c, extent_);
-    if (workshop_ && !sampled_dragon_)
+    if (workshop_ && (!sampled_dragon_ || optical_dragon_))
         validate_workshop_view(workshop_volumes_, workshop_routes_, *workshop_, c,
                                math::Vec3(camera.eye));
-    if (sampled_dragon_ && (!workshop_->supports(workshop_->selected) ||
-                            workshop_->recipes.at(workshop_->selected).optics.settings.y != 0))
+    if (sampled_dragon_ && !optical_dragon_ &&
+        (!workshop_->supports(workshop_->selected) ||
+         workshop_->recipes.at(workshop_->selected).optics.settings.y != 0))
         throw std::invalid_argument("sampled dragon glass requires optical mesh qualification");
+    if (optical_dragon_ &&
+        (!workshop_->supports(workshop_->selected) ||
+         (workshop_->recipes.at(workshop_->selected).optics.settings.y > 0 &&
+          workshop_->recipes.at(workshop_->selected).library.optical_options.x != 0) ||
+         c.reflection_source != "scene" || c.transmission_source != "scene"))
+        throw std::invalid_argument(
+            "dragon optics requires sharp supported materials and full scene transport");
     if (!glass_planes_.empty() &&
         std::all_of(glass_planes_.begin(), glass_planes_.end(), [&](auto p) {
             return glm::dot(p, math::Vec4(math::Vec3(camera.eye), 1)) <= 1e-6F;
@@ -859,7 +893,8 @@ void Renderer::save_queries(const std::filesystem::path& path) const {
 }
 std::uint64_t Renderer::requested_bytes() const {
     std::uint64_t bytes = 0;
-    for (auto* buffer : {vertices_.get(), indices_.get(), instances_.get(), sbt_.get()})
+    for (auto* buffer :
+         {vertices_.get(), indices_.get(), instances_.get(), sbt_.get(), edge_neighbors_.get()})
         if (buffer)
             bytes += buffer->size();
     for (const auto& acceleration : accelerations_)
@@ -893,7 +928,13 @@ nlohmann::json Renderer::metrics() const {
         {"material_scene_layout", sampled_dragon_ ? "dragon"
                                   : workshop_     ? "specimens"
                                                   : "legacy"},
-        {"ray_footprint_policy", sampled_dragon_
+        {"ray_spawn_policy", optical_dragon_
+                                 ? "NVIDIA reconstruction/error offset; adjacent-face "
+                                   "bisector near edges; tmin=0; medium-aware triangle facing cull"
+                                 : "legacy fixed offset"},
+        {"ray_footprint_policy", optical_dragon_ ? "geometric sharp interfaces; fixed-normal Snell "
+                                                   "angular magnification; no edge-jump bound"
+                                 : sampled_dragon_
                                      ? "world-space triangle shading-normal derivative estimate"
                                      : "specimen curvature / legacy primary footprint"},
         {"support_recipe",
@@ -948,6 +989,7 @@ nlohmann::json Renderer::metrics() const {
         {"as_build_gpu_ms", as_gpu_ms_},
         {"pipeline_setup_ms", pipeline_ms_},
         {"geometry_bytes", geometry_bytes_},
+        {"edge_adjacency_bytes", edge_neighbors_ ? edge_neighbors_->size() : 0},
         {"as_bytes", as_bytes_},
         {"sbt_bytes", sbt_ ? sbt_->size() : 0},
         {"scratch_peak_bytes", scratch_peak_},
@@ -1006,6 +1048,7 @@ void Renderer::destroy() noexcept {
             rt_.destroy_as(device_.handle(), a.handle, nullptr);
     accelerations_.clear();
     instances_.reset();
+    edge_neighbors_.reset();
     indices_.reset();
     vertices_.reset();
 }

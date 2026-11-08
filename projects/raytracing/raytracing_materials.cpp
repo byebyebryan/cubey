@@ -1,5 +1,6 @@
 #include "raytracing_materials.h"
 #include "raytracing_material_geometry.h"
+#include "raytracing_optical_asset.h"
 #include "raytracing_scene.h"
 #include <cubey/render/material_specimen_mesh.h>
 #include <stdexcept>
@@ -42,7 +43,7 @@ asset::MaterialRecipe marble_base_recipe() {
 }
 WorkshopState::WorkshopState(const Config& c)
     : catalog(asset::load_material_catalog(catalog_path())),
-      opaque_only(c.scene == "dragon-materials") {
+      opaque_only(c.scene == "dragon-materials"), sharp_only(c.scene == "dragon-optics") {
     bool found = false;
     for (std::size_t i = 0; i < catalog.size(); ++i) {
         validate_workshop_recipe(catalog[i].recipe);
@@ -54,8 +55,8 @@ WorkshopState::WorkshopState(const Config& c)
     }
     if (!found && c.material != "gallery")
         throw std::invalid_argument("unknown workshop material: " + c.material);
-    if (opaque_only && (c.material == "gallery" || !supports(selected)))
-        throw std::invalid_argument("sampled dragon currently supports opaque materials only");
+    if ((opaque_only || sharp_only) && (c.material == "gallery" || !supports(selected)))
+        throw std::invalid_argument("unsupported material for this dragon presentation");
     if (!c.recipe_input.empty())
         replace(selected, asset::load_material_recipe(c.recipe_input));
     if (c.material_roughness >= 0) {
@@ -67,12 +68,15 @@ WorkshopState::WorkshopState(const Config& c)
         asset::save_material_recipe(c.recipe_output, recipes.at(selected));
 }
 bool WorkshopState::supports(std::size_t index) const {
-    return !opaque_only || !glass(catalog.at(index).recipe);
+    return (!opaque_only || !glass(catalog.at(index).recipe)) &&
+           (!sharp_only || catalog.at(index).id != "frosted-glass");
 }
 void WorkshopState::replace(std::size_t index, asset::MaterialRecipe candidate) {
     if (!supports(index))
         throw std::invalid_argument("sampled dragon glass requires optical mesh qualification");
     validate_workshop_recipe(candidate);
+    if (sharp_only && glass(candidate) && candidate.library.optical_options.x != 0)
+        throw std::invalid_argument("dragon optics currently requires sharp glass interfaces");
     if (glass(candidate) != glass(catalog.at(index).recipe))
         throw std::invalid_argument("select a matching opaque or glass workshop slot");
     recipes.at(index) = std::move(candidate);
@@ -88,6 +92,9 @@ void WorkshopState::reload() {
         if (candidate[i].id != catalog[i].id ||
             glass(candidate[i].recipe) != glass(catalog[i].recipe))
             throw std::invalid_argument("catalog identity or routing change requires restart");
+        if (sharp_only && supports(i) && glass(candidate[i].recipe) &&
+            candidate[i].recipe.library.optical_options.x != 0)
+            throw std::invalid_argument("dragon optics reload requires sharp glass interfaces");
         next.push_back(candidate[i].recipe);
     }
     catalog = std::move(candidate);
@@ -155,7 +162,8 @@ Scene make_material_scene(const Config& c) {
         scene.routes.push_back({shape, index, 1});
         auto world = math::Mat4(1);
         world[0][0] = world[1][1] = world[2][2] = c.object_scale;
-        scene.instances.push_back({index, world, {1, 1, 1, 1}, scene.workshop->selected});
+        scene.instances.push_back(
+            {index, world, {1, 1, 1, 1}, scene.workshop->selected, Instance::RecipeRole::Selected});
     }
     const auto gallery_mesh = static_cast<std::uint32_t>(scene.meshes.size());
     scene.meshes.push_back(prepare_workshop_mesh(render::make_material_sphere_mesh(
@@ -203,19 +211,31 @@ Scene make_material_dragon(const Config& c) {
     auto geometry = c;
     geometry.scene = "reflection-dragon-solo";
     auto scene = make_optical_scene(geometry);
+    scene.optical_dragon = c.scene == "dragon-optics";
+    if (scene.optical_dragon)
+        admit_optical_dragon(scene.meshes.at(0), c.model);
     scene.workshop = std::make_shared<WorkshopState>(c);
     scene.material_layout = Scene::MaterialLayout::Dragon;
     scene.routes = {{"dragon", 0, 2}};
     scene.instances.at(0).material = scene.workshop->selected;
+    scene.instances.at(0).recipe_role = Instance::RecipeRole::Selected;
     // A separate immutable instance slot keeps edits to a marble dragon from
     // changing its base, even when both consume the same canonical recipe.
     scene.instances.at(1).material = static_cast<std::uint32_t>(scene.workshop->recipes.size());
+    scene.instances.at(1).recipe_role = Instance::RecipeRole::Support;
     resolve_materials(scene);
     const auto& base = *scene.support_recipe;
     scene.materials.push_back({base.surface.base_roughness,
                                {0, base.optics.settings.z, base.optics.settings.w, 0},
                                base.optics.attenuation,
                                {1, 1, 1, 1}});
+    if (scene.optical_dragon) {
+        const auto eye = math::Vec3(c.target_x, c.target_y, c.target_z) +
+                         math::Vec3(std::cos(c.pitch) * std::sin(c.yaw), std::sin(c.pitch),
+                                    std::cos(c.pitch) * std::cos(c.yaw)) *
+                             c.distance;
+        validate_workshop_view(workshop_volumes(scene), scene.routes, *scene.workshop, c, eye);
+    }
     return scene;
 }
 } // namespace cubey::projects::raytracing

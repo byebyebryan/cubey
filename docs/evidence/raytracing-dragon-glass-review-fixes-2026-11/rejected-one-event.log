@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/qualify_dragon_glass.py", line 181, in <module>
+    main()
+    ~~~~^^
+  File "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/qualify_dragon_glass.py", line 80, in main
+    default, default_metrics = run('preset-default', mode='optics')
+                               ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/qualify_dragon_glass.py", line 66, in run
+    require_transport_status(name, counts, allow_truncation=allow_truncation)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/dragon_glass_acceptance.py", line 22, in require_transport_status
+    raise AssertionError(f'{name}: forbidden transport status {failures}')
+AssertionError: preset-default: forbidden transport status {'event limit': 3657, 'shadow limit': 226}

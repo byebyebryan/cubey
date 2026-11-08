@@ -1,0 +1,10 @@
+{
+  "optical_camera_rejected_updates": 21,
+  "as_builds": 3,
+  "history_epochs": 130,
+  "target_generations": 3,
+  "device": "NVIDIA GeForce RTX 5070 Ti",
+  "history_samples": 32,
+  "resident_project_requested_bytes": 102642280,
+  "peak_simultaneous_project_requested_bytes": 134130408
+}

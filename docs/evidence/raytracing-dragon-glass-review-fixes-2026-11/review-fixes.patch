@@ -1,0 +1,60 @@
+--- before/projects/raytracing/raytracing_renderer.cpp
++++ after/projects/raytracing/raytracing_renderer.cpp
+@@ -896 +896,2 @@
+-    for (auto* buffer : {vertices_.get(), indices_.get(), instances_.get(), sbt_.get()})
++    for (auto* buffer :
++         {vertices_.get(), indices_.get(), instances_.get(), sbt_.get(), edge_neighbors_.get()})
+@@ -990,0 +992 @@
++        {"edge_adjacency_bytes", edge_neighbors_ ? edge_neighbors_->size() : 0},
+--- before/projects/raytracing/tools/qualify_dragon_glass.py
++++ after/projects/raytracing/tools/qualify_dragon_glass.py
+@@ -13,0 +14 @@
++from dragon_glass_acceptance import require_requested_memory, require_transport_status
+@@ -35 +36,2 @@
+-    def run(name, extra=(), *, mode='hdr', width=160, height=120, samples=None):
++    def run(name, extra=(), *, mode='hdr', width=160, height=120, samples=None,
++            allow_truncation=False):
+@@ -53,0 +56,3 @@
++        assert m['config']['throughput-cutoff'] == 0
++        assert m['edge_adjacency_bytes'] == m['active_triangles'] * 16
++        require_requested_memory(m)
+@@ -61 +66 @@
+-        assert not np.any(flags & (1 | 4 | 16 | 64)), (name, counts)
++        require_transport_status(name, counts, allow_truncation=allow_truncation)
+@@ -63 +68,7 @@
+-                          status_or_pixels=counts, binary_sha256=digest(a.binary)))
++                          status_or_pixels=counts, binary_sha256=digest(a.binary),
++                          transport_policy='shallow diagnostic' if allow_truncation else 'accepted view',
++                          budget={key: m['config'][key] for key in
++                                  ['max-events', 'max-path-rays', 'max-total-rays']},
++                          edge_adjacency_bytes=m['edge_adjacency_bytes'],
++                          resident_requested_bytes=m['resident_project_requested_bytes'],
++                          peak_requested_bytes=m['peak_simultaneous_project_requested_bytes']))
+@@ -66,0 +78,3 @@
++    # Check the actual preset before any reference-budget overrides. A broken
++    # preset must fail even when all deeper reference controls would pass.
++    default, default_metrics = run('preset-default', mode='optics')
+@@ -70 +84,2 @@
+-    sweep = {d: run('depth-'+str(d), budget(d), mode='optics')[0] for d in depths}
++    sweep = {d: run('depth-'+str(d), budget(d), mode='optics',
++                    allow_truncation=d < 128)[0] for d in depths}
+@@ -77,0 +93,2 @@
++    default_error = float(np.sqrt(np.mean((default[mask, 10, :3]-ref[mask])**2)))
++    assert default_error <= 1e-5, ('preset differs from deeper reference', default_error)
+@@ -79,0 +97,3 @@
++                   preset_budget={key: default_metrics['config'][key] for key in
++                                  ['max-events', 'max-path-rays', 'max-total-rays']},
++                   preset_subject_hdr_rmse_to_deep=default_error,
+@@ -99 +119 @@
+-        controls[name], _ = run(name, [*budget(128), *extra])
++        controls[name], _ = run(name, extra)
+@@ -107 +127 @@
+-        run(name, [*budget(128), *extra])
++        run(name, extra)
+@@ -120,0 +141,2 @@
++    assert not any(t in (result.stdout+result.stderr).lower() for t in
++                   ['vuid-', 'hazard detected', 'vulkan validation error'])
+@@ -121,0 +144,3 @@
++    flags = after[:, 3].astype(np.uint32)
++    require_transport_status('saved-reloaded', {str(b): int(np.count_nonzero(flags & b))
++                                              for b in [1, 2, 4, 8, 16, 32, 64]})

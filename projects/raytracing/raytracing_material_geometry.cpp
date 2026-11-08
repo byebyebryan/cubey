@@ -4,7 +4,9 @@
 #include <cmath>
 #include <limits>
 #include <map>
+#include <numeric>
 #include <stdexcept>
+#include <tuple>
 #include <unordered_map>
 
 namespace cubey::projects::raytracing {
@@ -117,9 +119,19 @@ std::vector<WorkshopVolume> workshop_volumes(const Scene& scene) {
     const float huge = std::numeric_limits<float>::max();
     for (const auto& instance : scene.instances) {
         const auto& mesh = scene.meshes.at(instance.mesh);
-        if (!mesh.admission.closed)
+        if (!mesh.admission.closed && instance.recipe_role != Instance::RecipeRole::Support)
             throw std::invalid_argument("unqualified workshop optical boundary");
-        WorkshopVolume body{math::Vec3(huge), math::Vec3(-huge), instance.material};
+        WorkshopVolume body{math::Vec3(huge), math::Vec3(-huge), instance.material,
+                            instance.recipe_role};
+        if (instance.recipe_role == Instance::RecipeRole::Support) {
+            for (const auto& vertex : mesh.vertices) {
+                const auto world = math::Vec3(instance.transform * vertex.position);
+                body.minimum = glm::min(body.minimum, world);
+                body.maximum = glm::max(body.maximum, world);
+            }
+            result.push_back(body);
+            continue;
+        }
         for (int corner = 0; corner < 8; ++corner) {
             math::Vec3 p;
             for (int k = 0; k < 3; ++k)
@@ -133,11 +145,51 @@ std::vector<WorkshopVolume> workshop_volumes(const Scene& scene) {
     return result;
 }
 std::string workshop_route(const Config& c) {
-    if (c.scene == "dragon-materials")
+    if (sampled_dragon_scene(c))
         return "dragon";
     return c.optical_pair != "none"  ? "optical-pair"
            : c.material == "gallery" ? "gallery"
                                      : c.specimen;
+}
+std::vector<glm::uvec4> optical_edge_neighbors(const Mesh& mesh) {
+    // Exact-position identity only; the certificate already binds this boundary.
+    std::vector<std::uint32_t> order(mesh.vertices.size()), welded(order.size());
+    std::iota(order.begin(), order.end(), 0U);
+    auto key = [&](std::uint32_t i) {
+        const auto p = mesh.vertices[i].position;
+        return std::tuple{p.x, p.y, p.z};
+    };
+    std::sort(order.begin(), order.end(), [&](auto a, auto b) { return key(a) < key(b); });
+    std::uint32_t identity = 0;
+    for (std::size_t i = 0; i < order.size(); ++i) {
+        if (i && key(order[i]) != key(order[i - 1]))
+            ++identity;
+        welded[order[i]] = identity;
+    }
+    struct Edge {
+        std::uint32_t a, b, face, corner;
+    };
+    std::vector<Edge> edges;
+    edges.reserve(mesh.indices.size());
+    for (std::size_t i = 0; i < mesh.indices.size(); i += 3)
+        for (std::uint32_t corner = 0; corner < 3; ++corner) {
+            auto a = welded.at(mesh.indices[i + (corner + 1) % 3]);
+            auto b = welded.at(mesh.indices[i + (corner + 2) % 3]);
+            if (a > b)
+                std::swap(a, b);
+            edges.push_back({a, b, static_cast<std::uint32_t>(i / 3), corner});
+        }
+    std::sort(edges.begin(), edges.end(),
+              [](auto a, auto b) { return std::tie(a.a, a.b) < std::tie(b.a, b.b); });
+    std::vector<glm::uvec4> neighbors(mesh.indices.size() / 3, glm::uvec4(0xffffffffU));
+    for (std::size_t i = 0; i < edges.size(); i += 2) {
+        if (i + 1 == edges.size() || edges[i].a != edges[i + 1].a || edges[i].b != edges[i + 1].b ||
+            (i + 2 < edges.size() && edges[i].a == edges[i + 2].a && edges[i].b == edges[i + 2].b))
+            throw std::invalid_argument("optical adjacency requires exactly two faces per edge");
+        neighbors[edges[i].face][static_cast<int>(edges[i].corner)] = edges[i + 1].face;
+        neighbors[edges[i + 1].face][static_cast<int>(edges[i + 1].corner)] = edges[i].face;
+    }
+    return neighbors;
 }
 void validate_workshop_view(std::span<const WorkshopVolume> volumes,
                             std::span<const Scene::Route> routes, const WorkshopState& state,
@@ -148,12 +200,18 @@ void validate_workshop_view(std::span<const WorkshopVolume> volumes,
     if (route == routes.end())
         throw std::invalid_argument("unprepared workshop view");
     auto glass = [&](std::size_t index) {
-        const auto material =
-            name == "gallery" || name == "optical-pair" ? volumes[index].material : state.selected;
+        if (volumes[index].recipe_role == Instance::RecipeRole::Support)
+            return false;
+        const auto material = volumes[index].recipe_role == Instance::RecipeRole::Selected
+                                  ? state.selected
+                                  : volumes[index].material;
         return state.recipes.at(material).optics.settings.y > 0;
     };
     for (std::size_t i = route->first; i < route->first + route->count; ++i) {
-        if (glass(i) && glm::all(glm::greaterThanEqual(eye, volumes[i].minimum)) &&
+        const bool optical_body = config.scene == "dragon-optics" &&
+                                  volumes[i].recipe_role == Instance::RecipeRole::Selected;
+        if ((glass(i) || optical_body) &&
+            glm::all(glm::greaterThanEqual(eye, volumes[i].minimum)) &&
             glm::all(glm::lessThanEqual(eye, volumes[i].maximum)))
             throw std::invalid_argument("camera overlaps the conservative bounds of a glass body");
         for (std::size_t j = i + 1; j < route->first + route->count; ++j) {
@@ -171,6 +229,9 @@ void validate_workshop_view(std::span<const WorkshopVolume> volumes,
 nlohmann::json mesh_admission_identity(const Mesh& mesh) {
     const auto& r = mesh.admission;
     return {{"closed", r.closed},
+            {"optical_volume_qualified", r.closed},
+            {"certificate_id", r.certificate_id},
+            {"model_sha256", r.model_sha256},
             {"signed_volume", r.signed_volume},
             {"welded_topology_vertices", r.welded_vertices},
             {"removed_degenerate_triangles", r.removed_triangles},

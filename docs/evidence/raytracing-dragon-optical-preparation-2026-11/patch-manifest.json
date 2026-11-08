@@ -1,0 +1,123 @@
+{
+  "format": "cubey.raytracing.optical-repair-study",
+  "version": 1,
+  "source_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+  "candidate_sha256": "fb4df688f63808a34724e2e55c941ff41c41dc61cbdd415dadee373ec23260bf",
+  "cgal": "5.6.post202402071826",
+  "numpy": "2.4.6",
+  "kernel": "Exact_predicates_inexact_constructions_kernel (CGAL SWIG Polyhedron_3)",
+  "source_intersection_pairs": 201,
+  "affected_faces": 190,
+  "source_topology": {
+    "active_vertices": 435545,
+    "triangles": 871306,
+    "edges": 1306959,
+    "all_edges_two_faces": true,
+    "consistent_winding": true,
+    "non_disk_vertex_links": 0,
+    "connected_components": 1,
+    "euler_characteristic": -108,
+    "component_details": [
+      {
+        "triangles": 871306,
+        "signed_volume": 0.05560572364145141
+      }
+    ],
+    "genus": 55
+  },
+  "removed_nonzero_faces": 468,
+  "added_faces": 76,
+  "removed_source_zero_area_faces": 108,
+  "hole_fill_triangle_counts": [
+    2,
+    9,
+    8,
+    14,
+    2,
+    3,
+    4,
+    7,
+    2,
+    3,
+    6,
+    16
+  ],
+  "operation": "erase intersection faces plus one vertex ring; triangulate each boundary",
+  "serialized_boundary": {
+    "active_vertices": 435359,
+    "triangles": 870914,
+    "edges": 1306371,
+    "all_edges_two_faces": true,
+    "consistent_winding": true,
+    "non_disk_vertex_links": 0,
+    "connected_components": 3,
+    "euler_characteristic": -98,
+    "component_details": [
+      {
+        "triangles": 870514,
+        "signed_volume": 0.05560572365811315
+      },
+      {
+        "triangles": 356,
+        "signed_volume": -5.198080289363033e-10
+      },
+      {
+        "triangles": 44,
+        "signed_volume": -7.549605981583495e-13
+      }
+    ],
+    "genus": null,
+    "self_intersection_pairs": 0,
+    "valid": true,
+    "closed": true,
+    "cgal_is_outward_oriented_predicate": true,
+    "signed_volume": 0.055605723137548
+  },
+  "raw_positions_and_normals_bit_identical": true,
+  "normal_policy": "original normals retained; new corners use first coincident source vertex",
+  "added_triangle_geometric_vs_shading_normal_degrees": {
+    "0": 0.2727232568021631,
+    "50": 9.918754694878507,
+    "95": 121.45058207524517,
+    "100": 165.69810406804802
+  },
+  "changed_face_minimum_y": -0.3322542905807495,
+  "contact_band_maximum_y": -0.33749000787734984,
+  "contact_band_faces_unchanged": true,
+  "surface_deviation_trial_budget_metres": 0.0001,
+  "distance_samples": [
+    {
+      "direction": "original-to-candidate",
+      "changed_faces": 468,
+      "samples": 752,
+      "maximum_sample_distance_metres": 0.008284525381319147,
+      "p95_sample_distance_metres": 0.008185235458792347,
+      "worst_sample": [
+        0.21961958706378937,
+        -0.23228466510772705,
+        0.10300492495298386
+      ]
+    },
+    {
+      "direction": "candidate-to-original",
+      "changed_faces": 76,
+      "samples": 174,
+      "maximum_sample_distance_metres": 0.00037105584436496035,
+      "p95_sample_distance_metres": 9.367386253599712e-05,
+      "worst_sample": [
+        0.2416761169830958,
+        -0.21545857191085815,
+        0.11206945528586705
+      ]
+    }
+  ],
+  "distance_samples_are_not_a_hausdorff_upper_bound": true,
+  "fidelity_gate_passed": false,
+  "optical_admission": false,
+  "rejection": "sampled surface distance alone exceeds 0.1 mm trial budget",
+  "additional_rejection_reasons": [
+    "one connected surface became three",
+    "new patch geometric and stored shading normals can oppose"
+  ],
+  "original_asset_unchanged": true
+}

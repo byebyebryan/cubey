@@ -1,0 +1,16 @@
+{
+  "edge_adjacency_bytes": 13928928,
+  "memory_deltas": {
+    "resident_project_requested_bytes": 13928928,
+    "peak_simultaneous_project_requested_bytes": 13928928
+  },
+  "before": {
+    "resident_project_requested_bytes": 78776968,
+    "peak_simultaneous_project_requested_bytes": 90791272
+  },
+  "after": {
+    "resident_project_requested_bytes": 92705896,
+    "peak_simultaneous_project_requested_bytes": 104720200
+  },
+  "render_png_identical": true
+}

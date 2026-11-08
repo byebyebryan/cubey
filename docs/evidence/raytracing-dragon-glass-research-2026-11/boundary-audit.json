@@ -1,0 +1,56 @@
+{
+  "asset_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+  "source_vertices": 437645,
+  "source_triangles": 871414,
+  "active_exact_position_vertices": 435545,
+  "nonzero_triangles": 871306,
+  "removed_zero_area_faces": 108,
+  "all_edges_two_incident_faces": true,
+  "consistent_edge_winding": true,
+  "vertices_with_non_disk_links": 0,
+  "maximum_link_components": 1,
+  "maximum_vertex_valence": 15,
+  "euler_characteristic": -108,
+  "genus_if_connected_embedded": 55,
+  "geometric_vs_average_shading_normal_degrees": {
+    "0": 0.0,
+    "1": 0.15321784280296127,
+    "5": 0.3522645030266862,
+    "50": 1.6190571727618865,
+    "95": 6.154452398354194,
+    "99": 12.506948279511496,
+    "100": 114.4375428156029
+  },
+  "adjacent_geometric_normal_angle_degrees": {
+    "0": 0.0,
+    "1": 0.04082788142379494,
+    "5": 0.21260146224138007,
+    "50": 2.7404622920731896,
+    "95": 12.131991744389126,
+    "99": 24.909468968670318,
+    "100": 179.9889022256803
+  },
+  "minimum_triangle_altitude_metres": {
+    "0": 5.193019313477032e-08,
+    "1": 1.0332597467847984e-05,
+    "5": 5.3403593507879226e-05,
+    "50": 0.0012246476954657322,
+    "95": 0.002317153231650682,
+    "99": 0.0033849882097316732,
+    "100": 0.009203989319507506
+  },
+  "triangles_with_altitude_below_current_20_micrometre_origin_offset": 16756,
+  "minimum_altitude_is_not_body_thickness": true,
+  "analysis_boundary": {
+    "path": "outputs/raytracing/dragon-glass-research-20261107/analysis-boundary.off",
+    "sha256": "0703f47dc38fb5971c49fc7caf1041e874db9b242434759d3e48d284eb6f5c6b",
+    "policy": "exact position identification and zero-area exclusion only; no position motion, reorientation or normal changes; offline predicates only"
+  },
+  "source_unchanged": true,
+  "elapsed_seconds": 3.728448963993287,
+  "not_established": [
+    "self-intersections",
+    "valid embedded volume",
+    "optical admission"
+  ]
+}

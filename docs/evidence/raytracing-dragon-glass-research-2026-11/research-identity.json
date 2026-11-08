@@ -1,0 +1,17 @@
+{
+  "reviewed_commit": "c02a938a625a8b418986c243ed71cddfd4289d04",
+  "asset_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+  "analysis_boundary_sha256": "0703f47dc38fb5971c49fc7caf1041e874db9b242434759d3e48d284eb6f5c6b",
+  "audit_scripts": {
+    "audit_boundary.py": "458bc1e2e61e0f416d71574dc8230bc6bd876b3a6c45fa5a32fd26cf5a35bc62",
+    "check_cgal.py": "aacb40124ea53639aa6a57e44ff4907f15884c0658b98b6c8f576ee35d3b09e4",
+    "classify_intersections.py": "c6f6573744097485f7b2bd2bb1dc0113de5fc9585fd2e1a820ee2b2f5ff30c46"
+  },
+  "unchanged_runtime_and_tool_files": 79,
+  "binary_unchanged": true,
+  "shader_unchanged": true,
+  "protected_original_files_unchanged": 11,
+  "production_asset_modified": false,
+  "repairs_attempted": false,
+  "glass_enabled": false
+}

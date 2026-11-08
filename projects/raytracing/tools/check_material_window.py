@@ -17,9 +17,10 @@ def main():
     p.add_argument('--gallery-exercise',action='store_true')
     p.add_argument('--optics-exercise',action='store_true')
     p.add_argument('--material',default='bronze')
-    p.add_argument('--scene',choices=['materials','dragon-materials'],default='materials')
+    p.add_argument('--scene',choices=['materials','dragon-materials','dragon-optics'],default='materials')
     args = p.parse_args()
-    dragon = args.scene == 'dragon-materials'
+    dragon = args.scene in ['dragon-materials','dragon-optics']
+    optical_dragon = args.scene == 'dragon-optics'
     if dragon and (args.catalog_exercise or args.gallery_exercise or args.optics_exercise):
         p.error('Dragon mode supports --exercise or preview; specimen exercises require materials')
     if os.environ.get('CUBEY_RT_PRIVATE_XVFB') != '1':
@@ -54,8 +55,11 @@ def main():
     root,window = x.XDefaultRootWindow(display),None
     env = dict(os.environ,XDG_SESSION_TYPE='x11',VK_LAYER_VALIDATE_SYNC='1')
     env.pop('WAYLAND_DISPLAY',None)
-    scene_args = (['--config','projects/raytracing/presets/optics/dragon-sampled.json']
-                  if args.scene=='dragon-materials' else ['--scene','materials'])
+    scene_args = (['--config','projects/raytracing/presets/optics/'+
+                   ('dragon-glass.json' if optical_dragon else 'dragon-sampled.json')]
+                  if dragon else ['--scene','materials'])
+    if optical_dragon and args.exercise:
+        scene_args += ['--yaw','1.7','--pitch','.78']
     command = [str(args.binary.resolve()),*scene_args,'--material',args.material,'--samples','32',
                '--width','1000','--height','760','--require-validation',
                '--metrics',str(out/'metrics.json'),'--recipe-output',str(out/'edited-recipe.json'),
@@ -155,7 +159,58 @@ def main():
                 edited_roughness=exported['surface']['roughness']
                 click(310,489)
                 capture('cloth-edited')
-            if args.exercise and dragon:
+            if args.exercise and optical_dragon:
+                click(150,439)  # Display resolve keeps the sampled history.
+                time.sleep(1)
+                capture('exposure')
+                click(140,209)  # Change IOR, save the effective recipe and view.
+                time.sleep(2)
+                click(70,559)
+                click(310,499)
+                good = (out/'edited-recipe.json').read_bytes()
+                assert json.loads(good)['surface']['optics']['ior'] > 1.8
+                capture('ior-edited')
+                (out/'edited-recipe.json').write_text('{"unexpected":true}\n')
+                click(175,559)
+                time.sleep(.3)
+                click(70,559)
+                assert (out/'edited-recipe.json').read_bytes() == good
+                click(175,559)
+                time.sleep(1)
+                click(80,499)  # Reset glass.
+                for count in [5,6]:  # Bronze and glass on the same prepared AS.
+                    click(110,657)
+                    key('Home')
+                    for _ in range(count): key('Down')
+                    key('Return')
+                    time.sleep(2)
+                    capture('bronze' if count==5 else 'glass')
+                click(26,23)
+                rx,ry,child = I(),I(),W()
+                x.XTranslateCoordinates(display,window,root,0,0,C.byref(rx),C.byref(ry),C.byref(child))
+                t.XTestFakeMotionEvent(display,-1,rx.value+760,ry.value+400,0)
+                t.XTestFakeButtonEvent(display,1,1,0)
+                for step in range(1,7):
+                    t.XTestFakeMotionEvent(display,-1,rx.value+760+10*step,ry.value+400+3*step,0)
+                    x.XSync(display,0)
+                    time.sleep(.15)
+                t.XTestFakeButtonEvent(display,1,0,0)
+                x.XSync(display,0)
+                # Dolly toward the exclusion region, then back out; the native
+                # app must retain a valid camera instead of throwing at render.
+                for button in [4]*24 + [5]*24:
+                    for pressed in [1,0]: t.XTestFakeButtonEvent(display,button,pressed,0)
+                    x.XSync(display,0)
+                    time.sleep(.04)
+                key('r')
+                time.sleep(2)
+                capture('orbit-settled')
+                for width,height,name in [(1200,820,'resized'),(1000,760,'restored')]:
+                    x.XResizeWindow(display,window,width,height)
+                    x.XSync(display,0)
+                    time.sleep(2)
+                    capture(name)
+            if args.exercise and dragon and not optical_dragon:
                 click(150,449)  # Exposure keeps the converged history.
                 time.sleep(1)
                 capture('exposure')
@@ -300,7 +355,18 @@ def main():
                 ['vuid-','hazard detected','vulkan validation error']),text
             metrics = json.loads((out/'metrics.json').read_text())
             assert metrics['history_samples'] == 32,metrics
-            if args.exercise and dragon:
+            if args.exercise and optical_dragon:
+                assert metrics['optical_camera_rejected_updates'] > 0
+                assert metrics['as_builds']==3 and metrics['target_generations']==3
+                assert metrics['history_epochs']>=6 and metrics['config']['material']=='glass'
+                journal=metrics['sampling_frames']
+                assert len({f['exposure'] for f in journal if f['epoch']==1})>=2
+                assert {'bronze','glass'} <= {f['selected_material'] for f in journal}
+                assert len({round(f['yaw'],4) for f in journal})>2
+                assert len({round(f['distance'],4) for f in journal})>2
+                assert metrics['config']['reflection-source']=='scene'
+                assert len(metrics['workshop_supported_material_ids'])==11
+            elif args.exercise and dragon:
                 assert metrics['as_builds']==3 and metrics['target_generations']==3
                 assert metrics['history_epochs']>=8 and metrics['config']['material']=='bronze'
                 assert metrics['config']['reflection-source']=='scene'

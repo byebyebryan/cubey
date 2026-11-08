@@ -1,0 +1,212 @@
+[
+  {
+    "region": 0,
+    "affected_faces": 137,
+    "removed_faces": 253,
+    "added_faces": 9,
+    "original_to_candidate": {
+      "direction": "original-to-candidate",
+      "changed_faces": 253,
+      "samples": 386,
+      "maximum_sample_distance_metres": 0.008284525381319147,
+      "p95_sample_distance_metres": 0.008261368505667019,
+      "worst_sample": [
+        0.21961958706378937,
+        -0.23228466510772705,
+        0.10300492495298386
+      ]
+    },
+    "candidate_to_original": {
+      "direction": "candidate-to-original",
+      "changed_faces": 9,
+      "samples": 22,
+      "maximum_sample_distance_metres": 7.137656399854496e-06,
+      "p95_sample_distance_metres": 6.255036173764631e-06,
+      "worst_sample": [
+        0.23514024913311005,
+        -0.2079844872156779,
+        0.10113156586885452
+      ]
+    }
+  },
+  {
+    "region": 1,
+    "affected_faces": 13,
+    "removed_faces": 43,
+    "added_faces": 7,
+    "original_to_candidate": {
+      "direction": "original-to-candidate",
+      "changed_faces": 43,
+      "samples": 70,
+      "maximum_sample_distance_metres": 0.0032855362114351957,
+      "p95_sample_distance_metres": 0.003118640198610773,
+      "worst_sample": [
+        0.22859251499176025,
+        -0.21912053227424622,
+        0.09453437477350235
+      ]
+    },
+    "candidate_to_original": {
+      "direction": "candidate-to-original",
+      "changed_faces": 7,
+      "samples": 18,
+      "maximum_sample_distance_metres": 4.5471313523346145e-05,
+      "p95_sample_distance_metres": 3.96844751368689e-05,
+      "worst_sample": [
+        0.2299456000328064,
+        -0.21585309505462646,
+        0.09368497381607692
+      ]
+    }
+  },
+  {
+    "region": 2,
+    "affected_faces": 13,
+    "removed_faces": 43,
+    "added_faces": 9,
+    "original_to_candidate": {
+      "direction": "original-to-candidate",
+      "changed_faces": 43,
+      "samples": 71,
+      "maximum_sample_distance_metres": 0.0026268857906631064,
+      "p95_sample_distance_metres": 0.002543499566815146,
+      "worst_sample": [
+        0.20917008817195892,
+        -0.2485172599554062,
+        0.09626668691635132
+      ]
+    },
+    "candidate_to_original": {
+      "direction": "candidate-to-original",
+      "changed_faces": 9,
+      "samples": 22,
+      "maximum_sample_distance_metres": 2.4421439125396726e-05,
+      "p95_sample_distance_metres": 1.6359467611883483e-05,
+      "worst_sample": [
+        0.21101968983809152,
+        -0.2460059920946757,
+        0.09515259166558583
+      ]
+    }
+  },
+  {
+    "region": 3,
+    "affected_faces": 10,
+    "removed_faces": 24,
+    "added_faces": 2,
+    "original_to_candidate": {
+      "direction": "original-to-candidate",
+      "changed_faces": 24,
+      "samples": 39,
+      "maximum_sample_distance_metres": 0.0010760808698348653,
+      "p95_sample_distance_metres": 0.0010743945630525694,
+      "worst_sample": [
+        -0.2884354591369629,
+        0.17172490060329437,
+        -0.05483424663543701
+      ]
+    },
+    "candidate_to_original": {
+      "direction": "candidate-to-original",
+      "changed_faces": 2,
+      "samples": 6,
+      "maximum_sample_distance_metres": 9.463207813090485e-07,
+      "p95_sample_distance_metres": 8.052526920628047e-07,
+      "worst_sample": [
+        -0.2870168189207713,
+        0.17200310031572977,
+        -0.05497529854377111
+      ]
+    }
+  },
+  {
+    "region": 4,
+    "affected_faces": 6,
+    "removed_faces": 36,
+    "added_faces": 16,
+    "original_to_candidate": {
+      "direction": "original-to-candidate",
+      "changed_faces": 36,
+      "samples": 63,
+      "maximum_sample_distance_metres": 0.00013436526771437175,
+      "p95_sample_distance_metres": 9.057490033035071e-05,
+      "worst_sample": [
+        0.12483808398246765,
+        -0.3127438426017761,
+        0.054122451692819595
+      ]
+    },
+    "candidate_to_original": {
+      "direction": "candidate-to-original",
+      "changed_faces": 16,
+      "samples": 35,
+      "maximum_sample_distance_metres": 9.656401419169622e-05,
+      "p95_sample_distance_metres": 7.392919884413715e-05,
+      "worst_sample": [
+        0.12312741080919902,
+        -0.31213148434956867,
+        0.053105940421422325
+      ]
+    }
+  },
+  {
+    "region": 5,
+    "affected_faces": 6,
+    "removed_faces": 34,
+    "added_faces": 16,
+    "original_to_candidate": {
+      "direction": "original-to-candidate",
+      "changed_faces": 34,
+      "samples": 61,
+      "maximum_sample_distance_metres": 5.4469943144970505e-05,
+      "p95_sample_distance_metres": 3.572674822634142e-05,
+      "worst_sample": [
+        0.24232231577237448,
+        -0.21466920773188272,
+        0.11223865300416946
+      ]
+    },
+    "candidate_to_original": {
+      "direction": "candidate-to-original",
+      "changed_faces": 16,
+      "samples": 34,
+      "maximum_sample_distance_metres": 0.00037105584436496035,
+      "p95_sample_distance_metres": 0.00018768942926602434,
+      "worst_sample": [
+        0.2416761169830958,
+        -0.21545857191085815,
+        0.11206945528586705
+      ]
+    }
+  },
+  {
+    "region": 6,
+    "affected_faces": 5,
+    "removed_faces": 35,
+    "added_faces": 17,
+    "original_to_candidate": {
+      "direction": "original-to-candidate",
+      "changed_faces": 35,
+      "samples": 62,
+      "maximum_sample_distance_metres": 0.0004426487253965757,
+      "p95_sample_distance_metres": 0.00025947375269428404,
+      "worst_sample": [
+        -0.14005436499913534,
+        -0.3312220374743144,
+        -0.015478664077818394
+      ]
+    },
+    "candidate_to_original": {
+      "direction": "candidate-to-original",
+      "changed_faces": 17,
+      "samples": 37,
+      "maximum_sample_distance_metres": 0.00023084488139925741,
+      "p95_sample_distance_metres": 0.0002090664148904058,
+      "worst_sample": [
+        -0.13967123130957285,
+        -0.33148624499638873,
+        -0.015105017150441805
+      ]
+    }
+  }
+]

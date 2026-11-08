@@ -17,6 +17,7 @@ struct Config {
     float red = .55F, green = .34F, blue = .15F, roughness = .4F;
     float sun_azimuth = -.8F, sun_elevation = .8F, intensity = 3, ambient = .12F, exposure = 0;
     bool shadows = true;
+    bool hide_dragon = false;
     std::string fault = "none";
     bool exercise_retry = false;
     bool optics_contract = false;
@@ -41,6 +42,12 @@ struct Config {
     float orbit_speed = 0, sun_speed = 0;
     int max_events = 8, max_path_rays = 32, max_total_rays = 128;
 };
+inline bool sampled_material_scene(const Config& c) {
+    return c.scene == "materials" || c.scene == "dragon-materials" || c.scene == "dragon-optics";
+}
+inline bool sampled_dragon_scene(const Config& c) {
+    return c.scene == "dragon-materials" || c.scene == "dragon-optics";
+}
 inline int dump_mode(const Config& c) {
     return !c.query_output.empty()
                ? 1
@@ -68,7 +75,7 @@ inline config::Schema schema(Config& c) {
     scene.enum_values = {"triangle",           "fixture",           "dragon",
                          "reflection-fixture", "reflection-dragon", "reflection-dragon-solo",
                          "refraction-fixture", "refraction-dragon", "slab",
-                         "materials",          "dragon-materials"};
+                         "materials",          "dragon-materials",  "dragon-optics"};
     auto view = opt("view", ValueType::Enum);
     view.enum_values = {
         "final",       "geometric-normal", "shading-normal", "depth",       "instance-id",
@@ -166,6 +173,7 @@ inline config::Schema schema(Config& c) {
         .bind(opt("stress-edits", ValueType::UInt32), c.stress_edits)
         .bind(opt("material-roughness", ValueType::Float), c.material_roughness);
     b.bind(opt("object-scale", ValueType::Float), c.object_scale);
+    b.bind(opt("hide-dragon", ValueType::Bool), c.hide_dragon);
     for (auto [name, value] : {std::pair{"pattern", &c.pattern}, {"bump", &c.bump}}) {
         auto option = opt(name, ValueType::Bool);
         option.negative_cli_name = "--no-" + std::string(name);
@@ -179,7 +187,7 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
     auto c = host::parse_configured_app<Config>(argc, argv, schema, parsed);
     if (parsed->write_config_template_path)
         return c;
-    const bool sampled_dragon = c.scene == "dragon-materials";
+    const bool sampled_dragon = sampled_dragon_scene(c);
     if (sampled_dragon) {
         auto fallback = [&](const char* path, auto& value, auto next) {
             if (!parsed->path_was_assigned(path))
@@ -195,6 +203,15 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         fallback("sun-azimuth", c.sun_azimuth, .6F);
         fallback("sun-elevation", c.sun_elevation, .38F);
         fallback("throughput-cutoff", c.throughput_cutoff, 0.F);
+        if (c.scene == "dragon-optics") {
+            fallback("material", c.material, std::string("glass"));
+            fallback("max-events", c.max_events, 128);
+            fallback("max-path-rays", c.max_path_rays, 1024);
+            fallback("max-total-rays", c.max_total_rays, 4096);
+            if (c.reflection_source != "scene" || c.transmission_source != "scene")
+                throw std::invalid_argument(
+                    "dragon optics requires full scene reflection and transmission");
+        }
         if (c.environment != "atmosphere" || c.dragon_support != "rock" ||
             c.support_material != "marble" || c.optical_pair != "none" || c.object_scale != 1)
             throw std::invalid_argument(
@@ -299,9 +316,13 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         c.attenuation_red <= 0 || c.attenuation_red > 1 || c.attenuation_green <= 0 ||
         c.attenuation_green > 1 || c.attenuation_blue <= 0 || c.attenuation_blue > 1 ||
         c.throughput_cutoff < 0 || c.throughput_cutoff > .01F || c.max_events < 1 ||
-        c.max_events > 12 || c.max_path_rays < 1 || c.max_path_rays > 64 || c.max_total_rays < 1 ||
-        c.max_total_rays > 256 || std::abs(c.orbit_speed) > 2 || std::abs(c.sun_speed) > 2)
+        c.max_events > (c.scene == "dragon-optics" ? 256 : 12) || c.max_path_rays < 1 ||
+        c.max_path_rays > (c.scene == "dragon-optics" ? 2048 : 64) || c.max_total_rays < 1 ||
+        c.max_total_rays > (c.scene == "dragon-optics" ? 8192 : 256) ||
+        std::abs(c.orbit_speed) > 2 || std::abs(c.sun_speed) > 2)
         throw std::invalid_argument("raytracing: invalid optical range or path budget");
+    if (c.hide_dragon && c.scene != "dragon-optics")
+        throw std::invalid_argument("hidden dragon control requires the optical dragon scene");
     const bool dragon = c.scene.find("dragon") != std::string::npos;
     if (dragon && (c.model.empty() || !std::filesystem::is_regular_file(c.model)))
         throw std::invalid_argument("dragon requires --model prepared.glb; run "

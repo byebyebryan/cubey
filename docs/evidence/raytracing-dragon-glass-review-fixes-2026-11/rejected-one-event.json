@@ -1,0 +1,30 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--no-project",
+    "--with",
+    "numpy==2.4.6",
+    "python",
+    "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/qualify_dragon_glass.py",
+    "--binary",
+    "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+    "--output",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-review-fixes-20261108/rejected-one-event",
+    "--samples",
+    "128"
+  ],
+  "cwd": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-review-20261108/budget-regression-repro",
+  "exit": 1,
+  "reason": "preset-default rejects event/shadow exhaustion",
+  "no_pass_receipt": true,
+  "status_or_pixels": {
+    "1": 0,
+    "2": 3657,
+    "4": 0,
+    "8": 0,
+    "16": 0,
+    "32": 226,
+    "64": 0
+  }
+}

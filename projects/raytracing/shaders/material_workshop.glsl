@@ -22,7 +22,7 @@ vec3 workshopShadowVisibility(Surface receiver,vec3 light) {
     int medium=-1;
     for(int i=0;i<environment.limits.w;++i) {
         if(totalQueries>=environment.limits.z){status|=1u;return vec3(0);}
-        Surface s=surfaceRay(origin,light,255u);++shadowQueries;
+        Surface s=surfaceRayMedium(origin,light,255u,medium);++shadowQueries;
         if(s.id<0){if(medium>=0){status|=16u;return vec3(0);}return visibility;}
         if(medium>=0) {
             if(s.id!=medium){status|=16u;return vec3(0);}
@@ -55,12 +55,17 @@ uint randomKey;
 float rtRoughDiffuse(float nl,float nv,float lv,float roughness);
 uint rtHash(uint x) { x^=x>>16; x*=0x7feb352du; x^=x>>15; x*=0x846ca68bu; return x^(x>>16); }
 bool rtBsdfProposal(uint sampleIndex,uint pixel,uint depth) {
+    // Deep optical controls exceed the 13 available sample-index bits (8192
+    // SPP). Use independent counter hashing there; do not shift past uint width
+    // or freeze one proposal for an entire pixel's accumulation.
+    if(depth>=13u)return (rtHash(sampleIndex^rtHash(pixel)^rtHash(depth+workshop.sampling.x))&1u)==0u;
     // Distinct sample bits provide joint coverage across event depths. Using
     // the same parity at every depth gives correct marginals but biased paths.
     uint scramble=rtHash(pixel^rtHash(workshop.sampling.x+depth*0x9e3779b9u));
     return (((sampleIndex>>depth)^scramble)&1u)==0u;
 }
 uint rtProposalIndex(uint sampleIndex,uint depth) {
+    if(depth>=13u)return sampleIndex;
     // Remove this proposal bit so either conditional proposal sees a complete,
     // unique contiguous sampling sequence rather than every other stratum.
     uint lower=(1u<<depth)-1u;
@@ -205,8 +210,8 @@ void traceWorkshop() {
     float width=0,spread=2*camera.light.z/float(gl_LaunchSizeEXT.y);
     int view=int(camera.options.y+.5);
     if(view==10)color=textureLod(visibleBackground,uv,0).rgb*environment.options.w;
-    Surface primary=Surface(vec3(0),vec3(0),vec3(0),vec3(0),-1,-1,0u,0u);
-    if(view!=10){primary=surfaceRay(origin,direction,255u);++radianceQueries;}
+    Surface primary=Surface(vec3(0),vec3(0),vec3(0),vec3(0),-1,-1,0u,0u,0,vec3(0));
+    if(view!=10){primary=surfaceRayMedium(origin,direction,255u,medium);++radianceQueries;}
     uint trials=1u;
     if(primary.id>=0) {
         Recipe initial=workshopRecipe(primary.id);
@@ -235,7 +240,7 @@ void traceWorkshop() {
             status|=radianceQueries>=environment.limits.y?4u:1u; discarded+=weight; ++terminatedBranches; break;
         }
         Surface s=primary;
-        if(depth>0){s=surfaceRay(origin,direction,255u);++radianceQueries;}
+        if(depth>0){s=surfaceRayMedium(origin,direction,255u,medium);++radianceQueries;}
         if(depth==1&&trunk)observation[8]=vec4(s.p,float(s.id));
         maximumDepth=max(maximumDepth,depth);
         if(medium>=0) {
@@ -299,7 +304,9 @@ void traceWorkshop() {
             }
             vec2 xi=rtStratified(sequence,1u+uint(depth)*2u);
             float branch=rtStratified(sequence,97u+uint(depth)).x;
-            float curvature=workshopCurvature(s,m.objectScale);
+            // The certified optical route scatters about the actual flat
+            // geometric interface, rather than interpolated shading normals.
+            float curvature=environment.glass.w>.5?0:workshopCurvature(s,m.objectScale);
             float angularIncrease=(delta?0:2*m.roughness*m.roughness)+2*width*curvature*m.objectScale;
             RtDielectricSample sampled=rtSampleDielectric(localV,delta?0:m.roughness,eta,vec3(xi,split?1:branch));
             if(split) {
@@ -336,7 +343,13 @@ void traceWorkshop() {
                 } else if(!entering&&trunk)observation[7]=vec4(s.p,float(s.id));
                 medium=entering?s.id:-1;
                 environmentOnly=environmentOnly||environment.transport.y<.5;
-                spread/=eta;
+                if(environment.glass.w>.5) {
+                    // Fixed-normal Snell angular magnification: tangent and
+                    // incidence-plane derivatives. Triangle-edge discontinuities
+                    // remain outside this local cone estimate.
+                    float ci=abs(dot(direction,s.outward)),ct=abs(dot(next,s.outward));
+                    spread*=max(1/eta,ci/max(eta*ct,1e-7));
+                } else spread/=eta;
             } else environmentOnly=environmentOnly||environment.transport.x<.5;
             if(knownEmptyOutside&&medium<0)environmentOnly=true;
             spread+=angularIncrease;

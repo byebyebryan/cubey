@@ -1,0 +1,90 @@
+{
+  "comparisons": [
+    {
+      "view": "bronze",
+      "different_pixels": 40,
+      "total_pixels": 2073600,
+      "fraction": 1.9290123456790123e-05,
+      "png_mean_absolute_difference_8bit": 5.9799382716049385e-05,
+      "linear_HDR_rmse": 0.00018883286975324154,
+      "different_pixel_bbox_xyxy": [
+        1090,
+        507,
+        1258,
+        884
+      ]
+    },
+    {
+      "view": "plain",
+      "different_pixels": 2,
+      "total_pixels": 2073600,
+      "fraction": 9.645061728395062e-07,
+      "png_mean_absolute_difference_8bit": 3.2150205761316875e-07,
+      "linear_HDR_rmse": 9.058752681312399e-08,
+      "different_pixel_bbox_xyxy": [
+        1148,
+        600,
+        1207,
+        751
+      ]
+    },
+    {
+      "view": "detail",
+      "different_pixels": 54,
+      "total_pixels": 2073600,
+      "fraction": 2.604166666666667e-05,
+      "png_mean_absolute_difference_8bit": 4.5010288065843624e-05,
+      "linear_HDR_rmse": 1.896192043204792e-05,
+      "different_pixel_bbox_xyxy": [
+        1126,
+        495,
+        1265,
+        997
+      ]
+    },
+    {
+      "view": "silhouette",
+      "different_pixels": 0,
+      "total_pixels": 2073600,
+      "fraction": 0.0,
+      "png_mean_absolute_difference_8bit": 0.0
+    },
+    {
+      "view": "detail-silhouette",
+      "different_pixels": 0,
+      "total_pixels": 2073600,
+      "fraction": 0.0,
+      "png_mean_absolute_difference_8bit": 0.0
+    },
+    {
+      "view": "geometric",
+      "different_pixels": 0,
+      "total_pixels": 2073600,
+      "fraction": 0.0,
+      "png_mean_absolute_difference_8bit": 0.0
+    }
+  ],
+  "native_scene": {
+    "base_mesh_bit_identical": true,
+    "instance_transforms_and_slots_identical": true,
+    "base_recipe_identical": true,
+    "dragon_vertex_attributes_identical": true,
+    "base_triangles": 44.0
+  },
+  "native_640x360_primary_queries": {
+    "same_instance_hits": 31839,
+    "depth_changed_over_1um": 0,
+    "geometric_normal_changed_over_1e_5": 0
+  },
+  "captures": {
+    "beauty_resolution": [
+      1920,
+      1080
+    ],
+    "beauty_samples": 256,
+    "diagnostic_samples": 1,
+    "seed": 7,
+    "validation_clean": true,
+    "glass_enabled": false
+  }
+}

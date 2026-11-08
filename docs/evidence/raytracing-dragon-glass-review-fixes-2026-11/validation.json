@@ -1,0 +1,15 @@
+{
+  "ctest_command": "ctest --test-dir build/dev -R ^raytracing_ --output-on-failure -j1",
+  "ctests_passed": 19,
+  "policy_unit_cases_passed": 7,
+  "clean_glass_qualification_passed": true,
+  "accepted_captures": 14,
+  "one_event_preset_rejected": true,
+  "no_pass_receipt_for_rejected_preset": true,
+  "memory_delta_bytes": 13928928,
+  "render_png_identical": true,
+  "binary_sha256": "595eadd25151cbfbb2b0e6214a3fafb2944919d6436ad7bc338876227646bd80",
+  "committed": false,
+  "pushed": false,
+  "public_site_changed": false
+}

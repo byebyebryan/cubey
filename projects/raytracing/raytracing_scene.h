@@ -18,13 +18,16 @@ struct Mesh {
         std::uint32_t welded_vertices = 0, removed_triangles = 0, snapped_positions = 0;
         double signed_volume = 0, maximum_position_snap = 0;
         bool closed = false;
+        std::string certificate_id, model_sha256;
     } admission;
 };
 struct Instance {
+    enum class RecipeRole { Fixed, Selected, Support };
     std::uint32_t mesh;
     math::Mat4 transform{1};
     math::Vec4 color{1};
     std::uint32_t material = 0;
+    RecipeRole recipe_role = RecipeRole::Fixed;
 };
 struct alignas(16) OpticalMaterial {
     math::Vec4 base_roughness{1, 1, 1, .4F};
@@ -46,6 +49,7 @@ struct Scene {
     std::vector<Route> routes;
     std::shared_ptr<WorkshopState> workshop;
     MaterialLayout material_layout = MaterialLayout::Specimens;
+    bool optical_dragon = false;
     std::optional<asset::MaterialRecipe> support_recipe;
     std::vector<Mesh> meshes;
     std::vector<Instance> instances;

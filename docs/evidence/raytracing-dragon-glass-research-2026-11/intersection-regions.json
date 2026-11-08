@@ -1,0 +1,1553 @@
+{
+  "analysis_boundary_sha256": "0703f47dc38fb5971c49fc7caf1041e874db9b242434759d3e48d284eb6f5c6b",
+  "pair_count": 201,
+  "classification": {
+    "shared-vertex": 66,
+    "nonadjacent": 135
+  },
+  "affected_faces": 190,
+  "affected_face_fraction": 0.00021806345876190455,
+  "patches_connected_by_intersection_or_shared_vertex": 7,
+  "regions": [
+    {
+      "faces": [
+        774610,
+        774612,
+        774623,
+        774625,
+        774626,
+        774639,
+        774654,
+        774656,
+        774657,
+        774659,
+        774670,
+        774672,
+        774673,
+        774685,
+        774686,
+        774705,
+        774706,
+        774707,
+        774708,
+        774718,
+        774721,
+        774722,
+        774731,
+        774732,
+        774733,
+        778095,
+        778096,
+        778143,
+        778144,
+        778145,
+        778146,
+        778176,
+        778177,
+        778178,
+        778197,
+        778198,
+        778200,
+        778229,
+        778231,
+        778257,
+        778258,
+        778259,
+        778260,
+        778261,
+        778262,
+        778286,
+        778287,
+        778288,
+        778289,
+        778313,
+        778316,
+        778339,
+        778340,
+        778341,
+        778342,
+        778343,
+        778344,
+        778362,
+        778383,
+        778384,
+        778386,
+        778402,
+        778403,
+        778405,
+        778407,
+        778422,
+        778423,
+        778426,
+        778427,
+        778428,
+        778445,
+        778447,
+        778448,
+        778468,
+        778470,
+        778471,
+        778472,
+        778490,
+        778491,
+        778492,
+        778493,
+        778515,
+        778516,
+        778517,
+        778537,
+        778540,
+        778541,
+        778542,
+        778556,
+        778557,
+        778558,
+        778576,
+        778577,
+        778578,
+        778591,
+        778594,
+        778595,
+        778610,
+        781845,
+        781846,
+        781890,
+        781893,
+        781894,
+        781915,
+        781918,
+        781919,
+        781937,
+        781938,
+        781940,
+        781959,
+        781963,
+        781982,
+        781983,
+        781984,
+        781985,
+        782003,
+        782004,
+        782005,
+        782006,
+        782025,
+        782026,
+        782028,
+        782029,
+        782051,
+        782052,
+        782053,
+        782064,
+        782065,
+        782066,
+        782087,
+        782089,
+        782090,
+        782105,
+        782107,
+        782108,
+        782109,
+        782127
+      ],
+      "face_count": 137,
+      "minimum": [
+        0.21091735363006592,
+        -0.24650691449642181,
+        0.10120689123868942
+      ],
+      "maximum": [
+        0.2348853200674057,
+        -0.20849093794822693,
+        0.10371311008930206
+      ],
+      "extent_metres": [
+        0.023967966437339783,
+        0.038015976548194885,
+        0.0025062188506126404
+      ]
+    },
+    {
+      "faces": [
+        759518,
+        759519,
+        759520,
+        759529,
+        759530,
+        759539,
+        763443,
+        763446,
+        763447,
+        763449,
+        763459,
+        763460,
+        763473
+      ],
+      "face_count": 13,
+      "minimum": [
+        0.22743499279022217,
+        -0.22127047181129456,
+        0.09391225129365921
+      ],
+      "maximum": [
+        0.22953025996685028,
+        -0.21691153943538666,
+        0.09498550742864609
+      ],
+      "extent_metres": [
+        0.002095267176628113,
+        0.004358932375907898,
+        0.0010732561349868774
+      ]
+    },
+    {
+      "faces": [
+        762970,
+        762972,
+        762992,
+        762993,
+        762994,
+        762995,
+        767007,
+        767008,
+        767009,
+        767010,
+        767011,
+        767030,
+        767031
+      ],
+      "face_count": 13,
+      "minimum": [
+        0.20771808922290802,
+        -0.250638872385025,
+        0.09561853110790253
+      ],
+      "maximum": [
+        0.2103775590658188,
+        -0.24683977663516998,
+        0.09669569134712219
+      ],
+      "extent_metres": [
+        0.0026594698429107666,
+        0.0037990957498550415,
+        0.0010771602392196655
+      ]
+    },
+    {
+      "faces": [
+        311617,
+        311618,
+        316388,
+        316389,
+        316410,
+        316412,
+        316415,
+        316417,
+        316450,
+        321209
+      ],
+      "face_count": 10,
+      "minimum": [
+        -0.2884354591369629,
+        0.17172490060329437,
+        -0.05489915981888771
+      ],
+      "maximum": [
+        -0.2875535190105438,
+        0.17192989587783813,
+        -0.05483424663543701
+      ],
+      "extent_metres": [
+        0.0008819401264190674,
+        0.0002049952745437622,
+        6.491318345069885e-05
+      ]
+    },
+    {
+      "faces": [
+        660640,
+        660641,
+        660642,
+        664577,
+        664578,
+        668503
+      ],
+      "face_count": 6,
+      "minimum": [
+        0.12332215160131454,
+        -0.3127438426017761,
+        0.05343286320567131
+      ],
+      "maximum": [
+        0.12494008988142014,
+        -0.3108774721622467,
+        0.054122451692819595
+      ],
+      "extent_metres": [
+        0.0016179382801055908,
+        0.001866370439529419,
+        0.0006895884871482849
+      ]
+    },
+    {
+      "faces": [
+        794366,
+        794387,
+        797220,
+        797237,
+        797257,
+        797263
+      ],
+      "face_count": 6,
+      "minimum": [
+        0.24116429686546326,
+        -0.2164151817560196,
+        0.11227672547101974
+      ],
+      "maximum": [
+        0.24216629564762115,
+        -0.2152203917503357,
+        0.11275063455104828
+      ],
+      "extent_metres": [
+        0.001001998782157898,
+        0.001194790005683899,
+        0.00047390908002853394
+      ]
+    },
+    {
+      "faces": [
+        437235,
+        437236,
+        437273,
+        437274,
+        443163
+      ],
+      "face_count": 5,
+      "minimum": [
+        -0.14034053683280945,
+        -0.3313528299331665,
+        -0.01654120162129402
+      ],
+      "maximum": [
+        -0.13931559026241302,
+        -0.33081305027008057,
+        -0.014415623620152473
+      ],
+      "extent_metres": [
+        0.0010249465703964233,
+        0.0005397796630859375,
+        0.002125578001141548
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "a": 311617,
+      "b": 316388,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 311617,
+      "b": 316389,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 316389,
+      "b": 311618,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 316412,
+      "b": 316417,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 316415,
+      "b": 316417,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 316410,
+      "b": 321209,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 316417,
+      "b": 316450,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 316417,
+      "b": 321209,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 437274,
+      "b": 437235,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 437274,
+      "b": 437236,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 443163,
+      "b": 437274,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 443163,
+      "b": 437273,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 668503,
+      "b": 660640,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 664577,
+      "b": 660640,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 660641,
+      "b": 668503,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 660642,
+      "b": 668503,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 664578,
+      "b": 668503,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 660641,
+      "b": 664577,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 660642,
+      "b": 664577,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 664578,
+      "b": 664577,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 759519,
+      "b": 759530,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 763446,
+      "b": 759530,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 763459,
+      "b": 759530,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 763460,
+      "b": 759530,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 759539,
+      "b": 759529,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 763473,
+      "b": 759529,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 759530,
+      "b": 763473,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 767008,
+      "b": 762995,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 767010,
+      "b": 762992,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 767010,
+      "b": 762994,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 767010,
+      "b": 762995,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 767009,
+      "b": 762992,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 767007,
+      "b": 762995,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 762994,
+      "b": 767031,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 762995,
+      "b": 767030,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 762995,
+      "b": 767031,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 767011,
+      "b": 762995,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 767031,
+      "b": 762993,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 763443,
+      "b": 763447,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 763449,
+      "b": 759520,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 763449,
+      "b": 759519,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 763449,
+      "b": 763446,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 759518,
+      "b": 763449,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 763443,
+      "b": 763449,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 762970,
+      "b": 767010,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 762972,
+      "b": 767008,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 762972,
+      "b": 767010,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774686,
+      "b": 778556,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 774686,
+      "b": 778558,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778557,
+      "b": 774705,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778557,
+      "b": 774707,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778576,
+      "b": 774705,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778578,
+      "b": 774705,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778576,
+      "b": 774707,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778578,
+      "b": 774707,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778578,
+      "b": 774706,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778577,
+      "b": 774706,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778577,
+      "b": 774708,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774708,
+      "b": 778591,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778591,
+      "b": 774721,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778595,
+      "b": 774721,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774721,
+      "b": 774718,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 774721,
+      "b": 778594,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774718,
+      "b": 774733,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778594,
+      "b": 774722,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778594,
+      "b": 774733,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774722,
+      "b": 778610,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778610,
+      "b": 774733,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774731,
+      "b": 774732,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 774731,
+      "b": 774733,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778288,
+      "b": 782026,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778288,
+      "b": 782028,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782005,
+      "b": 778288,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 782026,
+      "b": 778316,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 782028,
+      "b": 778316,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782026,
+      "b": 778313,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782028,
+      "b": 778313,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 782025,
+      "b": 778313,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778313,
+      "b": 782029,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782029,
+      "b": 778339,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782051,
+      "b": 778341,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782051,
+      "b": 778343,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 782051,
+      "b": 778342,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778339,
+      "b": 782051,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782053,
+      "b": 778341,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 782053,
+      "b": 778343,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782053,
+      "b": 778342,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778342,
+      "b": 778340,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778342,
+      "b": 782052,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782052,
+      "b": 778344,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778344,
+      "b": 782064,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782064,
+      "b": 778362,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782064,
+      "b": 782066,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782065,
+      "b": 782066,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 782066,
+      "b": 778384,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782066,
+      "b": 778386,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 782087,
+      "b": 778384,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782089,
+      "b": 778384,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778383,
+      "b": 782090,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778383,
+      "b": 782105,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778383,
+      "b": 782107,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778383,
+      "b": 782109,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782090,
+      "b": 778402,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778402,
+      "b": 782107,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778402,
+      "b": 782109,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778405,
+      "b": 778403,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778405,
+      "b": 782108,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778405,
+      "b": 782127,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782127,
+      "b": 778427,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778407,
+      "b": 782127,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778426,
+      "b": 778422,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778426,
+      "b": 778428,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778423,
+      "b": 778426,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778423,
+      "b": 778427,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774610,
+      "b": 778447,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778448,
+      "b": 774610,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778448,
+      "b": 778445,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778447,
+      "b": 774612,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774612,
+      "b": 778468,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778468,
+      "b": 774626,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778470,
+      "b": 774625,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778472,
+      "b": 774626,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778472,
+      "b": 774625,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774623,
+      "b": 778493,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778471,
+      "b": 778493,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778490,
+      "b": 774639,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778491,
+      "b": 774654,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 774639,
+      "b": 778491,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778493,
+      "b": 774654,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774639,
+      "b": 778493,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778492,
+      "b": 774654,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774654,
+      "b": 778515,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778515,
+      "b": 774656,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778517,
+      "b": 774656,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778515,
+      "b": 774657,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778517,
+      "b": 774657,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774657,
+      "b": 778516,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778516,
+      "b": 774659,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774659,
+      "b": 778537,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774659,
+      "b": 778541,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778541,
+      "b": 774673,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778541,
+      "b": 774672,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774672,
+      "b": 774670,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 774672,
+      "b": 778540,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 774670,
+      "b": 778542,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778540,
+      "b": 778542,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778542,
+      "b": 774685,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778542,
+      "b": 774686,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778258,
+      "b": 781985,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778258,
+      "b": 782003,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778258,
+      "b": 782004,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778258,
+      "b": 782006,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778262,
+      "b": 778286,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778262,
+      "b": 778287,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781985,
+      "b": 778286,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781985,
+      "b": 778287,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 782006,
+      "b": 778287,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778286,
+      "b": 778289,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778286,
+      "b": 782005,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778287,
+      "b": 778289,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778287,
+      "b": 782005,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781845,
+      "b": 778095,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 781846,
+      "b": 778095,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778095,
+      "b": 781890,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778096,
+      "b": 781890,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 781890,
+      "b": 778143,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 781890,
+      "b": 778145,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781894,
+      "b": 778145,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781894,
+      "b": 778144,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778144,
+      "b": 781893,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781893,
+      "b": 778146,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778146,
+      "b": 781915,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781915,
+      "b": 778177,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781919,
+      "b": 778177,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781919,
+      "b": 778176,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778176,
+      "b": 781918,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781918,
+      "b": 778178,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778178,
+      "b": 781937,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781937,
+      "b": 778197,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 781937,
+      "b": 778200,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781938,
+      "b": 778200,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778197,
+      "b": 781938,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778198,
+      "b": 781938,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 781940,
+      "b": 778200,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778231,
+      "b": 778229,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 781959,
+      "b": 778229,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778229,
+      "b": 781963,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781963,
+      "b": 778257,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781982,
+      "b": 778259,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781982,
+      "b": 778261,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778257,
+      "b": 781982,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781984,
+      "b": 778259,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 781984,
+      "b": 778261,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 781984,
+      "b": 778260,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 778260,
+      "b": 778258,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 778260,
+      "b": 781983,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 797237,
+      "b": 797220,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    },
+    {
+      "a": 794366,
+      "b": 797220,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 794387,
+      "b": 797220,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 797257,
+      "b": 797220,
+      "shared_vertices": 0,
+      "kind": "nonadjacent"
+    },
+    {
+      "a": 797263,
+      "b": 797220,
+      "shared_vertices": 1,
+      "kind": "shared-vertex"
+    }
+  ],
+  "topology_only_vertex_ids": true,
+  "source_geometry_modified": false
+}

@@ -32,6 +32,7 @@ struct WorkshopState {
     std::uint32_t selected = 0;
     std::uint64_t revision = 1;
     bool opaque_only = false;
+    bool sharp_only = false;
 
     explicit WorkshopState(const Config&);
     void replace(std::size_t index, asset::MaterialRecipe candidate);

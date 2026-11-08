@@ -135,7 +135,55 @@ marble base, with progressive sampling and scene GGX reflections. Its native
 material selector offers the ten opaque recipes. The
 [sampled dragon results](../../docs/notes/raytracing-dragon-sampled.md) record
 integration, save behavior, geometry preservation, native motion and qualification.
-Glass on this imported model remains the next gated step.
+The original imported model stays opaque. A separate certified main-shell copy
+now supports the opt-in solid-glass scene:
+
+```sh
+rtk proxy uv run --no-project --no-build projects/raytracing/tools/prepare_optical_dragon.py --output cache/raytracing/stanford-dragon/optical-v1
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-glass.json
+```
+
+Prepare the original pinned dragon first using the instructions above. Preparation
+is explicit, refuses an existing output directory, and requires pinned Python
+3.11, NumPy and CGAL offline. It never runs during rendering or a normal build.
+The tracked `assets/stanford-dragon-optical.json` certificate binds the serialized
+GLB hash, boundary audit and the user's acceptance of its local shape/topology
+changes. This acceptance supersedes the proposed .1 mm trial hold; the derivative
+does **not** satisfy that trial tolerance. The original cache/presets stay intact.
+
+`dragon-optics` uses the same certified boundary for bronze/opaque controls and
+canonical sharp Tinted glass. The marble slab has its own immutable recipe slot.
+Shared atmosphere, sun, material recipes, progressive sampling and display
+transform are reused. Reflection and transmission both trace the full scene,
+including repeated intervals of the nonconvex dragon. Frosted interfaces,
+overlapping/nested media and camera-inside views are excluded. Native orbit/dolly
+retains the last valid pose at the conservative exclusion bounds; invalid CLI
+views fail. `--hide-dragon` is an optics-only background control.
+
+The new route uses NVIDIA's barycentric reconstruction/error offset, an
+adjacent-face offset direction near folded edges, and medium-aware facing culling
+on its certified closed boundary. Medium misses and cross-instance errors remain
+checked. These are qualified float32 policies, not exact arithmetic guarantees.
+Geometric interface normals retain mesh faceting. The Snell-aware cone is local
+to each flat interface and does not bound triangle-edge jumps. Straight
+Fresnel/Beer sun shadows and SH diffuse lighting do not produce focused caustics.
+
+Only this scene defaults to 128 events / 1024 radiance rays / 4096 total queries;
+its deeper reference ceiling is 256 / 2048 / 8192. Legacy defaults/ceilings stay
+unchanged. Extra samples alone cannot remove path truncation. Run the asset-bound
+checks explicitly (no download):
+
+```sh
+rtk proxy uv run --no-project --no-build projects/raytracing/tools/qualify_dragon_glass.py --output outputs/raytracing/dragon-glass-check
+```
+
+The qualification first renders the preset's actual transport budget. Accepted
+views reject event/shadow exhaustion as well as invalid-medium and query/stack
+failures; only explicitly marked shallow diagnostic controls may truncate.
+Preset transport settings remain active in the neutral, tinted and alternate
+view checks. The preset also must match the deeper reference within the recorded
+HDR tolerance. Resident requested memory is checked against its component sum,
+including the adjacency buffer once through `geometry_bytes`.
 
 One scene unit is one metre; the original support top is y=0 and the rock fits
 the same subject placement. The earlier mixed dragon/prop

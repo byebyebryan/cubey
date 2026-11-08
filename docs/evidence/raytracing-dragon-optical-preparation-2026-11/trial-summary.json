@@ -1,0 +1,449 @@
+{
+  "format": "cubey.raytracing.optical-preparation-trials",
+  "date": "2026-11-08",
+  "trial_budget_metres": 0.0001,
+  "variants": 18,
+  "trials": [
+    {
+      "name": "inflate-r1-10um",
+      "result": {
+        "name": "inflate-r1-10um",
+        "maximum_vertex_displacement_metres": 1.0012598756137055e-05,
+        "moved_vertices": 284,
+        "self_intersection_pairs": 202,
+        "valid": true,
+        "closed": true,
+        "vertices": 435545,
+        "triangles": 871306,
+        "float32_reimport": true,
+        "surface_bound": "same triangle connectivity implies symmetric surface displacement <= maximum corresponding vertex displacement"
+      }
+    },
+    {
+      "name": "inflate-r1-1um",
+      "result": {
+        "name": "inflate-r1-1um",
+        "maximum_vertex_displacement_metres": 1.0076755322633214e-06,
+        "moved_vertices": 284,
+        "self_intersection_pairs": 182,
+        "valid": true,
+        "closed": true,
+        "vertices": 435545,
+        "triangles": 871306,
+        "float32_reimport": true,
+        "surface_bound": "same triangle connectivity implies symmetric surface displacement <= maximum corresponding vertex displacement"
+      }
+    },
+    {
+      "name": "inflate-r1-20um",
+      "result": {
+        "name": "inflate-r1-20um",
+        "maximum_vertex_displacement_metres": 2.000832021832245e-05,
+        "moved_vertices": 284,
+        "self_intersection_pairs": 207,
+        "valid": true,
+        "closed": true,
+        "vertices": 435545,
+        "triangles": 871306,
+        "float32_reimport": true,
+        "surface_bound": "same triangle connectivity implies symmetric surface displacement <= maximum corresponding vertex displacement"
+      }
+    },
+    {
+      "name": "inflate-r1-2um",
+      "result": {
+        "name": "inflate-r1-2um",
+        "maximum_vertex_displacement_metres": 2.008964472127021e-06,
+        "moved_vertices": 284,
+        "self_intersection_pairs": 187,
+        "valid": true,
+        "closed": true,
+        "vertices": 435545,
+        "triangles": 871306,
+        "float32_reimport": true,
+        "surface_bound": "same triangle connectivity implies symmetric surface displacement <= maximum corresponding vertex displacement"
+      }
+    },
+    {
+      "name": "inflate-r1-50um",
+      "result": {
+        "name": "inflate-r1-50um",
+        "maximum_vertex_displacement_metres": 5.000931147104353e-05,
+        "moved_vertices": 284,
+        "self_intersection_pairs": 220,
+        "valid": true,
+        "closed": true,
+        "vertices": 435545,
+        "triangles": 871306,
+        "float32_reimport": true,
+        "surface_bound": "same triangle connectivity implies symmetric surface displacement <= maximum corresponding vertex displacement"
+      }
+    },
+    {
+      "name": "inflate-r1-5um",
+      "result": {
+        "name": "inflate-r1-5um",
+        "maximum_vertex_displacement_metres": 5.009278613185652e-06,
+        "moved_vertices": 284,
+        "self_intersection_pairs": 210,
+        "valid": true,
+        "closed": true,
+        "vertices": 435545,
+        "triangles": 871306,
+        "float32_reimport": true,
+        "surface_bound": "same triangle connectivity implies symmetric surface displacement <= maximum corresponding vertex displacement"
+      }
+    },
+    {
+      "name": "inflate-r1-90um",
+      "result": {
+        "name": "inflate-r1-90um",
+        "maximum_vertex_displacement_metres": 9.00101789585102e-05,
+        "moved_vertices": 284,
+        "self_intersection_pairs": 242,
+        "valid": true,
+        "closed": true,
+        "vertices": 435545,
+        "triangles": 871306,
+        "float32_reimport": true,
+        "surface_bound": "same triangle connectivity implies symmetric surface displacement <= maximum corresponding vertex displacement"
+      }
+    },
+    {
+      "name": "smooth-1-a0.1",
+      "result": {
+        "name": "smooth-1-a0.1",
+        "maximum_vertex_displacement_metres": 2.245081486817178e-05,
+        "self_intersection_pairs": 201,
+        "vertices": 435545,
+        "triangles": 871306
+      }
+    },
+    {
+      "name": "smooth-10-a0.1",
+      "result": {
+        "name": "smooth-10-a0.1",
+        "maximum_vertex_displacement_metres": 9.000770163398146e-05,
+        "self_intersection_pairs": 196,
+        "vertices": 435545,
+        "triangles": 871306
+      }
+    },
+    {
+      "name": "smooth-100-a0.1",
+      "result": {
+        "name": "smooth-100-a0.1",
+        "maximum_vertex_displacement_metres": 9.00137596454504e-05,
+        "self_intersection_pairs": 256,
+        "vertices": 435545,
+        "triangles": 871306
+      }
+    },
+    {
+      "name": "smooth-3-a0.1",
+      "result": {
+        "name": "smooth-3-a0.1",
+        "maximum_vertex_displacement_metres": 6.087395918483403e-05,
+        "self_intersection_pairs": 199,
+        "vertices": 435545,
+        "triangles": 871306
+      }
+    },
+    {
+      "name": "smooth-30-a0.1",
+      "result": {
+        "name": "smooth-30-a0.1",
+        "maximum_vertex_displacement_metres": 9.001410067785034e-05,
+        "self_intersection_pairs": 216,
+        "vertices": 435545,
+        "triangles": 871306
+      }
+    },
+    {
+      "name": "patch-r1",
+      "result": {
+        "rings": 1,
+        "selected_faces": 468,
+        "fills": [
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 11,
+            "triangles": 9
+          },
+          {
+            "boundary_edges": 10,
+            "triangles": 8
+          },
+          {
+            "boundary_edges": 16,
+            "triangles": 14
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 5,
+            "triangles": 3
+          },
+          {
+            "boundary_edges": 6,
+            "triangles": 4
+          },
+          {
+            "boundary_edges": 9,
+            "triangles": 7
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 5,
+            "triangles": 3
+          },
+          {
+            "boundary_edges": 8,
+            "triangles": 6
+          },
+          {
+            "boundary_edges": 18,
+            "triangles": 16
+          }
+        ],
+        "remaining_self_intersection_pairs": 0,
+        "vertices": 435359,
+        "triangles": 870914,
+        "closed": true,
+        "valid": true,
+        "signed_volume": 0.055605723137548,
+        "outward": true,
+        "position_motion_metres": 0,
+        "elapsed_seconds": 7.571097923006164,
+        "cgal_package": "5.6.post202402071826",
+        "numpy": "2.4.6",
+        "output": "outputs/raytracing/dragon-optical-preparation-20261108/patch-r1.off"
+      }
+    },
+    {
+      "name": "patch-cover-r0",
+      "result": {
+        "rings": 0,
+        "selected_faces": 77,
+        "fills": [
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 6,
+            "triangles": 4
+          },
+          {
+            "boundary_edges": 7,
+            "triangles": 5
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 6,
+            "triangles": 4
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 7,
+            "triangles": 5
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 9,
+            "triangles": 7
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 7,
+            "triangles": 5
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 6,
+            "triangles": 4
+          },
+          {
+            "boundary_edges": 5,
+            "triangles": 3
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 4,
+            "triangles": 2
+          },
+          {
+            "boundary_edges": 3,
+            "triangles": 1
+          }
+        ],
+        "remaining_self_intersection_pairs": 154,
+        "vertices": 435545,
+        "triangles": 871306,
+        "closed": true,
+        "valid": true,
+        "signed_volume": 0.055605723636243734,
+        "outward": true,
+        "position_motion_metres": 0,
+        "elapsed_seconds": 7.581369092993555,
+        "cgal_package": "5.6.post202402071826",
+        "numpy": "2.4.6",
+        "output": "outputs/raytracing/dragon-optical-preparation-20261108/patch-cover-r0.off"
+      }
+    },
+    {
+      "name": "meshfix",
+      "result": {
+        "vertices": 435048,
+        "faces": 870308,
+        "clean_return": true,
+        "closed": true,
+        "valid": true,
+        "self_intersection_pairs": 0,
+        "outward": true,
+        "signed_volume": 0.0556057262137005,
+        "seconds": 15.171969331990113,
+        "pymeshfix": "0.18.1",
+        "numpy": "2.4.6"
+      }
+    },
+    {
+      "name": "meshlib-CutAndFill-r0-i0-m1",
+      "result": {
+        "name": "meshlib-CutAndFill-r0-i0-m1",
+        "vertices": 420177,
+        "faces": 840566,
+        "closed": true,
+        "valid": true,
+        "self_intersection_pairs": 78,
+        "seconds": 3.553498577006394,
+        "meshlib": "3.1.4.297"
+      }
+    },
+    {
+      "name": "meshlib-Relax-r2-i5-m0",
+      "result": {
+        "name": "meshlib-Relax-r2-i5-m0",
+        "vertices": 420177,
+        "faces": 840570,
+        "closed": true,
+        "valid": true,
+        "self_intersection_pairs": 142,
+        "seconds": 3.510559097994701,
+        "meshlib": "3.1.4.297"
+      }
+    },
+    {
+      "name": "patch-all-r0",
+      "result": {
+        "status": "hole triangulation failed",
+        "selected_faces": 190,
+        "failed_boundary_edges": 12
+      }
+    }
+  ],
+  "all_tested_variants_rejected": true,
+  "unproven": "not a proof that every local repair must fail"
+}

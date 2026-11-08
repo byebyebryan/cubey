@@ -28,7 +28,7 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
                          std::uint32_t slots) {
     const auto start = std::chrono::steady_clock::now();
     active_ = c.environment == "atmosphere";
-    sampled_ = c.scene == "materials" || c.scene == "dragon-materials";
+    sampled_ = sampled_material_scene(c);
     if (c.scene == "materials")
         probe_ground_mode_ = render::AtmosphereEnvironmentGroundMode::Ground;
     slots_ = slots;
@@ -131,8 +131,10 @@ EnvironmentUniform Environment::prepare(const Config& c, VkCommandBuffer command
         c.scene.find("reflection-") == 0 || c.scene.find("refraction-") == 0 || c.scene == "slab"
             ? 1.F
             : 0.F};
-    result.limits = {c.max_events, c.max_path_rays, c.max_total_rays, 8};
-    result.glass = {c.ior, c.attenuation_distance, c.throughput_cutoff, 0};
+    result.limits = {c.max_events, c.max_path_rays, c.max_total_rays,
+                     c.scene == "dragon-optics" ? c.max_events : 8};
+    result.glass = {c.ior, c.attenuation_distance, c.throughput_cutoff,
+                    c.scene == "dragon-optics" ? (c.hide_dragon ? 2.F : 1.F) : 0.F};
     result.attenuation = {c.attenuation_red, c.attenuation_green, c.attenuation_blue, 0};
     if (active_) {
         atmosphere_.set_environment(state(c, eye.y));
