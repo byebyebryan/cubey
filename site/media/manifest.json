@@ -1477,6 +1477,1062 @@
       }
     },
     {
+      "id": "materials-mesh-bronze",
+      "file": "/media/materials-mesh-bronze.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "9a17fdc80c789c639163a5a8ad570fb4d9a3c0fb47ff1a3c7be8a66e379a5b8b",
+      "bytes": 7370,
+      "caption": "Satin bronze \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-bronze.png",
+        "sourceSha256": "a262aeb9fc2516bd4159ac5637131a1ca6f20adb8e1915aeab5e14de3f72f66c",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-ceramic",
+      "file": "/media/materials-mesh-ceramic.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "8addf6a69cb340b364cc42428ad45ffbafcd775ebbefcaa882f53e035b41bd59",
+      "bytes": 6246,
+      "caption": "Ivory ceramic \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-ceramic.png",
+        "sourceSha256": "dbcb511f5df1d43870226997badbd48c78a4bf457a88a8b19df1ac51f9bb645c",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-clay",
+      "file": "/media/materials-mesh-clay.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "5ea190b5a67588df888808f797a35929a231240ec7ca5d6355a2a465957ad2d4",
+      "bytes": 7326,
+      "caption": "Dry terracotta \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-clay.png",
+        "sourceSha256": "eb743d0b40f85bee45d5fd19c2f49eed0f01ba389090efba7535d9511b2a363e",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-dawn",
+      "file": "/media/materials-mesh-dawn.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "dbff6ba3505b720cd471d7c7b4df891e6525b4e1c6f3e1739a3a89576fcf8d9b",
+      "bytes": 18494,
+      "caption": "Twelve shared materials \u00b7 Forward PBR \u00b7 dawn under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/forward-dawn-poster.png",
+        "sourceSha256": "68caa959ac95179825329d3f38edb822ce3ac54e507f4b9f23b3c3c9745c7a9a",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-dawn-film",
+      "file": "/media/materials-mesh-dawn-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "9048fbd26287d07e22c39e93da6b1e0336efa7fb7af264bc71e43267626f190a",
+      "bytes": 626181,
+      "caption": "Twelve shared materials \u00b7 Forward PBR \u00b7 dawn under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/forward-dawn.mp4",
+        "sourceSha256": "1f86c0f9abd08cd433dcf9b59eecb3d0f09d0ef7d3d26faeb49e16e95d7451de",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-dusk",
+      "file": "/media/materials-mesh-dusk.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "48de13eccfaad8507b82fbe98b8dcd57ce278a3da2c0085a99ebae2fd20ffa65",
+      "bytes": 18498,
+      "caption": "Twelve shared materials \u00b7 Forward PBR \u00b7 dusk under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/forward-dusk-poster.png",
+        "sourceSha256": "c0e239f9e27dfcceb104a234a6b021362dfcafe92b473e432f1c1135d896ca5c",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-dusk-film",
+      "file": "/media/materials-mesh-dusk-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "d804ae62aa5ac0cca66387b4da0af3b4e6b0817beea2d1709216cbcea8668214",
+      "bytes": 575906,
+      "caption": "Twelve shared materials \u00b7 Forward PBR \u00b7 dusk under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/forward-dusk.mp4",
+        "sourceSha256": "ebd713cafa974bd030ee44ba3ef5715ab2429e315811e8c93182ff608042ae4a",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-frosted-glass",
+      "file": "/media/materials-mesh-frosted-glass.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "dbf6a6d36ae7dc2d0cca2fb7eca28b72d57898bb16f8516748b00042dd5e91b1",
+      "bytes": 7124,
+      "caption": "Frosted glass \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-frosted-glass.png",
+        "sourceSha256": "9521b2f504a88a115264c672855bd9b7336909f229f31e2c738a5990fdac7d05",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-glass",
+      "file": "/media/materials-mesh-glass.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "50f961dc85a16c8df14a19eb740dec7d013caf57e5fb5f05a9a4fae43abc777c",
+      "bytes": 7282,
+      "caption": "Tinted glass \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-glass.png",
+        "sourceSha256": "31a7d2bad51dc184c9c20f4da9df399062b932168486508f226959b302408dac",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-kraft-cardboard",
+      "file": "/media/materials-mesh-kraft-cardboard.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "6ab327f9bc2f75cdabe73d035da36c7c57e6adf022644f66d43e606ae90ac8eb",
+      "bytes": 7810,
+      "caption": "Kraft cardboard \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-kraft-cardboard.png",
+        "sourceSha256": "e0dc75c1789f075b84c6b669d3d68cd58c18e36e8d3eca06db2ab4b06ed03879",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-limestone",
+      "file": "/media/materials-mesh-limestone.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "2fc920a0b1c5655de7c14f663c1b42e54877824c28cfdc22ee18b16cf4ec8c44",
+      "bytes": 9248,
+      "caption": "Limestone \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-limestone.png",
+        "sourceSha256": "ff224e7deaef454aae7e3010a996973b28db8690f51191c7d246a0047bf417a1",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-marble",
+      "file": "/media/materials-mesh-marble.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "1bc9e1c02e114c1ba651d2204c5f71ec343a7b5b8db4b7261bb58a935b3bebd4",
+      "bytes": 9046,
+      "caption": "Balanced marble \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-marble.png",
+        "sourceSha256": "5fd50357a341a0022cc6fd7b45b98cd1e35ce7b9f562624f1722fc480551b58f",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-plain",
+      "file": "/media/materials-mesh-plain.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "25fb1b5c930892e4123ead1964f698f85533cdeaf643985ad422ba39e1e91910",
+      "bytes": 6564,
+      "caption": "Neutral gray \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-plain.png",
+        "sourceSha256": "fd1c4fb8c553360beb50b0aff7aadac0b83c4fda446d28012425d37f0bcce8dc",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-rusted-steel",
+      "file": "/media/materials-mesh-rusted-steel.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "c65868270666395813f2054f66811c1eaf4bdf834f181dadd795122f62f9a91c",
+      "bytes": 11048,
+      "caption": "Rusted steel \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-rusted-steel.png",
+        "sourceSha256": "b21fa36496c3aeef93b1a9301ed2a211375d43f56e6a82991a8f836664347095",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-wood",
+      "file": "/media/materials-mesh-wood.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "1d18cd880a4af38ecd9339bed57dd8edffc4c57f6aabd3d92385ff10a67b5235",
+      "bytes": 9110,
+      "caption": "Unvarnished hardwood \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-wood.png",
+        "sourceSha256": "96a66abd9a7dd9686ca83043c4686ec7437288b873e1b3d5e3f122408e4d37dd",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-mesh-woven-cloth",
+      "file": "/media/materials-mesh-woven-cloth.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "563cc5617caee2ec85ffbdad168d0b6f0d196f837226ece5f92d463c4ab30a64",
+      "bytes": 10282,
+      "caption": "Plain-weave cloth \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/forward-woven-cloth.png",
+        "sourceSha256": "c565f4087c6af0299ab61c04604455678a73b8c26d6483c51aa64c8fe3042849",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-bronze",
+      "file": "/media/materials-rt-bronze.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "6886f8152bdb99d193658f78a28f0ad0eaa86bdbdb2e0f4b1992ebe35385b8cf",
+      "bytes": 7302,
+      "caption": "Satin bronze \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-bronze.png",
+        "sourceSha256": "406f9ee032ec5ac8645cd6a536a344ba3bcc33824528bedf6c0dbf0664b0502b",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-ceramic",
+      "file": "/media/materials-rt-ceramic.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "8102bd7b76260cb2f47a996f04b704a4e30b728c776ce4287856913a1886724a",
+      "bytes": 6354,
+      "caption": "Ivory ceramic \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-ceramic.png",
+        "sourceSha256": "8d07c2fe439ec5f58541bf2791467aad3779f0388a49581001d67fccb663ee31",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-clay",
+      "file": "/media/materials-rt-clay.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "c2022b243d5414a5a586279751526b46816b0a66428c469a296de0e087168744",
+      "bytes": 7070,
+      "caption": "Dry terracotta \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-clay.png",
+        "sourceSha256": "5a41f504120926502f77ac4fedf863eff0e340282ec28bd3a24536e2e0a17fba",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-dawn",
+      "file": "/media/materials-rt-dawn.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "657e98ba0d3c542ecf23790360095c4fa22ae5a5211fa101e3032280a02ea3ef",
+      "bytes": 17732,
+      "caption": "Twelve shared materials \u00b7 Hardware RT \u00b7 dawn under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/rt-dawn-poster.png",
+        "sourceSha256": "072c6edc2401bbb6f37c34765c691ff01d279e809f26f5fc887d77bce7d6b6bf",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-dawn-film",
+      "file": "/media/materials-rt-dawn-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "3d4a63931464c4916ce516015445d4c3873a1c2615044202d82850eaa72c3f2d",
+      "bytes": 624020,
+      "caption": "Twelve shared materials \u00b7 Hardware RT \u00b7 dawn under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/rt-dawn.mp4",
+        "sourceSha256": "d595638f79067ec358a472a8d3395ddfa800a194a3518729b799e484c60d8d1b",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-dusk",
+      "file": "/media/materials-rt-dusk.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "870115b8b33cbd512592a24a9b87245a78517a3f2d4806b407c0dc935be6cf88",
+      "bytes": 17818,
+      "caption": "Twelve shared materials \u00b7 Hardware RT \u00b7 dusk under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/rt-dusk-poster.png",
+        "sourceSha256": "e268d8317d357670dff59d9d6f06be9990dc3d8bf48c13ffdf233b3ed642b64d",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-dusk-film",
+      "file": "/media/materials-rt-dusk-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "31912e2893a07f6e91c8b201c4c015fc09c2d17418d58a757865a5361c0756da",
+      "bytes": 575686,
+      "caption": "Twelve shared materials \u00b7 Hardware RT \u00b7 dusk under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/rt-dusk.mp4",
+        "sourceSha256": "e8492bcf8d22b3b17854f09e97f99edcc4ce58e0f7f1448e395c61037b0b3538",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-frosted-glass",
+      "file": "/media/materials-rt-frosted-glass.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "244a2e214ed52394a154ea5cca2bbb5f77b2f1a77beded6d61fc71c7318501bc",
+      "bytes": 7142,
+      "caption": "Frosted glass \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-frosted-glass.png",
+        "sourceSha256": "94dfc2e1be999c151f0ee0b87d9a82481adeaaab2cab1b06dcdd6a8661999252",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-glass",
+      "file": "/media/materials-rt-glass.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "c2eb5b8e04d26e097c8143040b3c46cf82abe4f3df43b13549b50fcccb5e3f00",
+      "bytes": 7846,
+      "caption": "Tinted glass \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-glass.png",
+        "sourceSha256": "58d64f74d11e9bde4b21bd4a389198263309540ab19e8348ca002632d62a3208",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-kraft-cardboard",
+      "file": "/media/materials-rt-kraft-cardboard.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "580c346d62fde6253e9b03593f31bed9dba130406e4a0b862987f662aeccef08",
+      "bytes": 7684,
+      "caption": "Kraft cardboard \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-kraft-cardboard.png",
+        "sourceSha256": "6fe2ee3a32207da014e2318f199b6f329235e94084a4e63a7be7316631d5915b",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-limestone",
+      "file": "/media/materials-rt-limestone.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "63ad94eb35a388b2fd8a3ab55878a3f11a767cd9afdf775aed587b566f49697d",
+      "bytes": 8816,
+      "caption": "Limestone \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-limestone.png",
+        "sourceSha256": "fdef44ad80708302e4495aa55db641fbd057df4061126bb0bbb391de98d6db0f",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-marble",
+      "file": "/media/materials-rt-marble.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "93c186b646ef476334f2f8be83ca12da25b88fe3d88a0d84b01e26efad02f17f",
+      "bytes": 8992,
+      "caption": "Balanced marble \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-marble.png",
+        "sourceSha256": "be65602f795a85527e71821fcb648e70b7f47ffa9bd165ffa9e64238edad1ac5",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-plain",
+      "file": "/media/materials-rt-plain.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "7c4cf0fbf5f4ef5bc285e2a1745efdd28b599a8237685a2baece9cd50305cb5b",
+      "bytes": 6470,
+      "caption": "Neutral gray \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-plain.png",
+        "sourceSha256": "8d9d28a45b58db5bb2cc409c35ba09d332acd9c209489b0e30f73491f994d600",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-rusted-steel",
+      "file": "/media/materials-rt-rusted-steel.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "9aaf5c05760ce67a0fcd63848827061ae77fb2104f9ddefb2cdd707ee3470871",
+      "bytes": 10742,
+      "caption": "Rusted steel \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-rusted-steel.png",
+        "sourceSha256": "b5314182095b7a7f40d4eeb29ca3625d44021b04cc929fa6cf0243fa395446d1",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-wood",
+      "file": "/media/materials-rt-wood.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "a99f99bd3015fe40126c2df37eea8fc8bc09c4dec675dfddb2118871a7410610",
+      "bytes": 8798,
+      "caption": "Unvarnished hardwood \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-wood.png",
+        "sourceSha256": "3d29ec21b23cf28f470d7e0e7d1471f61d7aa00c91b5918332dd8816810f8b94",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-rt-woven-cloth",
+      "file": "/media/materials-rt-woven-cloth.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "2b9097a226738b3183389adf58afcfb8dda4bfb6cba42cc44137b4e579a2d77d",
+      "bytes": 9730,
+      "caption": "Plain-weave cloth \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/rt-woven-cloth.png",
+        "sourceSha256": "9ada06933c634fcf3c0b60321749b3b3bd7f48ba23d860a981ee659fcf8b1e58",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-bronze",
+      "file": "/media/materials-sdf-bronze.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "b8220b600b1c09fe766c69cf81c940c2eb0648a10830c308be6d02d03823a2df",
+      "bytes": 7324,
+      "caption": "Satin bronze \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-bronze.png",
+        "sourceSha256": "9ca757b00bfb6071b31ca5be1dafb4d4e03ef9cad6e73d9751bc753dcd4dfe44",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-ceramic",
+      "file": "/media/materials-sdf-ceramic.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "a3ae939f17ffd10e64fdbc6756a8cb78b0b93675e67f6e53f73a2d2dc4271acb",
+      "bytes": 6228,
+      "caption": "Ivory ceramic \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-ceramic.png",
+        "sourceSha256": "69fef64ad1bf8af15462df67ac3178df5347e2eb4548729a233d343bf59f69b2",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-clay",
+      "file": "/media/materials-sdf-clay.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "c3abf369e4575aa77392b95564046c31dcb9ac36426fb4cd02738ee7bf3a64c6",
+      "bytes": 7236,
+      "caption": "Dry terracotta \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-clay.png",
+        "sourceSha256": "ec927d2b3ecbed4ce59a13878e03e99c5b8437c0eeafe45ebd318d601cb84b27",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-dawn",
+      "file": "/media/materials-sdf-dawn.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "5bbfda88e22e3b9bd7d3a14ff6400f477f955100660dacd943dd4c81da6aee12",
+      "bytes": 17812,
+      "caption": "Twelve shared materials \u00b7 SDF ray marching \u00b7 dawn under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/sdf-dawn-poster.png",
+        "sourceSha256": "92053e0c5e10d8e6d2cf08772117d3b522f0f84b111b9cae373a6389c1d83f67",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-dawn-film",
+      "file": "/media/materials-sdf-dawn-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "9663b7e47777180babe471616513dee0366ef2f36f86cf8b97fdb05928c3af90",
+      "bytes": 615861,
+      "caption": "Twelve shared materials \u00b7 SDF ray marching \u00b7 dawn under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/sdf-dawn.mp4",
+        "sourceSha256": "6a2adae24e0ada7c6fe1a6dbf0684f97ca5375eb9901d1692020770e09126746",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-dusk",
+      "file": "/media/materials-sdf-dusk.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "f8409901c2fbbc8491a840c9eba80d4f8ed868189e15f0d018d16bb0ccc9f58e",
+      "bytes": 17918,
+      "caption": "Twelve shared materials \u00b7 SDF ray marching \u00b7 dusk under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/sdf-dusk-poster.png",
+        "sourceSha256": "bc9d4a06eb3e5a2736a52e3c65d3d34931525779e2f9f1ff3796a6f0ea504391",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-dusk-film",
+      "file": "/media/materials-sdf-dusk-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "3c97fe77c013398fa9a0bec414127c88341de31df6490896488fd5f9b742b602",
+      "bytes": 569084,
+      "caption": "Twelve shared materials \u00b7 SDF ray marching \u00b7 dusk under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/films/sdf-dusk.mp4",
+        "sourceSha256": "bb65d69c67596ad37e06b411ac90da3b390ad98901b1249b67900dfef4e13650",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-frosted-glass",
+      "file": "/media/materials-sdf-frosted-glass.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "de53e42dd2c1473f1c9d09b34136d252324d46f0723e90ea1ec1cbb1821d1203",
+      "bytes": 6688,
+      "caption": "Frosted glass \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-frosted-glass.png",
+        "sourceSha256": "a3fe07f51fdd2058bc52b4c464c28955bb71602059b812a5126b6c7f8af0e961",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-glass",
+      "file": "/media/materials-sdf-glass.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "9cbfe5138d0fa3845cb8d71f9aac3a351e6ac9759643f85e0951b0eeb58fdeda",
+      "bytes": 7538,
+      "caption": "Tinted glass \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-glass.png",
+        "sourceSha256": "82fc5e69bc2783aad7b67bc207d64dbad904c4960bde99f5b1acdf571efa7afa",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-kraft-cardboard",
+      "file": "/media/materials-sdf-kraft-cardboard.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "abaed5e88d2f0a7e5f6d225569874b38ea2914acf819d9f5003bb75d78f37ea9",
+      "bytes": 7774,
+      "caption": "Kraft cardboard \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-kraft-cardboard.png",
+        "sourceSha256": "de96f5fcf66d6992b24ef29caa739daa3f7a5c37ea6c9e84168cdee5c64f3f5a",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-limestone",
+      "file": "/media/materials-sdf-limestone.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "5b79ee8fd5cb01bdc6467a06f495635f4740875c67ecc2c7fd7f52bda8af75e5",
+      "bytes": 9028,
+      "caption": "Limestone \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-limestone.png",
+        "sourceSha256": "76cc52fc6f6db9b97a325d07ce3ca62231eedd9a2bad137472b19972cc4c9ea5",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-marble",
+      "file": "/media/materials-sdf-marble.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "3287260870e27b5ddc5b1d390190f931af8473ef74fa48fae74593f9d97de509",
+      "bytes": 9096,
+      "caption": "Balanced marble \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-marble.png",
+        "sourceSha256": "f713e23580046b4cc100a1a155f8cb1648f173ff1ba625f64a81a9c3dcd9dd01",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-plain",
+      "file": "/media/materials-sdf-plain.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "db53015a2a66a981db03b6d7a6ddb7574b8db0f5829c553e536d541294d29119",
+      "bytes": 6566,
+      "caption": "Neutral gray \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-plain.png",
+        "sourceSha256": "d85b87734b421bbbff95f476665e3dd71405112dbe9615ac1b4576c74ee77ed1",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-rusted-steel",
+      "file": "/media/materials-sdf-rusted-steel.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "0f2b35fc8efc6a39a9be2ea3d92c18144626125043d6b9004a89b3fc700a6a35",
+      "bytes": 11000,
+      "caption": "Rusted steel \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-rusted-steel.png",
+        "sourceSha256": "b50364dad8f34f555d000f398951b3fbddd09a04bc1bc7ae46a4692ee27173ac",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-wood",
+      "file": "/media/materials-sdf-wood.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "d7c09638e1143dc1e35fcf11fded9a5639bf4f6bd28b46d7a34d35daf5c70389",
+      "bytes": 9094,
+      "caption": "Unvarnished hardwood \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-wood.png",
+        "sourceSha256": "6bc5ae08cc65f24c04b56c7aedc5bfbaafc1f6008a3fe265d1218abc864f2ffc",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
+      "id": "materials-sdf-woven-cloth",
+      "file": "/media/materials-sdf-woven-cloth.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 540,
+      "sha256": "2c012906575efe1920b085bec8d19f0e1ecbad9e90503ca53cfe7506ae665ca6",
+      "bytes": 10248,
+      "caption": "Plain-weave cloth \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/forward-transmission/f2/stills/sdf-woven-cloth.png",
+        "sourceSha256": "ca96432b8f8f20337e0a12b19849e3e0593de4015b8722575d1d14724c4b0ea2",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "recipe": "site/media/receipts/raytracing-materials.json",
+        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+      }
+    },
+    {
       "id": "mesh-materials",
       "file": "/media/mesh-materials.webp",
       "kind": "image",
@@ -1827,6 +2883,29 @@
         "sourceSha256": "52d8e33b284556c0e79aae41ec705fc7e248647058cf40535f6d42cc17ece224",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
         "parentAsset": "gltf-motion-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-materials-mesh-dusk",
+      "file": "/media/preview-materials-mesh-dusk.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "764762c14364be6a20553f8b8ad2b441ecef853c2d82eaf74a57b0daa45e41a1",
+      "bytes": 51064,
+      "caption": "Short silent preview. Twelve shared materials \u00b7 Forward PBR \u00b7 dusk under the shared clear atmosphere.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/materials-mesh-dusk-film.mp4",
+        "sourceSha256": "d804ae62aa5ac0cca66387b4da0af3b4e6b0817beea2d1709216cbcea8668214",
+        "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+        "parentAsset": "materials-mesh-dusk-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "Silent video derivative of the selected web film; no native capture or render was made."
       }
@@ -2477,9 +3556,9 @@
       "preview": "preview-ocean-surface"
     },
     "mesh-materials": {
-      "poster": "mesh-materials",
-      "film": "mesh-materials-film",
-      "preview": "preview-mesh-materials"
+      "poster": "materials-mesh-dusk",
+      "film": "materials-mesh-dusk-film",
+      "preview": "preview-materials-mesh-dusk"
     },
     "sdf-materials": {
       "poster": "sdf-materials",

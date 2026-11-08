@@ -1,0 +1,1221 @@
+{
+  "format": "cubey.site.raytracing-materials",
+  "version": 1,
+  "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
+  "scope": "Native 1080p30 masters, 720p30 film and 960\u00d7540 still derivatives. Clear atmosphere, environment after exit, no local specimen shadows or diffuse GI. No performance claim.",
+  "qualifiedManifestSha256": "2510834142449061c99d0a3546347e62cc7e22acc4ab1bdb87bb3796203982b0",
+  "qualification": {
+    "docs/evidence/forward-transmission-2026-11/f2.json": "76a5b3989dd9784cd0db1eb20ee34abd74c350fd7bd55c7e26901cc3dc5a4712",
+    "docs/evidence/forward-transmission-2026-11/review.json": "0a2304aa6a920c0ce88e0d88ddac5c5f540b99c53bc6a53d354a3242fa317c58"
+  },
+  "canonicalRecipes": {
+    "plain": "254467393014482928",
+    "limestone": "8010415973675828309",
+    "marble": "5467103053595440915",
+    "clay": "5137840870869084180",
+    "ceramic": "18085266037672923844",
+    "bronze": "9551211816160129301",
+    "glass": "5361505010522837266",
+    "wood": "11224598288163044754",
+    "rusted-steel": "1282343094357678312",
+    "kraft-cardboard": "11505192751650608049",
+    "woven-cloth": "8241995533189518458",
+    "frosted-glass": "13327425828092101654"
+  },
+  "assets": {
+    "materials-mesh-plain": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-plain.png",
+      "nativeSha256": "fd1c4fb8c553360beb50b0aff7aadac0b83c4fda446d28012425d37f0bcce8dc",
+      "webSha256": "25fb1b5c930892e4123ead1964f698f85533cdeaf643985ad422ba39e1e91910",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-plain.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-plain.webp"
+      ]
+    },
+    "materials-mesh-limestone": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-limestone.png",
+      "nativeSha256": "ff224e7deaef454aae7e3010a996973b28db8690f51191c7d246a0047bf417a1",
+      "webSha256": "2fc920a0b1c5655de7c14f663c1b42e54877824c28cfdc22ee18b16cf4ec8c44",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-limestone.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-limestone.webp"
+      ]
+    },
+    "materials-mesh-marble": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-marble.png",
+      "nativeSha256": "5fd50357a341a0022cc6fd7b45b98cd1e35ce7b9f562624f1722fc480551b58f",
+      "webSha256": "1bc9e1c02e114c1ba651d2204c5f71ec343a7b5b8db4b7261bb58a935b3bebd4",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-marble.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-marble.webp"
+      ]
+    },
+    "materials-mesh-clay": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-clay.png",
+      "nativeSha256": "eb743d0b40f85bee45d5fd19c2f49eed0f01ba389090efba7535d9511b2a363e",
+      "webSha256": "5ea190b5a67588df888808f797a35929a231240ec7ca5d6355a2a465957ad2d4",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-clay.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-clay.webp"
+      ]
+    },
+    "materials-mesh-ceramic": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-ceramic.png",
+      "nativeSha256": "dbcb511f5df1d43870226997badbd48c78a4bf457a88a8b19df1ac51f9bb645c",
+      "webSha256": "8addf6a69cb340b364cc42428ad45ffbafcd775ebbefcaa882f53e035b41bd59",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-ceramic.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-ceramic.webp"
+      ]
+    },
+    "materials-mesh-bronze": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-bronze.png",
+      "nativeSha256": "a262aeb9fc2516bd4159ac5637131a1ca6f20adb8e1915aeab5e14de3f72f66c",
+      "webSha256": "9a17fdc80c789c639163a5a8ad570fb4d9a3c0fb47ff1a3c7be8a66e379a5b8b",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-bronze.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-bronze.webp"
+      ]
+    },
+    "materials-mesh-glass": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-glass.png",
+      "nativeSha256": "31a7d2bad51dc184c9c20f4da9df399062b932168486508f226959b302408dac",
+      "webSha256": "50f961dc85a16c8df14a19eb740dec7d013caf57e5fb5f05a9a4fae43abc777c",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-glass.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-glass.webp"
+      ]
+    },
+    "materials-mesh-wood": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-wood.png",
+      "nativeSha256": "96a66abd9a7dd9686ca83043c4686ec7437288b873e1b3d5e3f122408e4d37dd",
+      "webSha256": "1d18cd880a4af38ecd9339bed57dd8edffc4c57f6aabd3d92385ff10a67b5235",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-wood.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-wood.webp"
+      ]
+    },
+    "materials-mesh-rusted-steel": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-rusted-steel.png",
+      "nativeSha256": "b21fa36496c3aeef93b1a9301ed2a211375d43f56e6a82991a8f836664347095",
+      "webSha256": "c65868270666395813f2054f66811c1eaf4bdf834f181dadd795122f62f9a91c",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-rusted-steel.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-rusted-steel.webp"
+      ]
+    },
+    "materials-mesh-kraft-cardboard": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-kraft-cardboard.png",
+      "nativeSha256": "e0dc75c1789f075b84c6b669d3d68cd58c18e36e8d3eca06db2ab4b06ed03879",
+      "webSha256": "6ab327f9bc2f75cdabe73d035da36c7c57e6adf022644f66d43e606ae90ac8eb",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-kraft-cardboard.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-kraft-cardboard.webp"
+      ]
+    },
+    "materials-mesh-woven-cloth": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-woven-cloth.png",
+      "nativeSha256": "c565f4087c6af0299ab61c04604455678a73b8c26d6483c51aa64c8fe3042849",
+      "webSha256": "563cc5617caee2ec85ffbdad168d0b6f0d196f837226ece5f92d463c4ab30a64",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-woven-cloth.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-woven-cloth.webp"
+      ]
+    },
+    "materials-mesh-frosted-glass": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/forward-frosted-glass.png",
+      "nativeSha256": "9521b2f504a88a115264c672855bd9b7336909f229f31e2c738a5990fdac7d05",
+      "webSha256": "dbf6a6d36ae7dc2d0cca2fb7eca28b72d57898bb16f8516748b00042dd5e91b1",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/forward-frosted-glass.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-frosted-glass.webp"
+      ]
+    },
+    "materials-mesh-dusk": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/forward-dusk-poster.png",
+      "nativeSha256": "c0e239f9e27dfcceb104a234a6b021362dfcafe92b473e432f1c1135d896ca5c",
+      "webSha256": "48de13eccfaad8507b82fbe98b8dcd57ce278a3da2c0085a99ebae2fd20ffa65",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/forward-dusk-poster.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-dusk.webp"
+      ]
+    },
+    "materials-mesh-dusk-film": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/forward-dusk.mp4",
+      "nativeSha256": "ebd713cafa974bd030ee44ba3ef5715ab2429e315811e8c93182ff608042ae4a",
+      "webSha256": "d804ae62aa5ac0cca66387b4da0af3b4e6b0817beea2d1709216cbcea8668214",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/forward-dusk.mp4",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "medium",
+        "-crf",
+        "24",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-dusk-film.mp4"
+      ],
+      "ffprobe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "nb_read_frames": "240"
+          }
+        ],
+        "format": {
+          "duration": "8.000000"
+        }
+      }
+    },
+    "materials-mesh-dawn": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/forward-dawn-poster.png",
+      "nativeSha256": "68caa959ac95179825329d3f38edb822ce3ac54e507f4b9f23b3c3c9745c7a9a",
+      "webSha256": "dbff6ba3505b720cd471d7c7b4df891e6525b4e1c6f3e1739a3a89576fcf8d9b",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/forward-dawn-poster.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-dawn.webp"
+      ]
+    },
+    "materials-mesh-dawn-film": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/forward-dawn.mp4",
+      "nativeSha256": "1f86c0f9abd08cd433dcf9b59eecb3d0f09d0ef7d3d26faeb49e16e95d7451de",
+      "webSha256": "9048fbd26287d07e22c39e93da6b1e0336efa7fb7af264bc71e43267626f190a",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/forward-dawn.mp4",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "medium",
+        "-crf",
+        "24",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-mesh-dawn-film.mp4"
+      ],
+      "ffprobe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "nb_read_frames": "240"
+          }
+        ],
+        "format": {
+          "duration": "8.000000"
+        }
+      }
+    },
+    "materials-sdf-plain": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-plain.png",
+      "nativeSha256": "d85b87734b421bbbff95f476665e3dd71405112dbe9615ac1b4576c74ee77ed1",
+      "webSha256": "db53015a2a66a981db03b6d7a6ddb7574b8db0f5829c553e536d541294d29119",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-plain.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-plain.webp"
+      ]
+    },
+    "materials-sdf-limestone": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-limestone.png",
+      "nativeSha256": "76cc52fc6f6db9b97a325d07ce3ca62231eedd9a2bad137472b19972cc4c9ea5",
+      "webSha256": "5b79ee8fd5cb01bdc6467a06f495635f4740875c67ecc2c7fd7f52bda8af75e5",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-limestone.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-limestone.webp"
+      ]
+    },
+    "materials-sdf-marble": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-marble.png",
+      "nativeSha256": "f713e23580046b4cc100a1a155f8cb1648f173ff1ba625f64a81a9c3dcd9dd01",
+      "webSha256": "3287260870e27b5ddc5b1d390190f931af8473ef74fa48fae74593f9d97de509",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-marble.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-marble.webp"
+      ]
+    },
+    "materials-sdf-clay": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-clay.png",
+      "nativeSha256": "ec927d2b3ecbed4ce59a13878e03e99c5b8437c0eeafe45ebd318d601cb84b27",
+      "webSha256": "c3abf369e4575aa77392b95564046c31dcb9ac36426fb4cd02738ee7bf3a64c6",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-clay.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-clay.webp"
+      ]
+    },
+    "materials-sdf-ceramic": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-ceramic.png",
+      "nativeSha256": "69fef64ad1bf8af15462df67ac3178df5347e2eb4548729a233d343bf59f69b2",
+      "webSha256": "a3ae939f17ffd10e64fdbc6756a8cb78b0b93675e67f6e53f73a2d2dc4271acb",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-ceramic.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-ceramic.webp"
+      ]
+    },
+    "materials-sdf-bronze": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-bronze.png",
+      "nativeSha256": "9ca757b00bfb6071b31ca5be1dafb4d4e03ef9cad6e73d9751bc753dcd4dfe44",
+      "webSha256": "b8220b600b1c09fe766c69cf81c940c2eb0648a10830c308be6d02d03823a2df",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-bronze.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-bronze.webp"
+      ]
+    },
+    "materials-sdf-glass": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-glass.png",
+      "nativeSha256": "82fc5e69bc2783aad7b67bc207d64dbad904c4960bde99f5b1acdf571efa7afa",
+      "webSha256": "9cbfe5138d0fa3845cb8d71f9aac3a351e6ac9759643f85e0951b0eeb58fdeda",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-glass.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-glass.webp"
+      ]
+    },
+    "materials-sdf-wood": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-wood.png",
+      "nativeSha256": "6bc5ae08cc65f24c04b56c7aedc5bfbaafc1f6008a3fe265d1218abc864f2ffc",
+      "webSha256": "d7c09638e1143dc1e35fcf11fded9a5639bf4f6bd28b46d7a34d35daf5c70389",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-wood.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-wood.webp"
+      ]
+    },
+    "materials-sdf-rusted-steel": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-rusted-steel.png",
+      "nativeSha256": "b50364dad8f34f555d000f398951b3fbddd09a04bc1bc7ae46a4692ee27173ac",
+      "webSha256": "0f2b35fc8efc6a39a9be2ea3d92c18144626125043d6b9004a89b3fc700a6a35",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-rusted-steel.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-rusted-steel.webp"
+      ]
+    },
+    "materials-sdf-kraft-cardboard": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-kraft-cardboard.png",
+      "nativeSha256": "de96f5fcf66d6992b24ef29caa739daa3f7a5c37ea6c9e84168cdee5c64f3f5a",
+      "webSha256": "abaed5e88d2f0a7e5f6d225569874b38ea2914acf819d9f5003bb75d78f37ea9",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-kraft-cardboard.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-kraft-cardboard.webp"
+      ]
+    },
+    "materials-sdf-woven-cloth": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-woven-cloth.png",
+      "nativeSha256": "ca96432b8f8f20337e0a12b19849e3e0593de4015b8722575d1d14724c4b0ea2",
+      "webSha256": "2c012906575efe1920b085bec8d19f0e1ecbad9e90503ca53cfe7506ae665ca6",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-woven-cloth.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-woven-cloth.webp"
+      ]
+    },
+    "materials-sdf-frosted-glass": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/sdf-frosted-glass.png",
+      "nativeSha256": "a3fe07f51fdd2058bc52b4c464c28955bb71602059b812a5126b6c7f8af0e961",
+      "webSha256": "de53e42dd2c1473f1c9d09b34136d252324d46f0723e90ea1ec1cbb1821d1203",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/sdf-frosted-glass.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-frosted-glass.webp"
+      ]
+    },
+    "materials-sdf-dusk": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/sdf-dusk-poster.png",
+      "nativeSha256": "bc9d4a06eb3e5a2736a52e3c65d3d34931525779e2f9f1ff3796a6f0ea504391",
+      "webSha256": "f8409901c2fbbc8491a840c9eba80d4f8ed868189e15f0d018d16bb0ccc9f58e",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/sdf-dusk-poster.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-dusk.webp"
+      ]
+    },
+    "materials-sdf-dusk-film": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/sdf-dusk.mp4",
+      "nativeSha256": "bb65d69c67596ad37e06b411ac90da3b390ad98901b1249b67900dfef4e13650",
+      "webSha256": "3c97fe77c013398fa9a0bec414127c88341de31df6490896488fd5f9b742b602",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/sdf-dusk.mp4",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "medium",
+        "-crf",
+        "24",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-dusk-film.mp4"
+      ],
+      "ffprobe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "nb_read_frames": "240"
+          }
+        ],
+        "format": {
+          "duration": "8.000000"
+        }
+      }
+    },
+    "materials-sdf-dawn": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/sdf-dawn-poster.png",
+      "nativeSha256": "92053e0c5e10d8e6d2cf08772117d3b522f0f84b111b9cae373a6389c1d83f67",
+      "webSha256": "5bbfda88e22e3b9bd7d3a14ff6400f477f955100660dacd943dd4c81da6aee12",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/sdf-dawn-poster.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-dawn.webp"
+      ]
+    },
+    "materials-sdf-dawn-film": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/sdf-dawn.mp4",
+      "nativeSha256": "6a2adae24e0ada7c6fe1a6dbf0684f97ca5375eb9901d1692020770e09126746",
+      "webSha256": "9663b7e47777180babe471616513dee0366ef2f36f86cf8b97fdb05928c3af90",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/sdf-dawn.mp4",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "medium",
+        "-crf",
+        "24",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-sdf-dawn-film.mp4"
+      ],
+      "ffprobe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "nb_read_frames": "240"
+          }
+        ],
+        "format": {
+          "duration": "8.000000"
+        }
+      }
+    },
+    "materials-rt-plain": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-plain.png",
+      "nativeSha256": "8d9d28a45b58db5bb2cc409c35ba09d332acd9c209489b0e30f73491f994d600",
+      "webSha256": "7c4cf0fbf5f4ef5bc285e2a1745efdd28b599a8237685a2baece9cd50305cb5b",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-plain.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-plain.webp"
+      ]
+    },
+    "materials-rt-limestone": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-limestone.png",
+      "nativeSha256": "fdef44ad80708302e4495aa55db641fbd057df4061126bb0bbb391de98d6db0f",
+      "webSha256": "63ad94eb35a388b2fd8a3ab55878a3f11a767cd9afdf775aed587b566f49697d",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-limestone.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-limestone.webp"
+      ]
+    },
+    "materials-rt-marble": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-marble.png",
+      "nativeSha256": "be65602f795a85527e71821fcb648e70b7f47ffa9bd165ffa9e64238edad1ac5",
+      "webSha256": "93c186b646ef476334f2f8be83ca12da25b88fe3d88a0d84b01e26efad02f17f",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-marble.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-marble.webp"
+      ]
+    },
+    "materials-rt-clay": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-clay.png",
+      "nativeSha256": "5a41f504120926502f77ac4fedf863eff0e340282ec28bd3a24536e2e0a17fba",
+      "webSha256": "c2022b243d5414a5a586279751526b46816b0a66428c469a296de0e087168744",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-clay.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-clay.webp"
+      ]
+    },
+    "materials-rt-ceramic": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-ceramic.png",
+      "nativeSha256": "8d07c2fe439ec5f58541bf2791467aad3779f0388a49581001d67fccb663ee31",
+      "webSha256": "8102bd7b76260cb2f47a996f04b704a4e30b728c776ce4287856913a1886724a",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-ceramic.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-ceramic.webp"
+      ]
+    },
+    "materials-rt-bronze": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-bronze.png",
+      "nativeSha256": "406f9ee032ec5ac8645cd6a536a344ba3bcc33824528bedf6c0dbf0664b0502b",
+      "webSha256": "6886f8152bdb99d193658f78a28f0ad0eaa86bdbdb2e0f4b1992ebe35385b8cf",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-bronze.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-bronze.webp"
+      ]
+    },
+    "materials-rt-glass": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-glass.png",
+      "nativeSha256": "58d64f74d11e9bde4b21bd4a389198263309540ab19e8348ca002632d62a3208",
+      "webSha256": "c2eb5b8e04d26e097c8143040b3c46cf82abe4f3df43b13549b50fcccb5e3f00",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-glass.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-glass.webp"
+      ]
+    },
+    "materials-rt-wood": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-wood.png",
+      "nativeSha256": "3d29ec21b23cf28f470d7e0e7d1471f61d7aa00c91b5918332dd8816810f8b94",
+      "webSha256": "a99f99bd3015fe40126c2df37eea8fc8bc09c4dec675dfddb2118871a7410610",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-wood.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-wood.webp"
+      ]
+    },
+    "materials-rt-rusted-steel": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-rusted-steel.png",
+      "nativeSha256": "b5314182095b7a7f40d4eeb29ca3625d44021b04cc929fa6cf0243fa395446d1",
+      "webSha256": "9aaf5c05760ce67a0fcd63848827061ae77fb2104f9ddefb2cdd707ee3470871",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-rusted-steel.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-rusted-steel.webp"
+      ]
+    },
+    "materials-rt-kraft-cardboard": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-kraft-cardboard.png",
+      "nativeSha256": "6fe2ee3a32207da014e2318f199b6f329235e94084a4e63a7be7316631d5915b",
+      "webSha256": "580c346d62fde6253e9b03593f31bed9dba130406e4a0b862987f662aeccef08",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-kraft-cardboard.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-kraft-cardboard.webp"
+      ]
+    },
+    "materials-rt-woven-cloth": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-woven-cloth.png",
+      "nativeSha256": "9ada06933c634fcf3c0b60321749b3b3bd7f48ba23d860a981ee659fcf8b1e58",
+      "webSha256": "2b9097a226738b3183389adf58afcfb8dda4bfb6cba42cc44137b4e579a2d77d",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-woven-cloth.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-woven-cloth.webp"
+      ]
+    },
+    "materials-rt-frosted-glass": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/stills/rt-frosted-glass.png",
+      "nativeSha256": "94dfc2e1be999c151f0ee0b87d9a82481adeaaab2cab1b06dcdd6a8661999252",
+      "webSha256": "244a2e214ed52394a154ea5cca2bbb5f77b2f1a77beded6d61fc71c7318501bc",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/stills/rt-frosted-glass.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-frosted-glass.webp"
+      ]
+    },
+    "materials-rt-dusk": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/rt-dusk-poster.png",
+      "nativeSha256": "e268d8317d357670dff59d9d6f06be9990dc3d8bf48c13ffdf233b3ed642b64d",
+      "webSha256": "870115b8b33cbd512592a24a9b87245a78517a3f2d4806b407c0dc935be6cf88",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/rt-dusk-poster.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-dusk.webp"
+      ]
+    },
+    "materials-rt-dusk-film": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/rt-dusk.mp4",
+      "nativeSha256": "e8492bcf8d22b3b17854f09e97f99edcc4ce58e0f7f1448e395c61037b0b3538",
+      "webSha256": "31912e2893a07f6e91c8b201c4c015fc09c2d17418d58a757865a5361c0756da",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/rt-dusk.mp4",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "medium",
+        "-crf",
+        "24",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-dusk-film.mp4"
+      ],
+      "ffprobe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "nb_read_frames": "240"
+          }
+        ],
+        "format": {
+          "duration": "8.000000"
+        }
+      }
+    },
+    "materials-rt-dawn": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/rt-dawn-poster.png",
+      "nativeSha256": "072c6edc2401bbb6f37c34765c691ff01d279e809f26f5fc887d77bce7d6b6bf",
+      "webSha256": "657e98ba0d3c542ecf23790360095c4fa22ae5a5211fa101e3032280a02ea3ef",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/rt-dawn-poster.png",
+        "-vf",
+        "scale=960:540:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "82",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-dawn.webp"
+      ]
+    },
+    "materials-rt-dawn-film": {
+      "nativeSource": "outputs/raytracing/forward-transmission/f2/films/rt-dawn.mp4",
+      "nativeSha256": "d595638f79067ec358a472a8d3395ddfa800a194a3518729b799e484c60d8d1b",
+      "webSha256": "3d4a63931464c4916ce516015445d4c3873a1c2615044202d82850eaa72c3f2d",
+      "command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/f2/films/rt-dawn.mp4",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "medium",
+        "-crf",
+        "24",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/forward-transmission/site-materials-20261107/materials-rt-dawn-film.mp4"
+      ],
+      "ffprobe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "nb_read_frames": "240"
+          }
+        ],
+        "format": {
+          "duration": "8.000000"
+        }
+      }
+    }
+  }
+}

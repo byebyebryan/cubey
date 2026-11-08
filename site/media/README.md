@@ -89,6 +89,22 @@ encoded video-packet hashes match the native inputs; only MP4 container layout
 changes to put the playback index first. The content gate enforces fast-start
 layout for every film.
 
+The current material library compares forward PBR, SDF and hardware RT under
+the same clear-atmosphere dusk/dawn timelines. Its
+[capture and derivative receipt](receipts/raytracing-materials.json) identifies
+the qualified 1080p30 masters, unchanged recipes, 720p30 films and 960×540 stills.
+All three use the shared environment after the applicable interfaces; local
+specimen shadows, neighboring-object optics and diffuse GI are outside this
+comparison. The earlier cloud-lit library media and cut-material films remain
+preserved with their original identities.
+
+Prepare a new selection from qualified native captures with
+`site/tools/import-raytracing-materials.py`; its `--native`, `--qualified-bundle`
+and fresh `--output` inputs are required. Add `--import-media` to install the
+derivatives locally, then regenerate only the `mesh-materials` hover preview.
+Existing identities are rejected. The static build needs neither capture
+outputs nor FFmpeg, and local media import does not publish the site.
+
 The [site guide](../README.md) owns authoring/build instructions; the
 [implementation record](../../docs/notes/cubey-site-implementation-progress.md)
 owns point-in-time checks and preview delivery.

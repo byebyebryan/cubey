@@ -62,6 +62,16 @@ if(ids.has('guardian')||content.entries.filter(e=>e.family==='sdf').map(e=>e.id)
 if(content.families.some(f=>f.id==='fractals')||content.entries.some(e=>e.family==='fractals'))errors.push('Deferred fractals returned to the public catalog');
 if(library.entries.length!==12)errors.push('Shared twelve-material catalog changed');
 for(const material of library.entries)for(const renderer of ['mesh','sdf'])if(assets.get(`library-${renderer}-${material.id}`)?.kind!=='image')errors.push(`Missing ${renderer} library specimen: ${material.id}`);
+const materialReceipt=JSON.parse(readFileSync(resolve(site,'media/receipts/raytracing-materials.json'),'utf8'));
+for(const renderer of ['mesh','sdf','rt']){
+  for(const material of library.entries)if(assets.get(`materials-${renderer}-${material.id}`)?.kind!=='image')errors.push(`Missing current ${renderer} material: ${material.id}`);
+  for(const phase of ['dusk','dawn'])for(const [suffix,kind] of [['','image'],['-film','video']])if(assets.get(`materials-${renderer}-${phase}${suffix}`)?.kind!==kind)errors.push(`Missing matched ${renderer} ${phase} ${kind}`);
+}
+for(const [id,capture] of Object.entries(materialReceipt.assets)){
+  const asset=assets.get(id);
+  if(asset?.sha256!==capture.webSha256||asset?.provenance.sourceSha256!==capture.nativeSha256||asset?.provenance.sourceRevision!==materialReceipt.sourceRevision)errors.push(`Three-renderer material provenance mismatch: ${id}`);
+}
+for(const [name,expected] of Object.entries(materialReceipt.qualification))if(!existsSync(resolve(root,name))||sha(readFileSync(resolve(root,name)))!==expected)errors.push(`Material qualification receipt changed: ${name}`);
 for(const id of ['mesh-materials','library-mesh-dawn','library-sdf-dusk','library-sdf-dawn']){
   for(const [suffix,kind] of [['','image'],['-film','video']]){
     const a=assets.get(id+suffix);

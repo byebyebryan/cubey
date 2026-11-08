@@ -115,7 +115,7 @@ for (const library of document.querySelectorAll('[data-material-library]')) {
     const time=nextPhase===phase&&!video.ended?video.currentTime:0;
     const playing=!video.paused&&!video.ended;
     renderer=nextRenderer;phase=nextPhase;
-    const label=renderer==='sdf'?'SDF ray marching':'Forward PBR';
+    const label=buttons.find(button=>button.dataset.renderer===renderer).textContent.trim();
     for(const button of buttons)button.setAttribute('aria-pressed',String(button.dataset.renderer===renderer));
     for(const button of phaseButtons)button.setAttribute('aria-pressed',String(button.dataset.phase===phase));
     if(source.getAttribute('src')!==variant.getAttribute('href')){
@@ -146,5 +146,6 @@ for (const library of document.querySelectorAll('[data-material-library]')) {
   for(const button of buttons)button.addEventListener('click',()=>choose(button.dataset.renderer,phase));
   for(const button of phaseButtons)button.addEventListener('click',()=>choose(renderer,button.dataset.phase));
   const saved=new URLSearchParams(location.search);
-  choose(saved.get('renderer')==='sdf'?'sdf':'mesh',saved.get('light')==='dawn'?'dawn':'dusk',false);
+  const savedRenderer=saved.get('renderer');
+  choose(buttons.some(button=>button.dataset.renderer===savedRenderer)?savedRenderer:'mesh',saved.get('light')==='dawn'?'dawn':'dusk',false);
 }

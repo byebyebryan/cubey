@@ -594,23 +594,23 @@
     {
       "id": "mesh-materials",
       "family": "materials",
-      "title": "Forward PBR materials",
+      "title": "Materials across renderers",
       "owner": "projects/pbr_materials",
       "dimension": "3D",
-      "summary": "All twelve shared materials in one sphere lineup, under moving clouds and dusk or dawn light.",
+      "summary": "Twelve shared materials under the same clear sky, rendered with forward PBR, SDF ray marching and hardware ray tracing.",
       "cues": [
-        "Forward PBR",
-        "Mesh specimens",
-        "Shared recipes"
+        "Shared recipes",
+        "Three renderers",
+        "Reflection and refraction"
       ],
       "variants": [
         "Twelve-sphere lineup",
-        "Forward PBR / SDF comparison",
+        "Forward PBR / SDF / hardware RT",
         "Dusk / dawn"
       ],
-      "source": "projects/pbr_materials/presets/presentation/README.md",
-      "media": "site/public/media/mesh-materials-film.mp4",
-      "poster": "site/public/media/mesh-materials.webp",
+      "source": "docs/notes/raytracing-material-workshop-guide.md",
+      "media": "site/public/media/materials-mesh-dusk-film.mp4",
+      "poster": "site/public/media/materials-mesh-dusk.webp",
       "related": [
         "sdf-materials",
         "gltf-layers",
@@ -631,8 +631,8 @@
       },
       "selected_media": {
         "manifest": "site/media/manifest.json",
-        "poster": "mesh-materials",
-        "film": "mesh-materials-film"
+        "poster": "materials-mesh-dusk",
+        "film": "materials-mesh-dusk-film"
       }
     },
     {

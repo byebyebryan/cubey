@@ -1,0 +1,139 @@
+{
+  "format": "cubey.site.material-renderers-preview",
+  "version": 1,
+  "passed": true,
+  "review_base": "52da3d8e652c3527bc2ac09c89314da884b16005",
+  "public_base": "0fd2147f7a4f29d280e19df07e7ebd1c41f6bc04",
+  "media_source": "30bfad78360dbfee7807a749458d82ece7e28b65",
+  "changes": [
+    "Three renderer choices in the existing material library",
+    "Six clear-atmosphere dusk/dawn films",
+    "Twelve stills per renderer and a three-way glass comparison",
+    "Keyboard and URL restoration for hardware RT",
+    "New media identities and preserved previous assets"
+  ],
+  "checks": {
+    "astro": {
+      "files": 41,
+      "errors": 0,
+      "warnings": 0
+    },
+    "node_tests_passed": 17,
+    "documentation_tests_passed": 9,
+    "built_pages": 24,
+    "internal_references": 1036,
+    "maximum_page_image_resource_bound_bytes": 420725,
+    "material_page_image_resource_bound_bytes": 324059,
+    "browser": {
+      "passed": true,
+      "url": "http://starship:4321/cubey/demos/materials/",
+      "film_choices": [
+        {
+          "caption": "Forward PBR \u00b7 dusk \u00b7 native recorded playback",
+          "error": null,
+          "label": "Twelve material spheres \u00b7 Forward PBR \u00b7 dusk",
+          "source": "../../media/materials-mesh-dusk-film.mp4"
+        },
+        {
+          "caption": "Forward PBR \u00b7 dawn \u00b7 native recorded playback",
+          "error": null,
+          "label": "Twelve material spheres \u00b7 Forward PBR \u00b7 dawn",
+          "source": "../../media/materials-mesh-dawn-film.mp4"
+        },
+        {
+          "caption": "SDF ray marching \u00b7 dusk \u00b7 native recorded playback",
+          "error": null,
+          "label": "Twelve material spheres \u00b7 SDF ray marching \u00b7 dusk",
+          "source": "../../media/materials-sdf-dusk-film.mp4"
+        },
+        {
+          "caption": "SDF ray marching \u00b7 dawn \u00b7 native recorded playback",
+          "error": null,
+          "label": "Twelve material spheres \u00b7 SDF ray marching \u00b7 dawn",
+          "source": "../../media/materials-sdf-dawn-film.mp4"
+        },
+        {
+          "caption": "Hardware RT \u00b7 dusk \u00b7 native recorded playback",
+          "error": null,
+          "label": "Twelve material spheres \u00b7 Hardware RT \u00b7 dusk",
+          "source": "../../media/materials-rt-dusk-film.mp4"
+        },
+        {
+          "caption": "Hardware RT \u00b7 dawn \u00b7 native recorded playback",
+          "error": null,
+          "label": "Twelve material spheres \u00b7 Hardware RT \u00b7 dawn",
+          "source": "../../media/materials-rt-dawn-film.mp4"
+        }
+      ],
+      "mobile": {
+        "buttons": [
+          {
+            "right": 116.359375,
+            "text": "Forward PBR"
+          },
+          {
+            "right": 253.484375,
+            "text": "SDF ray marching"
+          },
+          {
+            "right": 116.625,
+            "text": "Hardware RT"
+          }
+        ],
+        "glassColumns": "339px",
+        "height": 844,
+        "overflow": false,
+        "width": 390
+      },
+      "paused_seek_before": 1.04,
+      "paused_seek_after": 1.04,
+      "keyboard_renderer_and_reload": "Hardware RT",
+      "console": [],
+      "viewport_override_reset": true
+    }
+  },
+  "preservation": {
+    "passed": true,
+    "previous_assets_preserved": 103,
+    "changed_selections": [
+      "mesh-materials"
+    ],
+    "original_protected_files_unchanged": 11,
+    "added_media": 49,
+    "unpublished_commits_before_site": 38
+  },
+  "new_media": {
+    "native_derivatives": 48,
+    "hover_previews": 1,
+    "native_derivative_bytes": 3988232,
+    "hover_bytes": 51064
+  },
+  "limitations": [
+    "Recorded native playback, not an interactive web renderer",
+    "Environment optics; no neighboring-object reflections or refractions",
+    "Optical approximations remain distinct; no equivalence or performance claim",
+    "Public deployment pending"
+  ],
+  "published": false,
+  "pushed": false,
+  "source_sha256": {
+    "site/src/components/MaterialLibrary.astro": "2258e80d41081577fee87e40bbafc7c4c7792a7016a4f67c2b04df859fa0b6c3",
+    "site/src/pages/demos/[subject].astro": "abeeacde76f96b0dc1e28fb3c47042bcdacb99dd4fc9de5f5017993a4cc4fdbb",
+    "site/public/scripts/media.js": "fdcdc2d4627e5be3b35789228e93df71d498d44e888b2c684815398ad416a083",
+    "site/tools/check-content.mjs": "9012d63ca222bb4158672834161893d1411ca4dd4f986782840fc2ab49d97955",
+    "site/tools/check-build.mjs": "bace6c54eab93ab54aff8082cfebfa3b1f165e4c68025f301fede295989ce37f",
+    "site/tools/import-raytracing-materials.py": "8104691827cd0118ef98e797e78e25ca51417134ebe983a6d243869b497b7483",
+    "site/media/manifest.json": "093d9fa18e5976baf914679120aa7bca918a91c04983d9356243e1ffdce565da",
+    "site/media/receipts/raytracing-materials.json": "992fef2e86f074aab0da8b65350bb23127cf3fb9626b3259b6bee8725c0a1e66",
+    "site/media/receipts/hover-previews.json": "9f6c00e0cf1a906c5121a0fe933fd3c226c4a6413397c4cf67ee66f0c90bb3fb",
+    "docs/notes/cubey-site-content-map.json": "44d4e62033f08c826a3fd085d58d8e7e80552784ace927993165f11020a9d195"
+  },
+  "artifact_sha256": {
+    "site-verify.log": "91ba5d8e3e42dd24c1c142f671da6f7740c3b45e237e03c5111a07f8bb94b20b",
+    "browser.json": "2bade5a88c87006fff6af9941ad3fc78fa8880161d1c9d4456526e48067e075a",
+    "preservation.json": "ff885b511fc42e305823d4df41e4ea2e051b618dd1dbb24da776e4c83b5d1aeb",
+    "desktop-glass.png": "3fbbdc2f2e568fc738c80079dc62a8f3eb4e7800d11548fbf429cdce240d971f",
+    "mobile.png": "3563dd942bc140d26b85fa1a7f6b81ddb5364f17da51ea2b72a33204f66b1a33"
+  },
+  "raw_evidence": "outputs/raytracing/forward-transmission/site-materials-20261107"
+}
