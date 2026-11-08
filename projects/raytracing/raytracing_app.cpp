@@ -56,12 +56,22 @@ class App {
                      {"global", m.optics.w},
                      {"reflectance", {m.reflectance.x, m.reflectance.y, m.reflectance.z}}});
             data["config"] = schema(config_).template_json();
+            if (scene_.support_recipe)
+                data["support_recipe"] = {
+                    {"active", config_.support_material == "marble"},
+                    {"fingerprint", asset::material_recipe_fingerprint(*scene_.support_recipe)},
+                    {"recipe", nlohmann::json::parse(
+                                   asset::serialize_material_recipe(*scene_.support_recipe))}};
             if (scene_.workshop) {
                 data["workshop_recipes"] = scene_.workshop->identity();
                 data["geometry_conversion"] =
-                    "shared forward specimen builders; uint16 indices widened; boundary winding "
-                    "aligned with supplied normals; seam/pole positions snapped within each "
-                    "recorded bound and degenerate triangles removed";
+                    scene_.material_layout == Scene::MaterialLayout::Dragon
+                        ? "preserved prepared dragon and convex slab; no optical repair or glass "
+                          "admission"
+                        : "shared forward specimen builders; uint16 indices widened; boundary "
+                          "winding "
+                          "aligned with supplied normals; seam/pole positions snapped within each "
+                          "recorded bound and degenerate triangles removed";
             }
             if (config_.scene_output.has_parent_path())
                 std::filesystem::create_directories(config_.scene_output.parent_path());
@@ -182,13 +192,16 @@ class App {
     void workshop_ui() {
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         auto& state = *scene_.workshop;
+        const bool dragon = scene_.material_layout == Scene::MaterialLayout::Dragon;
         auto recipe = state.recipes.at(state.selected);
         ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize({390, std::min(720.F, ImGui::GetIO().DisplaySize.y - 24)},
                                  ImGuiCond_FirstUseEver);
-        ImGui::Begin("RT material workshop");
+        ImGui::Begin(dragon ? "RT dragon materials" : "RT material workshop");
         ImGui::PushItemWidth(155);
         ImGui::TextUnformatted(state.catalog.at(state.selected).label.c_str());
+        if (dragon)
+            ImGui::TextUnformatted("Base: Balanced marble");
         if (renderer_)
             ImGui::Text("Samples %u / %u  |  History %llu", renderer_->sample_count(),
                         config_.samples,
@@ -284,6 +297,8 @@ class App {
                 workshop_family_ = "all";
             std::vector<std::string> families;
             for (const auto& item : state.catalog) {
+                if (dragon && item.recipe.optics.settings.y > 0)
+                    continue;
                 if (std::find(families.begin(), families.end(), item.family) != families.end())
                     continue;
                 families.push_back(item.family);
@@ -295,6 +310,8 @@ class App {
         if (ImGui::BeginCombo("Material", state.catalog.at(state.selected).label.c_str())) {
             for (std::size_t i = 0; i < state.catalog.size(); ++i) {
                 const auto& item = state.catalog[i];
+                if (!state.supports(i))
+                    continue;
                 if (workshop_family_ != "all" && item.family != workshop_family_)
                     continue;
                 if (ImGui::Selectable(item.label.c_str(), i == state.selected)) {
@@ -305,28 +322,30 @@ class App {
             }
             ImGui::EndCombo();
         }
-        const char* shapes[]{"sphere", "block", "swatch", "cut-block"};
-        int shape = 0;
-        for (int i = 0; i < 4; ++i)
-            if (config_.specimen == shapes[i])
-                shape = i;
-        bool gallery = config_.material == "gallery";
-        ImGui::BeginDisabled(gallery);
-        if (ImGui::Combo("Specimen", &shape, shapes, 4))
-            config_.specimen = shapes[shape];
-        ImGui::EndDisabled();
-        ImGui::SameLine();
-        ImGui::BeginDisabled(config_.object_scale != 1);
-        if (ImGui::Checkbox("Gallery", &gallery)) {
-            config_.material = gallery ? "gallery" : state.catalog.at(state.selected).id;
-            config_.yaw = 0;
-            config_.pitch = gallery ? 0 : .15F;
-            config_.distance = gallery ? .855F : 1.05F;
-            orbit_.set_home_distance(config_.distance);
-            orbit_.reset();
-            orbit_.set_distance(config_.distance);
+        if (!dragon) {
+            const char* shapes[]{"sphere", "block", "swatch", "cut-block"};
+            int shape = 0;
+            for (int i = 0; i < 4; ++i)
+                if (config_.specimen == shapes[i])
+                    shape = i;
+            bool gallery = config_.material == "gallery";
+            ImGui::BeginDisabled(gallery);
+            if (ImGui::Combo("Specimen", &shape, shapes, 4))
+                config_.specimen = shapes[shape];
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            ImGui::BeginDisabled(config_.object_scale != 1);
+            if (ImGui::Checkbox("Gallery", &gallery)) {
+                config_.material = gallery ? "gallery" : state.catalog.at(state.selected).id;
+                config_.yaw = 0;
+                config_.pitch = gallery ? 0 : .15F;
+                config_.distance = gallery ? .855F : 1.05F;
+                orbit_.set_home_distance(config_.distance);
+                orbit_.reset();
+                orbit_.set_distance(config_.distance);
+            }
+            ImGui::EndDisabled();
         }
-        ImGui::EndDisabled();
         recipe = state.recipes.at(state.selected);
         if (ImGui::CollapsingHeader("Recipe detail")) {
             bool detail = false;
@@ -462,7 +481,7 @@ class App {
             save();
         if (solo) {
             const char* surfaces[] = {"clay", "mirror"};
-            int surface = config_.subject_material == "mirror";
+            int surface = int(config_.subject_material == "mirror");
             if (ImGui::Combo("Dragon surface", &surface, surfaces, 2))
                 config_.subject_material = surfaces[surface];
         }
@@ -472,6 +491,16 @@ class App {
             int reflection = config_.reflection_source == "scene";
             if (ImGui::Combo("Reflection source", &reflection, sources, 2))
                 config_.reflection_source = sources[reflection];
+            if (solo && config_.dragon_support == "rock" && config_.environment == "atmosphere") {
+                const char* bases[] = {"matte", "marble"};
+                int base = int(config_.support_material == "marble");
+                if (ImGui::Combo("Base material", &base, bases, 2))
+                    config_.support_material = bases[base];
+                ImGui::BeginDisabled(config_.support_material != "marble");
+                ImGui::Checkbox("Marble pattern", &config_.pattern);
+                ImGui::Checkbox("Marble relief", &config_.bump);
+                ImGui::EndDisabled();
+            }
             const bool glass = config_.scene.find("refraction-") == 0 || config_.scene == "slab";
             if (glass) {
                 int transmission = config_.transmission_source == "scene";
@@ -498,6 +527,17 @@ class App {
     }
     void save() {
         auto c = current();
+        if (scene_.material_layout == Scene::MaterialLayout::Dragon) {
+            // Save the effective subject recipe beside the view. The base keeps
+            // its independent canonical record even when the subject is marble.
+            c.recipe_input =
+                std::filesystem::absolute(config_.save_config.parent_path() /
+                                          (config_.save_config.stem().string() + "-material.json"));
+            asset::save_material_recipe(c.recipe_input,
+                                        scene_.workshop->recipes.at(scene_.workshop->selected));
+            c.recipe_output.clear();
+            c.material_roughness = -1;
+        }
         if (c.scene == "materials" && c.material == "gallery") {
             c.recipe_input.clear();
             c.recipe_output.clear();

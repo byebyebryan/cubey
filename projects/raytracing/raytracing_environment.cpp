@@ -28,7 +28,9 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
                          std::uint32_t slots) {
     const auto start = std::chrono::steady_clock::now();
     active_ = c.environment == "atmosphere";
-    workshop_ = c.scene == "materials";
+    sampled_ = c.scene == "materials" || c.scene == "dragon-materials";
+    if (c.scene == "materials")
+        probe_ground_mode_ = render::AtmosphereEnvironmentGroundMode::Ground;
     slots_ = slots;
     try {
         fallback_.emplace(
@@ -45,17 +47,14 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
             placeholders_.emplace(
                 render::create_atmosphere_background_placeholder_textures(device, gpu));
             atmosphere_.create_resources(
-                device,
-                {.reflection_extent = 128,
-                 .reflection_mip_levels = 5,
-                 .reflection_update_hz = c.lighting_cycle == "frozen" ? 4.F : 30.F,
-                 .frame_slot_count = slots,
-                 .atmosphere_textures = placeholders_->bindings(),
-                 .reflection_ground_mode =
-                     workshop_ ? render::AtmosphereEnvironmentGroundMode::Ground
-                               : render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
-                 .consumer_stage_mask = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR});
-            if (workshop_)
+                device, {.reflection_extent = 128,
+                         .reflection_mip_levels = 5,
+                         .reflection_update_hz = c.lighting_cycle == "frozen" ? 4.F : 30.F,
+                         .frame_slot_count = slots,
+                         .atmosphere_textures = placeholders_->bindings(),
+                         .reflection_ground_mode = probe_ground_mode_,
+                         .consumer_stage_mask = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR});
+            if (sampled_)
                 background_.create_materials(
                     device, {.frame_slot_count = slots, .textures = placeholders_->bindings()});
             const auto pipeline_start = std::chrono::steady_clock::now();
@@ -65,7 +64,7 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
                          .reflection_prefilter_vertex_shader = shader("atmosphere.vert.spv"),
                          .reflection_prefilter_fragment_shader =
                              shader("atmosphere_reflection_prefilter.frag.spv")});
-            if (workshop_) {
+            if (sampled_) {
                 sun_component_ = std::make_unique<render::TextureCube>(
                     device, render::TextureCubeConfig{
                                 .extent = 128,
@@ -162,7 +161,7 @@ EnvironmentUniform Environment::prepare(const Config& c, VkCommandBuffer command
     return result;
 }
 void Environment::resize_background(const vulkan::Device& device, VkExtent2D extent) {
-    if (!workshop_)
+    if (!sampled_)
         return;
     std::vector<BackgroundTarget> next;
     for (std::uint32_t i = 0; i < slots_; ++i)
@@ -182,7 +181,7 @@ void Environment::resize_background(const vulkan::Device& device, VkExtent2D ext
 void Environment::record_background(VkCommandBuffer command, render::FrameSlot slot,
                                     const math::Mat4& inverse_view, float aspect,
                                     float tan_half_fovy) {
-    if (!workshop_)
+    if (!sampled_)
         return;
     if (sun_generation_ != generation()) {
         auto barrier =
@@ -202,7 +201,7 @@ void Environment::record_background(VkCommandBuffer command, render::FrameSlot s
                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0,
                              nullptr, 1, &barrier);
         auto environment = atmosphere_.environment();
-        environment.ground_mode = render::AtmosphereEnvironmentGroundMode::Ground;
+        environment.ground_mode = probe_ground_mode_;
         const auto faces = render::atmosphere_reflection_probe_cube_face_view_rays();
         for (std::uint32_t face = 0; face < 6; ++face) {
             const render::FrameSlot face_slot{slot.index * 6 + face, slots_ * 6};

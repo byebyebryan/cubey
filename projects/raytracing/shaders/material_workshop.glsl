@@ -9,7 +9,9 @@ layout(rgba32f,set=0,binding=15) uniform image2D sampleHistory;
 layout(set=0,binding=16) uniform sampler2D visibleBackground;
 layout(set=0,binding=17) uniform samplerCube visualSunComponent;
 Recipe workshopRecipe(int instanceId) {
-    return recipes[workshop.options.x==1u?workshop.options.y:instances[instanceId].offsets.z];
+    bool selected=workshop.options.x==1u||
+        (workshop.options.x==4u&&uint(instanceId)+1u==workshop.sampling.w);
+    return recipes[selected?workshop.options.y:instances[instanceId].offsets.z];
 }
 vec3 workshopAbsorption(Recipe r,float distance) {
     return exp(log(r.attenuation.rgb)*max(distance,0)/r.optics.w);
@@ -148,7 +150,23 @@ float rtRoughDiffuse(float nl,float nv,float lv,float roughness) {
     float a=1-.5*s2/(s2+.33),b=.45*s2/(s2+.09);
     return a+b*max(0,lv-nl*nv)/max(max(nl,nv),.001);
 }
-float workshopCurvature() {
+float workshopCurvature(Surface s,float objectScale) {
+    if(workshop.options.x==4u) {
+        // First-order world-space normal derivative on the actual hit triangle.
+        // Barycentric gradients have magnitude opposite-edge length / twice area.
+        // Division by the interpolated normal length accounts for normalization.
+        // This is a local estimate, not a global bound across edges or bump relief.
+        Instance inst=instances[s.id];uint start=inst.offsets.y+3*s.primitive;
+        Vertex a=vertices[indices[start]+inst.offsets.x],b=vertices[indices[start+1]+inst.offsets.x],c=vertices[indices[start+2]+inst.offsets.x];
+        vec3 ab=(inst.world*(b.position-a.position)).xyz,ac=(inst.world*(c.position-a.position)).xyz;
+        mat3 normalWorld=mat3(inst.normalWorld);
+        vec3 na=normalWorld*a.normal.xyz,nb=normalWorld*b.normal.xyz,nc=normalWorld*c.normal.xyz;
+        float area=length(cross(ab,ac));
+        float normalLength=length(na*s.bary.x+nb*s.bary.y+nc*s.bary.z);
+        float gradient=(length(nb-na)*length(ac)+length(nc-na)*length(ab))/max(area*normalLength,1e-20);
+        // Callers historically multiply object-space specimen curvature by scale.
+        return gradient/max(objectScale,1e-20);
+    }
     return workshop.options.x==2u?1/.075:workshop.sampling.z==0u?4:workshop.sampling.z==1u?1/.045:workshop.sampling.z==2u?1/.012:workshop.sampling.z==3u?1/.065:1/.005;
 }
 struct WorkshopPath {
@@ -281,7 +299,7 @@ void traceWorkshop() {
             }
             vec2 xi=rtStratified(sequence,1u+uint(depth)*2u);
             float branch=rtStratified(sequence,97u+uint(depth)).x;
-            float curvature=workshopCurvature();
+            float curvature=workshopCurvature(s,m.objectScale);
             float angularIncrease=(delta?0:2*m.roughness*m.roughness)+2*width*curvature*m.objectScale;
             RtDielectricSample sampled=rtSampleDielectric(localV,delta?0:m.roughness,eta,vec3(xi,split?1:branch));
             if(split) {
@@ -390,7 +408,7 @@ void traceWorkshop() {
         float incomingScale=min(viewScale,clamp(1-sheenMaximum*textureLod(brdfLut,vec2(localNext.z,m.sheen.w),0).a,0,1));
         weight*=rtGgxSampledEval(localV,localNext,m.roughness,m.f0)*compensation*localNext.z/pdf*incomingScale;
         if(max(max(weight.r,weight.g),weight.b)<=environment.glass.z) {discarded+=weight;status|=8u;++terminatedBranches;break;}
-        float curvature=workshopCurvature();
+        float curvature=workshopCurvature(s,m.objectScale);
         spread+=2*m.roughness*m.roughness+2*width*curvature*m.objectScale;
         origin=offsetOrigin(s,next);direction=next;
         environmentOnly=knownEmptyOutside;

@@ -95,6 +95,8 @@ class Renderer {
     std::vector<std::unique_ptr<vulkan::Buffer>> environment_uniforms_, material_buffers_;
     std::vector<OpticalMaterial> material_values_;
     std::shared_ptr<WorkshopState> workshop_;
+    bool sampled_dragon_ = false;
+    std::optional<asset::MaterialRecipe> support_recipe_;
     std::vector<std::unique_ptr<vulkan::Buffer>> recipe_buffers_, workshop_uniforms_;
     std::unique_ptr<vulkan::Image> history_;
     std::vector<std::byte> history_identity_;

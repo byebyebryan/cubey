@@ -1,9 +1,12 @@
+#include "raytracing_dragon_support.h"
+#include "raytracing_materials.h"
 #include "raytracing_scene.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <numbers>
+#include <optional>
 
 namespace cubey::projects::raytracing {
 namespace {
@@ -116,6 +119,7 @@ Mesh plinth(bool glass) {
 } // namespace
 Scene make_optical_scene(const Config& config) {
     Scene scene;
+    std::optional<Mesh> rock_footing;
     const bool solo = config.scene == "reflection-dragon-solo";
     const bool presentation = config.scene.find("dragon") != std::string::npos;
     const bool glass = config.scene.find("refraction-") == 0 || config.scene == "slab";
@@ -153,6 +157,8 @@ Scene make_optical_scene(const Config& config) {
         float low = 0;
         for (const auto& v : dragon.meshes[0].vertices)
             low = std::min(low, v.position.y);
+        if (solo && config.dragon_support == "rock")
+            rock_footing = make_dragon_rock_footing(dragon.meshes[0], -low + .001F);
         add(std::move(dragon.meshes[0]),
             solo ? math::Vec3(0, -low + .001F, 0) : math::Vec3(-.45F, -low + .001F, -.25F),
             {1, 1, 1}, 0);
@@ -161,7 +167,12 @@ Scene make_optical_scene(const Config& config) {
     if (solo) {
         scene.materials[0].optics.x = config.subject_material == "mirror" ? 1.F : 0.F;
         scene.materials[0].reflectance = {config.red, config.green, config.blue, 1};
-        add(plinth(false), {0, 0, 0}, {.52F, .7F, .5F}, 1);
+        if (rock_footing) {
+            scene.support_recipe = marble_base_recipe();
+            scene.materials[1].base_roughness = {.19F, .2F, .18F, .94F};
+            add(std::move(*rock_footing), {0, 0, 0}, {1, 1, 1}, 1);
+        } else if (config.dragon_support == "plinth")
+            add(plinth(false), {0, 0, 0}, {.52F, .7F, .5F}, 1);
         scene.materials.resize(2);
         return scene;
     }

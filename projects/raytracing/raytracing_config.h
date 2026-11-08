@@ -10,6 +10,8 @@ struct Config {
     std::filesystem::path optics_output, hdr_output, scene_output;
     std::string environment = "legacy", reflection_source = "scene", transmission_source = "scene";
     std::string subject_material = "mirror";
+    std::string support_material = "matte";
+    std::string dragon_support = "plinth";
     float fov = 45.F;
     float yaw = .6F, pitch = .25F, distance = 2.6F, target_y = 0, target_x = 0, target_z = 0;
     float red = .55F, green = .34F, blue = .15F, roughness = .4F;
@@ -66,7 +68,7 @@ inline config::Schema schema(Config& c) {
     scene.enum_values = {"triangle",           "fixture",           "dragon",
                          "reflection-fixture", "reflection-dragon", "reflection-dragon-solo",
                          "refraction-fixture", "refraction-dragon", "slab",
-                         "materials"};
+                         "materials",          "dragon-materials"};
     auto view = opt("view", ValueType::Enum);
     view.enum_values = {
         "final",       "geometric-normal", "shading-normal", "depth",       "instance-id",
@@ -88,6 +90,12 @@ inline config::Schema schema(Config& c) {
     auto subject = opt("subject-material", ValueType::Enum);
     subject.enum_values = {"clay", "mirror"};
     b.bind(subject, c.subject_material);
+    auto support_material = opt("support-material", ValueType::Enum);
+    support_material.enum_values = {"matte", "marble"};
+    b.bind(support_material, c.support_material);
+    auto support = opt("dragon-support", ValueType::Enum);
+    support.enum_values = {"plinth", "rock", "none"};
+    b.bind(support, c.dragon_support);
     b.bind(opt("model", ValueType::Path), c.model)
         .bind(opt("metrics", ValueType::Path), c.metrics)
         .bind(opt("save-config", ValueType::Path), c.save_config)
@@ -171,6 +179,36 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
     auto c = host::parse_configured_app<Config>(argc, argv, schema, parsed);
     if (parsed->write_config_template_path)
         return c;
+    const bool sampled_dragon = c.scene == "dragon-materials";
+    if (sampled_dragon) {
+        auto fallback = [&](const char* path, auto& value, auto next) {
+            if (!parsed->path_was_assigned(path))
+                value = next;
+        };
+        fallback("environment", c.environment, std::string("atmosphere"));
+        fallback("dragon-support", c.dragon_support, std::string("rock"));
+        fallback("support-material", c.support_material, std::string("marble"));
+        fallback("yaw", c.yaw, .45F);
+        fallback("pitch", c.pitch, .35F);
+        fallback("distance", c.distance, 1.75F);
+        fallback("target-y", c.target_y, .32F);
+        fallback("sun-azimuth", c.sun_azimuth, .6F);
+        fallback("sun-elevation", c.sun_elevation, .38F);
+        fallback("throughput-cutoff", c.throughput_cutoff, 0.F);
+        if (c.environment != "atmosphere" || c.dragon_support != "rock" ||
+            c.support_material != "marble" || c.optical_pair != "none" || c.object_scale != 1)
+            throw std::invalid_argument(
+                "sampled dragon requires its marble slab, shared atmosphere and original scale");
+        if (c.throughput_cutoff != 0)
+            throw std::invalid_argument("sampled dragon requires zero raw-throughput cutoff");
+    }
+    if (c.dragon_support != "plinth" && c.scene != "reflection-dragon-solo" && !sampled_dragon)
+        throw std::invalid_argument("dragon support selection requires the solo dragon scene");
+    if (c.support_material == "marble" &&
+        ((c.scene != "reflection-dragon-solo" && !sampled_dragon) || c.dragon_support != "rock" ||
+         c.environment != "atmosphere"))
+        throw std::invalid_argument(
+            "marble base requires the solo dragon's stone support under shared atmosphere");
     if (c.scene == "materials") {
         if (!std::isfinite(c.object_scale) || c.object_scale < .1F || c.object_scale > 10)
             throw std::invalid_argument("workshop object scale must be in [0.1,10]");
@@ -198,10 +236,10 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
             throw std::invalid_argument(
                 "sampled workshop transport requires zero raw-throughput cutoff");
     }
-    if (c.scene != "materials" &&
+    if (c.scene != "materials" && !sampled_dragon &&
         (c.view == "base-color" || c.view == "roughness" || c.view == "metallic" ||
          c.view == "footprint" || c.view == "diffuse" || c.view == "specular" || c.view == "sheen"))
-        throw std::invalid_argument("material component views require --scene materials");
+        throw std::invalid_argument("material component views require a sampled material scene");
     if (!std::isfinite(c.material_roughness) ||
         (c.material_roughness != -1 && (c.material_roughness < .05F || c.material_roughness > 1)) ||
         c.samples < 1 || c.samples > 8192 || c.stress_edits > 10000)

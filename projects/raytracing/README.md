@@ -85,7 +85,60 @@ controls are base color for clay and reflectance for the mirror. Roughness is
 inactive for the sharp mirror; rough scene reflections remain a later milestone.
 The dragon stays opaque; glass transport remains in the closed primitive study.
 
-One scene unit is one metre; support tops are y=0. The earlier mixed dragon/prop
+An opt-in composition audition replaces the bevelled base with a small,
+irregular stone slab, starting with a clay dragon and matte base:
+
+```sh
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-rock-footing.json
+```
+
+`--dragon-support plinth|rock|none` selects the support at startup for
+`reflection-dragon-solo` and is retained by Save view. The old preset still
+selects the original base. The `rock` selection now builds a flat stone slab
+around the dragon: flat top and bottom, 30 mm thickness and an asymmetric convex
+outline. The outline is fitted around the lowest foot contacts, then convexified.
+`none` isolates the floating model.
+The [native audition](../../docs/notes/raytracing-dragon-rock-footing.md) records
+the camera arc, contact check and review scope.
+
+The marble variation uses the library's unmodified **Balanced marble** recipe
+on the base, with the dragon in clay:
+
+```sh
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-marble.json
+```
+
+`--support-material matte|marble` and the native Base material selector switch
+the slab surface without rebuilding geometry. `--subject-material clay|mirror`
+and Dragon surface independently select the dragon. Marble requires the solo
+scene's stone support under shared atmosphere; its values come from the recipe.
+The marble pattern/relief controls and `--no-pattern`/`--no-bump` apply only to
+the base. The shared object-domain evaluator supplies its surface to the existing
+opaque environment PBR shading and traced sun shadows. The
+[flat marble-base audition](../../docs/notes/raytracing-dragon-marble.md) records
+the revised geometry and material roles.
+
+The [dragon optics research and proposed next pass](../../docs/notes/raytracing-dragon-optics-research-plan.md)
+audits the current reflection coverage and exact model topology, then proposes
+reusing workshop sampling/materials before enabling qualified clear glass.
+It is a plan; the legacy dragon selector remains clay or ideal mirror.
+
+The first implementation slice is now available as an opt-in sampled opaque
+dragon scene:
+
+```sh
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-sampled.json
+```
+
+It starts with shared Satin bronze on the dragon and an independent Balanced
+marble base, with progressive sampling and scene GGX reflections. Its native
+material selector offers the ten opaque recipes. The
+[sampled dragon results](../../docs/notes/raytracing-dragon-sampled.md) record
+integration, save behavior, geometry preservation, native motion and qualification.
+Glass on this imported model remains the next gated step.
+
+One scene unit is one metre; the original support top is y=0 and the rock fits
+the same subject placement. The earlier mixed dragon/prop
 presets remain available for reproducing the
 [contained-scene experiment](../../docs/notes/raytracing-contained-scene.md).
 The current [proof-to-showcase follow-up](../../docs/notes/raytracing-reflective-dragon.md)

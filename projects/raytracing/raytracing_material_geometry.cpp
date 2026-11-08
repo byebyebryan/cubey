@@ -133,6 +133,8 @@ std::vector<WorkshopVolume> workshop_volumes(const Scene& scene) {
     return result;
 }
 std::string workshop_route(const Config& c) {
+    if (c.scene == "dragon-materials")
+        return "dragon";
     return c.optical_pair != "none"  ? "optical-pair"
            : c.material == "gallery" ? "gallery"
                                      : c.specimen;

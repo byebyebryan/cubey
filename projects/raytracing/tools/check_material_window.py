@@ -17,7 +17,11 @@ def main():
     p.add_argument('--gallery-exercise',action='store_true')
     p.add_argument('--optics-exercise',action='store_true')
     p.add_argument('--material',default='bronze')
+    p.add_argument('--scene',choices=['materials','dragon-materials'],default='materials')
     args = p.parse_args()
+    dragon = args.scene == 'dragon-materials'
+    if dragon and (args.catalog_exercise or args.gallery_exercise or args.optics_exercise):
+        p.error('Dragon mode supports --exercise or preview; specimen exercises require materials')
     if os.environ.get('CUBEY_RT_PRIVATE_XVFB') != '1':
         raise RuntimeError('Use an owned xvfb-run with CUBEY_RT_PRIVATE_XVFB=1')
     out = args.output.resolve()
@@ -50,7 +54,9 @@ def main():
     root,window = x.XDefaultRootWindow(display),None
     env = dict(os.environ,XDG_SESSION_TYPE='x11',VK_LAYER_VALIDATE_SYNC='1')
     env.pop('WAYLAND_DISPLAY',None)
-    command = [str(args.binary.resolve()),'--scene','materials','--material',args.material,'--samples','32',
+    scene_args = (['--config','projects/raytracing/presets/optics/dragon-sampled.json']
+                  if args.scene=='dragon-materials' else ['--scene','materials'])
+    command = [str(args.binary.resolve()),*scene_args,'--material',args.material,'--samples','32',
                '--width','1000','--height','760','--require-validation',
                '--metrics',str(out/'metrics.json'),'--recipe-output',str(out/'edited-recipe.json'),
                '--save-config',str(out/'view.json')]
@@ -149,7 +155,88 @@ def main():
                 edited_roughness=exported['surface']['roughness']
                 click(310,489)
                 capture('cloth-edited')
-            if args.exercise:
+            if args.exercise and dragon:
+                click(150,449)  # Exposure keeps the converged history.
+                time.sleep(1)
+                capture('exposure')
+                click(140,149)
+                time.sleep(2)
+                click(70,569)
+                click(310,509)
+                edited_roughness = json.loads((out/'edited-recipe.json').read_text())['surface']['roughness']
+                saved = json.loads((out/'view.json').read_text())
+                assert .6 < edited_roughness < .9, edited_roughness
+                assert abs(json.loads(Path(saved['recipe-input']).read_text())['surface']['roughness']-edited_roughness)<1e-6
+                capture('edited')
+                click(110,299)
+                key('Home')
+                key('Return')
+                time.sleep(2)
+                capture('environment')
+                click(110,667)
+                key('Home')
+                key('Down')
+                key('Down')
+                key('Return')
+                time.sleep(2)
+                capture('marble-subject')
+                click(140,149)
+                time.sleep(2)
+                capture('marble-subject-edited')
+                click(110,667)
+                key('Home')
+                for _ in range(5):
+                    key('Down')
+                key('Return')
+                click(80,509)
+                click(110,299)
+                key('Home')
+                key('Down')
+                key('Return')
+                # Ctrl-click opens the slider's numeric editor.
+                control=x.XKeysymToKeycode(display,x.XStringToKeysym(b'Control_L'))
+                t.XTestFakeKeyEvent(display,control,1,0)
+                click(100,449)
+                key('a')
+                t.XTestFakeKeyEvent(display,control,0,0)
+                key('0')
+                key('Return')
+                time.sleep(2)
+                click(26,23)  # Collapse the inspector for the native motion capture.
+                movie_log=(out/'native-motion.log').open('w')
+                movie=subprocess.Popen(['ffmpeg','-y','-f','x11grab','-draw_mouse','0',
+                    '-window_id',str(window),'-video_size','1000x760','-framerate','30',
+                    '-i',os.environ['DISPLAY'],'-t','8','-c:v','libx264','-preset','veryfast',
+                    '-crf','20','-pix_fmt','yuv420p',str(out/'native-motion.mp4')],
+                    stdout=movie_log,stderr=subprocess.STDOUT)
+                time.sleep(.3)
+                # Drag only inside the owned render viewport, outside the UI.
+                rx,ry,child = I(),I(),W()
+                x.XTranslateCoordinates(display,window,root,0,0,C.byref(rx),C.byref(ry),C.byref(child))
+                t.XTestFakeMotionEvent(display,-1,rx.value+760,ry.value+400,0)
+                t.XTestFakeButtonEvent(display,1,1,0)
+                x.XSync(display,0)
+                time.sleep(.15)
+                for step in range(1,7):
+                    t.XTestFakeMotionEvent(display,-1,rx.value+760+10*step,ry.value+400+3*step,0)
+                    x.XSync(display,0)
+                    time.sleep(.15)
+                t.XTestFakeButtonEvent(display,1,0,0)
+                x.XSync(display,0)
+                time.sleep(3)
+                capture('orbit-settled')
+                assert movie.wait(timeout=20)==0,(out/'native-motion.log').read_text()
+                movie_log.close()
+                click(26,23)
+                click(200,509)
+                time.sleep(3)
+                for width,height,name in [(1200,820,'resized'),(1000,760,'restored')]:
+                    x.XResizeWindow(display,window,width,height)
+                    x.XSync(display,0)
+                    time.sleep(2)
+                    capture(name)
+                click(310,509)
+            if args.exercise and not dragon:
                 # Fixed coordinates were inspected in the native 1000x760 UI.
                 click(150,428)  # Exposure changes only the display resolve.
                 time.sleep(1)
@@ -213,7 +300,22 @@ def main():
                 ['vuid-','hazard detected','vulkan validation error']),text
             metrics = json.loads((out/'metrics.json').read_text())
             assert metrics['history_samples'] == 32,metrics
-            if args.exercise:
+            if args.exercise and dragon:
+                assert metrics['as_builds']==3 and metrics['target_generations']==3
+                assert metrics['history_epochs']>=8 and metrics['config']['material']=='bronze'
+                assert metrics['config']['reflection-source']=='scene'
+                assert abs(metrics['config']['exposure'])<1e-6
+                journal=metrics['sampling_frames']
+                assert len({f['exposure'] for f in journal if f['epoch']==1})>=2,'exposure reset history'
+                assert {'bronze','marble'} <= {f['selected_material'] for f in journal}
+                assert {'scene','environment'} <= {f['reflection_source'] for f in journal}
+                assert len({round(f['yaw'],4) for f in journal})>2,'orbit did not move camera'
+                assert len({f['resident_requested_bytes'] for f in journal})==2,'unexpected resource growth'
+                bronze=next(m for m in metrics['workshop_materials'] if m['catalog_id']=='bronze')
+                assert bronze['source_fingerprint']==bronze['resolved_fingerprint'],'reset lost recipe identity'
+                assert len(metrics['workshop_supported_material_ids'])==10
+                assert 'glass' not in metrics['workshop_supported_material_ids']
+            elif args.exercise:
                 assert metrics['history_epochs'] == 6,metrics['history_epochs']
                 assert metrics['as_builds'] == 10 and metrics['target_generations'] == 2,metrics
                 assert metrics['config']['reflection-source'] == 'scene',metrics['config']

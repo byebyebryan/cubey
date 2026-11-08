@@ -18,9 +18,31 @@ void validate_workshop_recipe(const asset::MaterialRecipe& r) {
         throw std::invalid_argument(
             "workshop glass requires full dielectric transmission and no metallic lobe");
 }
+void resolve_materials(Scene& scene) {
+    scene.materials.clear();
+    for (const auto& recipe : scene.workshop->recipes)
+        scene.materials.push_back(
+            {recipe.surface.base_roughness,
+             {glass(recipe) ? 2.F : 0.F, recipe.optics.settings.z, recipe.optics.settings.w, 0},
+             recipe.optics.attenuation,
+             {1, 1, 1, 1}});
+}
 } // namespace
+GpuRecipe gpu_recipe(const asset::MaterialRecipe& r, std::uint32_t slot) {
+    return {r.surface, r.pattern,
+            r.optics,  r.material_from_object,
+            r.library, {slot, glass(r) ? 1U : 0U, r.version, 0}};
+}
+asset::MaterialRecipe marble_base_recipe() {
+    auto recipe = asset::load_material_recipe(std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) /
+                                              "marble.json");
+    if (recipe.id != "marble" || glass(recipe) || recipe.optics.settings.x != 0)
+        throw std::invalid_argument("marble base requires the opaque dielectric marble recipe");
+    return recipe;
+}
 WorkshopState::WorkshopState(const Config& c)
-    : catalog(asset::load_material_catalog(catalog_path())) {
+    : catalog(asset::load_material_catalog(catalog_path())),
+      opaque_only(c.scene == "dragon-materials") {
     bool found = false;
     for (std::size_t i = 0; i < catalog.size(); ++i) {
         validate_workshop_recipe(catalog[i].recipe);
@@ -32,6 +54,8 @@ WorkshopState::WorkshopState(const Config& c)
     }
     if (!found && c.material != "gallery")
         throw std::invalid_argument("unknown workshop material: " + c.material);
+    if (opaque_only && (c.material == "gallery" || !supports(selected)))
+        throw std::invalid_argument("sampled dragon currently supports opaque materials only");
     if (!c.recipe_input.empty())
         replace(selected, asset::load_material_recipe(c.recipe_input));
     if (c.material_roughness >= 0) {
@@ -42,7 +66,12 @@ WorkshopState::WorkshopState(const Config& c)
     if (!c.recipe_output.empty())
         asset::save_material_recipe(c.recipe_output, recipes.at(selected));
 }
+bool WorkshopState::supports(std::size_t index) const {
+    return !opaque_only || !glass(catalog.at(index).recipe);
+}
 void WorkshopState::replace(std::size_t index, asset::MaterialRecipe candidate) {
+    if (!supports(index))
+        throw std::invalid_argument("sampled dragon glass requires optical mesh qualification");
     validate_workshop_recipe(candidate);
     if (glass(candidate) != glass(catalog.at(index).recipe))
         throw std::invalid_argument("select a matching opaque or glass workshop slot");
@@ -69,13 +98,7 @@ std::vector<GpuRecipe> WorkshopState::gpu_records() const {
     std::vector<GpuRecipe> result;
     result.reserve(recipes.size());
     for (std::size_t i = 0; i < recipes.size(); ++i) {
-        const auto& r = recipes[i];
-        result.push_back({r.surface,
-                          r.pattern,
-                          r.optics,
-                          r.material_from_object,
-                          r.library,
-                          {static_cast<std::uint32_t>(i), glass(r) ? 1U : 0U, r.version, 0}});
+        result.push_back(gpu_recipe(recipes[i], static_cast<std::uint32_t>(i)));
     }
     return result;
 }
@@ -162,13 +185,7 @@ Scene make_material_scene(const Config& c) {
         }
         scene.routes.push_back({"optical-pair", start, 2});
     }
-    scene.materials.clear();
-    for (const auto& recipe : scene.workshop->recipes)
-        scene.materials.push_back(
-            {recipe.surface.base_roughness,
-             {glass(recipe) ? 2.F : 0.F, recipe.optics.settings.z, recipe.optics.settings.w, 0},
-             recipe.optics.attenuation,
-             {1, 1, 1, 1}});
+    resolve_materials(scene);
     const auto target = math::Vec3(c.target_x, c.target_y, c.target_z);
     const float pitch = -c.pitch;
     const auto eye = target + math::Vec3(std::cos(pitch) * std::sin(c.yaw), std::sin(pitch),
@@ -176,6 +193,29 @@ Scene make_material_scene(const Config& c) {
                                   c.distance;
     const auto volumes = workshop_volumes(scene);
     validate_workshop_view(volumes, scene.routes, *scene.workshop, c, eye);
+    return scene;
+}
+Scene make_material_dragon(const Config& c) {
+    if (c.dragon_support != "rock" || c.support_material != "marble" ||
+        c.environment != "atmosphere")
+        throw std::invalid_argument(
+            "sampled dragon requires its marble slab and shared atmosphere");
+    auto geometry = c;
+    geometry.scene = "reflection-dragon-solo";
+    auto scene = make_optical_scene(geometry);
+    scene.workshop = std::make_shared<WorkshopState>(c);
+    scene.material_layout = Scene::MaterialLayout::Dragon;
+    scene.routes = {{"dragon", 0, 2}};
+    scene.instances.at(0).material = scene.workshop->selected;
+    // A separate immutable instance slot keeps edits to a marble dragon from
+    // changing its base, even when both consume the same canonical recipe.
+    scene.instances.at(1).material = static_cast<std::uint32_t>(scene.workshop->recipes.size());
+    resolve_materials(scene);
+    const auto& base = *scene.support_recipe;
+    scene.materials.push_back({base.surface.base_roughness,
+                               {0, base.optics.settings.z, base.optics.settings.w, 0},
+                               base.optics.attenuation,
+                               {1, 1, 1, 1}});
     return scene;
 }
 } // namespace cubey::projects::raytracing

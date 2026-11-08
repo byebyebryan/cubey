@@ -1,4 +1,5 @@
 #include "raytracing_config.h"
+#include "raytracing_dragon_support.h"
 #include "raytracing_environment.h"
 #include "raytracing_layout.h"
 #include "raytracing_material_geometry.h"
@@ -8,6 +9,7 @@
 #include <cubey/render/material_specimen_mesh.h>
 #include <iostream>
 #include <map>
+#include <tuple>
 #include <vector>
 using namespace cubey::projects::raytracing;
 namespace {
@@ -33,6 +35,79 @@ Config parse(std::initializer_list<const char*> args) {
         argv.push_back(s.data());
     return parse_config(static_cast<int>(argv.size()), argv.data());
 }
+void check_dragon_footing() {
+    using cubey::math::Vec3;
+    Mesh subject;
+    for (const auto p : {Vec3{-.3F, -.2F, -.16F}, Vec3{.36F, -.2F, -.12F}, Vec3{.29F, -.194F, .18F},
+                         Vec3{-.25F, -.2F, .14F}, Vec3{-.7F, .5F, .6F}})
+        subject.vertices.push_back({{p, 1}, {0, 1, 0, 0}});
+    const auto rock = make_dragon_rock_footing(subject, .201F);
+    const auto lifted = make_dragon_rock_footing(subject, .451F);
+    require(!rock.indices.empty() && rock.indices.size() % 3 == 0,
+            "footing has complete triangles");
+    std::map<std::tuple<float, float, float>, std::uint32_t> positions;
+    std::vector<std::uint32_t> welded;
+    Vec3 minimum(100), maximum(-100);
+    for (std::size_t i = 0; i < rock.vertices.size(); ++i) {
+        const auto p = Vec3(rock.vertices[i].position);
+        const auto n = Vec3(rock.vertices[i].normal);
+        require(std::isfinite(p.x) && std::isfinite(p.y) && std::isfinite(p.z) &&
+                    std::abs(glm::length(n) - 1) < 1e-5F,
+                "footing positions and unit normals are finite");
+        require(std::abs(p.y) < 1e-6F || std::abs(p.y + .030F) < 1e-6F,
+                "slab vertices lie on exactly two horizontal planes");
+        require(glm::length(Vec3(lifted.vertices.at(i).position) - p - Vec3(0, .25F, 0)) < 1e-6F,
+                "footing follows subject vertical placement");
+        minimum = glm::min(minimum, p);
+        maximum = glm::max(maximum, p);
+        const auto [entry, inserted] = positions.try_emplace(
+            std::tuple{p.x, p.y, p.z}, static_cast<std::uint32_t>(positions.size()));
+        welded.push_back(entry->second);
+    }
+    require(maximum.x - minimum.x < .82F && maximum.z - minimum.z < .5F &&
+                maximum.y - minimum.y < .12F && minimum.x > -.4F && maximum.x > .36F,
+            "footing fits the low contact region rather than the entire subject");
+    struct Edge {
+        int count = 0;
+        int direction = 0;
+    };
+    std::map<std::pair<std::uint32_t, std::uint32_t>, Edge> edges;
+    double volume = 0;
+    for (std::size_t i = 0; i < rock.indices.size(); i += 3) {
+        const auto a = Vec3(rock.vertices.at(rock.indices[i]).position);
+        const auto b = Vec3(rock.vertices.at(rock.indices[i + 1]).position);
+        const auto c = Vec3(rock.vertices.at(rock.indices[i + 2]).position);
+        const auto normal = glm::cross(b - a, c - a);
+        const auto supplied = Vec3(rock.vertices.at(rock.indices[i]).normal);
+        if (std::abs(supplied.y) > .5F)
+            require(a.y == b.y && b.y == c.y && std::abs(std::abs(supplied.y) - 1) < 1e-6F,
+                    "slab caps are flat with constant vertical normals");
+        else
+            require(std::abs(supplied.y) < 1e-6F, "slab cuts are vertical planes");
+        for (const auto& vertex : rock.vertices)
+            require(glm::dot(supplied, Vec3(vertex.position) - a) <= 2e-6F,
+                    "slab is convex: all vertices lie inside every outward face plane");
+        require(glm::length(normal) > 1e-10F &&
+                    glm::dot(normal, Vec3(rock.vertices.at(rock.indices[i]).normal)) > 0,
+                "footing triangles have nonzero area and consistent normals");
+        volume += glm::dot(glm::dvec3(a), glm::cross(glm::dvec3(b), glm::dvec3(c))) / 6.;
+        for (std::size_t j = 0; j < 3; ++j) {
+            const auto from = welded.at(rock.indices[i + j]);
+            const auto to = welded.at(rock.indices[i + (j + 1) % 3]);
+            auto& edge = edges[std::minmax(from, to)];
+            ++edge.count;
+            edge.direction += from < to ? 1 : -1;
+        }
+    }
+    for (const auto& [key, edge] : edges)
+        require(edge.count == 2 && edge.direction == 0,
+                "footing is a closed consistently wound surface");
+    require(volume > 0, "footing has outward winding");
+    rejects([] { (void)make_dragon_rock_footing({}, 0); });
+    rejects([&] { (void)make_dragon_rock_footing(subject, NAN); });
+    subject.vertices.resize(1);
+    rejects([&] { (void)make_dragon_rock_footing(subject, 0); });
+}
 } // namespace
 int main() {
     try {
@@ -43,6 +118,29 @@ int main() {
         rejects([] { (void)sbt_stride(32, 32, 64, 32); });
         rejects([] { (void)align_address(UINT64_MAX, 64); });
         require(parse({}).scene == "fixture", "default generated fixture");
+        require(parse({}).dragon_support == "plinth", "existing dragon support default");
+        require(parse({}).support_material == "matte", "existing support material default");
+        rejects([] { (void)parse({"--dragon-support", "unknown"}); });
+        rejects([] { (void)parse({"--dragon-support", "rock"}); });
+        rejects([] { (void)parse({"--subject-material", "marble"}); });
+        rejects([] {
+            (void)parse({"--scene", "reflection-dragon-solo", "--dragon-support", "rock",
+                         "--support-material", "marble"});
+        });
+        rejects([] { (void)parse({"--support-material", "marble"}); });
+        Config rock_config;
+        schema(rock_config)
+            .apply_json({{"scene", "reflection-dragon-solo"},
+                         {"dragon-support", "rock"},
+                         {"subject-material", "clay"},
+                         {"support-material", "marble"},
+                         {"environment", "atmosphere"}});
+        Config rock_copy;
+        schema(rock_copy).apply_json(schema(rock_config).template_json());
+        require(rock_copy.dragon_support == "rock", "support survives saved config roundtrip");
+        require(rock_copy.subject_material == "clay" && rock_copy.support_material == "marble",
+                "marble base and clay dragon survive saved config roundtrip independently");
+        check_dragon_footing();
         auto workshop = parse({"--scene", "materials"});
         require(workshop.material == "bronze" && workshop.environment == "atmosphere" &&
                     workshop.reflection_source == "environment" && !workshop.shadows &&
@@ -70,6 +168,41 @@ int main() {
                 {"--scene", "materials", "--material", "gallery", "--recipe-input", "bronze.json"});
         });
         WorkshopState content(workshop);
+        Config sampled_config;
+        sampled_config.scene = "dragon-materials";
+        WorkshopState sampled(sampled_config);
+        require(sampled.opaque_only && sampled.recipes.at(sampled.selected).id == "bronze" &&
+                    workshop_route(sampled_config) == "dragon",
+                "sampled dragon has independent scene routing and opaque material policy");
+        std::size_t supported = 0;
+        for (std::size_t i = 0; i < sampled.catalog.size(); ++i) {
+            if (sampled.supports(i)) {
+                ++supported;
+                require(sampled.catalog[i].recipe.optics.settings.y == 0,
+                        "every admitted dragon material is opaque");
+            } else
+                rejects([&] { sampled.replace(i, sampled.catalog[i].recipe); });
+        }
+        require(supported == 10, "ten canonical opaque materials are available on the dragon");
+        for (const std::string id : {"glass", "frosted-glass", "gallery"}) {
+            sampled_config.material = id;
+            rejects([&] { WorkshopState rejected(sampled_config); });
+        }
+        for (const auto& recipe : {marble_base_recipe()}) {
+            const auto canonical =
+                std::find_if(content.catalog.begin(), content.catalog.end(),
+                             [&](const auto& entry) { return entry.id == recipe.id; });
+            require(canonical != content.catalog.end() &&
+                        cubey::asset::material_recipe_fingerprint(recipe) ==
+                            cubey::asset::material_recipe_fingerprint(canonical->recipe),
+                    "marble base uses the unmodified canonical shared recipe");
+            const auto packed = gpu_recipe(recipe);
+            require(packed.surface.base_roughness == recipe.surface.base_roughness &&
+                        packed.pattern.settings == recipe.pattern.settings &&
+                        packed.material_from_object == recipe.material_from_object &&
+                        packed.routing.y == 0,
+                    "dragon recipe packing retains surface, pattern, domain and opaque routing");
+        }
         require(content.catalog.size() == 12 && content.recipes.at(content.selected).id == "bronze",
                 "RT consumes the canonical shared material catalog");
         const auto bronze_source =

@@ -7,6 +7,8 @@
 #include <stdexcept>
 namespace cubey::projects::raytracing {
 Scene make_scene(const Config& c) {
+    if (c.scene == "dragon-materials")
+        return make_material_dragon(c);
     if (c.scene == "materials")
         return make_material_scene(c);
     if (c.scene.find("reflection-") == 0 || c.scene.find("refraction-") == 0 || c.scene == "slab")

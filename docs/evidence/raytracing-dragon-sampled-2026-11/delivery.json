@@ -1,0 +1,272 @@
+{
+  "date": "2026-11-07",
+  "branch": "raytracing-first-pass-20261104",
+  "base": "3c1cda12313d69ff191212b01fd6080843f9c4a5",
+  "dirty_candidate": true,
+  "binary_sha256": "cb6d43d41b922f6224df4a7c36bc449627d4fa8a82f9605733d0ddee55f67189",
+  "shader_sha256": "6ff662d8f4c7f1a9d3fdb9dc67b6379f85d856730d9aaa276450321a9af6330a",
+  "asset_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+  "runtime_and_tools": {
+    "projects/raytracing/CMakeLists.txt": "67f9f29ad6e400946407ecfec70df1f1f325eb6e4752b0707ae3128ae4fac8a6",
+    "projects/raytracing/NOTICE": "ef392ae18394905c34ec93d7204d87cefda107a8aa97d595d86625fb07cb3ee9",
+    "projects/raytracing/assets/stanford-dragon.json": "aa28c71099b3b1e3fd6180270bb12121b621886dbb221cd372aa45c8fb06d2df",
+    "projects/raytracing/main.cpp": "983c1104aa45c9fc1d1b8ec9dfb00d71965c7e03da5af396141dc2fb8bdf6abf",
+    "projects/raytracing/presets/detail.json": "ff11792853ab24689657f3c1eac64585ca6151bd18a1805c173e9d840619f73a",
+    "projects/raytracing/presets/hero.json": "cea8f744b6dabce48a1b510158dd97fabdaf3356a8ac068a2f3f3db7e320ff87",
+    "projects/raytracing/presets/material-workshop/gallery-clear.json": "0c84f2d00288014a884706413737c51c004728da092295ceaac270881c79166e",
+    "projects/raytracing/presets/material-workshop/gallery-dawn.json": "5df96f6318d82ac7932d09d8d93f01e76f64e3630373d7a851c8ec26e84afd48",
+    "projects/raytracing/presets/material-workshop/gallery-dusk.json": "b48c842854a7f03a03a9b8e533800711d4fcc4b7b69702e5226ca18662826bd5",
+    "projects/raytracing/presets/material-workshop/gallery-orbit.json": "d27903959af09437ddcc352b74e519dc2a79d7450104580c17b03b5b13dfb4ee",
+    "projects/raytracing/presets/material-workshop/gallery-scene.json": "c5424e0a249cfb41f6ccb06de8fdeb407eaf3bce93ab9751dbc116177bac4357",
+    "projects/raytracing/presets/material-workshop/manifest.json": "f4c4440e3ebdc3bf0239175436e58b8a220b1e1ab98d4f3aaa54c6da5df2f525",
+    "projects/raytracing/presets/opposite.json": "0e2a1698fecc49acb7ac1da4de988c45e0c5b6c7bd4442b0f5a19e875d2eed87",
+    "projects/raytracing/presets/optics/curved-mirror.json": "795bce7b2b4c34bdbbe35893d6c1e07c23efbf955426e117cc4ccf05756cf769",
+    "projects/raytracing/presets/optics/dragon-marble.json": "33d1fb02917d988d253212ede0874a3f4b7e5fb2298ff005eaddcd6473d7114d",
+    "projects/raytracing/presets/optics/dragon-rock-footing.json": "0886f3eb67a6a15cd0a4c81c51ad2aa8112dadb6c8633a1bf5d04f070ed106f4",
+    "projects/raytracing/presets/optics/dragon-sampled.json": "e7a599574ed09c39addb7e5dabb6bc85b4b8c93e25754ac9695464892b76a456",
+    "projects/raytracing/presets/optics/proof-reflection.json": "046b03ae2a19edc5d796d01e0cfd5143b853ab580f043df97c57e36c94afaeb3",
+    "projects/raytracing/presets/optics/proof-refraction.json": "507acd0d33ae5110494917f8a35e671c23f4fe7fc5edd405e4c0179d3e51ee10",
+    "projects/raytracing/presets/optics/reflection.json": "250726f825d3fd1402c46a5b3d55e49af5f09ddd5b623e4301610c7eeee58286",
+    "projects/raytracing/presets/optics/reflective-dragon.json": "ff75971c7aed960922955024886cbdd1287401d305af79b5a408834ecbd6bc91",
+    "projects/raytracing/presets/optics/refraction.json": "fa7654115731f8e61d6e604cf568eaaf2a4b6a29f46a0e6bba3e2e4a7c9d59f4",
+    "projects/raytracing/raytracing_app.cpp": "07d4b2dc173b55cbd39416967b519fb20dc84f72b8c75de9405db0afc2573ed3",
+    "projects/raytracing/raytracing_config.h": "871dc21507dc5bf0f446891965bac633b687615d6bfc3bdfcb6b87531b5a4808",
+    "projects/raytracing/raytracing_device_tests.cpp": "c5687af33569553f059937fc28f15c8cfb8bd45496c122c175de1d30db5506ba",
+    "projects/raytracing/raytracing_dragon_support.cpp": "29c91d5f15a5bbe15322999a5f163e984705d2b94593617bd91e35c4c9337066",
+    "projects/raytracing/raytracing_dragon_support.h": "64ff79aaaddf2b9fffea3ad27c637d4497c65634c91b024983180624327b3b75",
+    "projects/raytracing/raytracing_environment.cpp": "b46f3d6ee3a7f57bbd4edd6da2c414f9ced27a5d32f9b7a1e2f6d4e9b613e80e",
+    "projects/raytracing/raytracing_environment.h": "72f19ff46c279103b8767816fd037d492f583183b9a4f24f6ec816da443ab169",
+    "projects/raytracing/raytracing_layout.h": "5932aee3a6b7ba187d1a65204338dbc3db8cb7ce0ebfd20aeb9f48fadffb0152",
+    "projects/raytracing/raytracing_material_geometry.cpp": "ef62bbbb55cd252ab05aefada2222785e4d2b57f051117e8937751fe5d0ca18d",
+    "projects/raytracing/raytracing_material_geometry.h": "cc77d677294670955a27e02f2ac3d4cc97a7485e8b6d005c27dac45630dac60f",
+    "projects/raytracing/raytracing_material_reference.cpp": "29554f75365ca6ab3aa10dad46e7a90ac639347f712e3956173f32c6e18f5a6d",
+    "projects/raytracing/raytracing_materials.cpp": "fee9a7d541c94d0cde5c5590a8829cd1e626dac0dc1ef22625c2bd01ba653ba8",
+    "projects/raytracing/raytracing_materials.h": "d1adddf2b40ad84e13063c4c2b38962f2e782c7cd9eb186ec411ec68fc016802",
+    "projects/raytracing/raytracing_optical_scene.cpp": "abd3e54e575e2b8b1c20d64b43f480e74b7fe01958d8621f794686f7d5dc7a30",
+    "projects/raytracing/raytracing_presentation.h": "0d891f02b25f372b0ae3e2a06a46e6930f53a18a838f501e3ed82cc85525237a",
+    "projects/raytracing/raytracing_renderer.cpp": "e1116ec2c228d26f6092e76c42e6f8a5445c2fb4c2edb17538296d55a5813db1",
+    "projects/raytracing/raytracing_renderer.h": "5b8c4dea85f0b6d70dd171424d1e6141ff4080e199c7708664e0ace18b38d413",
+    "projects/raytracing/raytracing_scene.cpp": "5a7f1d7a576b1478bf332c0c4454b79c3f7dd069d3c8428230de08f20bf46416",
+    "projects/raytracing/raytracing_scene.h": "47ed22b4f32ce6de9f3fcd5bffae429648ceb1e1cf003b9769e83ee8663b4940",
+    "projects/raytracing/raytracing_tests.cpp": "10f141c11b56e9d07dbb0d0ea8e76006178e88f50c7c636034aae35d13048a00",
+    "projects/raytracing/shaders/legacy_trace.glsl": "ead77a69e88130724c7b9002f3208715dd5ca1ed3460f6b97120e753f73b20ff",
+    "projects/raytracing/shaders/material_bsdf.glsl": "35dcfd9bb6dd373ce5ca2ea927932c74dbe462ad25ba90048e4e7e46407431a4",
+    "projects/raytracing/shaders/material_dielectric.glsl": "bf2cda199e31ccc654c565d985f74d440265bae437f4f768efc67d4b78a1f84e",
+    "projects/raytracing/shaders/material_workshop.glsl": "f1724412600a5f8862a77f46455dcb8594c74a84828be857d97390d7ddcad55a",
+    "projects/raytracing/shaders/optics.glsl": "5a9161acd408276e515fb4b09b5b8f74339f4ac85dd9082691fbade8e01b76fe",
+    "projects/raytracing/shaders/primary.rchit": "e039ec90eddfbb8ecde56bb19ebd19b0da754aa828a6347ddaf4ea9e3dd64ba5",
+    "projects/raytracing/shaders/primary.rmiss": "ee62451afed1b64852d51af3a56cbc4a8190daa71cc14f78293cfeca30edc334",
+    "projects/raytracing/shaders/rt_common.glsl": "bd8a2013690ab72b350d82628b9c7d273b3ba4d5118be3852cb3444d39a94cda",
+    "projects/raytracing/shaders/shadow.rmiss": "a597598f576545d3b4107b80eb1d9364c928fa7fe46b7e6a70f21edf451dbd4f",
+    "projects/raytracing/shaders/trace.rgen": "0d1a2af26073bf8f01b13d697b6fb108d0b24e7d60a7eca8c16605a4fa97bafb",
+    "projects/raytracing/third_party/LICENSE.Apache-2.0": "9c18288ad9997b4b8d62a544e01d960d3effa28e45e8cfcea6e0cacb9db33f6b",
+    "projects/raytracing/tools/author_material_comparison.py": "aeebe7487b80a9721edd538425da7be38e58dd3960ff0f8a10d98192d76b4846",
+    "projects/raytracing/tools/build_material_report.py": "d6e41fc719180f9bb34870042d214c28b9ad594f9b3b150a92e365bd24aaace8",
+    "projects/raytracing/tools/capture_material_reference.py": "38551c158efb7bae34835e4ac213c19d5576b3a1901bb0d21786fcd62512fb37",
+    "projects/raytracing/tools/check_material_window.py": "2c579f3c8d0c71080a32092c1d29288c11d8352deff77d9f3a538a3bcdd5f2c3",
+    "projects/raytracing/tools/check_refresh.py": "0241dad2185b68ecaac28e05c2159780650dbc046db9046ef11115190230f965",
+    "projects/raytracing/tools/check_sky_lookup.py": "304e91f46c15df1e26751773b7f54cd233b7f4de85f1e0cb1b0e1b8c12372cf6",
+    "projects/raytracing/tools/check_window.py": "55cc9a66560402bf1d20b072483b3293754ee3632469b522a406392acc7c8853",
+    "projects/raytracing/tools/compare_material_samples.py": "7c18a01dfc7b73e3b18e01fe2f10e095a027c8aefd430a4154fc31a94903a1ae",
+    "projects/raytracing/tools/inspect_optics.py": "9e2b12cf265971fdd84326ec032018fff4ab3113d4b138432dbc99eafc631e22",
+    "projects/raytracing/tools/material_workshop_report.html": "a37a24c136ef384236125ba2c65466c431a4aef72838eb3c782448adc81694dd",
+    "projects/raytracing/tools/optics_reference.py": "a5f1dce4364843531d3ef146c836af55d1f0dff77a90e07d8160357d2cb33852",
+    "projects/raytracing/tools/prepare_dragon.py": "f97ad33e0a9642765e5981c0576cf85145c91619b0f27a5539bf63bbc9951116",
+    "projects/raytracing/tools/profile_first_pass.py": "232050661dcfc495e059b0bf12df059397981e0ee712d42edaa501323db5e9c7",
+    "projects/raytracing/tools/profile_optics.py": "2c1c8453cc37b647b368537191f009405dc38dffde1f708f39a61351494f5511",
+    "projects/raytracing/tools/qualify_dragon_materials.py": "a57dfe70df49b7fe25406b805ba77ffa79bf24ea36a93cc9ff697c74d1d56cb1",
+    "projects/raytracing/tools/qualify_geometry.py": "a1a8104e5a44e320824aad9a61734160c7bbe8e0dd73d0f700facb380ad21094",
+    "projects/raytracing/tools/qualify_material_bsdf.py": "268fd82c943943fe9c40b85cfefd6f926f09bfb77eee16a93708768864948b47",
+    "projects/raytracing/tools/qualify_material_dielectric.py": "5b6dd657b21b6cb4903029cf002d74a8ee3fcc9daaf1bd70ee656e3ff2b4f289",
+    "projects/raytracing/tools/qualify_material_gallery.py": "b681fe7f00eacad024c2251d051490d71977cbcb0376dec93072e44762297212",
+    "projects/raytracing/tools/qualify_material_glass.py": "0e558f1ce1aeb32dfb66babf65be455cb19bfcec241b2836a27ce47fa5bc9922",
+    "projects/raytracing/tools/qualify_material_optics.py": "e14662fa965e847a174e83abc1c858e8fd925bfe09f4d14252acc260626b0723",
+    "projects/raytracing/tools/qualify_material_presentation.py": "d75650cc9112b1a65fc93bd7d1a4221a4d0e63681b4a6578468e760d7cc4afd2",
+    "projects/raytracing/tools/qualify_material_records.py": "a76df2dfc78f3970a3a1510e0e9300d850165414ddd34c43084aab50a2776cca",
+    "projects/raytracing/tools/qualify_material_workshop.py": "c58f7235a74f2782f1a7d5418769780582acc73c08432cef58ec41120f58ba51",
+    "projects/raytracing/tools/qualify_opaque_workshop.py": "1e0403ce13bb95f5ae095a302a2f6ae5a2846f9fec23b0ebc9bd7a3aea7801c6",
+    "projects/raytracing/tools/qualify_optics.py": "a523d69717b9b9d23340c78434e1b4776fe5798b4c71d07197d77b82dfed8467"
+  },
+  "report_url": "http://starship:8787/reports/52b247a6c27b1b2d7b02aa0300ea1552612065f00d04e9611d5ef109f8e490ed/",
+  "published_files_verified": 19,
+  "raytracing_tests": {
+    "passed": 18,
+    "total": 18
+  },
+  "documentation_checks": {
+    "passed": 9,
+    "total": 9
+  },
+  "qualification": {
+    "passed": true,
+    "device": "NVIDIA GeForce RTX 5070 Ti",
+    "hdr_rmse_to_2048_spp": {
+      "1": 0.29763659834861755,
+      "8": 0.09778884798288345,
+      "32": 0.04743253067135811,
+      "128": 0.023708805441856384,
+      "512": 0.010262957774102688,
+      "2048": 0.0
+    },
+    "foreground_hdr_rmse_to_2048_spp": {
+      "1": 0.6920173764228821,
+      "8": 0.2272471934556961,
+      "32": 0.11011111736297607,
+      "128": 0.054895903915166855,
+      "512": 0.023826003074645996,
+      "2048": 0.0
+    },
+    "foreground_pixels": 14157,
+    "foreground_mask_scope": "one jittered primary per pixel; includes edge pixels",
+    "transport_flag_pixels": {
+      "1": 0,
+      "2": 241,
+      "4": 0,
+      "8": 0,
+      "16": 0,
+      "32": 0,
+      "64": 0
+    },
+    "deeper_transport_flag_pixels": {
+      "1": 0,
+      "2": 37,
+      "4": 0,
+      "8": 0,
+      "16": 0,
+      "32": 0,
+      "64": 0
+    },
+    "default_deep_hdr_difference": {
+      "mean": 1.0811299944180064e-07,
+      "maximum": 0.0032845288515090942
+    },
+    "base_recipe_pixels_checked": 422,
+    "geometry": {
+      "reference": "outputs/raytracing/dragon-marble-convex-20261107/scene.json",
+      "meshes": 2,
+      "instances": 2,
+      "positions_normals_indices_and_worlds_identical": true
+    },
+    "source_material_files_unchanged": true
+  },
+  "native": {
+    "validation_clean": true,
+    "samples": 32,
+    "epochs": 78,
+    "as_builds": 3,
+    "target_generations": 3,
+    "materials_observed": [
+      "bronze",
+      "marble"
+    ],
+    "reflection_sources_observed": [
+      "environment",
+      "scene"
+    ],
+    "exposure_values_in_initial_history_epoch": [
+      0.0,
+      2.638000011444092
+    ],
+    "requested_resource_sizes": [
+      102701944,
+      109869944
+    ],
+    "motion": {
+      "seconds": 8,
+      "capture_fps": 30,
+      "width": 1000,
+      "height": 760,
+      "primary_sample_target": 32,
+      "sha256": "3ccaf3f694ef5ad485110a5b05d8439267c8b378769cf13946fba72c039f0ce8"
+    }
+  },
+  "legacy_mirror_png_identical": true,
+  "timing_scope": "Three serial Debug-build sync-validated 1080p runs; one fresh primary iteration per frame; 30 warmup and 150 measured frames. GPU time, not native present latency.",
+  "timing": [
+    {
+      "run": 0,
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": 1.6454559999999998,
+          "p95_ms": 1.671616,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 1.661104,
+          "p95_ms": 1.687328,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 2.23072,
+          "p95_ms": 2.25712,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "run": 1,
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": 1.64616,
+          "p95_ms": 1.6679039999999998,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 1.661808,
+          "p95_ms": 1.68352,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 2.231472,
+          "p95_ms": 2.254112,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "run": 2,
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": 1.646128,
+          "p95_ms": 1.6703999999999999,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 1.6619519999999999,
+          "p95_ms": 1.6858879999999998,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 2.23272,
+          "p95_ms": 2.255712,
+          "samples": 150
+        }
+      }
+    }
+  ],
+  "browser": {
+    "url": "http://starship:8787/reports/52b247a6c27b1b2d7b02aa0300ea1552612065f00d04e9611d5ef109f8e490ed/",
+    "sceneAndEnvironmentButtonsVerified": true,
+    "materialButtonsVerified": true,
+    "primarySampleSliderVerified": true,
+    "nativePlaybackObserved": true,
+    "finalState": {
+      "allImagesLoaded": true,
+      "comparison": "50%",
+      "height": 1102,
+      "overflow": false,
+      "primarySamples": "128",
+      "scrollY": 333.3333435058594,
+      "videoDuration": 8,
+      "width": 1600
+    }
+  },
+  "preservation": {
+    "goal_start_backup_files": 107,
+    "protected_original_files_checked": 11,
+    "protected_original_mismatches": [],
+    "commit": false,
+    "push": false,
+    "public_site_promotion": false
+  }
+}

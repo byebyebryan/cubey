@@ -1,7 +1,9 @@
 #pragma once
 #include "raytracing_config.h"
+#include <cubey/asset/material_recipe.h>
 #include <cubey/core/math.h>
 #include <memory>
+#include <optional>
 #include <vector>
 namespace cubey::projects::raytracing {
 struct WorkshopState;
@@ -33,12 +35,18 @@ struct alignas(16) OpticalMaterial {
 };
 static_assert(sizeof(OpticalMaterial) == 64);
 struct Scene {
+    enum class MaterialLayout {
+        Specimens,
+        Dragon
+    };
     struct Route {
         std::string name;
         std::uint32_t first, count;
     };
     std::vector<Route> routes;
     std::shared_ptr<WorkshopState> workshop;
+    MaterialLayout material_layout = MaterialLayout::Specimens;
+    std::optional<asset::MaterialRecipe> support_recipe;
     std::vector<Mesh> meshes;
     std::vector<Instance> instances;
     std::vector<OpticalMaterial> materials{

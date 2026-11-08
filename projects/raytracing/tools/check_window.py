@@ -129,6 +129,19 @@ def main():
                 capture("environment")
                 click(140, 458); click(130, 518); click(60, 398)
                 wait_for(lambda: json.loads((out / "saved.json").read_text())["reflection-source"] == "scene", "scene reflection save")
+                if initial.get("environment") == "atmosphere" and initial.get("dragon-support") == "rock":
+                    click(140, 488); click(130, 518); click(60, 398)
+                    wait_for(lambda: json.loads((out / "saved.json").read_text())["support-material"] == "matte", "matte base save")
+                    capture("matte-base")
+                    click(140, 488); click(130, 538); click(60, 398)
+                    wait_for(lambda: json.loads((out / "saved.json").read_text())["support-material"] == "marble", "marble base save")
+                    capture("marble-base")
+                    (out / "marble-base-saved.json").write_text((out / "saved.json").read_text())
+                    click(38, 518); click(60, 398)
+                    wait_for(lambda: not json.loads((out / "saved.json").read_text())["pattern"], "base pattern edit")
+                    capture("patterns-off")
+                    click(38, 518); click(60, 398)
+                    wait_for(lambda: json.loads((out / "saved.json").read_text())["pattern"], "base pattern restore")
                 x.XResizeWindow(display, window, 1100, 800)
                 x.XSync(display, 0); time.sleep(.4)
                 capture("resized")
@@ -195,8 +208,15 @@ def main():
                 raise RuntimeError(text)
             metrics = json.loads((out / "metrics.json").read_text())
             if not args.inspect:
-                assert metrics["as_builds"] == (3 if solo or not args.config else 7)
+                if solo:
+                    expected_as_builds = 2 if initial.get("dragon-support") == "none" else 3
+                else:
+                    expected_as_builds = 3 if not args.config else 7
+                assert metrics["as_builds"] == expected_as_builds
                 assert metrics["target_generations"] >= 3
+                if solo:
+                    saved_support = json.loads((out / "saved.json").read_text())["dragon-support"]
+                    assert saved_support == initial.get("dragon-support", "plinth")
             (out / "result.json").write_text(json.dumps({"passed": True, "command": command,
                 "as_builds": metrics["as_builds"], "target_generations": metrics["target_generations"],
                 "scope": "owned Xvfb; physical desktop acceptance separate"}, indent=2) + "\n")

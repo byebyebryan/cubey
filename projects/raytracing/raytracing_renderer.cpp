@@ -101,12 +101,21 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
         p.pNext = &properties_;
         properties_.pNext = &as_properties_;
         vkGetPhysicalDeviceProperties2(device.physical_device(), &p);
+        sampled_dragon_ = scene.material_layout == Scene::MaterialLayout::Dragon;
         create_scene(gpu, scene);
         if (scene.workshop) {
             workshop_routes_ = scene.routes;
-            workshop_volumes_ = workshop_volumes(scene);
-            for (const auto& mesh : scene.meshes)
-                geometry_admission_.push_back(mesh_admission_identity(mesh));
+            if (!sampled_dragon_)
+                workshop_volumes_ = workshop_volumes(scene);
+            for (const auto& mesh : scene.meshes) {
+                if (sampled_dragon_)
+                    geometry_admission_.push_back({{"optical_volume_qualified", false},
+                                                   {"policy", "preserved opaque geometry"},
+                                                   {"vertices", mesh.vertices.size()},
+                                                   {"triangles", mesh.indices.size() / 3}});
+                else
+                    geometry_admission_.push_back(mesh_admission_identity(mesh));
+            }
             for (const auto& route : scene.routes) {
                 std::uint64_t triangles = 0;
                 for (std::size_t i = route.first; i < route.first + route.count; ++i)
@@ -145,6 +154,7 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
         dump_stride_ = dump_stride(settings);
         material_values_ = scene.materials;
         workshop_ = scene.workshop;
+        support_recipe_ = scene.support_recipe;
         environment_ = std::make_unique<Environment>(device, gpu, settings, slots);
         auto start = Clock::now();
         create_pipeline();
@@ -426,7 +436,10 @@ void Renderer::create_pipeline() {
                                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory}));
         recipe_buffers_.push_back(std::make_unique<vulkan::Buffer>(
             device_,
-            vulkan::BufferConfig{(workshop_ ? workshop_->recipes.size() : 1) * sizeof(GpuRecipe),
+            vulkan::BufferConfig{(workshop_ ? workshop_->recipes.size() + (sampled_dragon_ ? 1 : 0)
+                                  : support_recipe_ ? 2
+                                                    : 1) *
+                                     sizeof(GpuRecipe),
                                  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory}));
         workshop_uniforms_.push_back(std::make_unique<vulkan::Buffer>(
             device_, vulkan::BufferConfig{sizeof(WorkshopUniform),
@@ -569,9 +582,12 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         vkUpdateDescriptorSets(device_.handle(), 1, &write, 0, nullptr);
     }
     auto camera = camera_uniform(c, extent_);
-    if (workshop_)
+    if (workshop_ && !sampled_dragon_)
         validate_workshop_view(workshop_volumes_, workshop_routes_, *workshop_, c,
                                math::Vec3(camera.eye));
+    if (sampled_dragon_ && (!workshop_->supports(workshop_->selected) ||
+                            workshop_->recipes.at(workshop_->selected).optics.settings.y != 0))
+        throw std::invalid_argument("sampled dragon glass requires optical mesh qualification");
     if (!glass_planes_.empty() &&
         std::all_of(glass_planes_.begin(), glass_planes_.end(), [&](auto p) {
             return glm::dot(p, math::Vec4(math::Vec3(camera.eye), 1)) <= 1e-6F;
@@ -618,12 +634,22 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                            ? 3.F
                            : (c.bsdf_contract ? 2.F : (c.optics_contract ? 1.F : 0.F));
     WorkshopUniform workshop_uniform;
-    if (workshop_) {
-        const auto records = workshop_->gpu_records();
+    if (support_recipe_ && !workshop_ && c.support_material == "marble") {
+        const std::array<GpuRecipe, 2> records{GpuRecipe{}, gpu_recipe(*support_recipe_, 1)};
         recipe_buffers_.at(slot.index)->upload(records.data(), records.size() * sizeof(GpuRecipe));
-        workshop_uniform.options = {c.optical_pair != "none"  ? 3U
-                                    : c.material == "gallery" ? 2U
-                                                              : 1U,
+        workshop_uniform.options = {0U, 0U, c.pattern ? 1U : 0U, c.bump ? 1U : 0U};
+        workshop_uniform.sampling.w = 2U; // only the support's material ID
+    }
+    if (workshop_) {
+        auto records = workshop_->gpu_records();
+        if (sampled_dragon_)
+            records.push_back(
+                gpu_recipe(*support_recipe_, static_cast<std::uint32_t>(records.size())));
+        recipe_buffers_.at(slot.index)->upload(records.data(), records.size() * sizeof(GpuRecipe));
+        workshop_uniform.options = {sampled_dragon_            ? 4U
+                                    : c.optical_pair != "none" ? 3U
+                                    : c.material == "gallery"  ? 2U
+                                                               : 1U,
                                     workshop_->selected, c.pattern ? 1U : 0U, c.bump ? 1U : 0U};
         const std::array<std::string_view, 4> shapes{"sphere", "block", "swatch", "cut-block"};
         workshop_uniform.sampling = {
@@ -634,6 +660,8 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                 : static_cast<std::uint32_t>(std::find(shapes.begin(), shapes.end(), c.specimen) -
                                              shapes.begin()),
             0};
+        if (sampled_dragon_)
+            workshop_uniform.sampling.w = 1U; // dynamic recipe belongs to instance 0 only
         workshop_uniform.solar = {
             environment_->solar_radius(), c.workshop_lighting == "sun" ? 0.F : 1.F,
             c.workshop_lighting == "sky" || c.workshop_lighting == "furnace" ? 0.F : 1.F,
@@ -753,6 +781,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
              {"recorded_dispatches", iterations},
              {"material_revision", workshop_->revision},
              {"selected_material", workshop_->catalog.at(workshop_->selected).id},
+             {"reflection_source", c.reflection_source},
              {"specimen", c.specimen},
              {"resident_requested_bytes", requested_bytes()},
              {"environment_generation", environment_->generation()},
@@ -854,12 +883,24 @@ std::uint64_t Renderer::requested_bytes() const {
 nlohmann::json Renderer::metrics() const {
     auto supported = nlohmann::json::array();
     if (workshop_)
-        for (const auto& entry : workshop_->catalog)
-            supported.push_back(entry.id);
+        for (std::size_t i = 0; i < workshop_->catalog.size(); ++i)
+            if (workshop_->supports(i))
+                supported.push_back(workshop_->catalog[i].id);
     const auto memory = device_.device_memory_budget();
     return {
         {"format", "cubey.raytracing.metrics"},
         {"workshop_enabled", bool(workshop_)},
+        {"material_scene_layout", sampled_dragon_ ? "dragon"
+                                  : workshop_     ? "specimens"
+                                                  : "legacy"},
+        {"ray_footprint_policy", sampled_dragon_
+                                     ? "world-space triangle shading-normal derivative estimate"
+                                     : "specimen curvature / legacy primary footprint"},
+        {"support_recipe",
+         support_recipe_
+             ? nlohmann::json{{"id", support_recipe_->id},
+                              {"fingerprint", asset::material_recipe_fingerprint(*support_recipe_)}}
+             : nlohmann::json(nullptr)},
         {"workshop_sampling",
          {{"primary_samples", history_samples_},
           {"rough_glass_secondary_trials", 10},
@@ -920,7 +961,9 @@ nlohmann::json Renderer::metrics() const {
         {"workshop_history_bytes",
          workshop_ && history_ ? std::uint64_t(extent_.width) * extent_.height * 16 : 0},
         {"workshop_recipe_bytes",
-         workshop_ ? workshop_->recipes.size() * sizeof(GpuRecipe) * slots_ : 0},
+         workshop_
+             ? (workshop_->recipes.size() + (sampled_dragon_ ? 1 : 0)) * sizeof(GpuRecipe) * slots_
+             : 0},
         {"workshop_uniform_bytes", sizeof(WorkshopUniform) * slots_},
         {"observed_device_local_usage_bytes",
          memory.available ? nlohmann::json(memory.device_local_usage) : nlohmann::json(nullptr)},

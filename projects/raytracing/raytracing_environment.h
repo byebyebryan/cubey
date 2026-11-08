@@ -54,7 +54,9 @@ class Environment {
     std::optional<render::AtmosphereBackgroundPlaceholderTextures> placeholders_;
     std::optional<render::GeneratedPbrEnvironment> fallback_;
     bool active_ = false;
-    bool workshop_ = false;
+    bool sampled_ = false;
+    render::AtmosphereEnvironmentGroundMode probe_ground_mode_ =
+        render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
     std::uint32_t slots_ = 1;
     render::AtmosphereBackgroundFrame background_;
     struct BackgroundTarget {
