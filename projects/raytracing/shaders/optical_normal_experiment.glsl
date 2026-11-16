@@ -1,4 +1,5 @@
-// Q1 diagnostic candidate; not selected by the ordinary renderer.
+// Guarded smooth interface used by the dragon demo and Q1 diagnostic probes.
+// Appearance choice: Q1's continuity and flux limitations remain documented.
 // eta = transmitted IOR / incident IOR. G and rawS face the incident side.
 // The whole interface is selected before either positive-weight branch.
 #ifndef CUBEY_RT_OPTICAL_NORMAL_EXPERIMENT_GLSL

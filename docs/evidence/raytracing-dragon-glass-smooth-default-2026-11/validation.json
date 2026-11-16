@@ -1,0 +1,295 @@
+{
+  "scope": "demo smooth-default integration, not optical accuracy certification",
+  "binary_sha256": "f15f708022ef6cd84453935df5f734c1303a3059c860eabf9b76d7c0abe15038",
+  "shader_sha256": {
+    "atmosphere.frag.spv": "621b4073823ab3f46b7449ad36311ca30e1d9b8633668aa8ed709e96751ae6a7",
+    "atmosphere.vert.spv": "ef76215d4ceda1d2cbbfdb66c84727acd83acb33045c0613b1feafc32b311dba",
+    "atmosphere_reflection_prefilter.frag.spv": "ce2b2109bd6ee82f0340ae64ea8bc913e50364b15fe09fb124d0627975192233",
+    "forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+    "forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+    "primary.rahit.spv": "3bebdb476fea5cc1cda821516ed18c5c01e35a5f908ba826dd9c87338b294dd7",
+    "primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+    "primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+    "shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+    "trace.rgen.spv": "bdb868ea09fe7e641a50cc66d6022ab5c9c7a16fb7a344d4aad982b3703c360a"
+  },
+  "checks": [
+    {
+      "label": "raytracing-tests",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build/dev",
+        "-R",
+        "^raytracing_",
+        "--output-on-failure"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "glass-controls",
+      "command": [
+        "/home/bryan/.cache/uv/builds-v0/.tmpv6Du30/bin/python",
+        "-B",
+        "projects/raytracing/tools/qualify_dragon_glass.py",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/glass-controls"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "documentation",
+      "command": [
+        "ctest",
+        "--preset",
+        "dev-docs"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "captures": [
+    {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "960",
+          "--height",
+          "540",
+          "--samples",
+          "128",
+          "--seed",
+          "19",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/captures/pilot-smooth.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/captures/pilot-smooth.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/captures/pilot-smooth.bin"
+        ],
+        "binary_sha256": "f15f708022ef6cd84453935df5f734c1303a3059c860eabf9b76d7c0abe15038",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 960,
+      "height": 540,
+      "samples": 128,
+      "seed": 19,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 1.330050429009134,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": true,
+      "transport_failure": null,
+      "transport_policy": "strict accepted capture",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 112981032,
+      "peak_requested_bytes": 112981032,
+      "artifacts": {
+        ".png": "b959f2377a211f6610b3702c08f899f3eb2e0d6b70a58720abda925259e68f1d",
+        ".json": "46195da8ea137ed450a5945b4112f6ce04172372568c643b72af8880b2e3e64c",
+        ".bin": "5d391d1990fc2985f257fdadbf12ea161307e0139d42657f304a2fa5e17c4707",
+        ".log": "d8107c8d7e67f353bb62b31b2d99e48505a3140b4c7ba0d0ac0fb6f743e49578"
+      }
+    },
+    {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "960",
+          "--height",
+          "540",
+          "--samples",
+          "128",
+          "--seed",
+          "19",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/captures/pilot-geometric.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/captures/pilot-geometric.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/captures/pilot-geometric.bin",
+          "--no-smooth-normals"
+        ],
+        "binary_sha256": "f15f708022ef6cd84453935df5f734c1303a3059c860eabf9b76d7c0abe15038",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 960,
+      "height": 540,
+      "samples": 128,
+      "seed": 19,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 1.3177763730054721,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": true,
+      "transport_failure": null,
+      "transport_policy": "strict accepted capture",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 1,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 112981032,
+      "peak_requested_bytes": 112981032,
+      "artifacts": {
+        ".png": "3ea7145e998c64ab7825c51ca0dedf54d10556d941fd28a26f680fdb659a1efb",
+        ".json": "f8e3049add3ebacf0e35b251790e277680746e815b11ec7f8496e2ae87b6fe86",
+        ".bin": "974eef5ebdf8bb55025429f82c9c4001f3cd8dd6d08f668d0bd2f7a3214965b5",
+        ".log": "8e74d10dc00d8fdce2a5770aa9896d6c025ef11a432a2b8a4e11936383e9bdaf"
+      }
+    },
+    {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "4096",
+          "--seed",
+          "19",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/captures/canonical-s19-smooth.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/captures/canonical-s19-smooth.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-smooth-default-20261116/captures/canonical-s19-smooth.bin"
+        ],
+        "binary_sha256": "f15f708022ef6cd84453935df5f734c1303a3059c860eabf9b76d7c0abe15038",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 4096,
+      "seed": 19,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 56.47075726700132,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": false,
+      "transport_failure": "canonical-s19-smooth: forbidden transport status {'event limit': 1}",
+      "transport_policy": "diagnostic only",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 1,
+        "4": 0,
+        "8": 207,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "485d707c05f7e502843303fc642acf5c318976aadbde07e4e084d4c50aa2d6b9",
+        ".json": "f3e906872063459f095562a9faece633ab2df4f66f716ef7483422713da281c6",
+        ".bin": "0991491335de8d6427a9494351e6313d53dad33cfa460c29dac3e7cf2a3c9fed",
+        ".log": "1ae461a42dec08944542662168083139c0c79f14ee2ef166585f25f8424e0d8d"
+      }
+    }
+  ],
+  "preview_fidelity": [
+    {
+      "name": "pilot-smooth",
+      "reference": "outputs/raytracing/dragon-glass-normal-looks-20261114/captures/pilot-smooth",
+      "png_mean_absolute_rgb8": 0.0,
+      "png_max_absolute_rgb8": 0.0,
+      "png_p99_absolute_rgb8": 0.0
+    },
+    {
+      "name": "pilot-geometric",
+      "reference": "outputs/raytracing/dragon-glass-normal-looks-20261114/captures/pilot-geometric",
+      "png_mean_absolute_rgb8": 0.0002700617283950617,
+      "png_max_absolute_rgb8": 3.0,
+      "png_p99_absolute_rgb8": 0.0
+    },
+    {
+      "name": "canonical-s19-smooth",
+      "reference": "outputs/raytracing/dragon-glass-normal-looks-20261114/captures/canonical-s19-smooth",
+      "png_mean_absolute_rgb8": 0.0,
+      "png_max_absolute_rgb8": 0.0,
+      "png_p99_absolute_rgb8": 0.0
+    }
+  ],
+  "known_limits": [
+    "Q1 continuity and flux counterexamples retained",
+    "flat-interface footprint retained",
+    "one event-budget pixel in canonical smooth seed19 is diagnostic, not strict transport acceptance"
+  ],
+  "native": {
+    "scope": "owned Xvfb native Vulkan window, no physical display claim",
+    "history_epochs": [
+      1,
+      2,
+      3
+    ],
+    "final_smooth_normals": true,
+    "validation_clean": true,
+    "metrics_path": "outputs/raytracing/dragon-glass-smooth-default-20261116/native-02/metrics.json",
+    "screenshot_paths": [
+      "outputs/raytracing/dragon-glass-smooth-default-20261116/native-02/before.png",
+      "outputs/raytracing/dragon-glass-smooth-default-20261116/native-02/after-1.png",
+      "outputs/raytracing/dragon-glass-smooth-default-20261116/native-02/after-2.png"
+    ]
+  }
+}

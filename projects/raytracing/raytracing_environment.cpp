@@ -135,7 +135,10 @@ EnvironmentUniform Environment::prepare(const Config& c, VkCommandBuffer command
                      c.scene == "dragon-optics" ? c.max_events : 8};
     result.glass = {c.ior, c.attenuation_distance, c.throughput_cutoff,
                     c.scene == "dragon-optics" ? (c.hide_dragon ? 2.F : 1.F) : 0.F};
-    result.attenuation = {c.attenuation_red, c.attenuation_green, c.attenuation_blue, 0};
+    // The spare fourth component selects the optical dragon's interface normal.
+    // It is part of the environment/history identity; other scenes keep zero.
+    result.attenuation = {c.attenuation_red, c.attenuation_green, c.attenuation_blue,
+                          c.scene == "dragon-optics" && c.smooth_normals ? 1.F : 0.F};
     if (active_) {
         atmosphere_.set_environment(state(c, eye.y));
         const auto now = std::chrono::steady_clock::now();

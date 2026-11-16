@@ -1,5 +1,10 @@
 # Dragon glass normal appearance comparison
 
+**2026-11-16 follow-up:** after reviewing these images, the user selected smooth
+normals as the demo default. The [integration record](raytracing-dragon-glass-smooth-default.md)
+supersedes the runtime/default boundary below; the original captures and their
+historical scope are unchanged.
+
 2026-11-14–15 local run. Follows the user's request to compare the actual
 looks after the [Q1 interface experiment](raytracing-dragon-glass-q1-results.md).
 Cubey's purpose here is an experiment/demo: visible payoff should determine

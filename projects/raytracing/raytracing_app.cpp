@@ -283,6 +283,8 @@ class App {
         ImGui::Checkbox("Patterns", &config_.pattern);
         ImGui::SameLine();
         ImGui::Checkbox("Relief normals", &config_.bump);
+        if (scene_.optical_dragon && glass)
+            ImGui::Checkbox("Smooth glass normals", &config_.smooth_normals);
         const char* sources[] = {"environment", "scene"};
         int source = config_.reflection_source == "scene";
         if (scene_.optical_dragon)

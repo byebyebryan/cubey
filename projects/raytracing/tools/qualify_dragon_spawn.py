@@ -6,6 +6,7 @@
 Requires the prepared certified dragon and a normal, uninstrumented RT build.
 The seed-7 prefix of 1336 includes the previously failing pixel/sample. Full
 images are checked, including the adjacent pixels and earlier logical samples.
+Geometric normals are selected explicitly to retain the Q0.1 regression policy.
 """
 
 import argparse
@@ -36,6 +37,7 @@ def main():
             "binary": digest(args.binary),
             "shaders": {p.name: digest(p) for p in sorted(shaders.glob("*.spv"))},
             "preset": digest(PRESET),
+            "normal_policy": "geometric",
             "model": digest(json.loads(PRESET.read_text())["model"]),
             "materials": {
                 p.name: digest(p)
@@ -59,7 +61,10 @@ def main():
     def run(name, samples, seed=7, extra=()):
         assert identity() == pinned, "qualification inputs changed"
         results.append(
-            capture(args.binary, args.output, name, 1920, 1080, samples, seed, extra)
+            capture(
+                args.binary, args.output, name, 1920, 1080, samples, seed,
+                ["--no-smooth-normals", *extra],
+            )
         )
         assert identity() == pinned, "qualification inputs changed during capture"
 

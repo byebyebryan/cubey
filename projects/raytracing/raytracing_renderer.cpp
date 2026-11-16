@@ -1051,8 +1051,9 @@ nlohmann::json Renderer::metrics() const {
                                  ? "NVIDIA reconstruction/error offset; adjacent-face "
                                    "bisector near edges; tmin=0; medium-aware triangle facing cull"
                                  : "legacy fixed offset"},
-        {"ray_footprint_policy", optical_dragon_ ? "geometric sharp interfaces; fixed-normal Snell "
-                                                   "angular magnification; no edge-jump bound"
+        {"ray_footprint_policy", optical_dragon_ ? "flat-interface approximation in both normal modes; "
+                                                   "fixed-normal Snell angular magnification; "
+                                                   "no edge-jump or varying-normal bound"
                                  : sampled_dragon_
                                      ? "world-space triangle shading-normal derivative estimate"
                                      : "specimen curvature / legacy primary footprint"},

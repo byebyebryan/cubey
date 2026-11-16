@@ -293,18 +293,30 @@ void traceWorkshop() {
 #endif
                 status|=16u;discarded+=weight;++terminatedBranches;break;}
             vec3 n=faceforward(s.outward,direction,s.outward),v=-direction;
+            vec3 geometricNormal=n;
+            float eta=medium>=0?1/boundaryRecipe.optics.z:boundaryRecipe.optics.z;
+            if(environment.attenuation.w>.5 && environment.glass.w>.5 && m.roughGlass<.5 && eta!=1) {
+                Instance normalInstance=instances[s.id];
+                uint normalStart=normalInstance.offsets.y+3*s.primitive;
+                vec3 rawNormal=vec3(0);
+                for(uint corner=0u;corner<3u;++corner)
+                    rawNormal+=vertices[indices[normalStart+corner]+normalInstance.offsets.x].normal.xyz*s.bary[corner];
+                rawNormal=mat3(normalInstance.normalWorld)*rawNormal;
+                if(!entering)rawNormal=-rawNormal;
+                RtNormalInterface selected=rtGuardedNormalInterface(direction,n,rawNormal,eta,true);
+                n=selected.normal;
+            }
             mat3 frame=rtDirectionFrame(n);
             vec3 localV=transpose(frame)*v;
-            float eta=medium>=0?1/boundaryRecipe.optics.z:boundaryRecipe.optics.z;
             bool delta=m.roughGlass<.5||eta==1;
             bool split=depth<2&&eta!=1;
 #ifdef CUBEY_RT_RAY_JOURNAL
             jRecord(40u,vec4(n,dot(direction,n)),vec4(localV,eta),vec4(direction,entering?1:0),vec4(weight,0),uintBitsToFloat(uvec4(uint(s.id),s.primitive,s.journalHitKind,split?1u:0u)),vec4(s.p,s.spawnOffset),vec4(s.spawnNormal,0));
 #endif
             if(depth==0) {
-                Interface b=opticalInterface(direction,s.outward,medium>=0,boundaryRecipe.optics.z);
+                Interface b=opticalInterface(direction,entering?n:-n,medium>=0,boundaryRecipe.optics.z);
                 observation[0]=vec4(s.t,float(s.id),float(s.primitive),1);
-                observation[1]=vec4(n,2);observation[2]=vec4(n,0);observation[3]=vec4(s.bary,0);
+                observation[1]=vec4(geometricNormal,2);observation[2]=vec4(n,0);observation[3]=vec4(s.bary,0);
                 observation[4]=vec4(direction,float(medium));observation[5]=vec4(b.reflected,b.fresnel);
                 observation[6]=vec4(b.transmitted,b.tir?1:0);
                 observation[13]=vec4(m.base,m.roughness);observation[14]=vec4(0,footprint,0,0);
@@ -338,8 +350,8 @@ void traceWorkshop() {
             }
             vec2 xi=rtStratified(sequence,1u+uint(depth)*2u);
             float branch=rtStratified(sequence,97u+uint(depth)).x;
-            // The certified optical route scatters about the actual flat
-            // geometric interface, rather than interpolated shading normals.
+            // Retain the existing flat-interface footprint approximation in
+            // both normal modes; varying-normal filtering is not qualified.
             float curvature=environment.glass.w>.5?0:workshopCurvature(s,m.objectScale);
             float angularIncrease=(delta?0:2*m.roughness*m.roughness)+2*width*curvature*m.objectScale;
             RtDielectricSample sampled=rtSampleDielectric(localV,delta?0:m.roughness,eta,vec3(xi,split?1:branch));

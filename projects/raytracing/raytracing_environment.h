@@ -15,7 +15,7 @@ struct EnvironmentUniform {
     std::array<math::Vec4, 9> irradiance{};
     math::Vec4 options{}, transport{};
     glm::ivec4 limits{};
-    math::Vec4 glass{}, attenuation{};
+    math::Vec4 glass{}, attenuation{}; // attenuation.w: guarded smooth dragon interface
 };
 static_assert(sizeof(EnvironmentUniform) == 240);
 class Environment {

@@ -5,6 +5,7 @@
 #include "cubey/pbr.glsl"
 #include "material_bsdf.glsl"
 #include "material_dielectric.glsl"
+#include "optical_normal_experiment.glsl"
 layout(rgba16f,set=0,binding=1) uniform writeonly image2D outputImage;
 layout(location=0) rayPayloadEXT Hit hit;
 layout(location=1) rayPayloadEXT bool occluded;

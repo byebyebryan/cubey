@@ -71,6 +71,9 @@ the architecture and project guides remain current authority.
   [paired capture evidence](../evidence/raytracing-dragon-glass-normal-looks-2026-11/README.md):
   actual geometric/smooth dragon stills in private builds, with full-scene
   toggles, detail crops, independent-seed and sky-only controls for demo review.
+- [Dragon glass smooth default](raytracing-dragon-glass-smooth-default.md):
+  adopts the reviewed smooth appearance for the demo, with a saved native/CLI
+  switch and the analytical limitations retained separately.
 - [Forward glass transmission research](forward-transmission-research-plan.md):
   measured sphere geometry and camera/environment direction mismatch, pinned
   renderer references and a proposed environment-transmission comparison pass.

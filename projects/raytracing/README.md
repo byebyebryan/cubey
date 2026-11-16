@@ -170,19 +170,24 @@ that skipped submicrometre opposing faces. The original seed-7 controls and six
 independent full-HD 4096-SPP references pass at the unchanged production budget.
 Physical scene/camera settings, original vertex data and shared lighting remain
 unchanged; other scenes retain a zero tracing origin.
-Geometric interface normals retain mesh faceting. The Snell-aware cone is local
-to each flat interface and does not bound triangle-edge jumps. Straight
+Sharp dragon glass defaults to guarded smooth interface normals, following the
+[matched appearance comparison](../../docs/notes/raytracing-dragon-glass-normal-looks.md).
+Use `--no-smooth-normals` or the native **Smooth glass normals** checkbox to
+restore the faceted geometric appearance. The choice survives saved views and
+resets accumulation when changed. It applies to sharp glass in `dragon-optics`;
+geometric normals still determine entry/exit, spawning and medium tracking.
+The Snell-aware cone retains its flat-interface approximation and does not
+bound varying-normal or triangle-edge jumps. Straight
 Fresnel/Beer sun shadows and SH diffuse lighting do not produce focused caustics.
 The [Q1 optical-normal experiment](../../docs/notes/raytracing-dragon-glass-q1-results.md)
 rejects its first whole-interface fallback candidate: GPU controls reproduce
 direction jumps and nonconservative flux despite correct geometric sides.
-The helper is diagnostic-only and is not included by ordinary shaders.
-Geometric normals remain the ordinary scene policy. A continuous interface
-and transport-weighting model is an optional analytical follow-up.
-The later [private visual comparison](../../docs/notes/raytracing-dragon-glass-normal-looks.md)
-now renders the dragon with both geometric and guarded smooth normals to judge
-the actual appearance. It supplies demo-oriented A/B images without changing
-the default or treating optical perfection as the preview's acceptance gate.
+The later visual comparison showed a useful improvement for the demo, and the
+user selected smoothing as the default on 2026-11-16. This is an appearance
+decision; the measured continuity and flux limitations remain. See the
+[default integration record](../../docs/notes/raytracing-dragon-glass-smooth-default.md)
+for scope and current validation. A continuous interface and transport-weighting
+model remains an optional analytical follow-up.
 
 Only this scene defaults to 128 events / 1024 radiance rays / 4096 total queries;
 its deeper reference ceiling is 256 / 2048 / 8192. Legacy defaults/ceilings stay
@@ -237,8 +242,9 @@ state, 101/102/103 classify medium failures, and kind 2 records color/status,
 discarded weight and query/branch counters. Both readable floats and raw words
 are retained. See the shader's `jRecord` calls for the complete field ABI.
 
-The asset-bound `tools/qualify_dragon_spawn.py --output DIRECTORY` checks the
-original full-HD seed-7 prefixes and doubled-budget/shadows-off controls.
+The asset-bound `tools/qualify_dragon_spawn.py --output DIRECTORY` explicitly
+selects geometric normals and checks the original full-HD seed-7 prefixes and
+doubled-budget/shadows-off controls.
 `--references` additionally requires all six canonical/elevated/grazing
 4096-SPP seed-19/43 captures to pass. The Q0.1 candidate passes this gate; a
 clean low-resolution qualification alone does not supersede it.

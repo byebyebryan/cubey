@@ -1,5 +1,11 @@
 # Dragon glass Q1 whole interface fallback rejected
 
+**2026-11-16 follow-up:** the analytical findings below remain valid. After the
+[actual dragon appearance comparison](raytracing-dragon-glass-normal-looks.md),
+the user accepted the smooth policy as a demo appearance choice. The
+[smooth-default record](raytracing-dragon-glass-smooth-default.md) describes that
+later integration; the no-integration statements below describe this earlier run.
+
 2026-11-14 local run date; raw receipts use UTC. Executes the first control
 stage of the [Q1 plan](raytracing-dragon-glass-q1-plan.md).
 

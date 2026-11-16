@@ -207,10 +207,17 @@ int main() {
             (std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "glass.json").string();
         auto optics_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str()});
         require(optics_config.material == "glass" && optics_config.max_events == 128 &&
+                    optics_config.smooth_normals &&
                     optics_config.max_path_rays == 1024 && optics_config.max_total_rays == 4096 &&
                     optics_config.reflection_source == "scene" &&
                     optics_config.transmission_source == "scene",
                 "optical dragon uses full-scene sharp glass defaults");
+        auto geometric_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                                        "--no-smooth-normals"});
+        require(!geometric_config.smooth_normals, "geometric glass remains selectable");
+        Config geometric_copy;
+        schema(geometric_copy).apply_json(schema(geometric_config).template_json());
+        require(!geometric_copy.smooth_normals, "glass normal choice survives saved config");
         require(parse({"--scene", "dragon-optics", "--model", existing_file.c_str(), "--max-events",
                        "256", "--max-path-rays", "2048", "--max-total-rays", "8192"})
                         .max_events == 256,

@@ -1,0 +1,51 @@
+Test project /home/bryan/code/cubey-raytracing-first-pass/build/dev
+      Start 308: raytracing_dragon_glass_acceptance
+ 1/20 Test #308: raytracing_dragon_glass_acceptance ......   Passed    0.03 sec
+      Start 309: raytracing_spawn_geometry
+ 2/20 Test #309: raytracing_spawn_geometry ...............   Passed    0.03 sec
+      Start 310: raytracing_material_comparison_inputs
+ 3/20 Test #310: raytracing_material_comparison_inputs ...   Passed    0.02 sec
+      Start 311: raytracing_config_and_layout
+ 4/20 Test #311: raytracing_config_and_layout ............   Passed    0.11 sec
+      Start 312: raytracing_device_contract
+ 5/20 Test #312: raytracing_device_contract ..............   Passed    0.26 sec
+      Start 313: raytracing_headless_writes_png
+ 6/20 Test #313: raytracing_headless_writes_png ..........   Passed    4.75 sec
+      Start 314: raytracing_retry_scene
+ 7/20 Test #314: raytracing_retry_scene ..................   Passed    0.30 sec
+      Start 315: raytracing_retry_pipeline
+ 8/20 Test #315: raytracing_retry_pipeline ...............   Passed    0.30 sec
+      Start 316: raytracing_retry_target
+ 9/20 Test #316: raytracing_retry_target .................   Passed    0.27 sec
+      Start 317: raytracing_atmosphere_reflection
+10/20 Test #317: raytracing_atmosphere_reflection ........   Passed    0.49 sec
+      Start 318: raytracing_atmosphere_refraction
+11/20 Test #318: raytracing_atmosphere_refraction ........   Passed    0.47 sec
+      Start 319: raytracing_atmosphere_retry
+12/20 Test #319: raytracing_atmosphere_retry .............   Passed    0.72 sec
+      Start 320: raytracing_materials_environment
+13/20 Test #320: raytracing_materials_environment ........   Passed    0.66 sec
+      Start 321: raytracing_materials_scene
+14/20 Test #321: raytracing_materials_scene ..............   Passed    0.50 sec
+      Start 322: raytracing_materials_retry_pipeline
+15/20 Test #322: raytracing_materials_retry_pipeline .....   Passed    0.74 sec
+      Start 323: raytracing_materials_retry_target
+16/20 Test #323: raytracing_materials_retry_target .......   Passed    0.50 sec
+      Start 324: raytracing_materials_glass
+17/20 Test #324: raytracing_materials_glass ..............   Passed    0.53 sec
+      Start 325: raytracing_materials_frosted-glass
+18/20 Test #325: raytracing_materials_frosted-glass ......   Passed    0.51 sec
+      Start 326: raytracing_materials_gallery
+19/20 Test #326: raytracing_materials_gallery ............   Passed    0.56 sec
+      Start 327: raytracing_sky_refresh
+20/20 Test #327: raytracing_sky_refresh ..................   Passed    5.01 sec
+
+100% tests passed out of 20
+
+Label Time Summary:
+gpu         =  16.30 sec*proc (15 tests)
+headless    =  16.30 sec*proc (15 tests)
+material    =   4.00 sec*proc (7 tests)
+sky         =  10.69 sec*proc (11 tests)
+
+Total Test time (real) =  16.76 sec

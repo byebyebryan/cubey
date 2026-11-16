@@ -18,6 +18,7 @@ struct Config {
     float sun_azimuth = -.8F, sun_elevation = .8F, intensity = 3, ambient = .12F, exposure = 0;
     bool shadows = true;
     bool hide_dragon = false;
+    bool smooth_normals = true;
     std::string fault = "none";
     bool exercise_retry = false;
     bool optics_contract = false;
@@ -179,6 +180,10 @@ inline config::Schema schema(Config& c) {
         .bind(opt("material-roughness", ValueType::Float), c.material_roughness);
     b.bind(opt("object-scale", ValueType::Float), c.object_scale);
     b.bind(opt("hide-dragon", ValueType::Bool), c.hide_dragon);
+    auto smooth_normals = opt("smooth-normals", ValueType::Bool);
+    smooth_normals.negative_cli_name = "--no-smooth-normals";
+    smooth_normals.help = "Use guarded smooth interfaces for sharp dragon glass";
+    b.bind(smooth_normals, c.smooth_normals);
     for (auto [name, value] : {std::pair{"pattern", &c.pattern}, {"bump", &c.bump}}) {
         auto option = opt(name, ValueType::Bool);
         option.negative_cli_name = "--no-" + std::string(name);
