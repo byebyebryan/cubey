@@ -1,0 +1,20 @@
+{
+  "url": "http://starship:8787/reports/03ec5d44dabdb95928be5797c063694437a035107b795b65bd10b25f801e752b/",
+  "http_entrypoint_verified": true,
+  "browser_checked": true,
+  "checks": [
+    "sample/reference selectors",
+    "8192 reference loads at canonical view",
+    "8192 disabled and reset on alternate view",
+    "regional tables and charts",
+    "comparison wipe",
+    "grazing ablation fallback label",
+    "native table excludes video run",
+    "all current-view images loaded",
+    "43.03 second video ready",
+    "no browser console warnings/errors",
+    "no horizontal overflow at observed 1602 pixel viewport"
+  ],
+  "physical_display_acceptance": false,
+  "responsive_mobile_tested": false
+}

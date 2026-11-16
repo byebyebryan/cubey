@@ -1,0 +1,68 @@
+{
+  "url": "http://starship:8787/reports/e95fac2a4ff410df3ca08d1a6cc01345196834015d92360d7b5f0034e8e4a4cd/",
+  "checked_at_utc": "2026-11-15T04:13:39.705392+00:00",
+  "assets": {
+    "seam.svg": {
+      "http_status": 200,
+      "bytes": 66008,
+      "sha256": "4e925bcf2a00500572a0292365b4dc44752a24c3aab0b7c50b8406cfde6ecff6"
+    },
+    "flux.svg": {
+      "http_status": 200,
+      "bytes": 46795,
+      "sha256": "85f7a829688a99ad4ed55ee1db8111adb908fc934b18d34cedfe88b1ea2726b9"
+    },
+    "field-baseline.png": {
+      "http_status": 200,
+      "bytes": 1073,
+      "sha256": "ff343a22065c69f94565d8687a32816aa52b2da717237dd94d8b60978813d963"
+    },
+    "field-candidate.png": {
+      "http_status": 200,
+      "bytes": 1167,
+      "sha256": "138ce608f4c55ea167b7541e29478e373d1afebb86a7101bedaf04ee96093aff"
+    },
+    "index.html": {
+      "http_status": 200,
+      "bytes": 680383,
+      "sha256": "5d6195ab012e7f9020e35b786437d93b37cc924178198db0a819297aaff435bb"
+    },
+    "analysis.json": {
+      "http_status": 200,
+      "bytes": 56594,
+      "sha256": "f5eada0fe5d6dc3bc2c3ace6a18972570b5f5a35669af8e4e1973d7d753ace0e"
+    },
+    "validation.json": {
+      "http_status": 200,
+      "bytes": 1708,
+      "sha256": "8ddb1a034a3103cb99de3dfb2311b2ce413557cb6de9643d5b24f1f333e317ac"
+    },
+    "preservation.json": {
+      "http_status": 200,
+      "bytes": 4809,
+      "sha256": "102422ecca68092d953fde95a7f8a0cf9376cc8442948a9a92e8fa3feed5b71f"
+    },
+    "seam-data.json": {
+      "http_status": 200,
+      "bytes": 620351,
+      "sha256": "e245fa02051f299f37009c3150a5b8028b4673c93039b407a81d97f29dda13a4"
+    },
+    "field-data.json": {
+      "http_status": 200,
+      "bytes": 49473,
+      "sha256": "e828505865f070c2123a509f3ad5cfd5c7265b1d5ec19e54805e206d39fe47a9"
+    }
+  },
+  "all_bytes_verified": true,
+  "browser_checked": true,
+  "before_after_buttons_checked": true,
+  "normal_tilt_selector_checked": true,
+  "keyboard_sample_step_checked": true,
+  "comparison_wipe_keyboard_checked": true,
+  "four_images_loaded": true,
+  "horizontal_overflow": false,
+  "console_errors": [],
+  "preview": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/report-preview.jpg",
+  "server_reused": true,
+  "public_site_update": false
+}

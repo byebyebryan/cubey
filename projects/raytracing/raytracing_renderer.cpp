@@ -149,6 +149,29 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
             throw std::runtime_error("owned RT creation fault: scene");
         const Config fallback_config;
         const auto& settings = config ? *config : fallback_config;
+#ifdef CUBEY_RT_RAY_JOURNAL
+        // parse_config caps queries at 8192. Each query plus its boundary/scatter
+        // emits at most 16 packets; 1024 covers sample/dequeue/branch records.
+        const auto capacity = std::uint32_t(settings.max_total_rays) * 16U + 1024U;
+        const std::array<std::uint32_t, 8> header{settings.journal_x,
+                                                  settings.journal_y,
+                                                  settings.journal_sample,
+                                                  (settings.journal_isolate ? 1U : 0U) |
+                                                      (settings.journal_first_failure ? 2U : 0U),
+                                                  capacity,
+                                                  0U,
+                                                  0U,
+                                                  0U};
+        ray_journal_ = std::make_unique<vulkan::Buffer>(
+            device_, vulkan::BufferConfig{32ULL + std::uint64_t(capacity) * 128ULL,
+                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory});
+        ray_journal_->upload(header.data(), sizeof(header));
+        journal_identity_["device"] = p.properties.deviceName;
+        journal_identity_["driver_version"] = p.properties.driverVersion;
+        journal_identity_["api_version"] = p.properties.apiVersion;
+        journal_identity_["isolated_sample"] = settings.journal_isolate;
+        journal_identity_["retain_first_failed_sample"] = settings.journal_first_failure;
+#endif
         if (scene.workshop)
             active_route_ = workshop_route(settings);
         dump_mode_ = dump_mode(settings);
@@ -177,6 +200,18 @@ Renderer::~Renderer() {
 }
 void Renderer::create_scene(vulkan::GpuRuntime& gpu, const Scene& scene) {
     auto start = Clock::now();
+    if (scene.optical_dragon) {
+        // The certified body's translation dominates the donor spawn bound at
+        // its thinnest folds. Trace about its fixed object origin rather than
+        // increasing/reducing the bound or baking rounded world-space vertices.
+        const auto body =
+            std::find_if(scene.instances.begin(), scene.instances.end(), [&](const auto& instance) {
+                return !scene.meshes.at(instance.mesh).admission.certificate_id.empty();
+            });
+        if (body == scene.instances.end())
+            throw std::invalid_argument("optical trace space requires a certified body");
+        trace_space_.world_origin = math::Vec3(body->transform[3]);
+    }
     std::vector<Vertex> vertices;
     std::vector<std::uint32_t> indices;
     std::vector<glm::uvec4> offsets;
@@ -213,12 +248,18 @@ void Renderer::create_scene(vulkan::GpuRuntime& gpu, const Scene& scene) {
             throw std::invalid_argument("invalid RT material index");
         geometry.z = i.material;
         geometry.w = offsets.at(i.mesh).y / 3;
+        const auto trace_world = trace_space_.from_world(i.transform);
         shading.push_back(
-            {i.transform, glm::transpose(glm::inverse(i.transform)), geometry, i.color});
+            {trace_world, glm::transpose(glm::inverse(trace_world)), geometry, i.color});
         triangle_count_ += offsets.at(i.mesh).w;
     }
     instances_ = upload(shading.data(), shading.size() * sizeof(GpuInstance),
                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+#ifdef CUBEY_RT_RAY_JOURNAL
+    std::vector<std::uint32_t> instance_bits(shading.size() * sizeof(GpuInstance) / 4);
+    std::memcpy(instance_bits.data(), shading.data(), instance_bits.size() * 4);
+    journal_identity_["instance_bits"] = instance_bits;
+#endif
     geometry_bytes_ =
         vertices_->size() + indices_->size() + instances_->size() + edge_neighbors_->size();
     accelerations_.reserve(scene.meshes.size() + std::max(std::size_t(1), scene.routes.size()));
@@ -315,10 +356,11 @@ void Renderer::create_scene(vulkan::GpuRuntime& gpu, const Scene& scene) {
                    std::vector<VkAccelerationStructureInstanceKHR> data;
                    for (std::size_t n = route.first; n < route.first + route.count; ++n) {
                        const auto& i = scene.instances[n];
+                       const auto trace_world = trace_space_.from_world(i.transform);
                        VkAccelerationStructureInstanceKHR instance{};
                        for (int r = 0; r < 3; ++r)
                            for (int c = 0; c < 4; ++c)
-                               instance.transform.matrix[r][c] = i.transform[c][r];
+                               instance.transform.matrix[r][c] = trace_world[c][r];
                        instance.instanceCustomIndex = static_cast<std::uint32_t>(n);
                        instance.mask =
                            scene.optical_dragon
@@ -360,26 +402,35 @@ void Renderer::create_pipeline() {
     const VkShaderStageFlags stages = VK_SHADER_STAGE_RAYGEN_BIT_KHR |
                                       VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
                                       VK_SHADER_STAGE_MISS_BIT_KHR;
-    const std::array<vulkan::DescriptorSetBindingConfig, 19> bindings{
-        {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, stages},
-         {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stages},
-         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stages},
-         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stages},
-         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stages},
-         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {10, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {11, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {12, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {13, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {14, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {15, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {16, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {17, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-         {18, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR}}};
+#ifdef CUBEY_RT_RAY_JOURNAL
+    constexpr std::size_t binding_count = 20;
+#else
+    constexpr std::size_t binding_count = 19;
+#endif
+    const std::array<vulkan::DescriptorSetBindingConfig, binding_count> bindings{{
+        {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, stages},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stages},
+        {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stages},
+        {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stages},
+        {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stages},
+        {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {10, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {11, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {12, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {13, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {14, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {15, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {16, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {17, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {18, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+#ifdef CUBEY_RT_RAY_JOURNAL
+        {19, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+#endif
+    }};
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device_, vulkan::DescriptorSetInfo(bindings, slots_));
     auto layout = cubey::vulkan::vk_struct<VkPipelineLayoutCreateInfo>(
@@ -449,6 +500,11 @@ void Renderer::create_pipeline() {
     miss_ = {base + stride, stride, 2 * stride};
     hit_ = {base + 3 * stride, stride, stride};
     for (std::uint32_t i = 0; i < slots_; ++i) {
+#ifdef CUBEY_RT_RAY_JOURNAL
+        vulkan::DescriptorWriteBatch{}
+            .storage_buffer(descriptors_->set(i), 19, ray_journal_->handle(), ray_journal_->size())
+            .update(device_);
+#endif
         uniforms_.push_back(std::make_unique<vulkan::Buffer>(
             device_, vulkan::BufferConfig{sizeof(CameraUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                           host_memory}));
@@ -702,7 +758,26 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
             c.workshop_lighting == "furnace" ? 1.F : 0.F};
     }
     workshop_uniforms_.at(slot.index)->upload(&workshop_uniform, sizeof(workshop_uniform));
+    if (optical_dragon_) {
+        // Admission, atmosphere and background use the physical camera above.
+        // Only the tracing uniforms share the fixed TLAS/shading frame.
+        camera.eye = math::Vec4(trace_space_.from_world(math::Vec3(camera.eye)), camera.eye.w);
+        camera.inverse_view = trace_space_.from_world(camera.inverse_view);
+    }
     uniforms_.at(slot.index)->upload(&camera, sizeof(camera));
+#ifdef CUBEY_RT_RAY_JOURNAL
+    auto capture_bits = [&](const char* name, const auto& value) {
+        std::vector<std::uint32_t> bits(sizeof(value) / 4);
+        std::memcpy(bits.data(), &value, sizeof(value));
+        journal_identity_[name] = std::move(bits);
+    };
+    capture_bits("camera_bits", camera);
+    capture_bits("environment_bits", environment);
+    capture_bits("workshop_bits", workshop_uniform);
+    journal_identity_["logical_extent"] = {extent_.width, extent_.height};
+    journal_identity_["trace_world_origin"] = {
+        trace_space_.world_origin.x, trace_space_.world_origin.y, trace_space_.world_origin.z};
+#endif
     post_.upload(slot, render::hdr_post_uniforms(output.format, c.exposure,
                                                  c.view == "final" ? render::PbrTonemap::Aces
                                                                    : render::PbrTonemap::Linear));
@@ -789,6 +864,9 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                                  descriptors_->set(slot.index));
     const auto samples_before = history_samples_;
     const auto iterations =
+#ifdef CUBEY_RT_RAY_JOURNAL
+        c.journal_isolate ? 1U :
+#endif
         workshop_ && !contract_probe && c.common.headless && !c.common.headless_render_only
             ? std::max(1U, c.samples > history_samples_ ? c.samples - history_samples_ : 0U)
             : 1U;
@@ -827,7 +905,11 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
              {"sun_azimuth_degrees", shared_sun_azimuth_degrees(c.sun_azimuth)},
              {"exposure", c.exposure},
              {"sample_target", c.samples}});
-    if (diagnostic_) {
+    if (diagnostic_
+#ifdef CUBEY_RT_RAY_JOURNAL
+        || ray_journal_
+#endif
+    ) {
         auto memory = vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
         memory.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
         memory.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
@@ -891,8 +973,45 @@ void Renderer::save_queries(const std::filesystem::path& path) const {
     out.write(reinterpret_cast<const char*>(data.data()),
               static_cast<std::streamsize>(data.size()));
 }
+#ifdef CUBEY_RT_RAY_JOURNAL
+void Renderer::save_ray_journal(const std::filesystem::path& path) const {
+    std::array<std::uint32_t, 8> header{};
+    ray_journal_->download(header.data(), sizeof(header));
+    const auto count = std::min(header[4], header[5]);
+    std::vector<std::uint32_t> data(std::size_t(count) * 32);
+    ray_journal_->download(data.data(), data.size() * 4, sizeof(header));
+    auto result = journal_identity_;
+    result["format"] = "cubey.ray-journal.v1";
+    result["control"] = {header[0], header[1], header[2], header[3]};
+    result["capacity"] = header[4];
+    result["attempted_records"] = header[5];
+    result["overflow"] = header[6];
+    result["first_failure_record_plus_one"] = header[7];
+    result["geometry_admission"] = geometry_admission_;
+    result["records"] = nlohmann::json::array();
+    for (std::size_t i = 0; i < count; ++i) {
+        auto packet = nlohmann::json::array();
+        for (std::size_t j = 0; j < 8; ++j)
+            packet.push_back({data[i * 32 + j * 4], data[i * 32 + j * 4 + 1],
+                              data[i * 32 + j * 4 + 2], data[i * 32 + j * 4 + 3]});
+        result["records"].push_back(std::move(packet));
+    }
+    if (path.has_parent_path())
+        std::filesystem::create_directories(path.parent_path());
+    std::ofstream out(path);
+    if (!out)
+        throw std::runtime_error("cannot write ray journal");
+    out << result.dump(2) << '\n';
+    if (header[6] || !count)
+        throw std::runtime_error("ray journal overflowed or target sample was not recorded");
+}
+#endif
 std::uint64_t Renderer::requested_bytes() const {
     std::uint64_t bytes = 0;
+#ifdef CUBEY_RT_RAY_JOURNAL
+    if (ray_journal_)
+        bytes += ray_journal_->size();
+#endif
     for (auto* buffer :
          {vertices_.get(), indices_.get(), instances_.get(), sbt_.get(), edge_neighbors_.get()})
         if (buffer)
@@ -992,6 +1111,12 @@ nlohmann::json Renderer::metrics() const {
         {"edge_adjacency_bytes", edge_neighbors_ ? edge_neighbors_->size() : 0},
         {"as_bytes", as_bytes_},
         {"sbt_bytes", sbt_ ? sbt_->size() : 0},
+        {"trace_world_origin",
+         {trace_space_.world_origin.x, trace_space_.world_origin.y, trace_space_.world_origin.z}},
+        {"query_position_space", "trace = world - trace_world_origin"},
+#ifdef CUBEY_RT_RAY_JOURNAL
+        {"ray_journal_bytes", ray_journal_ ? ray_journal_->size() : 0},
+#endif
         {"scratch_peak_bytes", scratch_peak_},
         {"resident_project_requested_bytes", requested_bytes()},
         {"peak_simultaneous_project_requested_bytes", requested_peak_},
@@ -1021,6 +1146,9 @@ nlohmann::json Renderer::metrics() const {
         {"gpu_samples", timing_}};
 }
 void Renderer::destroy() noexcept {
+#ifdef CUBEY_RT_RAY_JOURNAL
+    ray_journal_.reset();
+#endif
     executor_.clear();
     targets_.clear();
     history_.reset();

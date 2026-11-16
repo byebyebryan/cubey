@@ -1,0 +1,233 @@
+[
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 128,
+    "reflection_ratio": 0.09501876611047992,
+    "transmission_ratio": 0.899563928167165,
+    "total_ratio": 0.9945826942776449,
+    "exact_geometric_ratio": 1.0,
+    "method": "two-outgoing-hemisphere projected-solid-angle quadrature",
+    "candidate": false
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 256,
+    "reflection_ratio": 0.09479206661874706,
+    "transmission_ratio": 0.9043791940975894,
+    "total_ratio": 0.9991712607163364,
+    "exact_geometric_ratio": 1.0,
+    "method": "two-outgoing-hemisphere projected-solid-angle quadrature",
+    "candidate": false
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 512,
+    "reflection_ratio": 0.09489414834592032,
+    "transmission_ratio": 0.9068898287697178,
+    "total_ratio": 1.001783977115638,
+    "exact_geometric_ratio": 1.0,
+    "method": "two-outgoing-hemisphere projected-solid-angle quadrature",
+    "candidate": false
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 64,
+    "reflection_ratio": 0.09490459563749042,
+    "transmission_ratio": 0.9050954043625092,
+    "total_ratio": 0.9999999999999997,
+    "pieces": [
+      {
+        "piece": "geometric",
+        "reflection_ratio": 0.09490459563749042,
+        "transmission_ratio": 0.9050954043625092,
+        "reflected_preimage_fraction": 1.0,
+        "transmitted_preimage_fraction": 1.0
+      }
+    ],
+    "exact_geometric_ratio": 1.0,
+    "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+    "candidate": false
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 128,
+    "reflection_ratio": 0.0949045956374904,
+    "transmission_ratio": 0.9050954043625091,
+    "total_ratio": 0.9999999999999996,
+    "pieces": [
+      {
+        "piece": "geometric",
+        "reflection_ratio": 0.0949045956374904,
+        "transmission_ratio": 0.9050954043625091,
+        "reflected_preimage_fraction": 1.0,
+        "transmitted_preimage_fraction": 1.0
+      }
+    ],
+    "exact_geometric_ratio": 1.0,
+    "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+    "candidate": false
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 256,
+    "reflection_ratio": 0.09490459563749043,
+    "transmission_ratio": 0.9050954043625092,
+    "total_ratio": 0.9999999999999997,
+    "pieces": [
+      {
+        "piece": "geometric",
+        "reflection_ratio": 0.09490459563749043,
+        "transmission_ratio": 0.9050954043625092,
+        "reflected_preimage_fraction": 1.0,
+        "transmitted_preimage_fraction": 1.0
+      }
+    ],
+    "exact_geometric_ratio": 1.0,
+    "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+    "candidate": false
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 128,
+    "reflection_ratio": 0.17732605815653443,
+    "transmission_ratio": 1.1547317918130824,
+    "total_ratio": 1.3320578499696167,
+    "exact_geometric_ratio": 1.0,
+    "method": "two-outgoing-hemisphere projected-solid-angle quadrature",
+    "candidate": true
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 256,
+    "reflection_ratio": 0.17686210501889263,
+    "transmission_ratio": 1.1401589542105985,
+    "total_ratio": 1.317021059229491,
+    "exact_geometric_ratio": 1.0,
+    "method": "two-outgoing-hemisphere projected-solid-angle quadrature",
+    "candidate": true
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 512,
+    "reflection_ratio": 0.17700638697702048,
+    "transmission_ratio": 1.1418781148014705,
+    "total_ratio": 1.318884501778491,
+    "exact_geometric_ratio": 1.0,
+    "method": "two-outgoing-hemisphere projected-solid-angle quadrature",
+    "candidate": true
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 64,
+    "reflection_ratio": 0.1770711274574409,
+    "transmission_ratio": 1.1411720030159591,
+    "total_ratio": 1.3182431304734,
+    "pieces": [
+      {
+        "piece": "geometric",
+        "reflection_ratio": 0.08673477148924309,
+        "transmission_ratio": 0.0,
+        "reflected_preimage_fraction": 0.882568359375,
+        "transmitted_preimage_fraction": 0.0
+      },
+      {
+        "piece": "smooth",
+        "reflection_ratio": 0.09033635596819782,
+        "transmission_ratio": 1.1411720030159591,
+        "reflected_preimage_fraction": 1.0,
+        "transmitted_preimage_fraction": 1.0
+      }
+    ],
+    "exact_geometric_ratio": 1.0,
+    "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+    "candidate": true
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 128,
+    "reflection_ratio": 0.17705836356202162,
+    "transmission_ratio": 1.1411720030159591,
+    "total_ratio": 1.3182303665779807,
+    "pieces": [
+      {
+        "piece": "geometric",
+        "reflection_ratio": 0.0867220075938238,
+        "transmission_ratio": 0.0,
+        "reflected_preimage_fraction": 0.88250732421875,
+        "transmitted_preimage_fraction": 0.0
+      },
+      {
+        "piece": "smooth",
+        "reflection_ratio": 0.09033635596819782,
+        "transmission_ratio": 1.1411720030159591,
+        "reflected_preimage_fraction": 1.0,
+        "transmitted_preimage_fraction": 1.0
+      }
+    ],
+    "exact_geometric_ratio": 1.0,
+    "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+    "candidate": true
+  },
+  {
+    "tilt_degrees": 20,
+    "beam_angle_degrees": 60,
+    "beam_radius_degrees": 15,
+    "ior": 1.5,
+    "order": 256,
+    "reflection_ratio": 0.1770512181751971,
+    "transmission_ratio": 1.1411720030159591,
+    "total_ratio": 1.3182232211911562,
+    "pieces": [
+      {
+        "piece": "geometric",
+        "reflection_ratio": 0.08671486220699925,
+        "transmission_ratio": 0.0,
+        "reflected_preimage_fraction": 0.8823318481445312,
+        "transmitted_preimage_fraction": 0.0
+      },
+      {
+        "piece": "smooth",
+        "reflection_ratio": 0.09033635596819783,
+        "transmission_ratio": 1.1411720030159591,
+        "reflected_preimage_fraction": 1.0,
+        "transmitted_preimage_fraction": 1.0
+      }
+    ],
+    "exact_geometric_ratio": 1.0,
+    "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+    "candidate": true
+  }
+]

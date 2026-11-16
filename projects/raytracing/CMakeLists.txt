@@ -17,6 +17,8 @@ target_compile_definitions(cubey_project_raytracing PRIVATE CUBEY_RAYTRACING_ASS
 if(BUILD_TESTING)
     add_test(NAME raytracing_dragon_glass_acceptance
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_dragon_glass_acceptance.py")
+    add_test(NAME raytracing_spawn_geometry
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_ray_spawn_geometry.py")
     add_test(NAME raytracing_material_comparison_inputs
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/author_material_comparison.py" --check)
     add_executable(cubey_project_raytracing_material_reference raytracing_material_reference.cpp)

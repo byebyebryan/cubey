@@ -1,0 +1,41 @@
+{
+  "scope": "Single headless active accumulation and final native Xvfb epoch, separately; no physical display latency claim.",
+  "headless_2048_spp_gpu": [
+    {
+      "frame": 0,
+      "milliseconds": 20193.080704,
+      "pass": "raytracing.trace"
+    },
+    {
+      "frame": 0,
+      "milliseconds": 20193.099808,
+      "pass": "raytracing.whole_scene"
+    },
+    {
+      "frame": 0,
+      "milliseconds": 0.621312,
+      "pass": "raytracing.environment_update"
+    },
+    {
+      "frame": 0,
+      "milliseconds": 20193.723808,
+      "pass": "raytracing.total_frame"
+    }
+  ],
+  "native_last_epoch": 137,
+  "native": {
+    "active": {
+      "frames": 32,
+      "timed_gpu_frames": 32,
+      "median_gpu_trace_ms": 3.825792,
+      "median_cpu_record_ms": 0.15411550000000002
+    },
+    "settled": {
+      "frames": 95,
+      "timed_gpu_frames": 95,
+      "median_gpu_trace_ms": 0.03216,
+      "median_cpu_record_ms": 0.184291
+    }
+  },
+  "ordinary_resident_requested_bytes_without_diagnostics": 142011496
+}

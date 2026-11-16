@@ -1,0 +1,83 @@
+{
+  "url": "http://starship:8787/reports/8fab40dff6b178dcdf49d6c45c0c2ea3b9483bf14dd789b71c952b7262bc2668/",
+  "checked_at_utc": "2026-11-15T08:07:52.529507+00:00",
+  "assets": {
+    "comparison.json": {
+      "http_status": 200,
+      "bytes": 38899,
+      "sha256": "180081785c09b4361b537c365efa998eeb195557bab240fdd13f5e8e6993c576"
+    },
+    "index.html": {
+      "http_status": 200,
+      "bytes": 16691,
+      "sha256": "302d1cba599b78615df86c24730060ab8e0477f925cd5980aafad45ee8f1f7bd"
+    },
+    "validation.json": {
+      "http_status": 200,
+      "bytes": 4716,
+      "sha256": "61734dd289443b914e3f9b7ca889592981aa652b601043c96e2ca47d87c9e6cf"
+    },
+    "images/canonical-s19-geometric.png": {
+      "http_status": 200,
+      "bytes": 1029097,
+      "sha256": "edf584fa00a632d76a1d88e496f27cd5b3bd70f4e03f0d43d744cc8b7b895abc"
+    },
+    "images/canonical-s19-smooth.png": {
+      "http_status": 200,
+      "bytes": 1004169,
+      "sha256": "485d707c05f7e502843303fc642acf5c318976aadbde07e4e084d4c50aa2d6b9"
+    },
+    "images/canonical-s43-geometric.png": {
+      "http_status": 200,
+      "bytes": 1028327,
+      "sha256": "8c79e579fa00c6d9aa8fe37d937570d3994b784a36ade9bd55ae48eb300943a2"
+    },
+    "images/canonical-s43-smooth.png": {
+      "http_status": 200,
+      "bytes": 1003493,
+      "sha256": "76ea842b03fb9e11555e2747f7b87bd58b9b0e4984844f2d42032df9fb8dc0cc"
+    },
+    "images/elevated-s19-geometric.png": {
+      "http_status": 200,
+      "bytes": 1031512,
+      "sha256": "b86dee61faecf9321dc205b982bcfa0d6a774c7a804fb6732f6a822bc81e5a07"
+    },
+    "images/elevated-s19-smooth.png": {
+      "http_status": 200,
+      "bytes": 1009123,
+      "sha256": "230ff4b30379edece416b5d9bc9fcb195607b74ef33fe48b77b746de432f78e2"
+    },
+    "images/grazing-s19-geometric.png": {
+      "http_status": 200,
+      "bytes": 882729,
+      "sha256": "22ffedacb464967c2be6c61b91196bcadf86f3485a040d5156df80e259242fa0"
+    },
+    "images/grazing-s19-smooth.png": {
+      "http_status": 200,
+      "bytes": 869550,
+      "sha256": "bd63d6e0719cfd0795ea2e7f5a67f843992e57c9b8a448974ba7ee27209f4594"
+    },
+    "images/isolated-s19-geometric.png": {
+      "http_status": 200,
+      "bytes": 993066,
+      "sha256": "5f8f3e48340d191bd8c03601bd3d424015ce2509fc2decfdc9c60c673d817aa8"
+    },
+    "images/isolated-s19-smooth.png": {
+      "http_status": 200,
+      "bytes": 959345,
+      "sha256": "6c56a73a7fddfbbff78e10598f6566d0e0396cc32513da594a7e0238d91af737"
+    }
+  },
+  "all_bytes_verified": true,
+  "browser_checked": true,
+  "matched_views_checked": 5,
+  "mode_toggle_and_wipe_checked": true,
+  "blink_both_phases_checked": true,
+  "crop_alignment_checked": 4,
+  "alternate_seed_checked": true,
+  "horizontal_overflow": false,
+  "browser_console_errors": [],
+  "preview": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-normal-looks-20261114/report-preview.jpg",
+  "public_site_update": false,
+  "shared_report_server_reused": true
+}

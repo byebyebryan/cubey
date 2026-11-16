@@ -164,9 +164,25 @@ The new route uses NVIDIA's barycentric reconstruction/error offset, an
 adjacent-face offset direction near folded edges, and medium-aware facing culling
 on its certified closed boundary. Medium misses and cross-instance errors remain
 checked. These are qualified float32 policies, not exact arithmetic guarantees.
+The [Q0.1 replay correction](../../docs/notes/raytracing-dragon-glass-q01-results.md)
+uses a fixed model-anchored tracing frame and removes extra crease amplification
+that skipped submicrometre opposing faces. The original seed-7 controls and six
+independent full-HD 4096-SPP references pass at the unchanged production budget.
+Physical scene/camera settings, original vertex data and shared lighting remain
+unchanged; other scenes retain a zero tracing origin.
 Geometric interface normals retain mesh faceting. The Snell-aware cone is local
 to each flat interface and does not bound triangle-edge jumps. Straight
 Fresnel/Beer sun shadows and SH diffuse lighting do not produce focused caustics.
+The [Q1 optical-normal experiment](../../docs/notes/raytracing-dragon-glass-q1-results.md)
+rejects its first whole-interface fallback candidate: GPU controls reproduce
+direction jumps and nonconservative flux despite correct geometric sides.
+The helper is diagnostic-only and is not included by ordinary shaders.
+Geometric normals remain the ordinary scene policy. A continuous interface
+and transport-weighting model is an optional analytical follow-up.
+The later [private visual comparison](../../docs/notes/raytracing-dragon-glass-normal-looks.md)
+now renders the dragon with both geometric and guarded smooth normals to judge
+the actual appearance. It supplies demo-oriented A/B images without changing
+the default or treating optical perfection as the preview's acceptance gate.
 
 Only this scene defaults to 128 events / 1024 radiance rays / 4096 total queries;
 its deeper reference ceiling is 256 / 2048 / 8192. Legacy defaults/ceilings stay
@@ -184,6 +200,48 @@ Preset transport settings remain active in the neutral, tinted and alternate
 view checks. The preset also must match the deeper reference within the recorded
 HDR tolerance. Resident requested memory is checked against its component sum,
 including the adjacency buffer once through `geometry_bytes`.
+
+The [Q0 quality measurements](../../docs/notes/raytracing-dragon-glass-q0-results.md)
+extend the earlier coverage: full-HD seed 7 records an invalid-medium event at
+pixel (908, 344), first appearing at 1336 samples. It persists with the deeper
+budget and shadows disabled. Q0.1 explains and corrects that numerical failure;
+its qualified reference matrix is recorded separately. The original Q0 noise,
+faceting and motion observations retain their own scope. The opt-in measurement tools retain raw convergence, solar controls
+and native orbit/settle telemetry, with Xvfb presentation limits stated separately.
+
+Private numerical replay builds are opt-in and use their own executable and full
+shader directory; they never replace ordinary SPIR-V in place:
+
+```sh
+rtk proxy python3 -B projects/raytracing/tools/build_ray_replay.py --journal --output outputs/raytracing/private-replay
+```
+
+The private executable adds `--ray-journal`, `--journal-x`, `--journal-y` and
+`--journal-sample`. Use the original preset, extent, seed and sample count.
+`--journal-isolate` runs only that logical pixel/sample, retains the full logical
+extent, and labels a one-sample diagnostic. It excludes raw image dumps.
+`--journal-first-failure` instead retains the first failed sample at the selected
+pixel across the full prefix; without a failure, it retains the last sample.
+Those two modes cannot be combined. Packet 1 contains the actual logical sample.
+Normal builds expose none of these options or their storage binding.
+
+`tools/inspect_ray_journal.py JOURNAL --output DECODED --compare OTHER` validates
+capacity/shape, decodes float bits and compares exact event streams. Nonfinite
+float interpretations of integer payloads are null; original uint32 bits remain.
+Each packet is eight `uvec4`s: kind/branch/depth/signed-medium, then seven payloads.
+Kinds 10/13/12/11 describe query, vertices, adjacent faces and reconstructed
+surface; 40/41/42 describe dielectric boundary, scatter and queued reflection;
+14 records point/offset, direction/side, actual origin/displacement, spawn normal,
+outward normal and hit identity/sequence. Kinds 20/21 record dequeue/iteration
+state, 101/102/103 classify medium failures, and kind 2 records color/status,
+discarded weight and query/branch counters. Both readable floats and raw words
+are retained. See the shader's `jRecord` calls for the complete field ABI.
+
+The asset-bound `tools/qualify_dragon_spawn.py --output DIRECTORY` checks the
+original full-HD seed-7 prefixes and doubled-budget/shadows-off controls.
+`--references` additionally requires all six canonical/elevated/grazing
+4096-SPP seed-19/43 captures to pass. The Q0.1 candidate passes this gate; a
+clean low-resolution qualification alone does not supersede it.
 
 One scene unit is one metre; the original support top is y=0 and the rock fits
 the same subject placement. The earlier mixed dragon/prop
@@ -331,8 +389,10 @@ one record per pixel. `--query-output` preserves the first-pass 64-byte ABI.
 `--optics-output` uses 256 bytes (16 vec4s), at most 32 MiB;
 `--hdr-output` uses 16 bytes (linear RGB plus integer status encoded as float),
 at most 64 MiB. Each requires one headless PNG frame, no video/render-only,
-and dimensions no greater than 2048. `--scene-output` exports the actual CPU
-geometry and material identities for the independent oracle.
+and dimensions no greater than 2048. In `dragon-optics`, position records use
+the fixed tracing frame: add metrics `trace_world_origin` to recover physical
+world positions. Other scenes have a zero origin. `--scene-output` exports the
+actual CPU geometry and material identities for the independent oracle.
 
 | Optical vec4 | Meaning |
 | --- | --- |

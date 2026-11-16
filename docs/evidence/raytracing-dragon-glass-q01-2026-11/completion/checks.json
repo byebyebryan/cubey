@@ -1,0 +1,175 @@
+[
+  {
+    "name": "light-failure16",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/light-failure-build-16/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/dragon-glass.json",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--samples",
+      "809",
+      "--seed",
+      "19",
+      "--pitch",
+      ".65",
+      "--require-validation",
+      "--optics-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/light-failure16/optics.bin",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/light-failure16/metrics.json",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/light-failure16/image.png"
+    ],
+    "exit": 0,
+    "wall_seconds": 21.56555722298799
+  },
+  {
+    "name": "fixture17-candidate",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/fixture-build-17/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/dragon-glass.json",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "2",
+      "--height",
+      "1",
+      "--samples",
+      "1",
+      "--require-validation",
+      "--optics-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/fixture17-candidate/optics.bin",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/fixture17-candidate/metrics.json",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/fixture17-candidate/image.png"
+    ],
+    "exit": 0,
+    "wall_seconds": 0.769440529984422
+  },
+  {
+    "name": "fixture18-baseline",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/fixture-build-18-baseline/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/dragon-glass.json",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "2",
+      "--height",
+      "1",
+      "--samples",
+      "1",
+      "--require-validation",
+      "--optics-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/fixture18-baseline/optics.bin",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/fixture18-baseline/metrics.json",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/fixture18-baseline/image.png"
+    ],
+    "exit": 0,
+    "wall_seconds": 0.7564286429842468
+  },
+  {
+    "name": "normal-without-diagnostics",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/dragon-glass.json",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--samples",
+      "2048",
+      "--seed",
+      "7",
+      "--require-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/normal-without-diagnostics/metrics.json",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/normal-without-diagnostics/image.png"
+    ],
+    "exit": 0,
+    "wall_seconds": 20.976748929999303
+  },
+  {
+    "name": "rt-ctests",
+    "command": [
+      "ctest",
+      "--test-dir",
+      "build/dev",
+      "-R",
+      "^raytracing_",
+      "--output-on-failure",
+      "-j1"
+    ],
+    "exit": 0,
+    "wall_seconds": 12.239075240009697
+  },
+  {
+    "name": "optical-qualification",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--no-build",
+      "projects/raytracing/tools/qualify_dragon_glass.py",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical"
+    ],
+    "exit": 0,
+    "wall_seconds": 16.02612625999609
+  },
+  {
+    "name": "opaque-qualification",
+    "command": [
+      "uv",
+      "run",
+      "--no-project",
+      "--no-build",
+      "projects/raytracing/tools/qualify_dragon_materials.py",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-opaque"
+    ],
+    "exit": 0,
+    "wall_seconds": 13.552251740009524
+  },
+  {
+    "name": "native-qualification",
+    "command": [
+      "xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1600x1200x24",
+      "env",
+      "CUBEY_RT_PRIVATE_XVFB=1",
+      "python3",
+      "-B",
+      "projects/raytracing/tools/check_material_window.py",
+      "--scene",
+      "dragon-optics",
+      "--material",
+      "glass",
+      "--exercise",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-native"
+    ],
+    "exit": 0,
+    "wall_seconds": 30.361282077996293
+  }
+]

@@ -1,0 +1,60 @@
+{
+  "pixel": [
+    908,
+    344
+  ],
+  "first_failing_sample_count": 1336,
+  "last_clean_sample_count": 1335,
+  "zero_based_failing_sample": 1335,
+  "reproduced_byte_exact": true,
+  "search": [
+    {
+      "samples": 1280,
+      "flags": 0
+    },
+    {
+      "samples": 1664,
+      "flags": 16
+    },
+    {
+      "samples": 1472,
+      "flags": 16
+    },
+    {
+      "samples": 1376,
+      "flags": 16
+    },
+    {
+      "samples": 1328,
+      "flags": 0
+    },
+    {
+      "samples": 1352,
+      "flags": 16
+    },
+    {
+      "samples": 1340,
+      "flags": 16
+    },
+    {
+      "samples": 1334,
+      "flags": 0
+    },
+    {
+      "samples": 1337,
+      "flags": 16
+    },
+    {
+      "samples": 1335,
+      "flags": 0
+    },
+    {
+      "samples": 1336,
+      "flags": 16
+    }
+  ],
+  "deep_budget_flags": 16,
+  "no_shadows_flags": 16,
+  "optical_policy_changed": false,
+  "scope": "Full-HD seed-7 production-policy diagnostic. Failures are retained, never accepted as quality references."
+}

@@ -1,0 +1,7 @@
+{
+  "projects/raytracing/raytracing_app.cpp": "213b74c7ae821c8031d5c7f348e801f22a1c60b69350823294ee0f48f5d7e452",
+  "projects/raytracing/tools/analyze_glass_quality.py": "716a2f237b55c949afb448819624abbe4f708ad4a2642e0cf9dac125411a7e7a",
+  "projects/raytracing/tools/test_glass_quality.py": "010f78f09b7ba3730c37377ef768251def6cf5f592b6236ff9471bacc1174180",
+  "projects/raytracing/tools/measure_dragon_glass.py": "656ee5a224f8600d7f1b72e0c8fb84bb26c57e145e09ca87555611d936339c71",
+  "projects/raytracing/tools/measure_dragon_window.py": "ad45988f48d9b92c4df3768cc543a637039b66e455227e1f1b9b2caeaa688181"
+}

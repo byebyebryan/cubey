@@ -1,0 +1,70 @@
+{
+  "checked_at": "2026-11-09T10:24:21.349707+00:00",
+  "complete": true,
+  "requirements": [
+    {
+      "requirement": "R1 faithful baseline and isolated replay",
+      "status": "proved",
+      "evidence": "fidelity.json; journals/seed7-passive.json; journals/seed7-isolated.json"
+    },
+    {
+      "requirement": "R2 first failure classified with exact geometry",
+      "status": "proved",
+      "evidence": "exact-local.json; completion/fixture-and-fidelity.json"
+    },
+    {
+      "requirement": "smallest supported correction implemented",
+      "status": "proved",
+      "evidence": "raytracing_trace_space.h; renderer transforms/camera; trace.rgen crease projection; frozen candidate-build.json"
+    },
+    {
+      "requirement": "R3 exact seed7 prefixes, deep and no-shadow controls",
+      "status": "proved",
+      "evidence": "completion/qualification.json captures 1-5"
+    },
+    {
+      "requirement": "R3 independent full-HD references at production budget",
+      "status": "proved",
+      "evidence": "completion/qualification.json captures 6-11"
+    },
+    {
+      "requirement": "R3 local geometry, neighbors and angle controls",
+      "status": "proved",
+      "evidence": "test_ray_spawn_geometry.py; CPU trace-space invariants; GPU fixture17/18; whole-image cumulative flags"
+    },
+    {
+      "requirement": "R3 optical/opaque/native/memory/validation controls",
+      "status": "proved",
+      "evidence": "completion/checks.json; optical.json; opaque.json; native.json; normal-build-identity.json"
+    },
+    {
+      "requirement": "R3 ordinary build with diagnostics disabled",
+      "status": "proved",
+      "evidence": "completion/normal-build-identity.json; normal-without-diagnostics capture"
+    },
+    {
+      "requirement": "active tracing distinct from settled and Xvfb",
+      "status": "proved",
+      "evidence": "completion/performance.json"
+    },
+    {
+      "requirement": "preserve model, scene/materials and non-optical consumers",
+      "status": "proved",
+      "evidence": "completion/preservation.json; fixture-and-fidelity.json; physical camera/config invariants"
+    },
+    {
+      "requirement": "reviewable retained evidence and report",
+      "status": "proved",
+      "evidence": "completion/report-delivery.json; source/build/capture snapshots in outputs"
+    },
+    {
+      "requirement": "no Q1-Q3, commit, push or public-site change",
+      "status": "proved",
+      "evidence": "HEAD unchanged, scoped diff and preserved assets; all changes uncommitted"
+    }
+  ],
+  "documentation_tests": 4,
+  "owned_raytracing_processes": [],
+  "report": "http://starship:8787/reports/23d2bfda9d33aa8eda303808cb764931b9779be2b97b2d27de21213e60bec79a/",
+  "optional_stopped_probes_excluded": true
+}

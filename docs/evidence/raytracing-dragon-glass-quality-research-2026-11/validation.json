@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-08",
+  "kind": "research-and-planning-only",
+  "head": "10328ef2dff12bd26b6ff20a589c47dde5e8eabc",
+  "head_unchanged": true,
+  "checks": {
+    "documentation_ctest": {
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        "documentation_hygiene",
+        "documentation_media",
+        "documentation_rules",
+        "documentation_cli_recipes"
+      ]
+    },
+    "git_diff_check": "pass",
+    "normal_analysis": "pass; unoccluded centroid scope only",
+    "historical_timing_analysis": "pass; not a fresh benchmark"
+  },
+  "preservation": {
+    "project_source_and_executable_entries_unchanged": 109,
+    "starting_manifest_sha256": "d6d430a4de2c796079d9d25e463cadbe12143a5050d79bff36e9774cbe3c8e4b",
+    "executable_sha256": "595eadd25151cbfbb2b0e6214a3fafb2944919d6436ad7bc338876227646bd80",
+    "optical_model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+    "original_model_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+    "original_sdf_worktree_written": false,
+    "runtime_changes": false,
+    "fresh_gpu_captures": false,
+    "committed": false,
+    "pushed": false,
+    "public_site_changed": false
+  },
+  "retained_evidence_sha256": {
+    "README.md": "578bb0a6bcab35c77938e1e5904b6342cf16951517f6b63032e715af1d229c76",
+    "analyze_baseline.py": "4276d093a13981068c0d551102f5899cc98613865eb6586107ad5a91fd583b07",
+    "historical-window-analysis.json": "be4d91e40cca7a32fd35cc9a4fdc5a762c137a09cd3c9d7e6acc2967ea55f9cb",
+    "normal-audit.json": "5faae34fea1e2e041f93f753a2d62d02457d67daf1d04a181e8c7f90f2e68a6a",
+    "sources.json": "6da7431fa18b8f56ef6b1b8dc04b94a4e491733f428a760988663b7862921158"
+  },
+  "proposed_next_loop": "Q0 baseline/convergence/native orbit-stop-settle measurement only; no Q1-Q3 implementation selected"
+}

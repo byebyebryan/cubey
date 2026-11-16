@@ -1,0 +1,44 @@
+{
+  "baseline_head": "10328ef2dff12bd26b6ff20a589c47dde5e8eabc",
+  "current_state": "Existing uncommitted Q0 instrumentation/tools/docs preserved.",
+  "known_reproducer": {
+    "pixel": [
+      908,
+      344
+    ],
+    "extent": [
+      1920,
+      1080
+    ],
+    "seed": 7,
+    "sample_zero_based": 1335,
+    "first_failing_prefix": 1336,
+    "deeper_budget_and_shadows_off_retain_failure": true
+  },
+  "active_route": "make_material_dragon -> reflection-dragon-solo geometry -> certified optical admission and sharp workshop transport",
+  "radiance_status_16_cases": [
+    "inside miss (id < 0 while medium >= 0)",
+    "different instance while medium >= 0",
+    "geometric entry/exit test disagrees with incoming medium"
+  ],
+  "hit_payload": "bary, t, instance, primitive; hardware hit kind not retained",
+  "branch_asymmetry": "Main continuation checks outgoing world-space geometric side; pending split-reflection enqueue has no equivalent check. Not proved causal.",
+  "culling": "Optical instance flags are zero; medium-aware front/back culling is active. No cull-disable or flip-facing instance flag.",
+  "transforms": "Selected dragon has unit scale/vertical translation; marble slab identity transform. Uploaded matrix identity still required in replay.",
+  "proposed_first_discriminators": [
+    "miss versus wrong-instance versus orientation reason code",
+    "hardware hit kind versus shader geometric dot",
+    "pending reflection parent/child state and direction",
+    "actual rounded spawn displacement versus local neighborhood"
+  ],
+  "not_established": [
+    "first failing event depth or branch",
+    "inside-miss versus wrong-hit versus facing cause",
+    "driver defect",
+    "new mesh defect",
+    "a valid correction"
+  ],
+  "replay_identity_warning": "A 1x1 render changes logical pixel hash, jitter, ray and footprint. Preserve original logical dimensions and sample/RNG sequence.",
+  "runtime_changed": false,
+  "new_gpu_captures": false
+}

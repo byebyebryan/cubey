@@ -1,0 +1,47 @@
+{
+  "pixel": [
+    1007,
+    752
+  ],
+  "seed": 19,
+  "sample": 808,
+  "source_point": [
+    0.24223899841308594,
+    -0.22252270579338074,
+    0.11931820213794708
+  ],
+  "spawn_origin": [
+    0.24223916232585907,
+    -0.22252285480499268,
+    0.11931832134723663
+  ],
+  "direction": [
+    0.5243634581565857,
+    0.37092044949531555,
+    0.7664599418640137
+  ],
+  "crossed_primitive": 805124,
+  "crossed_vertices": [
+    [
+      0.2424801141023636,
+      -0.22233396768569946,
+      0.11967824399471283
+    ],
+    [
+      0.24220484495162964,
+      -0.22284692525863647,
+      0.11954305320978165
+    ],
+    [
+      0.24223901331424713,
+      -0.22252283990383148,
+      0.11931805312633514
+    ]
+  ],
+  "trace_world_origin": [
+    0,
+    0.3534899950027466,
+    0
+  ],
+  "provenance": "Rebase-only prototype, elevated seed 19, logical sample 808. Minimal shadow readback retains exact target RGB. Certified optical-v1 GLB SHA256 bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47. The recorded spawn segment crosses an exit before its endpoint."
+}

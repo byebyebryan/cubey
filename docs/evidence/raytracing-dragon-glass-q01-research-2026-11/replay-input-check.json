@@ -1,0 +1,32 @@
+{
+  "source": "projects/raytracing/shaders/material_workshop.glsl, rtHash/rtStratified dimension 0",
+  "pixel": [
+    908,
+    344
+  ],
+  "logical_extent": [
+    1920,
+    1080
+  ],
+  "seed": 7,
+  "zero_based_sample": 1335,
+  "linear_pixel": 661388,
+  "random_key": 3943738118,
+  "batch": 20,
+  "within": 55,
+  "dimension_0_key": 914582703,
+  "cell": 36,
+  "jitter_u24": [
+    2670141,
+    9620259
+  ],
+  "cpu_float32_subpixel": [
+    0.5198941230773926,
+    0.57167649269104
+  ],
+  "cpu_float32_uv": [
+    0.4731874465942383,
+    0.31904786825180054
+  ],
+  "scope": "Unsigned integer arithmetic transcribed from current shader; explicit CPU float32 rounding for expected primary jitter. Not a GPU replay, camera ray, failure trace, or verified GPU float-bit match."
+}

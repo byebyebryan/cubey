@@ -1,0 +1,231 @@
+{
+  "checked_at_utc": "2026-11-15T08:02:00.527847+00:00",
+  "scope": "Private appearance comparison, not optical/default/native-motion qualification",
+  "report_pairs": 5,
+  "captures": [
+    {
+      "name": "canonical-s19-geometric.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 220,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    },
+    {
+      "name": "canonical-s19-smooth.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 1,
+        "4": 0,
+        "8": 207,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": false
+    },
+    {
+      "name": "canonical-s43-geometric.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 217,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    },
+    {
+      "name": "canonical-s43-smooth.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 249,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    },
+    {
+      "name": "elevated-s19-geometric.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 315,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    },
+    {
+      "name": "elevated-s19-smooth.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 323,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    },
+    {
+      "name": "grazing-s19-geometric.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 240,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    },
+    {
+      "name": "grazing-s19-smooth.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 1,
+        "4": 0,
+        "8": 230,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": false
+    },
+    {
+      "name": "isolated-s19-geometric.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 102,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    },
+    {
+      "name": "isolated-s19-smooth.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 1,
+        "4": 0,
+        "8": 105,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": false
+    },
+    {
+      "name": "pilot-geometric.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 1,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    },
+    {
+      "name": "pilot-ordinary.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 1,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    },
+    {
+      "name": "pilot-smooth.receipt.json",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "transport_accepted": true
+    }
+  ],
+  "ordinary_binary_and_shaders_unchanged": true,
+  "preexisting_files_checked": 4078,
+  "only_preexisting_files_changed": [
+    "docs/notes/README.md",
+    "docs/notes/raytracing-dragon-glass-q1-results.md",
+    "docs/notes/raytracing-dragon-glass-quality-plan.md",
+    "projects/raytracing/README.md"
+  ],
+  "accepted_assets_materials_presets_unchanged": true,
+  "separate_primary_worktree_preserved": true,
+  "paired_identities_verified": true,
+  "checks": [
+    {
+      "command": [
+        "rtk",
+        "proxy",
+        "uvx",
+        "ruff",
+        "check",
+        "projects/raytracing/tools/compare_dragon_normals.py",
+        "docs/evidence/raytracing-dragon-glass-normal-looks-2026-11/make_report.py"
+      ],
+      "exit_code": 0,
+      "log": "check-0.log"
+    },
+    {
+      "command": [
+        "rtk",
+        "proxy",
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "log": "check-1.log"
+    },
+    {
+      "command": [
+        "rtk",
+        "proxy",
+        "ctest",
+        "--test-dir",
+        "build/dev",
+        "-R",
+        "^documentation_",
+        "--output-on-failure",
+        "-j1"
+      ],
+      "exit_code": 0,
+      "log": "check-2.log"
+    }
+  ],
+  "commit": false,
+  "push": false,
+  "public_site_update": false
+}

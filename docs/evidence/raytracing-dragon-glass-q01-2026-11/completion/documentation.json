@@ -1,0 +1,13 @@
+{
+  "command": [
+    "ctest",
+    "--test-dir",
+    "build/dev",
+    "-R",
+    "^documentation_",
+    "--output-on-failure",
+    "-j4"
+  ],
+  "exit": 0,
+  "tests": 4
+}

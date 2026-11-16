@@ -1,0 +1,871 @@
+{
+  "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+  "samples": 256,
+  "subject_pixels": 2879,
+  "budget_comparison": {
+    "24": {
+      "subject_hdr_rmse": 0.0006137597374618053,
+      "subject_mean_discarded_weight": 0.00039928220212459564,
+      "mean_queries": 3.0411171913146973,
+      "maximum_depth": 24.0
+    },
+    "64": {
+      "subject_hdr_rmse": 3.1142376428761054e-06,
+      "subject_mean_discarded_weight": 6.822434528430676e-08,
+      "mean_queries": 3.0538322925567627,
+      "maximum_depth": 64.0
+    },
+    "128": {
+      "subject_hdr_rmse": 1.7926424233927207e-10,
+      "subject_mean_discarded_weight": 0.0,
+      "mean_queries": 3.0538389682769775,
+      "maximum_depth": 91.0
+    },
+    "256": {
+      "subject_hdr_rmse": 0.0,
+      "subject_mean_discarded_weight": 0.0,
+      "mean_queries": 3.0538389682769775,
+      "maximum_depth": 91.0
+    }
+  },
+  "preset_budget": {
+    "max-events": 128,
+    "max-path-rays": 1024,
+    "max-total-rays": 4096
+  },
+  "preset_subject_hdr_rmse_to_deep": 0.0,
+  "status_scope": "OR over all completed primary samples per pixel; not last sample",
+  "calls": [
+    {
+      "name": "preset-default",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/preset-default.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/preset-default.json",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/preset-default.bin"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 97621032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "depth-24",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-24.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-24.json",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-24.bin",
+        "--max-events",
+        "24",
+        "--max-path-rays",
+        "192",
+        "--max-total-rays",
+        "768"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 2821,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "shallow diagnostic",
+      "budget": {
+        "max-events": 24,
+        "max-path-rays": 192,
+        "max-total-rays": 768
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 97621032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "depth-64",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-64.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-64.json",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-64.bin",
+        "--max-events",
+        "64",
+        "--max-path-rays",
+        "512",
+        "--max-total-rays",
+        "2048"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 3,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "shallow diagnostic",
+      "budget": {
+        "max-events": 64,
+        "max-path-rays": 512,
+        "max-total-rays": 2048
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 97621032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "depth-128",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-128.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-128.json",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-128.bin",
+        "--max-events",
+        "128",
+        "--max-path-rays",
+        "1024",
+        "--max-total-rays",
+        "4096"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 97621032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "depth-256",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-256.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-256.json",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/depth-256.bin",
+        "--max-events",
+        "256",
+        "--max-path-rays",
+        "2048",
+        "--max-total-rays",
+        "8192"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 256,
+        "max-path-rays": 2048,
+        "max-total-rays": 8192
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 97621032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "hidden",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/hidden.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/hidden.json",
+        "--hdr-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/hidden.bin",
+        "--hide-dragon"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 93013032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "index-matched",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/index-matched.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/index-matched.json",
+        "--hdr-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/index-matched.bin",
+        "--recipe-input",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/index-matched-glass.json"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 93013032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "neutral",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/neutral.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/neutral.json",
+        "--hdr-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/neutral.bin",
+        "--recipe-input",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/neutral-glass.json"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 93013032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "tinted",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/tinted.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/tinted.json",
+        "--hdr-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/tinted.bin"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 93013032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "bronze",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/bronze.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/bronze.json",
+        "--hdr-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/bronze.bin",
+        "--material",
+        "bronze"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 2,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 93013032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "grazing",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/grazing.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/grazing.json",
+        "--hdr-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/grazing.bin",
+        "--yaw",
+        "1.35",
+        "--pitch",
+        ".1"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 93013032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "thin-features",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/thin-features.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/thin-features.json",
+        "--hdr-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/thin-features.bin",
+        "--yaw",
+        "-.55",
+        "--pitch",
+        ".5",
+        "--distance",
+        "1.3"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 93013032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "marble-view",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "256",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/marble-view.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/marble-view.json",
+        "--hdr-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/marble-view.bin",
+        "--pitch",
+        ".65"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 93013032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "marble-subject",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "16",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/marble-subject.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/marble-subject.json",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/marble-subject.bin",
+        "--material",
+        "marble"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 2,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 97621032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "marble-edited",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "16",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/marble-edited.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/marble-edited.json",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/marble-edited.bin",
+        "--material",
+        "marble",
+        "--material-roughness",
+        ".1"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 97621032,
+      "peak_requested_bytes": 104720200
+    },
+    {
+      "name": "save-effective",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "160",
+        "--height",
+        "120",
+        "--samples",
+        "32",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/save-effective.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/save-effective.json",
+        "--hdr-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/save-effective.bin",
+        "--recipe-input",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/neutral-glass.json",
+        "--save-config",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/saved-view.json"
+      ],
+      "validation_clean": true,
+      "finite_hdr": true,
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 0,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+      "transport_policy": "accepted view",
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "edge_adjacency_bytes": 13928928,
+      "resident_requested_bytes": 93013032,
+      "peak_requested_bytes": 104720200
+    }
+  ],
+  "passed": true,
+  "index_matched_hdr_rmse": 0.00039802948595024645,
+  "bending_subject_hdr_rmse": 2.4956953525543213,
+  "tint_subject_hdr_rmse": 1.166619062423706,
+  "base_recipe_pixels_checked": 649,
+  "rejected": [
+    {
+      "arguments": [
+        "--model",
+        "cache/raytracing/stanford-dragon/dragon.glb"
+      ],
+      "message": "raytracing: dragon optics requires the exact certified model; run prepare_optical_dragon.py"
+    },
+    {
+      "arguments": [
+        "--model",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/tampered-metadata.glb"
+      ],
+      "message": "raytracing: dragon optics requires the exact certified model; run prepare_optical_dragon.py"
+    },
+    {
+      "arguments": [
+        "--model",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/continuation-01/final-optical/tampered-position.glb"
+      ],
+      "message": "raytracing: dragon optics requires the exact certified model; run prepare_optical_dragon.py"
+    },
+    {
+      "arguments": [
+        "--material",
+        "frosted-glass"
+      ],
+      "message": "raytracing: unsupported material for this dragon presentation"
+    },
+    {
+      "arguments": [
+        "--reflection-source",
+        "environment"
+      ],
+      "message": "raytracing: dragon optics requires full scene reflection and transmission"
+    },
+    {
+      "arguments": [
+        "--distance",
+        ".1"
+      ],
+      "message": "raytracing: camera overlaps the conservative bounds of a glass body"
+    },
+    {
+      "arguments": [
+        "--dragon-support",
+        "none"
+      ],
+      "message": "raytracing: sampled dragon requires its marble slab, shared atmosphere and original scale"
+    }
+  ],
+  "saved_view_recipe_exact_roundtrip": true,
+  "source_material_files_unchanged": true
+}

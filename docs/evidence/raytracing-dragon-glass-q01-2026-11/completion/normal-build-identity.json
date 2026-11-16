@@ -1,0 +1,62 @@
+{
+  "shader_hashes_match": {
+    "trace.rgen.spv": true,
+    "primary.rchit.spv": true,
+    "primary.rmiss.spv": true,
+    "shadow.rmiss.spv": true,
+    "forward_pbr_post.vert.spv": true,
+    "forward_pbr_post.frag.spv": true,
+    "atmosphere.vert.spv": true,
+    "atmosphere.frag.spv": true,
+    "atmosphere_reflection_prefilter.frag.spv": true
+  },
+  "runtime_source_matches_frozen_candidate": {
+    "main.cpp": true,
+    "raytracing_layout.h": true,
+    "raytracing_scene.cpp": true,
+    "raytracing_device_tests.cpp": true,
+    "raytracing_environment.h": true,
+    "raytracing_material_reference.cpp": true,
+    "raytracing_material_geometry.h": true,
+    "raytracing_presentation.h": true,
+    "raytracing_dragon_support.h": true,
+    "raytracing_optical_scene.cpp": true,
+    "raytracing_dragon_support.cpp": true,
+    "raytracing_scene.h": true,
+    "raytracing_materials.h": true,
+    "raytracing_environment.cpp": true,
+    "raytracing_config.h": true,
+    "raytracing_material_geometry.cpp": true,
+    "raytracing_materials.cpp": true,
+    "raytracing_optical_asset.cpp": true,
+    "raytracing_optical_asset.h": true,
+    "raytracing_tests.cpp": true,
+    "raytracing_app.cpp": true,
+    "raytracing_trace_space.h": true,
+    "raytracing_renderer.h": true,
+    "raytracing_renderer.cpp": true,
+    "shaders/rt_common.glsl": true,
+    "shaders/primary.rchit": true,
+    "shaders/primary.rmiss": true,
+    "shaders/shadow.rmiss": true,
+    "shaders/trace.rgen": true,
+    "shaders/legacy_trace.glsl": true,
+    "shaders/optics.glsl": true,
+    "shaders/material_bsdf.glsl": true,
+    "shaders/material_workshop.glsl": true,
+    "shaders/material_dielectric.glsl": true,
+    "shaders/nvidia_self_intersection.glsl": true,
+    "shaders/ray_journal.glsl": true
+  },
+  "normal_binary_sha256": "f9aa776613af21d534a09d0f1886ff786f00d623767d53b1533a0d39af5661c2",
+  "normal_diagnostics_disabled": {
+    "query_bytes": 64,
+    "journal_metric_present": false,
+    "trace_world_origin": [
+      0.0,
+      0.3534899950027466,
+      0.0
+    ],
+    "requested_bytes": 142011496
+  }
+}

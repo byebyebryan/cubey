@@ -1,0 +1,1778 @@
+{
+  "baseline": "10328ef2dff12bd26b6ff20a589c47dde5e8eabc",
+  "measurement_loop_complete": true,
+  "quality_gate_passed": false,
+  "hold": "Reproducible full-HD radiance-path medium failure; no Q1-Q3 promotion",
+  "pilot_hdr_captures": 18,
+  "pilot_primary_label_captures": 3,
+  "lighting_ablation_hdr_captures": 18,
+  "extended_reference_hdr_captures": 2,
+  "pilot_budget_captures": 6,
+  "fullhd_ladder": {
+    "clean_samples": [
+      32,
+      128,
+      512
+    ],
+    "first_failed_capture_samples": 2048,
+    "independent_reference_suite_completed": false
+  },
+  "failure": {
+    "pixel": [
+      908,
+      344
+    ],
+    "first_failing_sample_count": 1336,
+    "last_clean_sample_count": 1335,
+    "zero_based_failing_sample": 1335,
+    "reproduced_byte_exact": true,
+    "search": [
+      {
+        "samples": 1280,
+        "flags": 0
+      },
+      {
+        "samples": 1664,
+        "flags": 16
+      },
+      {
+        "samples": 1472,
+        "flags": 16
+      },
+      {
+        "samples": 1376,
+        "flags": 16
+      },
+      {
+        "samples": 1328,
+        "flags": 0
+      },
+      {
+        "samples": 1352,
+        "flags": 16
+      },
+      {
+        "samples": 1340,
+        "flags": 16
+      },
+      {
+        "samples": 1334,
+        "flags": 0
+      },
+      {
+        "samples": 1337,
+        "flags": 16
+      },
+      {
+        "samples": 1335,
+        "flags": 0
+      },
+      {
+        "samples": 1336,
+        "flags": 16
+      }
+    ],
+    "deep_budget_flags": 16,
+    "no_shadows_flags": 16,
+    "optical_policy_changed": false,
+    "scope": "Full-HD seed-7 production-policy diagnostic. Failures are retained, never accepted as quality references."
+  },
+  "canonical_convergence": {
+    "32": {
+      "hdr": {
+        "pixels": 53862,
+        "rmse": 4.53003382435339,
+        "reference_pair_rmse": 0.4582761012531304,
+        "reference_mean_noise_estimate": 0.2291380506265652,
+        "candidate_noise_estimate": 4.524234985446807,
+        "reference_rms": 2.3337267713900727,
+        "absolute_channel_error_p95": 0.04793844744563103,
+        "absolute_channel_error_p99": 0.11023363061249179,
+        "absolute_channel_error_p999": 7.914100473226181,
+        "maximum_absolute_channel_error": 613.2348077744246
+      },
+      "display_rgb8": {
+        "pixels": 53862,
+        "rmse": 7.482885344693342,
+        "reference_pair_rmse": 6.167002601124145,
+        "reference_mean_noise_estimate": 3.0835013005620726,
+        "candidate_noise_estimate": 6.818034380322411,
+        "reference_rms": 175.07538821688647,
+        "absolute_channel_error_p95": 12.5,
+        "absolute_channel_error_p99": 24.5,
+        "absolute_channel_error_p999": 84.70750000000407,
+        "maximum_absolute_channel_error": 189.5
+      }
+    },
+    "128": {
+      "hdr": {
+        "pixels": 53862,
+        "rmse": 1.6990716064996627,
+        "reference_pair_rmse": 0.4582761012531304,
+        "reference_mean_noise_estimate": 0.2291380506265652,
+        "candidate_noise_estimate": 1.683549844159181,
+        "reference_rms": 2.3337267713900727,
+        "absolute_channel_error_p95": 0.021426795050501823,
+        "absolute_channel_error_p99": 0.07065572179853878,
+        "absolute_channel_error_p999": 7.9197694626462445,
+        "maximum_absolute_channel_error": 183.1131905913353
+      },
+      "display_rgb8": {
+        "pixels": 53862,
+        "rmse": 5.885486451894904,
+        "reference_pair_rmse": 6.167002601124145,
+        "reference_mean_noise_estimate": 3.0835013005620726,
+        "candidate_noise_estimate": 5.013079941998778,
+        "reference_rms": 175.07538821688647,
+        "absolute_channel_error_p95": 6.0,
+        "absolute_channel_error_p99": 13.5,
+        "absolute_channel_error_p999": 82.5,
+        "maximum_absolute_channel_error": 182.5
+      }
+    },
+    "512": {
+      "hdr": {
+        "pixels": 53862,
+        "rmse": 0.9468309866229693,
+        "reference_pair_rmse": 0.4582761012531304,
+        "reference_mean_noise_estimate": 0.2291380506265652,
+        "candidate_noise_estimate": 0.9186863833672964,
+        "reference_rms": 2.3337267713900727,
+        "absolute_channel_error_p95": 0.011067492887377739,
+        "absolute_channel_error_p99": 0.08390161395072929,
+        "absolute_channel_error_p999": 8.024530820698066,
+        "maximum_absolute_channel_error": 77.89981696009636
+      },
+      "display_rgb8": {
+        "pixels": 53862,
+        "rmse": 5.351793376951762,
+        "reference_pair_rmse": 6.167002601124145,
+        "reference_mean_noise_estimate": 3.0835013005620726,
+        "candidate_noise_estimate": 4.3742098805403415,
+        "reference_rms": 175.07538821688647,
+        "absolute_channel_error_p95": 3.0,
+        "absolute_channel_error_p99": 8.5,
+        "absolute_channel_error_p999": 80.0,
+        "maximum_absolute_channel_error": 182.5
+      }
+    },
+    "2048": {
+      "hdr": {
+        "pixels": 53862,
+        "rmse": 0.4950551706001325,
+        "reference_pair_rmse": 0.4582761012531304,
+        "reference_mean_noise_estimate": 0.2291380506265652,
+        "candidate_noise_estimate": 0.4388341095368316,
+        "reference_rms": 2.3337267713900727,
+        "absolute_channel_error_p95": 0.006126172840595245,
+        "absolute_channel_error_p99": 0.11052835471928088,
+        "absolute_channel_error_p999": 5.850153630115274,
+        "maximum_absolute_channel_error": 70.4273681640625
+      },
+      "display_rgb8": {
+        "pixels": 53862,
+        "rmse": 5.277906435089012,
+        "reference_pair_rmse": 6.167002601124145,
+        "reference_mean_noise_estimate": 3.0835013005620726,
+        "candidate_noise_estimate": 4.283493441921675,
+        "reference_rms": 175.07538821688647,
+        "absolute_channel_error_p95": 2.0,
+        "absolute_channel_error_p99": 10.0,
+        "absolute_channel_error_p999": 80.5,
+        "maximum_absolute_channel_error": 180.0
+      }
+    }
+  },
+  "canonical_8192_reference": {
+    "pixels": 53862,
+    "rmse": 0.4448292082563324,
+    "reference_pair_rmse": 0.3494188952853856,
+    "reference_mean_noise_estimate": 0.1747094476426928,
+    "candidate_noise_estimate": 0.40908389533485756,
+    "reference_rms": 2.303100290397489,
+    "absolute_channel_error_p95": 0.0061834827065467834,
+    "absolute_channel_error_p99": 0.13241514936089374,
+    "absolute_channel_error_p999": 5.710434697717454,
+    "maximum_absolute_channel_error": 60.56946563720703
+  },
+  "lighting": {
+    "canonical-combined": {
+      "pixels": 53862,
+      "rmse": 1.6795700630889712,
+      "reference_pair_rmse": 0.6718957092376178,
+      "reference_mean_noise_estimate": 0.3359478546188089,
+      "candidate_noise_estimate": 1.6456289483968463,
+      "reference_rms": 2.306579154264329,
+      "absolute_channel_error_p95": 0.02101023867726326,
+      "absolute_channel_error_p99": 0.04133288189768787,
+      "absolute_channel_error_p999": 9.24503812901697,
+      "maximum_absolute_channel_error": 159.7419147491455
+    },
+    "canonical-sky": {
+      "pixels": 53862,
+      "rmse": 0.008935399695220768,
+      "reference_pair_rmse": 0.0031455818585206176,
+      "reference_mean_noise_estimate": 0.0015727909292603088,
+      "candidate_noise_estimate": 0.008795890881894107,
+      "reference_rms": 0.3761430420895404,
+      "absolute_channel_error_p95": 0.020193742588162422,
+      "absolute_channel_error_p99": 0.03157287091016764,
+      "absolute_channel_error_p999": 0.04737170025706307,
+      "maximum_absolute_channel_error": 0.08198313415050507
+    },
+    "canonical-sun": {
+      "pixels": 53862,
+      "rmse": 1.6796059236754666,
+      "reference_pair_rmse": 0.6718418168260998,
+      "reference_mean_noise_estimate": 0.3359209084130499,
+      "candidate_noise_estimate": 1.645671049188345,
+      "reference_rms": 2.267443056197587,
+      "absolute_channel_error_p95": 0.0034931072732433677,
+      "absolute_channel_error_p99": 0.017531747277825922,
+      "absolute_channel_error_p999": 9.271372035750694,
+      "maximum_absolute_channel_error": 159.74907302856445
+    },
+    "elevated-combined": {
+      "pixels": 53194,
+      "rmse": 3.106970100958173,
+      "reference_pair_rmse": 0.7698502073123996,
+      "reference_mean_noise_estimate": 0.3849251036561998,
+      "candidate_noise_estimate": 3.083033550388854,
+      "reference_rms": 3.312274267169067,
+      "absolute_channel_error_p95": 0.021135995537042606,
+      "absolute_channel_error_p99": 0.0518561653792862,
+      "absolute_channel_error_p999": 11.185161723043038,
+      "maximum_absolute_channel_error": 505.81524658203125
+    },
+    "elevated-sky": {
+      "pixels": 53194,
+      "rmse": 0.008888948972816486,
+      "reference_pair_rmse": 0.003085066504569654,
+      "reference_mean_noise_estimate": 0.001542533252284827,
+      "candidate_noise_estimate": 0.008754085046818476,
+      "reference_rms": 0.2883684699801084,
+      "absolute_channel_error_p95": 0.019951219856739033,
+      "absolute_channel_error_p99": 0.03124071642756462,
+      "absolute_channel_error_p999": 0.04732951420545642,
+      "maximum_absolute_channel_error": 0.07766132056713104
+    },
+    "elevated-sun": {
+      "pixels": 53194,
+      "rmse": 3.1068228849160526,
+      "reference_pair_rmse": 0.7698184438383986,
+      "reference_mean_noise_estimate": 0.3849092219191993,
+      "candidate_noise_estimate": 3.0828871742442443,
+      "reference_rms": 3.292486351364929,
+      "absolute_channel_error_p95": 0.0039029786828905285,
+      "absolute_channel_error_p99": 0.03444816185161481,
+      "absolute_channel_error_p999": 11.187759827078395,
+      "maximum_absolute_channel_error": 505.8008575439453
+    }
+  },
+  "native": {
+    "native-final-540": {
+      "recording": false,
+      "validation": false,
+      "width": 960,
+      "height": 540,
+      "phases": {
+        "orbit-outward": {
+          "groups": {
+            "reset": {
+              "frames": 120,
+              "host_delta_ms": {
+                "count": 120,
+                "p50": 14.8069555,
+                "p95": 16.134478549999997,
+                "maximum": 17.130814
+              },
+              "cpu_record_ms": {
+                "count": 120,
+                "p50": 0.1032605,
+                "p95": 0.134759,
+                "maximum": 0.193181
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 120,
+                  "p50": 14.80335,
+                  "p95": 16.070097949999997,
+                  "maximum": 17.087534
+                },
+                "host.acquire_image": {
+                  "count": 120,
+                  "p50": 0.00104,
+                  "p95": 0.0017915,
+                  "maximum": 0.00225
+                },
+                "host.queue_submit": {
+                  "count": 120,
+                  "p50": 0.007959999999999998,
+                  "p95": 0.012710999999999998,
+                  "maximum": 0.01607
+                },
+                "host.present": {
+                  "count": 120,
+                  "p50": 14.206752999999999,
+                  "p95": 15.54599655,
+                  "maximum": 16.608322
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 120,
+                "p50": 4.029999999999999,
+                "p95": 5.0579728,
+                "maximum": 5.91728
+              },
+              "sample_counts": {
+                "count": 120,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 38,
+              "host_delta_ms": {
+                "count": 38,
+                "p50": 14.466778999999999,
+                "p95": 16.04808815,
+                "maximum": 17.093974000000003
+              },
+              "cpu_record_ms": {
+                "count": 38,
+                "p50": 0.090951,
+                "p95": 0.1222885,
+                "maximum": 0.145611
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 38,
+                  "p50": 14.4947595,
+                  "p95": 16.12470065,
+                  "maximum": 16.925243
+                },
+                "host.acquire_image": {
+                  "count": 38,
+                  "p50": 0.000985,
+                  "p95": 0.0016024999999999995,
+                  "maximum": 0.00195
+                },
+                "host.queue_submit": {
+                  "count": 38,
+                  "p50": 0.00724,
+                  "p95": 0.0118655,
+                  "maximum": 0.01236
+                },
+                "host.present": {
+                  "count": 38,
+                  "p50": 13.952002,
+                  "p95": 15.65835965,
+                  "maximum": 16.445231
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 38,
+                "p50": 3.9064639999999997,
+                "p95": 5.2120592,
+                "maximum": 5.9453439999999995
+              },
+              "sample_counts": {
+                "count": 38,
+                "p50": 6.5,
+                "p95": 182.15,
+                "maximum": 184.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 120,
+            "samples_after": {
+              "count": 120,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": 0.44999998807907104,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499985218048096,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-outward": {
+          "groups": {
+            "accumulating": {
+              "frames": 498,
+              "host_delta_ms": {
+                "count": 498,
+                "p50": 13.537651,
+                "p95": 15.311726,
+                "maximum": 17.136934
+              },
+              "cpu_record_ms": {
+                "count": 498,
+                "p50": 0.069345,
+                "p95": 0.13036884999999998,
+                "maximum": 0.222031
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 498,
+                  "p50": 13.5417205,
+                  "p95": 15.278585999999999,
+                  "maximum": 16.971563
+                },
+                "host.acquire_image": {
+                  "count": 498,
+                  "p50": 0.00053,
+                  "p95": 0.0016429999999999995,
+                  "maximum": 0.00446
+                },
+                "host.queue_submit": {
+                  "count": 498,
+                  "p50": 0.00575,
+                  "p95": 0.01139,
+                  "maximum": 0.02824
+                },
+                "host.present": {
+                  "count": 498,
+                  "p50": 13.115574,
+                  "p95": 14.641258,
+                  "maximum": 16.352881
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 498,
+                "p50": 3.224736,
+                "p95": 4.1157455999999994,
+                "maximum": 4.83184
+              },
+              "sample_counts": {
+                "count": 498,
+                "p50": 263.5,
+                "p95": 487.15,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 820,
+              "host_delta_ms": {
+                "count": 820,
+                "p50": 10.0297875,
+                "p95": 10.801897449999998,
+                "maximum": 12.664036999999999
+              },
+              "cpu_record_ms": {
+                "count": 820,
+                "p50": 0.0463,
+                "p95": 0.08556549999999996,
+                "maximum": 0.14791
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 820,
+                  "p50": 10.027473,
+                  "p95": 10.76594195,
+                  "maximum": 12.500907
+                },
+                "host.acquire_image": {
+                  "count": 820,
+                  "p50": 0.00037,
+                  "p95": 0.0009119999999999982,
+                  "maximum": 0.00551
+                },
+                "host.queue_submit": {
+                  "count": 820,
+                  "p50": 0.00481,
+                  "p95": 0.008241499999999999,
+                  "maximum": 0.01858
+                },
+                "host.present": {
+                  "count": 820,
+                  "p50": 9.6888315,
+                  "p95": 10.299836999999998,
+                  "maximum": 11.874014
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 820,
+                "p50": 0.029248,
+                "p95": 0.0494096,
+                "maximum": 0.088416
+              },
+              "sample_counts": {
+                "count": 820,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 432.129576,
+            "128": 1815.563929,
+            "512": 6880.523646
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": -1.5499985218048096,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499985218048096,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "orbit-return": {
+          "groups": {
+            "reset": {
+              "frames": 115,
+              "host_delta_ms": {
+                "count": 115,
+                "p50": 12.890409,
+                "p95": 19.132163099999957,
+                "maximum": 32.665112
+              },
+              "cpu_record_ms": {
+                "count": 115,
+                "p50": 0.05263,
+                "p95": 0.0848553,
+                "maximum": 0.108921
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 115,
+                  "p50": 12.879808,
+                  "p95": 18.885971399999956,
+                  "maximum": 32.587482
+                },
+                "host.acquire_image": {
+                  "count": 115,
+                  "p50": 0.00042,
+                  "p95": 0.00094,
+                  "maximum": 0.00144
+                },
+                "host.queue_submit": {
+                  "count": 115,
+                  "p50": 0.00539,
+                  "p95": 0.008655,
+                  "maximum": 0.0141
+                },
+                "host.present": {
+                  "count": 115,
+                  "p50": 12.516747,
+                  "p95": 18.462121399999955,
+                  "maximum": 32.294081
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 115,
+                "p50": 2.821088,
+                "p95": 8.758543999999958,
+                "maximum": 22.37264
+              },
+              "sample_counts": {
+                "count": 115,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 44,
+              "host_delta_ms": {
+                "count": 44,
+                "p50": 13.044179,
+                "p95": 14.203195000000001,
+                "maximum": 14.449844
+              },
+              "cpu_record_ms": {
+                "count": 44,
+                "p50": 0.052915000000000004,
+                "p95": 0.0784745,
+                "maximum": 0.10303
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 44,
+                  "p50": 13.129614,
+                  "p95": 14.3662465,
+                  "maximum": 14.708505
+                },
+                "host.acquire_image": {
+                  "count": 44,
+                  "p50": 0.0004,
+                  "p95": 0.0011610000000000001,
+                  "maximum": 0.00153
+                },
+                "host.queue_submit": {
+                  "count": 44,
+                  "p50": 0.0053355,
+                  "p95": 0.008653000000000001,
+                  "maximum": 0.01195
+                },
+                "host.present": {
+                  "count": 44,
+                  "p50": 12.7076425,
+                  "p95": 13.868556,
+                  "maximum": 14.125323
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 44,
+                "p50": 2.904336,
+                "p95": 4.07336,
+                "maximum": 4.112416
+              },
+              "sample_counts": {
+                "count": 44,
+                "p50": 2.0,
+                "p95": 12.850000000000001,
+                "maximum": 15.0
+              }
+            },
+            "settled": {
+              "frames": 16,
+              "host_delta_ms": {
+                "count": 16,
+                "p50": 10.440394000000001,
+                "p95": 10.915196,
+                "maximum": 11.044331
+              },
+              "cpu_record_ms": {
+                "count": 16,
+                "p50": 0.050835500000000006,
+                "p95": 0.076101,
+                "maximum": 0.076461
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 16,
+                  "p50": 10.410799,
+                  "p95": 10.886713499999999,
+                  "maximum": 10.932201
+                },
+                "host.acquire_image": {
+                  "count": 16,
+                  "p50": 0.00039,
+                  "p95": 0.000755,
+                  "maximum": 0.00077
+                },
+                "host.queue_submit": {
+                  "count": 16,
+                  "p50": 0.00568,
+                  "p95": 0.00795,
+                  "maximum": 0.00834
+                },
+                "host.present": {
+                  "count": 16,
+                  "p50": 10.040947500000001,
+                  "p95": 10.50347,
+                  "maximum": 10.61255
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 16,
+                "p50": 0.032816,
+                "p95": 0.122696,
+                "maximum": 0.23676799999999998
+              },
+              "sample_counts": {
+                "count": 16,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 115,
+            "samples_after": {
+              "count": 115,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": -1.5499985218048096,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": 0.4500000476837158,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-return": {
+          "groups": {
+            "accumulating": {
+              "frames": 497,
+              "host_delta_ms": {
+                "count": 497,
+                "p50": 13.220569,
+                "p95": 14.44171,
+                "maximum": 16.322551
+              },
+              "cpu_record_ms": {
+                "count": 497,
+                "p50": 0.05056,
+                "p95": 0.0859542,
+                "maximum": 0.136001
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 497,
+                  "p50": 13.240269,
+                  "p95": 14.428992,
+                  "maximum": 16.0762
+                },
+                "host.acquire_image": {
+                  "count": 497,
+                  "p50": 0.00042,
+                  "p95": 0.00099,
+                  "maximum": 0.0069
+                },
+                "host.queue_submit": {
+                  "count": 497,
+                  "p50": 0.00544,
+                  "p95": 0.00887,
+                  "maximum": 0.015761
+                },
+                "host.present": {
+                  "count": 497,
+                  "p50": 12.825768,
+                  "p95": 14.00234,
+                  "maximum": 15.655299
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 497,
+                "p50": 3.05056,
+                "p95": 4.1274239999999995,
+                "maximum": 4.625216
+              },
+              "sample_counts": {
+                "count": 497,
+                "p50": 264.0,
+                "p95": 487.2,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 813,
+              "host_delta_ms": {
+                "count": 813,
+                "p50": 10.139968,
+                "p95": 10.8323364,
+                "maximum": 13.896482
+              },
+              "cpu_record_ms": {
+                "count": 813,
+                "p50": 0.04613,
+                "p95": 0.084622,
+                "maximum": 0.668563
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 813,
+                  "p50": 10.140438,
+                  "p95": 10.794959,
+                  "maximum": 12.037255
+                },
+                "host.acquire_image": {
+                  "count": 813,
+                  "p50": 0.00038,
+                  "p95": 0.00098,
+                  "maximum": 0.01008
+                },
+                "host.queue_submit": {
+                  "count": 813,
+                  "p50": 0.005241,
+                  "p95": 0.009147999999999998,
+                  "maximum": 0.02053
+                },
+                "host.present": {
+                  "count": 813,
+                  "p50": 9.792787,
+                  "p95": 10.3304284,
+                  "maximum": 11.465103
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 813,
+                "p50": 0.028064,
+                "p95": 0.04369279999999999,
+                "maximum": 0.39289599999999997
+              },
+              "sample_counts": {
+                "count": 813,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 429.440298,
+            "128": 1731.941355,
+            "512": 6878.523722
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": 0.4500000476837158,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": 0.4500000476837158,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        }
+      },
+      "camera_rejections": 0,
+      "history_epochs": 236,
+      "as_builds": 3,
+      "resident_requested_bytes": 108840008,
+      "peak_requested_bytes": 108840008,
+      "scope": "Native Xvfb. Settle times end at CPU command recording; GPU execution/presentation follow. host.present is vkQueuePresentKHR CPU call duration, not display latency."
+    },
+    "native-final-1080": {
+      "recording": false,
+      "validation": false,
+      "width": 1920,
+      "height": 1080,
+      "phases": {
+        "orbit-outward": {
+          "groups": {
+            "reset": {
+              "frames": 42,
+              "host_delta_ms": {
+                "count": 42,
+                "p50": 50.176788,
+                "p95": 52.945985900000004,
+                "maximum": 54.490875
+              },
+              "cpu_record_ms": {
+                "count": 42,
+                "p50": 0.10743549999999999,
+                "p95": 0.14196944999999997,
+                "maximum": 0.16645
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 42,
+                  "p50": 50.140888000000004,
+                  "p95": 52.97588285,
+                  "maximum": 54.447905
+                },
+                "host.acquire_image": {
+                  "count": 42,
+                  "p50": 0.00156,
+                  "p95": 0.0021074999999999996,
+                  "maximum": 0.00333
+                },
+                "host.queue_submit": {
+                  "count": 42,
+                  "p50": 0.01139,
+                  "p95": 0.017651999999999998,
+                  "maximum": 0.776423
+                },
+                "host.present": {
+                  "count": 42,
+                  "p50": 49.3461395,
+                  "p95": 52.12448035,
+                  "maximum": 53.756141
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 42,
+                "p50": 9.709264,
+                "p95": 11.937889599999998,
+                "maximum": 12.156255999999999
+              },
+              "sample_counts": {
+                "count": 42,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 5,
+              "host_delta_ms": {
+                "count": 5,
+                "p50": 50.414949,
+                "p95": 52.4249664,
+                "maximum": 52.553857
+              },
+              "cpu_record_ms": {
+                "count": 5,
+                "p50": 0.08377,
+                "p95": 0.118814,
+                "maximum": 0.12367
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 5,
+                  "p50": 50.196918,
+                  "p95": 51.973788799999994,
+                  "maximum": 52.018435
+                },
+                "host.acquire_image": {
+                  "count": 5,
+                  "p50": 0.00122,
+                  "p95": 0.0015619999999999998,
+                  "maximum": 0.00162
+                },
+                "host.queue_submit": {
+                  "count": 5,
+                  "p50": 0.00968,
+                  "p95": 0.011404000000000001,
+                  "maximum": 0.01165
+                },
+                "host.present": {
+                  "count": 5,
+                  "p50": 49.570706,
+                  "p95": 51.1944958,
+                  "maximum": 51.247752
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 5,
+                "p50": 9.802016,
+                "p95": 11.5581184,
+                "maximum": 11.817984
+              },
+              "sample_counts": {
+                "count": 5,
+                "p50": 51.0,
+                "p95": 52.8,
+                "maximum": 53.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 42,
+            "samples_after": {
+              "count": 42,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": 0.44999998807907104,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-outward": {
+          "groups": {
+            "accumulating": {
+              "frames": 509,
+              "host_delta_ms": {
+                "count": 509,
+                "p50": 50.052848,
+                "p95": 53.684731,
+                "maximum": 60.128575
+              },
+              "cpu_record_ms": {
+                "count": 509,
+                "p50": 0.10384,
+                "p95": 0.13563459999999994,
+                "maximum": 1.179855
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 509,
+                  "p50": 50.041678,
+                  "p95": 53.75290719999998,
+                  "maximum": 60.153716
+                },
+                "host.acquire_image": {
+                  "count": 509,
+                  "p50": 0.00153,
+                  "p95": 0.0020859999999999993,
+                  "maximum": 0.073371
+                },
+                "host.queue_submit": {
+                  "count": 509,
+                  "p50": 0.01133,
+                  "p95": 0.015375999999999996,
+                  "maximum": 0.03401
+                },
+                "host.present": {
+                  "count": 509,
+                  "p50": 49.322006,
+                  "p95": 52.812194,
+                  "maximum": 59.287873
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 509,
+                "p50": 9.435456,
+                "p95": 11.754528,
+                "maximum": 13.070784
+              },
+              "sample_counts": {
+                "count": 509,
+                "p50": 258.0,
+                "p95": 486.59999999999997,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 110,
+              "host_delta_ms": {
+                "count": 110,
+                "p50": 40.042950000000005,
+                "p95": 41.60095105,
+                "maximum": 50.163398
+              },
+              "cpu_record_ms": {
+                "count": 110,
+                "p50": 0.10166049999999999,
+                "p95": 0.133377,
+                "maximum": 0.191781
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 110,
+                  "p50": 40.014925500000004,
+                  "p95": 41.56273845,
+                  "maximum": 44.285977
+                },
+                "host.acquire_image": {
+                  "count": 110,
+                  "p50": 0.00145,
+                  "p95": 0.0020349999999999995,
+                  "maximum": 0.00253
+                },
+                "host.queue_submit": {
+                  "count": 110,
+                  "p50": 0.00969,
+                  "p95": 0.014077,
+                  "maximum": 0.02093
+                },
+                "host.present": {
+                  "count": 110,
+                  "p50": 39.340293,
+                  "p95": 40.681484499999996,
+                  "maximum": 43.374843
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 110,
+                "p50": 0.125728,
+                "p95": 0.1376368,
+                "maximum": 0.14271999999999999
+              },
+              "sample_counts": {
+                "count": 110,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 1519.767761,
+            "128": 6338.681741,
+            "512": 25662.80256
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "orbit-return": {
+          "groups": {
+            "reset": {
+              "frames": 41,
+              "host_delta_ms": {
+                "count": 41,
+                "p50": 51.160962,
+                "p95": 54.049763,
+                "maximum": 55.292967999999995
+              },
+              "cpu_record_ms": {
+                "count": 41,
+                "p50": 0.103831,
+                "p95": 0.12753,
+                "maximum": 0.13301
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 41,
+                  "p50": 51.106513,
+                  "p95": 53.974133,
+                  "maximum": 55.150148
+                },
+                "host.acquire_image": {
+                  "count": 41,
+                  "p50": 0.00127,
+                  "p95": 0.00181,
+                  "maximum": 0.00203
+                },
+                "host.queue_submit": {
+                  "count": 41,
+                  "p50": 0.01057,
+                  "p95": 0.01701,
+                  "maximum": 0.16475
+                },
+                "host.present": {
+                  "count": 41,
+                  "p50": 50.51331,
+                  "p95": 53.26108,
+                  "maximum": 54.526475
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 41,
+                "p50": 11.28112,
+                "p95": 13.919903999999999,
+                "maximum": 15.059488
+              },
+              "sample_counts": {
+                "count": 41,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 2,
+              "host_delta_ms": {
+                "count": 2,
+                "p50": 49.829592500000004,
+                "p95": 50.817377150000006,
+                "maximum": 50.927131
+              },
+              "cpu_record_ms": {
+                "count": 2,
+                "p50": 0.1047155,
+                "p95": 0.11159645,
+                "maximum": 0.112361
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 2,
+                  "p50": 50.8941815,
+                  "p95": 50.970123949999994,
+                  "maximum": 50.978562
+                },
+                "host.acquire_image": {
+                  "count": 2,
+                  "p50": 0.00166,
+                  "p95": 0.0018310000000000002,
+                  "maximum": 0.00185
+                },
+                "host.queue_submit": {
+                  "count": 2,
+                  "p50": 0.012945000000000002,
+                  "p95": 0.0155235,
+                  "maximum": 0.01581
+                },
+                "host.present": {
+                  "count": 2,
+                  "p50": 50.014913,
+                  "p95": 50.0297135,
+                  "maximum": 50.031358
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 2,
+                "p50": 10.734639999999999,
+                "p95": 10.7887696,
+                "maximum": 10.794784
+              },
+              "sample_counts": {
+                "count": 2,
+                "p50": 2.5,
+                "p95": 2.95,
+                "maximum": 3.0
+              }
+            },
+            "settled": {
+              "frames": 4,
+              "host_delta_ms": {
+                "count": 4,
+                "p50": 39.660269,
+                "p95": 39.8476035,
+                "maximum": 39.86595
+              },
+              "cpu_record_ms": {
+                "count": 4,
+                "p50": 0.0926005,
+                "p95": 0.0977415,
+                "maximum": 0.09795
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 4,
+                  "p50": 39.658909,
+                  "p95": 39.7515555,
+                  "maximum": 39.755829
+                },
+                "host.acquire_image": {
+                  "count": 4,
+                  "p50": 0.0014650000000000002,
+                  "p95": 0.0017375000000000001,
+                  "maximum": 0.00176
+                },
+                "host.queue_submit": {
+                  "count": 4,
+                  "p50": 0.00869,
+                  "p95": 0.0109115,
+                  "maximum": 0.01124
+                },
+                "host.present": {
+                  "count": 4,
+                  "p50": 39.066027,
+                  "p95": 39.1854765,
+                  "maximum": 39.192837
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 4,
+                "p50": 0.131184,
+                "p95": 0.1372,
+                "maximum": 0.138016
+              },
+              "sample_counts": {
+                "count": 4,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 41,
+            "samples_after": {
+              "count": 41,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": 0.4499998986721039,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-return": {
+          "groups": {
+            "accumulating": {
+              "frames": 509,
+              "host_delta_ms": {
+                "count": 509,
+                "p50": 52.105786,
+                "p95": 56.202768,
+                "maximum": 60.384718
+              },
+              "cpu_record_ms": {
+                "count": 509,
+                "p50": 0.10484,
+                "p95": 0.13167799999999996,
+                "maximum": 0.164781
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 509,
+                  "p50": 52.097996,
+                  "p95": 56.1034956,
+                  "maximum": 60.194957
+                },
+                "host.acquire_image": {
+                  "count": 509,
+                  "p50": 0.00142,
+                  "p95": 0.00215,
+                  "maximum": 0.01196
+                },
+                "host.queue_submit": {
+                  "count": 509,
+                  "p50": 0.0106,
+                  "p95": 0.014957999999999999,
+                  "maximum": 0.02401
+                },
+                "host.present": {
+                  "count": 509,
+                  "p50": 51.432844,
+                  "p95": 55.387638599999995,
+                  "maximum": 59.419864
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 509,
+                "p50": 10.837856,
+                "p95": 13.732415999999997,
+                "maximum": 16.357088
+              },
+              "sample_counts": {
+                "count": 509,
+                "p50": 258.0,
+                "p95": 486.59999999999997,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 79,
+              "host_delta_ms": {
+                "count": 79,
+                "p50": 42.254059,
+                "p95": 45.0066504,
+                "maximum": 54.927897
+              },
+              "cpu_record_ms": {
+                "count": 79,
+                "p50": 0.10977,
+                "p95": 0.13615389999999997,
+                "maximum": 0.166001
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 79,
+                  "p50": 42.232148,
+                  "p95": 44.9577471,
+                  "maximum": 48.248601
+                },
+                "host.acquire_image": {
+                  "count": 79,
+                  "p50": 0.0016,
+                  "p95": 0.0021669999999999997,
+                  "maximum": 0.01426
+                },
+                "host.queue_submit": {
+                  "count": 79,
+                  "p50": 0.01173,
+                  "p95": 0.016134099999999988,
+                  "maximum": 0.0215
+                },
+                "host.present": {
+                  "count": 79,
+                  "p50": 41.467697,
+                  "p95": 43.99933719999999,
+                  "maximum": 47.442208
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 79,
+                "p50": 0.126464,
+                "p95": 0.13892480000000001,
+                "maximum": 0.146816
+              },
+              "sample_counts": {
+                "count": 79,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 1567.959274,
+            "128": 6535.865754,
+            "512": 26733.985748
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": 0.4499998986721039,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": 0.4499998986721039,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        }
+      },
+      "camera_rejections": 0,
+      "history_epochs": 84,
+      "as_builds": 3,
+      "resident_requested_bytes": 158606408,
+      "peak_requested_bytes": 158606408,
+      "scope": "Native Xvfb. Settle times end at CPU command recording; GPU execution/presentation follow. host.present is vkQueuePresentKHR CPU call duration, not display latency."
+    },
+    "native-recording": {
+      "recording": true,
+      "validation": true,
+      "width": 1920,
+      "height": 1080,
+      "phases": {
+        "orbit-outward": {
+          "groups": {
+            "reset": {
+              "frames": 40,
+              "host_delta_ms": {
+                "count": 40,
+                "p50": 50.604195000000004,
+                "p95": 52.206346499999995,
+                "maximum": 54.725046
+              },
+              "cpu_record_ms": {
+                "count": 40,
+                "p50": 0.361391,
+                "p95": 0.4443069499999999,
+                "maximum": 0.509632
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 40,
+                  "p50": 50.6234605,
+                  "p95": 52.1588535,
+                  "maximum": 54.765476
+                },
+                "host.acquire_image": {
+                  "count": 40,
+                  "p50": 0.0195705,
+                  "p95": 0.02618649999999999,
+                  "maximum": 0.03073
+                },
+                "host.queue_submit": {
+                  "count": 40,
+                  "p50": 0.06994,
+                  "p95": 0.10125404999999989,
+                  "maximum": 0.871503
+                },
+                "host.present": {
+                  "count": 40,
+                  "p50": 49.316291,
+                  "p95": 50.92163655,
+                  "maximum": 53.354011
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 40,
+                "p50": 8.723824,
+                "p95": 10.683089599999999,
+                "maximum": 12.291647999999999
+              },
+              "sample_counts": {
+                "count": 40,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 7,
+              "host_delta_ms": {
+                "count": 7,
+                "p50": 51.346903,
+                "p95": 54.8211334,
+                "maximum": 55.81828
+              },
+              "cpu_record_ms": {
+                "count": 7,
+                "p50": 0.331601,
+                "p95": 0.39424799999999993,
+                "maximum": 0.408981
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 7,
+                  "p50": 51.193153,
+                  "p95": 54.7201185,
+                  "maximum": 55.845741
+                },
+                "host.acquire_image": {
+                  "count": 7,
+                  "p50": 0.01945,
+                  "p95": 0.021466,
+                  "maximum": 0.02224
+                },
+                "host.queue_submit": {
+                  "count": 7,
+                  "p50": 0.071461,
+                  "p95": 0.074324,
+                  "maximum": 0.07457
+                },
+                "host.present": {
+                  "count": 7,
+                  "p50": 50.192519,
+                  "p95": 53.50039149999999,
+                  "maximum": 54.679306
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 7,
+                "p50": 9.95328,
+                "p95": 10.6174016,
+                "maximum": 10.662656
+              },
+              "sample_counts": {
+                "count": 7,
+                "p50": 51.0,
+                "p95": 53.7,
+                "maximum": 54.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 40,
+            "samples_after": {
+              "count": 40,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": 0.44999998807907104,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-outward": {
+          "groups": {
+            "accumulating": {
+              "frames": 508,
+              "host_delta_ms": {
+                "count": 508,
+                "p50": 51.476879,
+                "p95": 54.884088649999995,
+                "maximum": 60.113517
+              },
+              "cpu_record_ms": {
+                "count": 508,
+                "p50": 0.352641,
+                "p95": 0.4516949999999999,
+                "maximum": 0.701133
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 508,
+                  "p50": 51.491693999999995,
+                  "p95": 54.876553,
+                  "maximum": 60.099737
+                },
+                "host.acquire_image": {
+                  "count": 508,
+                  "p50": 0.019975,
+                  "p95": 0.028282999999999996,
+                  "maximum": 0.951664
+                },
+                "host.queue_submit": {
+                  "count": 508,
+                  "p50": 0.07194500000000001,
+                  "p95": 0.0932475,
+                  "maximum": 0.16005
+                },
+                "host.present": {
+                  "count": 508,
+                  "p50": 50.2338195,
+                  "p95": 53.4652795,
+                  "maximum": 58.730391
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 508,
+                "p50": 9.322864,
+                "p95": 11.654484799999999,
+                "maximum": 13.447999999999999
+              },
+              "sample_counts": {
+                "count": 508,
+                "p50": 258.5,
+                "p95": 486.65,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 302,
+              "host_delta_ms": {
+                "count": 302,
+                "p50": 45.147765500000006,
+                "p95": 52.011434949999995,
+                "maximum": 55.292489
+              },
+              "cpu_record_ms": {
+                "count": 302,
+                "p50": 0.35550649999999995,
+                "p95": 0.46313055,
+                "maximum": 0.574982
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 302,
+                  "p50": 45.171670500000005,
+                  "p95": 52.045174949999996,
+                  "maximum": 61.549613
+                },
+                "host.acquire_image": {
+                  "count": 302,
+                  "p50": 0.021335,
+                  "p95": 0.03183949999999999,
+                  "maximum": 0.186211
+                },
+                "host.queue_submit": {
+                  "count": 302,
+                  "p50": 0.0721955,
+                  "p95": 0.09947549999999998,
+                  "maximum": 0.438841
+                },
+                "host.present": {
+                  "count": 302,
+                  "p50": 43.8136255,
+                  "p95": 50.5581285,
+                  "maximum": 60.401518
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 302,
+                "p50": 1.057616,
+                "p95": 3.5089951999999993,
+                "maximum": 5.509119999999999
+              },
+              "sample_counts": {
+                "count": 302,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 1602.434778,
+            "128": 6561.894731,
+            "512": 26343.368922
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        }
+      },
+      "camera_rejections": 0,
+      "history_epochs": 41,
+      "as_builds": 3,
+      "resident_requested_bytes": 158606408,
+      "peak_requested_bytes": 158606408,
+      "scope": "Native Xvfb. Settle times end at CPU command recording; GPU execution/presentation follow. host.present is vkQueuePresentKHR CPU call duration, not display latency."
+    }
+  },
+  "validation": {
+    "measurement_loop_complete": true,
+    "fullhd_quality_gate_passed": false,
+    "unresolved_failure": {
+      "pixel": [
+        908,
+        344
+      ],
+      "first_failing_sample_count": 1336,
+      "production_status": 16
+    },
+    "q0_unit_tests_passed": 7,
+    "scoped_ctest_passed": 23,
+    "clang_format_clean": true,
+    "ruff_clean": true,
+    "baseline_instrumented_128_hdr_and_png_byte_identical": true,
+    "baseline_instrumented_failure_1336_hdr_and_png_byte_identical": true,
+    "baseline_binary_sha256": "595eadd25151cbfbb2b0e6214a3fafb2944919d6436ad7bc338876227646bd80",
+    "final_binary_sha256": "da7f583b735209a33514e7531e20fd156bba4cd81f53527c5cdd81f092842072",
+    "captured_native_binary_sha256": "b1fc5a03d640e55a9f26efe810eb86f628c4617f4c8e71f02643df3a6915929f",
+    "native_source_formatted_after_capture": true,
+    "native_source_capture_copy": "captured-raytracing_app.cpp",
+    "compiled_shader_hashes": {
+      "build/dev/projects/raytracing/shaders/forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+      "build/dev/projects/raytracing/shaders/forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+      "build/dev/projects/raytracing/shaders/primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+      "build/dev/projects/raytracing/shaders/primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+      "build/dev/projects/raytracing/shaders/shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+      "build/dev/projects/raytracing/shaders/trace.rgen.spv": "776119424ff45f875dffd79977b12323ca89309aa3c3c60af8a3fe5bd6172183",
+      "build/dev/projects/raytracing/shaders/atmosphere.frag.spv": "621b4073823ab3f46b7449ad36311ca30e1d9b8633668aa8ed709e96751ae6a7",
+      "build/dev/projects/raytracing/shaders/atmosphere.vert.spv": "ef76215d4ceda1d2cbbfdb66c84727acd83acb33045c0613b1feafc32b311dba",
+      "build/dev/projects/raytracing/shaders/atmosphere_reflection_prefilter.frag.spv": "ce2b2109bd6ee82f0340ae64ea8bc913e50364b15fe09fb124d0627975192233",
+      "build/dev/projects/raytracing/shaders/primary.rahit.spv": "3bebdb476fea5cc1cda821516ed18c5c01e35a5f908ba826dd9c87338b294dd7"
+    },
+    "existing_files_changed": [
+      "projects/raytracing/README.md",
+      "projects/raytracing/raytracing_app.cpp"
+    ],
+    "model_material_preset_shader_sources_unchanged": true,
+    "optical_policy_changed": false,
+    "committed": false,
+    "pushed": false,
+    "public_site_changed": false
+  },
+  "report": {
+    "url": "http://starship:8787/reports/03ec5d44dabdb95928be5797c063694437a035107b795b65bd10b25f801e752b/",
+    "http_entrypoint_verified": true,
+    "browser_checked": true,
+    "checks": [
+      "sample/reference selectors",
+      "8192 reference loads at canonical view",
+      "8192 disabled and reset on alternate view",
+      "regional tables and charts",
+      "comparison wipe",
+      "grazing ablation fallback label",
+      "native table excludes video run",
+      "all current-view images loaded",
+      "43.03 second video ready",
+      "no browser console warnings/errors",
+      "no horizontal overflow at observed 1602 pixel viewport"
+    ],
+    "physical_display_acceptance": false,
+    "responsive_mobile_tested": false
+  },
+  "next_loop": "Q0.1: event-level replay of pixel (908,344), zero-based sample 1335; local double-precision comparison; minimal justified correction and full-HD independent-seed qualification before Q1",
+  "preserved": [
+    "accepted optical and original GLBs",
+    "canonical material files",
+    "existing presets",
+    "all shader sources",
+    "transport/normal/filtering policy",
+    "original SDF worktree"
+  ],
+  "committed": false,
+  "pushed": false,
+  "public_site_changed": false
+}

@@ -6,7 +6,9 @@
 #include "raytracing_materials.h"
 #include "raytracing_optical_asset.h"
 #include "raytracing_scene.h"
+#include "raytracing_trace_space.h"
 #include <array>
+#include <cstring>
 #include <cubey/render/material_specimen_mesh.h>
 #include <iostream>
 #include <map>
@@ -35,6 +37,36 @@ Config parse(std::initializer_list<const char*> args) {
     for (auto& s : strings)
         argv.push_back(s.data());
     return parse_config(static_cast<int>(argv.size()), argv.data());
+}
+void check_trace_space() {
+    using cubey::math::Mat4;
+    using cubey::math::Vec3;
+    using cubey::math::Vec4;
+    const TraceSpace space{{0, .3534899950027466F, 0}};
+    Mat4 body(1);
+    body[3] = Vec4(space.world_origin, 1);
+    const auto local_body = space.from_world(body);
+    require(local_body == Mat4(1), "body origin cancels exactly without changing its vertices");
+    Mat4 physical(1);
+    physical[0] = {0, 2, 0, 0};
+    physical[1] = {-3, .25F, 0, 0};
+    physical[2] = {0, 0, .5F, 0};
+    physical[3] = {.125F, -.0625F, .25F, 1};
+    const auto traced = space.from_world(physical);
+    for (int i = 0; i < 3; ++i)
+        require(traced[i] == physical[i], "translation preserves rotations, scale and shear");
+    for (const Vec3 point : {Vec3(0), Vec3(.25F, .5F, -.125F), Vec3(-.5F, .125F, .25F)}) {
+        const auto world_point = Vec3(physical * Vec4(point, 1));
+        const auto trace_point = Vec3(traced * Vec4(point, 1));
+        require(glm::length(space.to_world(trace_point) - world_point) < 2e-7F,
+                "instance transform and point conversion describe the same physical scene");
+        require(glm::length(space.from_world(world_point) - trace_point) < 2e-7F,
+                "camera/ray points share the instance translation");
+    }
+    const TraceSpace unchanged;
+    const auto same = unchanged.from_world(physical);
+    require(std::memcmp(&physical, &same, sizeof(physical)) == 0,
+            "unselected zero-origin transforms remain bit-identical");
 }
 void check_dragon_footing() {
     using cubey::math::Vec3;
@@ -142,6 +174,7 @@ int main() {
         require(rock_copy.subject_material == "clay" && rock_copy.support_material == "marble",
                 "marble base and clay dragon survive saved config roundtrip independently");
         check_dragon_footing();
+        check_trace_space();
         auto workshop = parse({"--scene", "materials"});
         require(workshop.material == "bronze" && workshop.environment == "atmosphere" &&
                     workshop.reflection_source == "environment" && !workshop.shadows &&

@@ -1,0 +1,11 @@
+{
+  "complete": true,
+  "report": "http://starship:8787/reports/8fab40dff6b178dcdf49d6c45c0c2ea3b9483bf14dd789b71c952b7262bc2668/",
+  "matched_report_pairs": 5,
+  "captures_verified": 13,
+  "normal_renderer_preserved": true,
+  "source_assets_and_other_existing_work_preserved": true,
+  "documentation_checks_passed": 4,
+  "owned_raytracing_processes": [],
+  "scope": "visual report and private build integration only; no default change/commit/push/public site"
+}

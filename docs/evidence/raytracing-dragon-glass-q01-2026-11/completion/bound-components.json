@@ -1,0 +1,32 @@
+{
+  "seed7": {
+    "trace_origin": [
+      0.0,
+      0.3534899950027466,
+      0.0
+    ],
+    "reconstruction": 5.596298273376079e-09,
+    "original_object_to_world": 5.7143413072244645e-08,
+    "original_world_to_object": 9.409532060966801e-08,
+    "original_total": 1.5683503195528873e-07,
+    "rebased_object_to_trace": 1.5143629151115962e-08,
+    "rebased_trace_to_object": 1.0095752767410641e-08,
+    "rebased_total": 3.083568019190268e-08,
+    "note": "Double-precision decomposition of unchanged donor bound at the recorded local point. Rebased values are predictions, not GPU path qualification."
+  },
+  "seed19": {
+    "trace_origin": [
+      0.0,
+      0.3534899950027466,
+      0.0
+    ],
+    "reconstruction": 1.6354739988047964e-08,
+    "original_object_to_world": 8.04838186651488e-08,
+    "original_world_to_object": 9.60499569309152e-08,
+    "original_total": 1.9288851558411198e-07,
+    "rebased_object_to_trace": 4.8688260299536806e-08,
+    "rebased_trace_to_object": 3.24588401996912e-08,
+    "rebased_total": 9.750184048727598e-08,
+    "note": "Double-precision decomposition of unchanged donor bound at the recorded local point. Rebased values are predictions, not GPU path qualification."
+  }
+}

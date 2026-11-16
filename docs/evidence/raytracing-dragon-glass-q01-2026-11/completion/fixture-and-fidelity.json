@@ -1,0 +1,170 @@
+{
+  "fixture17-candidate": {
+    "source": [
+      [
+        -0.25848135352134705,
+        0.07606060057878494,
+        -0.0852033942937851,
+        3.4492526168605764e-08
+      ],
+      [
+        -0.10215987265110016,
+        0.262409508228302,
+        -0.09155767410993576,
+        4.873292027696152e-07
+      ]
+    ],
+    "spawn": [
+      [
+        -0.25848138332366943,
+        0.07606057077646255,
+        -0.0852033942937851,
+        4.214684778958144e-08
+      ],
+      [
+        -0.10215972363948822,
+        0.2624095678329468,
+        -0.09155813604593277,
+        4.890214881925203e-07
+      ]
+    ],
+    "next_position_and_t": [
+      [
+        -0.25848153233528137,
+        0.07606031745672226,
+        -0.08520350605249405,
+        3.102421715084347e-07
+      ],
+      [
+        -0.10215946286916733,
+        0.26240941882133484,
+        -0.09155826270580292,
+        3.211382306744781e-07
+      ]
+    ],
+    "source_and_exit_identity": [
+      [
+        220337.0,
+        220311.0,
+        0.0,
+        0.0
+      ],
+      [
+        199473.0,
+        199468.0,
+        0.0,
+        0.0
+      ]
+    ]
+  },
+  "fixture18-baseline": {
+    "source": [
+      [
+        -0.25848135352134705,
+        0.4295505881309509,
+        -0.0852033942937851,
+        3.5086858929389564e-07
+      ],
+      [
+        -0.10215987265110016,
+        0.6158995032310486,
+        -0.09155767410993576,
+        1.928885211555098e-07
+      ]
+    ],
+    "spawn": [
+      [
+        -0.258481502532959,
+        0.42955026030540466,
+        -0.08520343154668808,
+        3.6202462183609896e-07
+      ],
+      [
+        -0.10215974599123001,
+        0.615899384021759,
+        -0.09155768901109695,
+        1.7457269052556512e-07
+      ]
+    ],
+    "next_position_and_t": [
+      [
+        0.0,
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        -1.0
+      ]
+    ],
+    "source_and_exit_identity": [
+      [
+        220337.0,
+        0.0,
+        -1.0,
+        0.0
+      ],
+      [
+        199473.0,
+        0.0,
+        -1.0,
+        0.0
+      ]
+    ]
+  },
+  "light_failure16": {
+    "status": 16,
+    "fault_fields": [
+      [
+        -0.26696640253067017,
+        -0.725146472454071,
+        -0.6347373723983765,
+        -1.0
+      ],
+      [
+        0.0352918915450573,
+        0.9099140763282776,
+        -0.4132924973964691,
+        0.042334333062171936
+      ],
+      [
+        -0.24512088298797607,
+        -0.8466412425041199,
+        -0.47234973311424255,
+        0.0
+      ],
+      [
+        0.14612093567848206,
+        -0.30524003505706787,
+        0.12449139356613159,
+        0.0
+      ]
+    ],
+    "color": [
+      0.2036914974451065,
+      0.19391922652721405,
+      0.18414638936519623
+    ],
+    "bit_identical_to_rebase08_prefix809": true,
+    "max_depth": 35.0
+  },
+  "nonoptical_png_comparison": {
+    "build/dev/projects/raytracing/raytracing-smoke.png": true,
+    "build/dev/projects/raytracing/retry-scene.png": true,
+    "build/dev/projects/raytracing/retry-pipeline.png": true,
+    "build/dev/projects/raytracing/retry-target.png": true,
+    "build/dev/projects/raytracing/reflection-smoke.png": true,
+    "build/dev/projects/raytracing/refraction-smoke.png": true,
+    "build/dev/projects/raytracing/atmosphere-retry.png": true,
+    "build/dev/projects/raytracing/materials-environment.png": true,
+    "build/dev/projects/raytracing/materials-scene.png": true,
+    "build/dev/projects/raytracing/materials-retry-pipeline.png": true,
+    "build/dev/projects/raytracing/materials-retry-target.png": true,
+    "build/dev/projects/raytracing/materials-glass.png": true,
+    "build/dev/projects/raytracing/materials-frosted-glass.png": true,
+    "build/dev/projects/raytracing/materials-gallery.png": true
+  }
+}

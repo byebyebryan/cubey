@@ -1,0 +1,13 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "samples": 4096,
+  "matched_seed": 19,
+  "whole_image_hdr_rmse_before_after": 0.004037227287644013,
+  "whole_image_hdr_max_absolute_before_after": 5.9184406995773315,
+  "changed_rgb_components": 676163,
+  "whole_image_mean_luminance_before": 0.5012946657659109,
+  "whole_image_mean_luminance_after": 0.5012902285186723,
+  "independent_seed_19_43_whole_image_hdr_rmse": 0.14294310479000102,
+  "scope": "Whole-image raw RGB comparison. Precision/frame and spawn changes alter sampled paths. Independent-seed difference is context, not a confidence interval or a denoising-quality claim."
+}

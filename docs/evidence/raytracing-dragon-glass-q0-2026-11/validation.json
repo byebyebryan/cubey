@@ -1,0 +1,44 @@
+{
+  "measurement_loop_complete": true,
+  "fullhd_quality_gate_passed": false,
+  "unresolved_failure": {
+    "pixel": [
+      908,
+      344
+    ],
+    "first_failing_sample_count": 1336,
+    "production_status": 16
+  },
+  "q0_unit_tests_passed": 7,
+  "scoped_ctest_passed": 23,
+  "clang_format_clean": true,
+  "ruff_clean": true,
+  "baseline_instrumented_128_hdr_and_png_byte_identical": true,
+  "baseline_instrumented_failure_1336_hdr_and_png_byte_identical": true,
+  "baseline_binary_sha256": "595eadd25151cbfbb2b0e6214a3fafb2944919d6436ad7bc338876227646bd80",
+  "final_binary_sha256": "da7f583b735209a33514e7531e20fd156bba4cd81f53527c5cdd81f092842072",
+  "captured_native_binary_sha256": "b1fc5a03d640e55a9f26efe810eb86f628c4617f4c8e71f02643df3a6915929f",
+  "native_source_formatted_after_capture": true,
+  "native_source_capture_copy": "captured-raytracing_app.cpp",
+  "compiled_shader_hashes": {
+    "build/dev/projects/raytracing/shaders/forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+    "build/dev/projects/raytracing/shaders/forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+    "build/dev/projects/raytracing/shaders/primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+    "build/dev/projects/raytracing/shaders/primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+    "build/dev/projects/raytracing/shaders/shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+    "build/dev/projects/raytracing/shaders/trace.rgen.spv": "776119424ff45f875dffd79977b12323ca89309aa3c3c60af8a3fe5bd6172183",
+    "build/dev/projects/raytracing/shaders/atmosphere.frag.spv": "621b4073823ab3f46b7449ad36311ca30e1d9b8633668aa8ed709e96751ae6a7",
+    "build/dev/projects/raytracing/shaders/atmosphere.vert.spv": "ef76215d4ceda1d2cbbfdb66c84727acd83acb33045c0613b1feafc32b311dba",
+    "build/dev/projects/raytracing/shaders/atmosphere_reflection_prefilter.frag.spv": "ce2b2109bd6ee82f0340ae64ea8bc913e50364b15fe09fb124d0627975192233",
+    "build/dev/projects/raytracing/shaders/primary.rahit.spv": "3bebdb476fea5cc1cda821516ed18c5c01e35a5f908ba826dd9c87338b294dd7"
+  },
+  "existing_files_changed": [
+    "projects/raytracing/README.md",
+    "projects/raytracing/raytracing_app.cpp"
+  ],
+  "model_material_preset_shader_sources_unchanged": true,
+  "optical_policy_changed": false,
+  "committed": false,
+  "pushed": false,
+  "public_site_changed": false
+}

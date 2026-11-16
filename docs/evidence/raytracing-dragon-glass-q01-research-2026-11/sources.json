@@ -1,0 +1,54 @@
+{
+  "reviewed": "2026-11-08",
+  "scope": "Primary-source research only; no algorithm imported or renderer candidate tested.",
+  "sources": [
+    {
+      "id": "nvidia-offset",
+      "url": "https://developer.nvidia.com/blog/solving-self-intersection-artifacts-in-directx-raytracing/",
+      "fetched_url": "https://developer.nvidia.com/blog/?p=68307",
+      "author": "Dirk Gerrit van Antwerpen",
+      "published": "2023-08-31",
+      "reviewed_scope": "Article body: hit reconstruction, RTX error constants, offset, direction/grazing caveat. Automatically generated summary excluded.",
+      "finding": "Origin bounds do not cover grazing direction-side flips; primitive-ID rejection alone does not cover adjacent triangles.",
+      "limit": "Does not diagnose Cubey or supply a ready-made dielectric direction correction."
+    },
+    {
+      "id": "vulkan-traversal",
+      "url": "https://docs.vulkan.org/spec/latest/chapters/raytraversal.html",
+      "reviewed_scope": "Intersection candidate precision, shared-edge/closed-fan watertightness, ray face culling and HitKind.",
+      "finding": "Facing uses projected ray-space area; watertightness is expressed as should/expected/tested rather than a universal must.",
+      "limit": "Does not imply this failure is a driver defect or prove any CPU/GPU disagreement."
+    },
+    {
+      "id": "hit-kind",
+      "url": "https://docs.vulkan.org/refpages/latest/refpages/source/HitKindKHR.html",
+      "reviewed_scope": "Built-in definition and shader-stage availability.",
+      "finding": "Triangle front/back kind is available in closest-hit/any-hit, not directly in ray generation.",
+      "limit": "Current Cubey payload does not carry it; changing the payload requires an instrumented build and fidelity checks."
+    },
+    {
+      "id": "pbrt-rounding",
+      "url": "https://www.pbr-book.org/4ed/Shapes/Managing_Rounding_Error",
+      "reviewed_scope": "Spawn-point error bounds, fixed epsilon tradeoff, geometry intersection error.",
+      "finding": "A larger fixed offset can miss nearby geometry.",
+      "limit": "PBRT software intersection behavior is not an exact model of hardware traversal."
+    },
+    {
+      "id": "watertight-intersection",
+      "url": "https://jcgt.org/published/0002/01/05/",
+      "paper_url": "https://jcgt.org/published/0002/01/05/paper.pdf",
+      "authors": "Sven Woop, Carsten Benthin, Ingo Wald",
+      "published": "2013-06-28",
+      "reviewed_scope": "Publication abstract and algorithm overview; no equations implemented.",
+      "finding": "Robust shared-edge/vertex tests require more than blindly promoting a basic intersection formula to double.",
+      "limit": "A diagnostic reference, not a proposal to replace hardware traversal."
+    },
+    {
+      "id": "pbrt-dielectric",
+      "url": "https://www.pbr-book.org/4ed/Reflection_Models/Dielectric_BSDF",
+      "reviewed_scope": "Specular reflection/transmission, Fresnel weighting and TIR/refraction.",
+      "finding": "Glass branches carry explicit probability/energy semantics; grazing paths cannot be assumed negligible.",
+      "limit": "No optical material policy or sampler is changed in this research pass."
+    }
+  ]
+}

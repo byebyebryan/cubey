@@ -4,6 +4,7 @@
 #include "raytracing_presentation.h"
 #include "raytracing_renderer.h"
 #include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -14,6 +15,11 @@
 
 namespace cubey::projects::raytracing {
 namespace {
+std::int64_t steady_ns() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+               std::chrono::steady_clock::now().time_since_epoch())
+        .count();
+}
 class App {
   public:
     explicit App(Config c) : config_(std::move(c)), scene_(make_scene(config_)) {
@@ -190,6 +196,9 @@ class App {
     void shutdown() {
         if (renderer_) {
             renderer_->finish();
+#ifdef CUBEY_RT_RAY_JOURNAL
+            renderer_->save_ray_journal(config_.ray_journal);
+#endif
             if (dump_mode(config_))
                 renderer_->save_queries(!config_.query_output.empty()
                                             ? config_.query_output
@@ -203,6 +212,15 @@ class App {
                     .count();
             auto completed_config = current();
             data["optical_camera_rejected_updates"] = optical_camera_rejections_;
+            if (!config_.common.headless && !config_.metrics.empty()) {
+                data["native_frames"] = native_frames_;
+                data["dropped_native_frames"] = dropped_native_frames_;
+                data["native_timing_scope"] =
+                    "steady_clock nanoseconds at app update/record; CPU record excludes "
+                    "journal packing and submission/present; host profile includes those CPU "
+                    "spans; no physical "
+                    "display or end-to-end input latency measurement";
+            }
             data["config"] = schema(completed_config).template_json();
             if (!config_.metrics.empty()) {
                 if (config_.metrics.has_parent_path())
@@ -592,6 +610,11 @@ class App {
         c.sun_speed = 0;
         c.fault = "none";
         c.exercise_retry = false;
+#ifdef CUBEY_RT_RAY_JOURNAL
+        c.ray_journal.clear();
+        c.journal_isolate = false;
+        c.journal_first_failure = false;
+#endif
         schema(c).write_template(config_.save_config);
     }
     int run() {
@@ -639,13 +662,53 @@ class App {
         };
         cb.update = [&](host::WindowedAppContext& c, const FrameTiming& t) {
             presentation_seconds_ += t.delta_seconds;
-            orbit_.update_from_input(c.filtered_input(), t.delta_seconds);
+            const auto filtered = c.filtered_input();
+            if (!config_.metrics.empty()) {
+                native_update_ns_ = steady_ns();
+                const auto delta = filtered.mouse_button_delta(input::MouseButton::Left);
+                const auto scroll = filtered.scroll_delta();
+                native_input_ = {
+                    {"left_down", filtered.mouse_button_down(input::MouseButton::Left)},
+                    {"drag_dx", delta.x},
+                    {"drag_dy", delta.y},
+                    {"scroll_y", scroll.y},
+                    {"reset_pressed", filtered.key_pressed(input::Key::R)}};
+            }
+            orbit_.update_from_input(filtered, t.delta_seconds);
         };
         cb.draw_ui = [&](host::WindowedAppContext&) { ui(); };
         cb.record_frame = [&](host::WindowedAppContext& c, const host::WindowedRenderFrame& f) {
             stress_edit(frame_);
-            renderer_->render(f.command_buffer, f.color_target, f.frame_slot, current(), true,
-                              c.profile_recorder(), frame_++);
+            const auto begin = config_.metrics.empty() ? 0 : steady_ns();
+            const auto view = current();
+            renderer_->render(f.command_buffer, f.color_target, f.frame_slot, view, true,
+                              c.profile_recorder(), frame_);
+            if (!config_.metrics.empty()) {
+                const auto end = steady_ns();
+                if (native_frames_.size() < 20000)
+                    native_frames_.push_back(
+                        {{"frame", frame_},
+                         // WindowedHost's profile loop is zero-based; FrameClock
+                         // increments before returning its first tick.
+                         {"host_frame", f.timing.frame_index - 1},
+                         {"clock_frame", f.timing.frame_index},
+                         {"update_steady_ns", native_update_ns_},
+                         {"record_begin_steady_ns", begin},
+                         {"record_end_steady_ns", end},
+                         {"cpu_record_ms", double(end - begin) / 1e6},
+                         {"host_delta_ms", f.timing.delta_seconds * 1000},
+                         {"input", native_input_},
+                         {"yaw", view.yaw},
+                         {"pitch", view.pitch},
+                         {"distance", view.distance},
+                         {"width", c.swapchain().extent().width},
+                         {"height", c.swapchain().extent().height},
+                         {"samples_after", renderer_->sample_count()},
+                         {"epoch", renderer_->history_epoch()}});
+                else
+                    ++dropped_native_frames_;
+            }
+            ++frame_;
         };
         cb.shutdown = [&](host::WindowedAppContext&) { shutdown(); };
         return host::run_windowed_app(std::move(h), std::move(cb));
@@ -662,6 +725,10 @@ class App {
     mutable std::uint64_t optical_camera_rejections_ = 0;
     std::unique_ptr<Renderer> renderer_;
     std::uint64_t frame_ = 0;
+    std::int64_t native_update_ns_ = 0;
+    std::uint64_t dropped_native_frames_ = 0;
+    nlohmann::json native_frames_ = nlohmann::json::array();
+    nlohmann::json native_input_;
     double presentation_seconds_ = 0;
     bool target_fault_used_ = false;
     std::array<char, 512> recipe_path_{};

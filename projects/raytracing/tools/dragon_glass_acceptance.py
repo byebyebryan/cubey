@@ -25,6 +25,7 @@ def require_transport_status(name, counts, *, allow_truncation=False):
 def require_requested_memory(metrics):
     # geometry_bytes already includes edge_adjacency_bytes; don't count it twice.
     expected = sum(metrics[field] for field in REQUESTED_MEMORY_FIELDS)
+    expected += metrics.get("ray_journal_bytes", 0)
     actual = metrics['resident_project_requested_bytes']
     if actual != expected:
         raise AssertionError(f'resident requested bytes: {actual}, component sum: {expected}')

@@ -1,0 +1,47 @@
+{
+  "url": "http://starship:8787/reports/23d2bfda9d33aa8eda303808cb764931b9779be2b97b2d27de21213e60bec79a/",
+  "assets": {
+    "index.html": {
+      "http_status": 200,
+      "bytes": 14084,
+      "sha256": "186fb3ce52a5f54cfb084b3e41bb580e105383b352438de2be2691aeb82b51a3"
+    },
+    "qualification.json": {
+      "http_status": 200,
+      "bytes": 27676,
+      "sha256": "5412a91d0de2af5db12299be9c42d0173b3698b039871efe7e5fbcae08cf39f8"
+    },
+    "fixtures.json": {
+      "http_status": 200,
+      "bytes": 3770,
+      "sha256": "06be3b8b28a8749a5eb759ca296e4da88304fa97a216afda4b2cc54da96134c4"
+    },
+    "performance.json": {
+      "http_status": 200,
+      "bytes": 1012,
+      "sha256": "336209342441146eeacb028aa2544f8db91fd8c26aa06249469017b85894f048"
+    },
+    "validation.json": {
+      "http_status": 200,
+      "bytes": 73982,
+      "sha256": "5708b3bb68a003a94e8ff673bb71960a3924140dc5e26aee26706fb98a881578"
+    },
+    "images/baseline-4096-s19.png": {
+      "http_status": 200,
+      "bytes": 1029080,
+      "sha256": "d3d910ba2e94b6c3e057282dc4cc447804426e07939e8f95479bb32e8484bd4f"
+    },
+    "images/corrected-4096-s19.png": {
+      "http_status": 200,
+      "bytes": 1029259,
+      "sha256": "8f6e8df89e18b00eeb0c2bdbd0297420ec58cba18b8e4cf8780010088e1ed70c"
+    }
+  },
+  "delivery_verified": true,
+  "browser_checked": true,
+  "browser_matrix_rows": 11,
+  "comparison_buttons_checked": true,
+  "keyboard_range_checked": true,
+  "images_loaded": true,
+  "horizontal_overflow": false
+}

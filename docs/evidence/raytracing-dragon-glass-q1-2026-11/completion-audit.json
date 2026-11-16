@@ -1,0 +1,52 @@
+{
+  "checked_at_utc": "2026-11-15T04:13:43.249379+00:00",
+  "goal_outcome": "complete with stage-1 rejection of the one approved candidate",
+  "requirements": {
+    "qualified_baseline_preserved": true,
+    "one_whole_interface_candidate_implemented_privately": true,
+    "independent_analytic_and_gpu_controls_complete": true,
+    "first_failure_classified_and_independently_confirmed": true,
+    "no_post_selection_branch_loss_or_side_flip": true,
+    "evidence_supported_rejection_before_dragon_promotion": true,
+    "existing_renderer_and_shared_consumers_preserved": true,
+    "bounded_report_delivered_and_browser_checked": true,
+    "q2_q3_commit_push_public_site_excluded": true
+  },
+  "retained_source_build_root": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114",
+  "report": "http://starship:8787/reports/e95fac2a4ff410df3ca08d1a6cc01345196834015d92360d7b5f0034e8e4a4cd/",
+  "checks": [
+    {
+      "command": [
+        "rtk",
+        "proxy",
+        "ctest",
+        "--test-dir",
+        "build/dev",
+        "-R",
+        "^documentation_",
+        "--output-on-failure",
+        "-j1"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "rtk",
+        "proxy",
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "owned_raytracing_processes": [],
+  "later_stages_not_entered": [
+    "smooth dragon pilot/full-HD matrix",
+    "native policy selector/history integration",
+    "Q2 filtering",
+    "Q3 motion reconstruction"
+  ],
+  "head": "10328ef2dff12bd26b6ff20a589c47dde5e8eabc",
+  "status": " M docs/notes/README.md\n M projects/raytracing/CMakeLists.txt\n M projects/raytracing/NOTICE\n M projects/raytracing/README.md\n M projects/raytracing/raytracing_app.cpp\n M projects/raytracing/raytracing_config.h\n M projects/raytracing/raytracing_renderer.cpp\n M projects/raytracing/raytracing_renderer.h\n M projects/raytracing/raytracing_tests.cpp\n M projects/raytracing/shaders/material_workshop.glsl\n M projects/raytracing/shaders/primary.rchit\n M projects/raytracing/shaders/rt_common.glsl\n M projects/raytracing/shaders/trace.rgen\n M projects/raytracing/tools/dragon_glass_acceptance.py\n M projects/raytracing/tools/test_dragon_glass_acceptance.py\n?? docs/evidence/raytracing-dragon-glass-q0-2026-11/\n?? docs/evidence/raytracing-dragon-glass-q01-2026-11/\n?? docs/evidence/raytracing-dragon-glass-q01-research-2026-11/\n?? docs/evidence/raytracing-dragon-glass-q1-2026-11/\n?? docs/evidence/raytracing-dragon-glass-q1-research-2026-11/\n?? docs/evidence/raytracing-dragon-glass-quality-research-2026-11/\n?? docs/notes/raytracing-dragon-glass-q0-results.md\n?? docs/notes/raytracing-dragon-glass-q01-plan.md\n?? docs/notes/raytracing-dragon-glass-q01-results.md\n?? docs/notes/raytracing-dragon-glass-q1-plan.md\n?? docs/notes/raytracing-dragon-glass-q1-results.md\n?? docs/notes/raytracing-dragon-glass-quality-plan.md\n?? projects/raytracing/raytracing_trace_space.h\n?? projects/raytracing/shaders/optical_normal_experiment.glsl\n?? projects/raytracing/shaders/ray_journal.glsl\n?? projects/raytracing/tools/analyze_glass_quality.py\n?? projects/raytracing/tools/analyze_optical_normal.py\n?? projects/raytracing/tools/build_ray_replay.py\n?? projects/raytracing/tools/fixtures/\n?? projects/raytracing/tools/inspect_ray_journal.py\n?? projects/raytracing/tools/measure_dragon_glass.py\n?? projects/raytracing/tools/measure_dragon_window.py\n?? projects/raytracing/tools/optical_normal_reference.py\n?? projects/raytracing/tools/qualify_dragon_spawn.py\n?? projects/raytracing/tools/run_optical_normal_probe.py\n?? projects/raytracing/tools/test_glass_quality.py\n?? projects/raytracing/tools/test_ray_spawn_geometry.py\n"
+}

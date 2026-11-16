@@ -1,0 +1,7 @@
+{
+  "candidate": "03",
+  "accepted": false,
+  "reason": "Original seed-7 reproduction fixed, but independent seed-19 medium failure persists with the base donor offset and a separate production-budget event limit also persists. Restore original spawn policy; do not promote candidate.",
+  "source_snapshot": "outputs/raytracing/dragon-glass-q01-20261109/candidate-source-03",
+  "remaining_gate": "Numerical-resolution contract and full-HD independent-seed qualification"
+}

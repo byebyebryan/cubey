@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cubey Q1 optical normal experiment</title>
+<style>
+:root{color-scheme:dark;--bg:#101719;--panel:#192326;--text:#e7efed;--muted:#a3b7b7;--line:#334348;--blue:#71c5ec;--green:#83d9ba;--amber:#f0bd69;--red:#f4949b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:46px 28px 70px}a{color:var(--blue)}h1,h2,h3{line-height:1.2;letter-spacing:-.025em}h1{font-size:clamp(30px,4.8vw,51px);max-width:900px;margin:15px 0 22px}h2{font-size:28px;margin-top:0}h3{font-size:19px}p{max-width:88ch}.eyebrow,.tag{font-size:12px;letter-spacing:.12em;text-transform:uppercase}.eyebrow{color:var(--muted)}.tag{display:inline-block;color:var(--red);border:1px solid #76444b;padding:5px 10px;border-radius:4px}header>p{font-size:19px;color:var(--muted);max-width:830px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0}.stat{background:var(--panel);border:1px solid var(--line);padding:18px;border-radius:9px}.stat strong{display:block;font-size:30px;line-height:1.25;color:var(--amber)}.stat small{color:var(--muted)}nav{display:flex;gap:18px;flex-wrap:wrap;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}section{margin-top:48px}.note{border-left:3px solid var(--amber);padding:8px 18px;background:#202729;color:var(--muted)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}.panel{background:var(--panel);border:1px solid var(--line);padding:20px;border-radius:9px}button,select{font:inherit;color:var(--text);background:#23373e;border:1px solid #52666e;border-radius:5px;padding:7px 12px;cursor:pointer}button:hover{background:#34505b}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:3px}.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.controls label{color:var(--muted)}input[type=range]{width:100%;accent-color:var(--blue);margin:18px 0}canvas{width:100%;height:auto;display:block}.readouts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}.readouts strong{display:block;color:var(--blue);font-size:22px}.readouts span{font-size:13px;color:var(--muted)}.caption{font-size:13px;color:var(--muted);margin-top:9px}.plot{width:100%;background:white;border-radius:7px;display:block;margin-top:18px}.wipe{position:relative;width:100%;aspect-ratio:16/3;overflow:hidden;border:1px solid var(--line);border-radius:7px}.wipe img{position:absolute;inset:0;width:100%;height:100%}.wipe .overlay{clip-path:inset(0 50% 0 0)}.wipe:after{content:"";position:absolute;top:0;bottom:0;left:var(--split,50%);width:2px;background:white}.legend{display:flex;justify-content:space-between;color:var(--muted);font-size:13px}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}th{color:var(--muted);font-weight:500}.good{color:var(--green)}.bad{color:var(--red)}details{padding:10px 0}summary{cursor:pointer;color:var(--blue)}code{font-size:.87em;overflow-wrap:anywhere}footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}@media(max-width:740px){main{padding:26px 16px}.grid{grid-template-columns:1fr}.stats{gap:8px}.stat{padding:12px}.stat strong{font-size:23px}.stat small{font-size:11px}h2{font-size:25px}.controls{align-items:flex-start}section{margin-top:36px}}
+</style>
+<main>
+<header><div class="eyebrow">Cubey / hardware ray tracing / Q1 / November 14, 2026</div>
+<h1>The first smooth-glass policy fails its interface controls</h1>
+<span class="tag">Rejected before dragon integration</span>
+<p>The tested guard keeps rays on the correct geometric sides. The resulting policy still has direction jumps and a nonconservative radiance operator.</p>
+<div class="stats"><div class="stat"><strong>65,536</strong><small>GPU interface observations</small></div><div class="stat"><strong>40° / 12°</strong><small>reflection / refraction jump</small></div><div class="stat"><strong>+31.8%</strong><small>outgoing flux in a lossless control</small></div></div>
+<p class="note">The qualified Q0.1 geometric dragon is preserved. This is a stage-1 diagnostic result: there is no smooth dragon capture, native selector or newly promoted renderer policy.</p>
+</header>
+<nav><a href="#switch">Explore the switch</a><a href="#energy">Energy test</a><a href="#benefit">Sphere benefit</a><a href="#evidence">Evidence</a></nav>
+<section id="switch"><h2>A tiny input change crosses a finite jump</h2>
+<p>The smooth normal is constant in this control; the geometric normal and IOR 1.5 are also fixed. Only incidence changes. Selection happens before either Fresnel branch, with the recorded 2⁻¹⁶ side guard.</p>
+<div class="grid"><div class="panel">
+<div class="controls"><label for="tilt">Smooth normal tilt</label><select id="tilt"><option value="2">−2°</option><option value="5">−5°</option><option value="10">−10°</option><option value="20" selected>−20°</option></select></div>
+<canvas id="directions" width="520" height="330" aria-label="Incident, reflected and transmitted ray directions from the selected GPU observation"></canvas>
+<div class="legend"><span style="color:var(--amber)">Incident / geometric</span><span style="color:var(--blue)">Reflected</span><span style="color:var(--green)">Transmitted</span></div>
+</div><div class="panel"><h3>Actual GPU observations</h3><div class="controls"><button id="before">Before fallback</button><button id="after">After fallback</button></div>
+<label for="sample">Incidence sample</label><input id="sample" type="range" min="0" max="511" value="233" step="1">
+<div class="readouts"><div><strong id="incidence"></strong><span>input incidence</span></div><div><strong id="policy"></strong><span>selected whole interface</span></div><div><strong id="fresnel"></strong><span>Fresnel reflectance</span></div><div><strong id="reflection"></strong><span>reflected angle</span></div></div>
+<p id="jump" class="note"></p><p class="caption">These directions and Fresnel values come from the Vulkan ray-generation fixture. No Monte Carlo image noise or triangle-edge change is involved.</p></div></div>
+<img src="seam.svg" class="plot" alt="GPU sweep showing a reflection direction, transmission direction and Fresnel jump near 50 degrees incidence">
+<p class="caption">20° normal tilt, 512 samples across a 0.02° incidence interval. Dashed curves retain geometric interfaces. <a href="seam-data.json">Download all four GPU sweeps</a>.</p>
+<h3>A continuous field can acquire a visible boundary</h3>
+<div class="legend"><span>Left: guarded candidate</span><span>Right: geometric baseline</span></div>
+<div class="wipe" id="wipe"><img src="field-baseline.png" alt="Geometric interface analytic illustration"><img class="overlay" id="overlay" src="field-candidate.png" alt="Guarded smooth interface analytic illustration"></div>
+<label for="comparison">Analytic illustration comparison</label><input type="range" id="comparison" min="0" max="100" value="50">
+<p class="caption">CPU analytic illustration: a raw vertex-normal field varies linearly on one flat interface, with fixed incidence and a low-frequency direction-to-RGB environment. It is not a dragon render or a texture-filtering result. <a href="field-data.json">Field values</a>.</p>
+</section>
+<section id="energy"><h2>Correct sides do not establish energy conservation</h2>
+<p>We integrate both outgoing geometric hemispheres of a lossless interface, including radiance-mode eta scaling. The exterior source is a unit-radiance cap centered at 60°, with radius 15°; the smooth normal tilt is 20°.</p>
+<div class="scroll"><table><thead><tr><th>Independent integral</th><th>Geometric flux / input</th><th>Candidate flux / input</th></tr></thead><tbody><tr><td>GPU outgoing hemispheres, 1024 × 4096 cells</td><td class="good">1.000076</td><td class="bad">1.318088</td></tr><tr><td>CPU source cap, all analytic preimages</td><td class="good">1.000000</td><td class="bad">1.318223</td></tr></tbody></table></div>
+<p>The two methods differ by 0.0001355 for the candidate. The approximately 31.8% excess is much larger than integration uncertainty. The CPU method sums all geometric and smooth preimages, including overlaps and gaps, without renormalization.</p>
+<img src="flux.svg" class="plot" alt="Controlled CPU beam sweep showing directional flux gains and losses for 2, 5, 10 and 20 degree normal tilts">
+<p class="caption">Separate CPU angular sweep: 5° cap radius, IOR 1.5. These curves use a different cap radius from the independently verified GPU witness above. At 80° beam center, even the 2° normal tilt gives flux ratio 1.2383; the 20° case gives 2.6079.</p>
+<details><summary>What the flux calculation measures</summary><p>Output radiance is integrated against projected geometric solid angle on both sides. For each constant-normal piece, reflection has unit solid-angle Jacobian; Snell transmission contributes |w·N| / (IOR² |v·N|). The camera radiance factor cancels the IOR² term. The geometric control gives one pointwise. Fallback can select multiple preimages or none.</p><p>The local reduced-radiance furnace identity still passes to 1.19 × 10⁻⁷. Complementary Fresnel weights alone do not prove this mapping conserves flux. No complete closed-body furnace or full-scene energy qualification is claimed.</p></details>
+</section>
+<section id="benefit"><h2>Normal interpolation does improve the sphere directions</h2>
+<p>The candidate has a useful appearance mechanism. CPU centroid-ray controls approach an analytic sphere more closely as tessellation increases. That improvement does not clear the continuity and energy gates.</p>
+<div class="scroll"><table><thead><tr><th>Sphere triangles</th><th>Geometric R</th><th>Guarded R</th><th>Geometric T</th><th>Guarded T</th></tr></thead><tbody id="spheres"></tbody></table></div>
+<p class="caption">Median direction error in degrees. First entering interface only, unit sphere and camera (0,0,3); a defined silhouette region is excluded. Polygon and analytic hit locations differ. These are not dragon, exit or TIR qualification scores.</p>
+<p>Reselecting the policy on a reversed ray can change the interface: the observed local discrepancies reach 120° for reflection and 42.54° for transmission. Keeping the selected interface fixed instead reduces them to ordinary numerical errors.</p>
+</section>
+<section id="evidence"><h2>Experiment complete; candidate not promoted</h2>
+<div class="scroll"><table><thead><tr><th>Boundary</th><th>Result</th></tr></thead><tbody>
+<tr><td>Regular CPU/GPU Snell, Fresnel and direction arithmetic</td><td class="good">Pass, existing 10⁻⁵ tolerances</td></tr>
+<tr><td>Positive branches on geometric sides</td><td class="good">0 wrong sides in 65,536 observations</td></tr>
+<tr><td>Index-matched transmission</td><td class="good">12,288 bit-exact direction controls</td></tr>
+<tr><td>Continuity / flux / reversed policy</td><td class="bad">Reject first candidate</td></tr>
+<tr><td>Corrected geometric runtime, binary and shader bytes</td><td class="good">Preserved against frozen Q0.1</td></tr>
+<tr><td>Existing renderer and documentation checks</td><td id="checks"></td></tr>
+<tr><td>Smooth dragon matrix / native selector / filtering / moving quality</td><td>Not entered after stage-1 rejection</td></tr>
+</tbody></table></div>
+<details><summary>Critical-angle and experimental limits</summary><p>6 policy classifications differ between the float32 GPU and float64 field oracle inside the explicit 8,192-observation critical fixture. Equal-normal compiled branches differ by up to 0.000172 in transmitted components there; regular differences are below 10⁻⁵. All selected outputs are finite and all observed geometric sides remain valid. These records are retained rather than claimed as critical-angle certification.</p><p>The actual GLSL helper is diagnostic-only. It is not included by ordinary shaders and adds no runtime scene or native control. Shader/kernel timings are not a dragon-rendering performance result. The accepted model, marble base, recipes and shared lighting remain preserved.</p></details>
+<p>The next question is a continuous interface model and its transport weighting together. Reuse these witnesses before another dragon candidate; a reflection-only normal fix is not a dielectric solution.</p>
+<p><a href="analysis.json">Numerical receipt</a> · <a href="validation.json">Validation</a> · <a href="preservation.json">Preservation</a> · <a href="http://starship:8787/reports/23d2bfda9d33aa8eda303808cb764931b9779be2b97b2d27de21213e60bec79a/">Qualified Q0.1 dragon</a></p>
+</section>
+<footer>Primary foundations: <a href="https://www.pbr-book.org/3ed-2018/Materials/BSDFs">geometric and shading normals</a>, <a href="https://www.pbr-book.org/4ed/Reflection_Models/Dielectric_BSDF">dielectric sampling</a>, <a href="https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/The_Path-Space_Measurement_Equation">radiance and importance transport</a>. The fallback policy and numerical experiments are Cubey-owned. No Q2/Q3, commit, push or public-site promotion. <a href="http://starship:8787/reports/#project=cubey">Cubey report catalog</a>.</footer>
+</main>
+<script>
+const reportData=/*REPORT_DATA*/{};
+const $=id=>document.getElementById(id);
+function update(){const tilt=$('tilt').value, records=reportData.seams[tilt], i=Number($('sample').value), p=records[i];
+$('incidence').textContent=p.theta.toFixed(6)+'°';$('policy').textContent=p.reason===0?'Smooth':'Geometric';$('fresnel').textContent=p.fresnel.toFixed(6);$('reflection').textContent=(Math.atan2(p.reflected[0],p.reflected[2])*180/Math.PI).toFixed(3)+'°';
+const witness=reportData.analysis.interface.seams.find(s=>s.eta===1.5&&s.normal_tilt_degrees===-Number(tilt));$('jump').textContent=`Across one ${witness.input_angle_step_degrees.toExponential(2)}° input step: reflection jumps ${witness.reflection_jump_degrees.toFixed(3)}°, transmission ${witness.transmission_jump_degrees.toFixed(3)}°.`;
+const c=$('directions'),g=c.getContext('2d'),o=[260,155],scale=126;g.clearRect(0,0,c.width,c.height);g.strokeStyle='#405357';g.beginPath();g.moveTo(28,o[1]);g.lineTo(492,o[1]);g.stroke();
+function ray(d,color,label,dashed=false,incoming=false){const end=[o[0]+d[0]*scale,o[1]-d[2]*scale];g.strokeStyle=color;g.fillStyle=color;g.lineWidth=2.5;g.setLineDash(dashed?[5,5]:[]);g.beginPath();g.moveTo(...o);g.lineTo(...end);g.stroke();g.setLineDash([]);const a=incoming?end:o,b=incoming?o:end;const angle=Math.atan2(b[1]-a[1],b[0]-a[0]);g.beginPath();g.moveTo(...b);g.lineTo(b[0]-9*Math.cos(angle-.4),b[1]-9*Math.sin(angle-.4));g.lineTo(b[0]-9*Math.cos(angle+.4),b[1]-9*Math.sin(angle+.4));g.closePath();g.fill();g.font='13px system-ui';g.fillText(label,Math.max(10,Math.min(450,end[0]+8)),Math.max(17,Math.min(318,end[1]-5)));}
+ray([0,0,1],'#b0bfc1','Ng',true);ray(p.incoming.map(v=>-v),'#f0bd69','in',false,true);ray(p.normal,'#f0bd69',p.reason===0?'Ns':'selected Ng',true);ray(p.reflected,'#71c5ec','R');ray(p.transmitted,'#83d9ba','T');}
+function side(after){const a=reportData.seams[$('tilt').value];const k=a.findIndex((p,i)=>i>0&&p.reason!==a[i-1].reason);$('sample').value=after?k:k-1;update();}
+$('sample').addEventListener('input',update);$('tilt').addEventListener('change',()=>side(false));$('before').onclick=()=>side(false);$('after').onclick=()=>side(true);
+$('comparison').addEventListener('input',e=>{const value=e.target.value;$('overlay').style.clipPath=`inset(0 ${100-value}% 0 0)`;$('wipe').style.setProperty('--split',value+'%');});
+$('spheres').innerHTML=reportData.analysis.spheres.map(s=>`<tr><td>${s.triangles}</td><td>${s.geometric_reflected_median_degrees.toFixed(4)}°</td><td class="good">${s.guarded_reflected_median_degrees.toFixed(4)}°</td><td>${s.geometric_transmitted_median_degrees.toFixed(4)}°</td><td class="good">${s.guarded_transmitted_median_degrees.toFixed(4)}°</td></tr>`).join('');
+$('checks').textContent=reportData.validation.check_summary;$('checks').className='good';update();
+</script>
+</html>

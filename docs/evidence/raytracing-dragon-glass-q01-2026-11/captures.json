@@ -1,0 +1,912 @@
+[
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/baseline-reproducer/prefix-1336.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/baseline-build/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "1336",
+          "--seed",
+          "7",
+          "--output",
+          "outputs/raytracing/dragon-glass-q01-20261109/baseline-reproducer/prefix-1336.png",
+          "--metrics",
+          "outputs/raytracing/dragon-glass-q01-20261109/baseline-reproducer/prefix-1336.json",
+          "--hdr-output",
+          "outputs/raytracing/dragon-glass-q01-20261109/baseline-reproducer/prefix-1336.bin"
+        ],
+        "binary_sha256": "979aada5b6db56cbe51fe817aef116e180ec65a746e0f9fdd1a939794dbe153d",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 1336,
+      "seed": 7,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 14.331075485009933,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": false,
+      "transport_failure": "prefix-1336: forbidden transport status {'invalid medium': 1}",
+      "transport_policy": "diagnostic only",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 82,
+        "16": 1,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "d0585c932545559b900b88b956b8a1567eea0fe9e0609ecc6dc205e93d6570e4",
+        ".json": "bdc28b8781bca7c1d6f79f8b3ff4a521289096d21f19f506d0ff6817c8eebd42",
+        ".bin": "d5b2e662f2447ecc1b1ee49ee4e21d9878654f1402c7cbdaa53498ffebba6d76",
+        ".log": "a00de341e1d9c216c7b88553b14d747a4e70abe5caf37f03bedc570efc45c8c7"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-1335-s7.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "1335",
+          "--seed",
+          "7",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-1335-s7.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-1335-s7.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-1335-s7.bin"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 1335,
+      "seed": 7,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 25.072469176986488,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": true,
+      "transport_failure": null,
+      "transport_policy": "strict accepted capture",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 82,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "156ed5fdf077e770d520ca0f4d79ea0b26795b1ea17e1a355df934209296b794",
+        ".json": "5899fad36a89a46385945a21941db326c6a1504a1a561fc38c68cb4ff7e374ff",
+        ".bin": "f7d5958809a09ca0d4918a5d8f9b304fdee5cbe3288101652a38ffc11469dd20",
+        ".log": "66e415975e7dc4e785fc31ad7cd6016ca1b8370b80944f30b86c2d7a6793ed5c"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-1336-s7.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "1336",
+          "--seed",
+          "7",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-1336-s7.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-1336-s7.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-1336-s7.bin"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 1336,
+      "seed": 7,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 14.560135436011478,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": true,
+      "transport_failure": null,
+      "transport_policy": "strict accepted capture",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 82,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "7088b56fdcbeac44999b1c0d7ee92c0f8c4fd27efabd17a77782f0acca22465a",
+        ".json": "8da66a054842250a2b0061355a509d6ef1761d930d2359e650193a38ef35cb73",
+        ".bin": "0aafe513f618af2cea045f87a8d273397791af3d779eb0de57d9f398e1d889e6",
+        ".log": "7a2e96b25031d0c2a6534ba6f09530aa26ef71615ca74e419166bbf81c178709"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "2048",
+          "--seed",
+          "7",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7.bin"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 2048,
+      "seed": 7,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 22.910939852998126,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": true,
+      "transport_failure": null,
+      "transport_policy": "strict accepted capture",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 116,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "2b74d525e3836e4004581df4cbb5282dae60ed49511d7096e5d3d715b48c46ce",
+        ".json": "39088b0a074759717b0ec25af0686163a724e1dbe102ed3a101f8f04abf241e7",
+        ".bin": "1d2c69daf3014caa3a42f87aac1fa0f1f9a65d15da1a546ad2e90cb022ce1e20",
+        ".log": "441f79e9f380f069b7acc03ed50a45c0a950b4d9528963c106995fcade1987b0"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7-deep.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "2048",
+          "--seed",
+          "7",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7-deep.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7-deep.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7-deep.bin",
+          "--max-events",
+          "256",
+          "--max-path-rays",
+          "2048",
+          "--max-total-rays",
+          "8192"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 2048,
+      "seed": 7,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 34.49910441899556,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": true,
+      "transport_failure": null,
+      "transport_policy": "strict accepted capture",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 116,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 256,
+        "max-path-rays": 2048,
+        "max-total-rays": 8192
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "2b74d525e3836e4004581df4cbb5282dae60ed49511d7096e5d3d715b48c46ce",
+        ".json": "9d4e846b3968bcc0358fa840d0d2977a92b1d8f2052b57c254d9357ce5018e7c",
+        ".bin": "1d2c69daf3014caa3a42f87aac1fa0f1f9a65d15da1a546ad2e90cb022ce1e20",
+        ".log": "63f3b716b1000f1b3aad3f6b5751f18eef32aca86bfc7b5a5c992055874cc3a9"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7-no-shadows.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "2048",
+          "--seed",
+          "7",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7-no-shadows.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7-no-shadows.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-2048-s7-no-shadows.bin",
+          "--no-shadows"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 2048,
+      "seed": 7,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 29.23737465799786,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": true,
+      "transport_failure": null,
+      "transport_policy": "strict accepted capture",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 115,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "3ca72208fd6638e25423df6e91ccf21f2536e9f9e227aa4f66587be4f8add278",
+        ".json": "8f2b08a9d384342e2aed4bf34d8e42f28094524231f549fc7f72755bac96cf65",
+        ".bin": "fc830c543595185cc6bc0fc9e5ce808ab974cf71b983f1d89cd241cbb474be3d",
+        ".log": "09762e3bafbec926608ae48589179d620f309b435a4a07fb579167b364663b8e"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-4096-s19.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "4096",
+          "--seed",
+          "19",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-4096-s19.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-4096-s19.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-03/canonical-4096-s19.bin"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 4096,
+      "seed": 19,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 67.88235981101752,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": false,
+      "transport_failure": "canonical-4096-s19: forbidden transport status {'event limit': 1, 'invalid medium': 1}",
+      "transport_policy": "strict accepted capture",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 1,
+        "4": 0,
+        "8": 224,
+        "16": 1,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "9d5b393638d0a03e88ad2f41c912c8892eac511beb128490615fdb3093b051ad",
+        ".json": "9079bc9aa666417a13b6b1c2ed830da2bf41995b52fa25dd28d881a717f30a23",
+        ".bin": "6a321f88196a6053febeb1c91842d9fe4381ec220bd00d28bf42598a2cf1d7f3",
+        ".log": "a47b43e89ba2173f18ddce5572a38171f886ff2ca66c220ec5c340ff401bc38e"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/baseline-canonical-4096-s19.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/baseline-build/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "4096",
+          "--seed",
+          "19",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/baseline-canonical-4096-s19.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/baseline-canonical-4096-s19.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/baseline-canonical-4096-s19.bin"
+        ],
+        "binary_sha256": "979aada5b6db56cbe51fe817aef116e180ec65a746e0f9fdd1a939794dbe153d",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 4096,
+      "seed": 19,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 43.66704759799177,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": false,
+      "transport_failure": "baseline-canonical-4096-s19: forbidden transport status {'event limit': 1, 'invalid medium': 1}",
+      "transport_policy": "diagnostic only",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 1,
+        "4": 0,
+        "8": 224,
+        "16": 1,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "d3d910ba2e94b6c3e057282dc4cc447804426e07939e8f95479bb32e8484bd4f",
+        ".json": "5802cbc39696dabfc61c641e5a9174d631e73de6afdf77b541e30d8deaf5d99e",
+        ".bin": "28e34ca9b76794b9eb7661e12927308949876c72571d8bf2278b5d1f2a36673a",
+        ".log": "54a52928abaf5e3750cc4278879a0dbee8edaa31abad51631e758e06c49b4f3e"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/candidate-canonical-4096-s19-deep.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "4096",
+          "--seed",
+          "19",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/candidate-canonical-4096-s19-deep.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/candidate-canonical-4096-s19-deep.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/candidate-canonical-4096-s19-deep.bin",
+          "--max-events",
+          "256",
+          "--max-path-rays",
+          "2048",
+          "--max-total-rays",
+          "8192"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 4096,
+      "seed": 19,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 51.46572496701265,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": false,
+      "transport_failure": "candidate-canonical-4096-s19-deep: forbidden transport status {'invalid medium': 1}",
+      "transport_policy": "diagnostic only",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 224,
+        "16": 1,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 256,
+        "max-path-rays": 2048,
+        "max-total-rays": 8192
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "9d5b393638d0a03e88ad2f41c912c8892eac511beb128490615fdb3093b051ad",
+        ".json": "849d96e6990cd84788c057b28e00095debe923bc02a76374cc11c525da43fdc3",
+        ".bin": "f9e9b6c946be5101d5945565d0d1fa0e8f58ce38e012e68f22b20275ba509fae",
+        ".log": "da8ee300072b0ecc8f2a34f18f859b1336768606d12bcdd2c3911b629314c987"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/candidate-canonical-4096-s43.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "4096",
+          "--seed",
+          "43",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/candidate-canonical-4096-s43.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/candidate-canonical-4096-s43.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/diagnostic-controls/candidate-canonical-4096-s43.bin"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 4096,
+      "seed": 43,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 67.27267810801277,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": true,
+      "transport_failure": null,
+      "transport_policy": "diagnostic only",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 214,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "7db7182abab974e230b6aba5abf35a2194ec177522920098566f0104af3580cd",
+        ".json": "2ba974666914cd75c06a6bc1b66a51c98864d03de0ec73c59bae82a53f96bb22",
+        ".bin": "c5cff45f95a44c69f69bb767c8093cb8c3b3e04290e58adbeb5ab961f6a2d12b",
+        ".log": "5e4fe1b4c4af2e1da619e215b58de77b6b859c6bb948f712e97d6dcea070e880"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/restored-normal/prefix-1336.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "1336",
+          "--seed",
+          "7",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/restored-normal/prefix-1336.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/restored-normal/prefix-1336.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/restored-normal/prefix-1336.bin"
+        ],
+        "binary_sha256": "847371669cfc622ac7c272b10fdeb0f86b5c6edec4cf5bf9bce544e9e954915a",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 1336,
+      "seed": 7,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 13.641971673001535,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": false,
+      "transport_failure": "prefix-1336: forbidden transport status {'invalid medium': 1}",
+      "transport_policy": "diagnostic only",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 82,
+        "16": 1,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "d0585c932545559b900b88b956b8a1567eea0fe9e0609ecc6dc205e93d6570e4",
+        ".json": "6340e6d575cb2df44162e286c8c50f7f54c35b76736956cfb2207da69a022a87",
+        ".bin": "d5b2e662f2447ecc1b1ee49ee4e21d9878654f1402c7cbdaa53498ffebba6d76",
+        ".log": "de1cdf41fe977802d7ddaab532d606463127eb4db2e69640f240268f4ca216ef"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/seed19-prefix-fidelity/prefix-1986.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "1986",
+          "--seed",
+          "19",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/seed19-prefix-fidelity/prefix-1986.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/seed19-prefix-fidelity/prefix-1986.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/seed19-prefix-fidelity/prefix-1986.bin"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 1986,
+      "seed": 19,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 20.30119509101496,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": true,
+      "transport_failure": null,
+      "transport_policy": "diagnostic only",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 105,
+        "16": 0,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "0b98db9ba3a62f03c0a1747977d0c7f73115811b2125859aa6a242732f02ec47",
+        ".json": "87b74f7e11d616a6ed0a63fcfd06ddf66c05715c9e221b157b2bb2057d071014",
+        ".bin": "ce6207284506b66a92140a8e7877892fbd1f7667ae1be3d94dd73d7828068721",
+        ".log": "3f8e3a5571e067bd146e40fe9ec57571cddd5c8bbf9e508ad54a38431f6b993d"
+      }
+    }
+  },
+  {
+    "path": "outputs/raytracing/dragon-glass-q01-20261109/seed19-prefix-fidelity/prefix-1987.receipt.json",
+    "receipt": {
+      "identity": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/candidate-build-03/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/dragon-glass.json",
+          "--headless",
+          "--frames",
+          "1",
+          "--require-validation",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--samples",
+          "1987",
+          "--seed",
+          "19",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/seed19-prefix-fidelity/prefix-1987.png",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/seed19-prefix-fidelity/prefix-1987.json",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/seed19-prefix-fidelity/prefix-1987.bin"
+        ],
+        "binary_sha256": "3f292f0c3b92f2b2c095c7c80b44cde3c43942c12d0a2f145112007b90e22887",
+        "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+        "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+        "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+      },
+      "width": 1920,
+      "height": 1080,
+      "samples": 1987,
+      "seed": 19,
+      "mode": "hdr",
+      "wall_seconds_including_setup": 21.000983896985417,
+      "finite_output": true,
+      "nonnegative_hdr": true,
+      "validation_clean": true,
+      "transport_status_checked": true,
+      "transport_accepted": false,
+      "transport_failure": "prefix-1987: forbidden transport status {'invalid medium': 1}",
+      "transport_policy": "diagnostic only",
+      "status_or_pixels": {
+        "1": 0,
+        "2": 0,
+        "4": 0,
+        "8": 105,
+        "16": 1,
+        "32": 0,
+        "64": 0
+      },
+      "budget": {
+        "max-events": 128,
+        "max-path-rays": 1024,
+        "max-total-rays": 4096
+      },
+      "resident_requested_bytes": 175189032,
+      "peak_requested_bytes": 175189032,
+      "artifacts": {
+        ".png": "891817369d39f65eaf87dd1c8b7e8ab5198c878584b89bb754c943548c40e9de",
+        ".json": "ac281eec70323b2e8e1402b1ed91d15591e7f4d4b6bf62913b98490f6ed8eea6",
+        ".bin": "1edfdd7254539f3e6dc3e6ae48a079e51cf058d7df61876e6bccae6690058fb6",
+        ".log": "c4b54c2775c93aaf887fe104c16a561ac92143451f4382637066db5c690a3f4b"
+      }
+    }
+  }
+]

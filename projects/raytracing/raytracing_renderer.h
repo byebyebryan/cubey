@@ -3,6 +3,7 @@
 #include "raytracing_material_geometry.h"
 #include "raytracing_materials.h"
 #include "raytracing_scene.h"
+#include "raytracing_trace_space.h"
 #include <cubey/core/profiling.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/texture.h>
@@ -50,6 +51,9 @@ class Renderer {
                 std::uint64_t frame);
     void finish();
     void save_queries(const std::filesystem::path& path) const;
+#ifdef CUBEY_RT_RAY_JOURNAL
+    void save_ray_journal(const std::filesystem::path& path) const;
+#endif
     [[nodiscard]] nlohmann::json metrics() const;
     [[nodiscard]] std::uint32_t sample_count() const {
         return history_samples_;
@@ -126,9 +130,14 @@ class Renderer {
     std::uint64_t target_generations_ = 0;
     std::uint64_t requested_peak_ = 0;
     bool diagnostic_ = false, collect_metrics_ = false;
+    TraceSpace trace_space_;
     std::uint64_t dropped_samples_ = 0;
     std::optional<std::uint32_t> last_slot_;
     int dump_mode_ = 0;
     std::uint64_t dump_stride_ = 64;
+#ifdef CUBEY_RT_RAY_JOURNAL
+    std::unique_ptr<vulkan::Buffer> ray_journal_;
+    nlohmann::json journal_identity_;
+#endif
 };
 } // namespace cubey::projects::raytracing

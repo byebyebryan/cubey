@@ -43,6 +43,16 @@ class GlassAcceptanceTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, 'component sum'):
             require_requested_memory(metrics)
 
+    def test_private_journal_is_included_when_present(self):
+        metrics = self.memory()
+        metrics.update(ray_journal_bytes=32 + 66560 * 128,
+                       resident_project_requested_bytes=160 + 32 + 66560 * 128,
+                       peak_simultaneous_project_requested_bytes=160 + 32 + 66560 * 128)
+        self.assertEqual(require_requested_memory(metrics), metrics["resident_project_requested_bytes"])
+        metrics["resident_project_requested_bytes"] -= 32
+        with self.assertRaisesRegex(AssertionError, "component sum"):
+            require_requested_memory(metrics)
+
     def test_peak_smaller_than_resident_is_rejected(self):
         metrics = self.memory()
         metrics['peak_simultaneous_project_requested_bytes'] = 159

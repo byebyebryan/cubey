@@ -8,7 +8,10 @@ https://github.com/KhronosGroup/Vulkan-Samples
 Stanford Dragon model data is separately attributed to the Stanford Computer
 Graphics Laboratory and governed by the source repository's usage terms.
 https://graphics.stanford.edu/data/3Dscanrep/
-It is downloaded explicitly and is not included in this code package.
+The full model is downloaded explicitly and is not included in this code package.
+Minimal numerical face-pair excerpts are retained in
+tools/fixtures/ray-spawn-thin-folds.json and ray-spawn-shadow-fold.json for the
+optical spawn regression.
 
 The bounded ray-generation scheduling follows the ray_tracing_reflection
 example at the same Khronos revision. Copyright (c) 2021-2025 NVIDIA CORPORATION,

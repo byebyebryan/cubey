@@ -41,6 +41,11 @@ struct Config {
     float attenuation_distance = 1.F, throughput_cutoff = .0001F;
     float orbit_speed = 0, sun_speed = 0;
     int max_events = 8, max_path_rays = 32, max_total_rays = 128;
+#ifdef CUBEY_RT_RAY_JOURNAL
+    std::filesystem::path ray_journal;
+    std::uint32_t journal_x = 0, journal_y = 0, journal_sample = 0;
+    bool journal_isolate = false, journal_first_failure = false;
+#endif
 };
 inline bool sampled_material_scene(const Config& c) {
     return c.scene == "materials" || c.scene == "dragon-materials" || c.scene == "dragon-optics";
@@ -179,6 +184,14 @@ inline config::Schema schema(Config& c) {
         option.negative_cli_name = "--no-" + std::string(name);
         b.bind(option, *value);
     }
+#ifdef CUBEY_RT_RAY_JOURNAL
+    b.bind(opt("ray-journal", ValueType::Path), c.ray_journal)
+        .bind(opt("journal-x", ValueType::UInt32), c.journal_x)
+        .bind(opt("journal-y", ValueType::UInt32), c.journal_y)
+        .bind(opt("journal-sample", ValueType::UInt32), c.journal_sample)
+        .bind(opt("journal-isolate", ValueType::Bool), c.journal_isolate)
+        .bind(opt("journal-first-failure", ValueType::Bool), c.journal_first_failure);
+#endif
     return b.build();
 }
 inline Config parse_config(int argc, char** argv, config::ParseResult* result = nullptr) {
@@ -357,6 +370,15 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
                         (dump_mode(c) == 3 ? 64ULL : 32ULL) * 1024 * 1024))
         throw std::invalid_argument(
             "query output requires one headless PNG frame and at most 32 MiB of raw geometry");
+#ifdef CUBEY_RT_RAY_JOURNAL
+    if (c.ray_journal.empty() || c.scene != "dragon-optics" || !c.common.headless ||
+        c.common.frames != 1 || c.common.headless_render_only || c.material != "glass" ||
+        c.common.capture_mode != CaptureMode::Png || c.journal_x >= c.common.width ||
+        c.journal_y >= c.common.height || c.journal_sample >= c.samples ||
+        (c.journal_isolate && (outputs || c.journal_first_failure)))
+        throw std::invalid_argument("ray journal requires one headless sharp-glass dragon PNG, "
+                                    "a valid pixel/sample and no raw dump in isolated mode");
+#endif
     return c;
 }
 int run(const Config& config);

@@ -1,0 +1,55 @@
+{
+  "reviewed": "2026-11-14",
+  "scope": "Primary-source planning only; no imported implementation",
+  "sources": [
+    {
+      "id": "pbrt-geometric-shading",
+      "url": "https://www.pbr-book.org/3ed-2018/Materials/BSDFs",
+      "reviewed_scope": "Geometric and shading hemispheres, light leaks, reflection/transmission classification",
+      "planning_use": "Retain geometric boundary authority; test the complete interface before sampling",
+      "limit": "Does not supply the proposed fallback helper or certify this dielectric policy"
+    },
+    {
+      "id": "pbrt-dielectric",
+      "url": "https://www.pbr-book.org/4ed/Reflection_Models/Dielectric_BSDF",
+      "reviewed_scope": "Perfect and rough dielectric sampling, Fresnel branch masses, radiance-mode eta scaling",
+      "planning_use": "Keep sampling weights consistent with the selected interface",
+      "limit": "No justification for replacing geometric normals or discarding positive branches"
+    },
+    {
+      "id": "veach-nonsymmetry",
+      "url": "https://graphics.stanford.edu/papers/non-symmetric/gamma-fixed/",
+      "reviewed_scope": "Author abstract on nonsymmetric scattering from refraction and shading normals",
+      "planning_use": "Distinguish reciprocity and transport conventions",
+      "limit": "Full PostScript algorithms were not ported or evaluated"
+    },
+    {
+      "id": "pbrt-adjoint",
+      "url": "https://www.pbr-book.org/3ed-2018/Light_Transport_III_Bidirectional_Methods/The_Path-Space_Measurement_Equation",
+      "reviewed_scope": "Refraction and shading-normal nonsymmetry; radiance versus importance corrections",
+      "planning_use": "Do not add an importance correction as a camera-path brightness fix",
+      "limit": "View-dependent fallback needs its own reverse-path and energy characterization"
+    },
+    {
+      "id": "pbrt-energy-limit",
+      "url": "https://www.pbr-book.org/3ed-2018/Materials/Further_Reading",
+      "reviewed_scope": "Shading normals may violate energy conservation beyond hemisphere classification",
+      "planning_use": "Energy characterization is independent from geometric-side admissibility",
+      "limit": "Fresnel branch normalization alone does not prove flux conservation"
+    },
+    {
+      "id": "pbrt-specular-footprints",
+      "url": "https://www.pbr-book.org/4ed/Textures_and_Materials/Texture_Sampling_and_Antialiasing",
+      "reviewed_scope": "Specular differential propagation including normal variation",
+      "planning_use": "Isolate Q1 direction appearance; require matching filtering before textured promotion",
+      "limit": "No runtime differential implementation selected"
+    },
+    {
+      "id": "refraction-cones",
+      "url": "https://research.nvidia.com/publication/2021-08_refraction-ray-cones-texture-level-detail",
+      "reviewed_scope": "Official abstract and full-versus-half cone-angle erratum",
+      "planning_use": "Explicit cone conventions in Q2; zero curvature does not qualify varying normals",
+      "limit": "Full chapter equations were not imported or qualified"
+    }
+  ]
+}

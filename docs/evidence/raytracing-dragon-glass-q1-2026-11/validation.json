@@ -1,0 +1,69 @@
+{
+  "checked_at_utc": "2026-11-15T04:09:02.467332+00:00",
+  "check_summary": "20 existing RT CTests + 4 documentation checks pass",
+  "existing_regressions": {
+    "command": [
+      "rtk",
+      "proxy",
+      "ctest",
+      "--test-dir",
+      "build/dev",
+      "-R",
+      "^(raytracing_|documentation_)",
+      "--output-on-failure",
+      "-j1"
+    ],
+    "exit_code": 0,
+    "checked_at_utc": "2026-11-15T04:07:56.408842+00:00"
+  },
+  "checks": [
+    {
+      "command": [
+        "rtk",
+        "proxy",
+        "uvx",
+        "ruff",
+        "check",
+        "projects/raytracing/tools/optical_normal_reference.py",
+        "projects/raytracing/tools/run_optical_normal_probe.py",
+        "projects/raytracing/tools/analyze_optical_normal.py",
+        "docs/evidence/raytracing-dragon-glass-q1-2026-11/render_report.py"
+      ],
+      "exit_code": 0,
+      "log": "check-0.log"
+    },
+    {
+      "command": [
+        "rtk",
+        "proxy",
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "log": "check-1.log"
+    },
+    {
+      "command": [
+        "rtk",
+        "proxy",
+        "ctest",
+        "--test-dir",
+        "build/dev",
+        "-R",
+        "^documentation_",
+        "--output-on-failure",
+        "-j1"
+      ],
+      "exit_code": 0,
+      "log": "check-2.log"
+    }
+  ],
+  "scope": "Existing renderer regressions and experiment arithmetic validation; candidate promotion rejected at stage 1",
+  "arithmetic_probe_passed": true,
+  "gpu_sync_validation_passed": true,
+  "candidate_promotion_passed": false,
+  "candidate_dragon_matrix_executed": false,
+  "candidate_native_integration_executed": false,
+  "q01_runtime_identity_preserved": true
+}

@@ -1,0 +1,25 @@
+{
+  "final06_seed7_streams_identical": true,
+  "final06_seed7_records": 86,
+  "final06_seed7_failure": 82,
+  "final06_vs_probe01_identical": true,
+  "seed19_isolated_vs_search_identical": true,
+  "seed19_records": 121,
+  "private_memory": {
+    "final-passive06": {
+      "journal": 8519712,
+      "resident": 183708744,
+      "history_samples": 1336
+    },
+    "final-isolated06": {
+      "journal": 8519712,
+      "resident": 150531208,
+      "history_samples": 1
+    },
+    "seed19-isolated05": {
+      "journal": 8519712,
+      "resident": 150531208,
+      "history_samples": 1
+    }
+  }
+}

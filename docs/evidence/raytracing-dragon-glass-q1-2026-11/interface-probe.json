@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "command": [
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/probe-02/build/raytracing",
+    "--headless",
+    "--frames",
+    "1",
+    "--width",
+    "512",
+    "--height",
+    "128",
+    "--require-validation",
+    "--dielectric-contract",
+    "--optics-output",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/probe-02/probe.bin",
+    "--output",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/probe-02/probe.png",
+    "--metrics",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/probe-02/metrics.json"
+  ],
+  "exit_code": 0,
+  "fixture": "Q1 interface, private substituted dielectric-contract entry point",
+  "logical_extent": [
+    512,
+    128
+  ],
+  "record_bytes": 256,
+  "binary_sha256": "6db5ab1fe2be9bde33a19a7e9cf98134b2c252fcd6d2fcd0045aeda7c694f416",
+  "shader_sha256": "fed1c34defd806e446f79a71bc7fb48ae03b13018d6ee1e9cb95ac58e00f7c80",
+  "source_sha256": {
+    "shaders/optical_normal_experiment.glsl": "0f2ce738a4b7732d88490424adc1f3d73b0c3b2cfaf35668b442d15b5a85017c",
+    "tools/fixtures/optical-normal-probe.glsl": "6dd03107e41cabdc2b004636014d2253025c1f54dc54ef95b3393b37f30df070",
+    "tools/run_optical_normal_probe.py": "f5792485a4c12095f507b37620da754b26ece58286108d5add280d84ebfa674e"
+  },
+  "probe_sha256": "13ab181bbc23c8c8dc9428bd962b6a39ae2a9fbd33cbeaa60b61ffae97a728f2"
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/dragon-glass.json",
+      "--headless",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--ray-journal",
+      "unused.json"
+    ],
+    "exit": 1,
+    "log": "raytracing: unknown argument: --ray-journal\n"
+  },
+  {
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/probe-build-05/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/dragon-glass.json",
+      "--headless",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--ray-journal",
+      "unused.json",
+      "--journal-isolate",
+      "--journal-first-failure"
+    ],
+    "exit": 1,
+    "log": "raytracing: ray journal requires one headless sharp-glass dragon PNG, a valid pixel/sample and no raw dump in isolated mode\n"
+  },
+  {
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q01-20261109/probe-build-05/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/dragon-glass.json",
+      "--headless",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--ray-journal",
+      "unused.json",
+      "--journal-x",
+      "1920"
+    ],
+    "exit": 1,
+    "log": "raytracing: ray journal requires one headless sharp-glass dragon PNG, a valid pixel/sample and no raw dump in isolated mode\n"
+  }
+]

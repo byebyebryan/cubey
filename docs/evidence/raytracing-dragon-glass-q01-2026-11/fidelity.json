@@ -1,0 +1,15 @@
+{
+  "passive_status_map_identical": true,
+  "passive_hdr_rmse": 1.3821206874466786e-05,
+  "passive_hdr_max_absolute": 0.0022388100624084473,
+  "changed_rgb_components": 445433,
+  "passive_isolated_records_bit_identical": true,
+  "passive_record_count": 86,
+  "causal_common_prefix_records": 75,
+  "causal_record_count": 215,
+  "causal_first_failure_record_plus_one": 0,
+  "restored_output_bit_identical": {
+    ".bin": true,
+    ".png": true
+  }
+}

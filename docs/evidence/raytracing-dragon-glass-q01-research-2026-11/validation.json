@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-08",
+  "kind": "analysis-and-research-only",
+  "baseline_head": "10328ef2dff12bd26b6ff20a589c47dde5e8eabc",
+  "head_unchanged": true,
+  "preserved_source_binary_shader_model_material_entries": 120,
+  "changed_snapshot_entries": [],
+  "documentation_tests_passed": 4,
+  "diff_whitespace_clean": true,
+  "cpu_replay_inputs_reproduced": true,
+  "gpu_float_bit_match_verified": false,
+  "new_gpu_captures": false,
+  "probe_implemented": false,
+  "renderer_fix_implemented": false,
+  "fullhd_medium_failure_cleared": false,
+  "original_sdf_worktree_written": false,
+  "prior_q0_work_preserved": true,
+  "committed": false,
+  "pushed": false,
+  "published": false,
+  "research_evidence_sha256": {
+    "README.md": "c6a32a395814a94558c3f9f3cdcda616f6530afe8cf50f25f20bc45d56b139c3",
+    "replay-input-check.json": "c2f399fe0bf61752dd2a0a1a4988abd60c1e3cbaa7254594bf2102d4ed5d0524",
+    "replay_input_check.py": "3aa2baf1c4af0a145dac050bcb5d5c9b67e25dac9ef37990a0d45a95a622f137",
+    "source-observations.json": "a3ece76656e9daec461492863c04540e2881dc125476183e8a6af6c1388613db",
+    "sources.json": "1b19d4872b3bc564bce2441c1ba573c5e95865ad4eb8edfc6a18e8db50ff9efa"
+  }
+}

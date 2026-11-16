@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "qualification_captures_rechecked": 11,
+  "fullhd_independent_references": 6,
+  "whole_image_cumulative_status": true,
+  "rt_ctests": 20,
+  "nonoptical_pngs_bit_identical": 14,
+  "normal_png_matches_frozen_candidate": true,
+  "models_materials_presets_certificates_preserved": true,
+  "diagnostic_fixture_is_camera_replay": false,
+  "audit_scope": "Runtime and artifact identity. Documentation and report delivery have separate receipts."
+}

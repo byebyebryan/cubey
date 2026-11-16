@@ -1,0 +1,40 @@
+{
+  "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+  "triangles": 870514,
+  "scope": "Float64 calculations on the accepted serialized float32 mesh. Stored corner normals normalized before comparison; no ray traversal or image capture.",
+  "corner_normal_angle_degrees": {
+    "0": 0.0,
+    "50": 2.8662207809762545,
+    "95": 10.134408492885592,
+    "99": 18.882323668064704,
+    "99.9": 45.809688281755136,
+    "100": 110.97611975142885
+  },
+  "centroid_normal_angle_degrees": {
+    "0": 0.0,
+    "50": 1.6183733667519868,
+    "95": 6.1396959478873825,
+    "99": 12.436920285266762,
+    "99.9": 33.26202493064591,
+    "100": 87.07442780937505
+  },
+  "adjacent_face_angle_degrees": {
+    "0": 0.0,
+    "50": 2.7383524054251223,
+    "95": 12.085306975730843,
+    "99": 24.545847537557883,
+    "99.9": 77.66454645100445,
+    "100": 175.27377013033464
+  },
+  "corners_opposed_or_tangent_to_geometric": 44,
+  "faces_with_an_opposed_or_tangent_corner": 43,
+  "centroid_normals_opposed_or_tangent": 0,
+  "patch_triangles": 63,
+  "centroid_direction_probe": {
+    "scope": "Unoccluded triangle centroids at the default camera, IOR 1.5 entering. Counts are not observed visible-path errors.",
+    "front_facing_centroids": 408501,
+    "incident_shading_hemisphere_disagreement": 5228,
+    "naive_reflections_on_wrong_geometric_side": 4951,
+    "naive_transmissions_on_wrong_geometric_side": 0
+  }
+}

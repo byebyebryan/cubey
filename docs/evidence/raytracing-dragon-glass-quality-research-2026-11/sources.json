@@ -1,0 +1,49 @@
+{
+  "reviewed": "2026-11-08",
+  "scope": "Primary-source research, with no imported implementation or adopted denoiser.",
+  "sources": [
+    {
+      "id": "pbrt-bsdf",
+      "url": "https://www.pbr-book.org/3ed-2018/Materials/BSDFs",
+      "reviewed_scope": "BSDF discussion of geometric and shading hemispheres and reflection/transmission classification.",
+      "planning_use": "Keep geometric boundary semantics while investigating optical normals; this is not a complete smooth-glass solution."
+    },
+    {
+      "id": "refraction-cones",
+      "url": "https://research.nvidia.com/publication/2021-08_refraction-ray-cones-texture-level-detail",
+      "reviewed_scope": "Official publication abstract and cone-angle erratum. Full chapter equations have not been ported or qualified.",
+      "planning_use": "Pin full versus half cone angle before comparing a refraction footprint model."
+    },
+    {
+      "id": "ray-differentials",
+      "url": "https://graphics.stanford.edu/papers/trd/",
+      "paper_url": "https://graphics.stanford.edu/papers/trd/trd_jpg.pdf",
+      "reviewed_scope": "Author page and paper text on first-order footprints through specular interactions.",
+      "planning_use": "Possible diagnostic reference for normal variation and anisotropy; not selected as runtime replacement."
+    },
+    {
+      "id": "nrd",
+      "url": "https://github.com/NVIDIA-RTX/NRD/blob/abb00a7fb3535d969435f1b68c0c37e480ca88b6/README.md",
+      "document_commit": "abb00a7fb3535d969435f1b68c0c37e480ca88b6",
+      "document_commit_date": "2026-10-07T08:53:17Z",
+      "document_version": "4.18.0",
+      "reviewed_scope": "Overview, transparency limitation, guide inputs and primary surface replacement guidance.",
+      "planning_use": "A future integration needs guide/history design; native transparency support must not be assumed."
+    },
+    {
+      "id": "rtxpt",
+      "url": "https://github.com/NVIDIA-RTX/RTXPT/blob/303b408ab81790a5051abd7573830b7a4112eb8e/Docs/Design.md",
+      "document_commit": "303b408ab81790a5051abd7573830b7a4112eb8e",
+      "document_commit_date": "2026-10-23T23:31:11Z",
+      "document_version": "1.9.0",
+      "reviewed_scope": "Path decomposition and denoiser guide generation for delta reflection/transmission.",
+      "planning_use": "Evidence that modern glass reconstruction involves path layers and apparent motion, not just final-color filtering."
+    },
+    {
+      "id": "path-space-motion",
+      "url": "https://cs.dartmouth.edu/~wjarosz/publications/zimmer15path.html",
+      "reviewed_scope": "Author publication page and abstract, not a full algorithm evaluation.",
+      "planning_use": "Separating specular paths addresses ambiguity in motion and filtering through curved glass."
+    }
+  ]
+}

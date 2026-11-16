@@ -1,0 +1,86 @@
+{
+  "source": "outputs/raytracing/dragon-glass-first-pass-20261108/window-final/metrics.json",
+  "source_sha256": "385c1018492909f6d0487bae109fd3fb7719087ae3aa383e0ba73d245627cfee",
+  "scope": "Historical mixed native UI exercise: changing views, IOR, exposure and extents. Not a fresh steady-state benchmark or wall-clock/input-latency measurement. Reset includes non-motion edits. Memory values predate the accounting fix.",
+  "device": "NVIDIA GeForce RTX 5070 Ti",
+  "sample_target": 32,
+  "all_history_epochs": 130,
+  "maximum_new_samples_per_native_frame": 1,
+  "groups": {
+    "reset": {
+      "journal_frames": 129,
+      "gpu_passes": {
+        "raytracing.environment_update": {
+          "count": 129,
+          "median_ms": 0.216576,
+          "p95_ms": 1.0764799999999999
+        },
+        "raytracing.total_frame": {
+          "count": 129,
+          "median_ms": 4.9552,
+          "p95_ms": 18.136063999999998
+        },
+        "raytracing.trace": {
+          "count": 129,
+          "median_ms": 4.482976,
+          "p95_ms": 17.8495936
+        },
+        "raytracing.whole_scene": {
+          "count": 129,
+          "median_ms": 4.491872,
+          "p95_ms": 17.8611008
+        }
+      }
+    },
+    "accumulating": {
+      "journal_frames": 259,
+      "gpu_passes": {
+        "raytracing.environment_update": {
+          "count": 259,
+          "median_ms": 0.217696,
+          "p95_ms": 0.27758079999999996
+        },
+        "raytracing.total_frame": {
+          "count": 259,
+          "median_ms": 5.161408,
+          "p95_ms": 10.536137599999998
+        },
+        "raytracing.trace": {
+          "count": 259,
+          "median_ms": 4.928319999999999,
+          "p95_ms": 10.300559999999999
+        },
+        "raytracing.whole_scene": {
+          "count": 259,
+          "median_ms": 4.939839999999999,
+          "p95_ms": 10.3144224
+        }
+      }
+    },
+    "settled": {
+      "journal_frames": 906,
+      "gpu_passes": {
+        "raytracing.environment_update": {
+          "count": 906,
+          "median_ms": 0.21584,
+          "p95_ms": 0.274464
+        },
+        "raytracing.total_frame": {
+          "count": 906,
+          "median_ms": 0.25792,
+          "p95_ms": 0.322152
+        },
+        "raytracing.trace": {
+          "count": 906,
+          "median_ms": 0.029455999999999996,
+          "p95_ms": 0.041136
+        },
+        "raytracing.whole_scene": {
+          "count": 906,
+          "median_ms": 0.039055999999999993,
+          "p95_ms": 0.050552
+        }
+      }
+    }
+  }
+}

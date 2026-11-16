@@ -5,5 +5,5 @@
 layout(location=0) rayPayloadInEXT Hit hit;
 hitAttributeEXT vec2 bary;
 void main() {
-    hit=Hit(bary,gl_HitTEXT,gl_InstanceCustomIndexEXT,gl_PrimitiveID);
+    hit=Hit(bary,gl_HitTEXT,gl_InstanceCustomIndexEXT,gl_PrimitiveID RT_JOURNAL_ARG(gl_HitKindEXT));
 }

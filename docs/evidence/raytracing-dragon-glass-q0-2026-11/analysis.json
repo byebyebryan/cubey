@@ -1,0 +1,4152 @@
+{
+  "captures": {
+    "pilot": {
+      "canonical": {
+        "width": 960,
+        "height": 540,
+        "comparisons": {
+          "32": {
+            "foreground": {
+              "hdr": {
+                "pixels": 71592,
+                "rmse": 4.126688239640553,
+                "reference_pair_rmse": 0.4245755121628156,
+                "reference_mean_noise_estimate": 0.2122877560814078,
+                "candidate_noise_estimate": 4.1212243005938864,
+                "reference_rms": 2.3749682511948778,
+                "absolute_channel_error_p95": 0.04506835341453552,
+                "absolute_channel_error_p99": 0.10636081174015999,
+                "absolute_channel_error_p999": 6.289818506315899,
+                "maximum_absolute_channel_error": 613.2348077744246
+              },
+              "display_rgb8": {
+                "pixels": 71592,
+                "rmse": 7.059759517544623,
+                "reference_pair_rmse": 6.217079650102746,
+                "reference_mean_noise_estimate": 3.108539825051373,
+                "candidate_noise_estimate": 6.338547515135582,
+                "reference_rms": 170.81382833399488,
+                "absolute_channel_error_p95": 11.5,
+                "absolute_channel_error_p99": 24.0,
+                "absolute_channel_error_p999": 80.0,
+                "maximum_absolute_channel_error": 189.5
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 53862,
+                "rmse": 4.53003382435339,
+                "reference_pair_rmse": 0.4582761012531304,
+                "reference_mean_noise_estimate": 0.2291380506265652,
+                "candidate_noise_estimate": 4.524234985446807,
+                "reference_rms": 2.3337267713900727,
+                "absolute_channel_error_p95": 0.04793844744563103,
+                "absolute_channel_error_p99": 0.11023363061249179,
+                "absolute_channel_error_p999": 7.914100473226181,
+                "maximum_absolute_channel_error": 613.2348077744246
+              },
+              "display_rgb8": {
+                "pixels": 53862,
+                "rmse": 7.482885344693342,
+                "reference_pair_rmse": 6.167002601124145,
+                "reference_mean_noise_estimate": 3.0835013005620726,
+                "candidate_noise_estimate": 6.818034380322411,
+                "reference_rms": 175.07538821688647,
+                "absolute_channel_error_p95": 12.5,
+                "absolute_channel_error_p99": 24.5,
+                "absolute_channel_error_p999": 84.70750000000407,
+                "maximum_absolute_channel_error": 189.5
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 14062,
+                "rmse": 3.023237954677154,
+                "reference_pair_rmse": 0.47693135775893164,
+                "reference_mean_noise_estimate": 0.23846567887946582,
+                "candidate_noise_estimate": 3.0138184833524826,
+                "reference_rms": 3.618469305990326,
+                "absolute_channel_error_p95": 0.054022423923015594,
+                "absolute_channel_error_p99": 0.11154903396964096,
+                "absolute_channel_error_p999": 8.505991220102528,
+                "maximum_absolute_channel_error": 239.4079331457615
+              },
+              "display_rgb8": {
+                "pixels": 14062,
+                "rmse": 7.180712592638299,
+                "reference_pair_rmse": 4.840736152378284,
+                "reference_mean_noise_estimate": 2.420368076189142,
+                "candidate_noise_estimate": 6.760506764573106,
+                "reference_rms": 183.9190463186911,
+                "absolute_channel_error_p95": 12.0,
+                "absolute_channel_error_p99": 23.0,
+                "absolute_channel_error_p999": 82.63000000000466,
+                "maximum_absolute_channel_error": 157.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 16525,
+                "rmse": 5.588295263382428,
+                "reference_pair_rmse": 0.6350920733776309,
+                "reference_mean_noise_estimate": 0.3175460366888154,
+                "candidate_noise_estimate": 5.579265943233546,
+                "reference_rms": 1.5146870984607002,
+                "absolute_channel_error_p95": 0.054221506416797606,
+                "absolute_channel_error_p99": 0.1516784018278135,
+                "absolute_channel_error_p999": 15.750625902924565,
+                "maximum_absolute_channel_error": 613.2348077744246
+              },
+              "display_rgb8": {
+                "pixels": 16525,
+                "rmse": 9.23355033779778,
+                "reference_pair_rmse": 7.6917767224325955,
+                "reference_mean_noise_estimate": 3.8458883612162977,
+                "candidate_noise_estimate": 8.39449787382822,
+                "reference_rms": 163.34110797411284,
+                "absolute_channel_error_p95": 15.0,
+                "absolute_channel_error_p99": 30.0,
+                "absolute_channel_error_p999": 98.0,
+                "maximum_absolute_channel_error": 189.5
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 11561,
+                "rmse": 0.06901357352495913,
+                "reference_pair_rmse": 0.04276925201909668,
+                "reference_mean_noise_estimate": 0.02138462600954834,
+                "candidate_noise_estimate": 0.06561685074061913,
+                "reference_rms": 0.22274664098988634,
+                "absolute_channel_error_p95": 0.00930849835276604,
+                "absolute_channel_error_p99": 0.02435138195753107,
+                "absolute_channel_error_p999": 0.362081192180536,
+                "maximum_absolute_channel_error": 7.508325397968292
+              },
+              "display_rgb8": {
+                "pixels": 11561,
+                "rmse": 3.824543110759093,
+                "reference_pair_rmse": 6.035195048641693,
+                "reference_mean_noise_estimate": 3.0175975243208466,
+                "candidate_noise_estimate": 2.3497308754977744,
+                "reference_rms": 150.65256143406125,
+                "absolute_channel_error_p95": 4.0,
+                "absolute_channel_error_p99": 10.0,
+                "absolute_channel_error_p999": 43.15900000000329,
+                "maximum_absolute_channel_error": 106.5
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 8826,
+                "rmse": 3.5910254327915223,
+                "reference_pair_rmse": 0.42388319729725876,
+                "reference_mean_noise_estimate": 0.21194159864862938,
+                "candidate_noise_estimate": 3.5847656015028098,
+                "reference_rms": 3.5449605991676627,
+                "absolute_channel_error_p95": 0.04370298981666564,
+                "absolute_channel_error_p99": 0.1026807029545298,
+                "absolute_channel_error_p999": 5.845307133288224,
+                "maximum_absolute_channel_error": 381.04402923583984
+              },
+              "display_rgb8": {
+                "pixels": 8826,
+                "rmse": 6.655658115734788,
+                "reference_pair_rmse": 5.897451187449248,
+                "reference_mean_noise_estimate": 2.948725593724624,
+                "candidate_noise_estimate": 5.9668083869401825,
+                "reference_rms": 182.04865920801228,
+                "absolute_channel_error_p95": 11.0,
+                "absolute_channel_error_p99": 23.61499999999978,
+                "absolute_channel_error_p999": 72.26150000000234,
+                "maximum_absolute_channel_error": 160.5
+              }
+            }
+          },
+          "128": {
+            "foreground": {
+              "hdr": {
+                "pixels": 71592,
+                "rmse": 1.6731170365681765,
+                "reference_pair_rmse": 0.4245755121628156,
+                "reference_mean_noise_estimate": 0.2122877560814078,
+                "candidate_noise_estimate": 1.6595946874681775,
+                "reference_rms": 2.3749682511948778,
+                "absolute_channel_error_p95": 0.02024839259684086,
+                "absolute_channel_error_p99": 0.06903673894703388,
+                "absolute_channel_error_p999": 6.718744823336666,
+                "maximum_absolute_channel_error": 240.72369384765625
+              },
+              "display_rgb8": {
+                "pixels": 71592,
+                "rmse": 5.690320550722782,
+                "reference_pair_rmse": 6.217079650102746,
+                "reference_mean_noise_estimate": 3.108539825051373,
+                "candidate_noise_estimate": 4.766206890814498,
+                "reference_rms": 170.81382833399488,
+                "absolute_channel_error_p95": 5.5,
+                "absolute_channel_error_p99": 13.5,
+                "absolute_channel_error_p999": 81.0,
+                "maximum_absolute_channel_error": 182.5
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 53862,
+                "rmse": 1.6990716064996627,
+                "reference_pair_rmse": 0.4582761012531304,
+                "reference_mean_noise_estimate": 0.2291380506265652,
+                "candidate_noise_estimate": 1.683549844159181,
+                "reference_rms": 2.3337267713900727,
+                "absolute_channel_error_p95": 0.021426795050501823,
+                "absolute_channel_error_p99": 0.07065572179853878,
+                "absolute_channel_error_p999": 7.9197694626462445,
+                "maximum_absolute_channel_error": 183.1131905913353
+              },
+              "display_rgb8": {
+                "pixels": 53862,
+                "rmse": 5.885486451894904,
+                "reference_pair_rmse": 6.167002601124145,
+                "reference_mean_noise_estimate": 3.0835013005620726,
+                "candidate_noise_estimate": 5.013079941998778,
+                "reference_rms": 175.07538821688647,
+                "absolute_channel_error_p95": 6.0,
+                "absolute_channel_error_p99": 13.5,
+                "absolute_channel_error_p999": 82.5,
+                "maximum_absolute_channel_error": 182.5
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 14062,
+                "rmse": 1.9479580476212668,
+                "reference_pair_rmse": 0.47693135775893164,
+                "reference_mean_noise_estimate": 0.23846567887946582,
+                "candidate_noise_estimate": 1.933306668712704,
+                "reference_rms": 3.618469305990326,
+                "absolute_channel_error_p95": 0.02290359139442444,
+                "absolute_channel_error_p99": 0.05438750647008421,
+                "absolute_channel_error_p999": 9.035932282806579,
+                "maximum_absolute_channel_error": 183.1131905913353
+              },
+              "display_rgb8": {
+                "pixels": 14062,
+                "rmse": 5.661345111711641,
+                "reference_pair_rmse": 4.840736152378284,
+                "reference_mean_noise_estimate": 2.420368076189142,
+                "candidate_noise_estimate": 5.1178752280283035,
+                "reference_rms": 183.9190463186911,
+                "absolute_channel_error_p95": 5.5,
+                "absolute_channel_error_p99": 12.5,
+                "absolute_channel_error_p999": 82.40750000000116,
+                "maximum_absolute_channel_error": 155.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 16525,
+                "rmse": 1.956581270589227,
+                "reference_pair_rmse": 0.6350920733776309,
+                "reference_mean_noise_estimate": 0.3175460366888154,
+                "candidate_noise_estimate": 1.9306410290377078,
+                "reference_rms": 1.5146870984607002,
+                "absolute_channel_error_p95": 0.024649453163146956,
+                "absolute_channel_error_p99": 0.1474534510821119,
+                "absolute_channel_error_p999": 13.724495773747915,
+                "maximum_absolute_channel_error": 153.08871841430664
+              },
+              "display_rgb8": {
+                "pixels": 16525,
+                "rmse": 7.129081096246083,
+                "reference_pair_rmse": 7.6917767224325955,
+                "reference_mean_noise_estimate": 3.8458883612162977,
+                "candidate_noise_estimate": 6.002744371528266,
+                "reference_rms": 163.34110797411284,
+                "absolute_channel_error_p95": 7.0,
+                "absolute_channel_error_p99": 23.0,
+                "absolute_channel_error_p999": 95.13900000001013,
+                "maximum_absolute_channel_error": 182.5
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 11561,
+                "rmse": 0.13109877001301418,
+                "reference_pair_rmse": 0.04276925201909668,
+                "reference_mean_noise_estimate": 0.02138462600954834,
+                "candidate_noise_estimate": 0.1293428980244255,
+                "reference_rms": 0.22274664098988634,
+                "absolute_channel_error_p95": 0.003314118087291718,
+                "absolute_channel_error_p99": 0.02085873484611512,
+                "absolute_channel_error_p999": 0.4430130832493307,
+                "maximum_absolute_channel_error": 15.050631247460842
+              },
+              "display_rgb8": {
+                "pixels": 11561,
+                "rmse": 4.002456321323193,
+                "reference_pair_rmse": 6.035195048641693,
+                "reference_mean_noise_estimate": 3.0175975243208466,
+                "candidate_noise_estimate": 2.629403313550945,
+                "reference_rms": 150.65256143406125,
+                "absolute_channel_error_p95": 1.5,
+                "absolute_channel_error_p99": 7.0,
+                "absolute_channel_error_p999": 52.65900000000329,
+                "maximum_absolute_channel_error": 116.0
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 8826,
+                "rmse": 2.2510276070181394,
+                "reference_pair_rmse": 0.42388319729725876,
+                "reference_mean_noise_estimate": 0.21194159864862938,
+                "candidate_noise_estimate": 2.2410278994961383,
+                "reference_rms": 3.5449605991676627,
+                "absolute_channel_error_p95": 0.019556132331490512,
+                "absolute_channel_error_p99": 0.058056153506040015,
+                "absolute_channel_error_p999": 5.845212866068923,
+                "maximum_absolute_channel_error": 240.72369384765625
+              },
+              "display_rgb8": {
+                "pixels": 8826,
+                "rmse": 5.538488305296712,
+                "reference_pair_rmse": 5.897451187449248,
+                "reference_mean_noise_estimate": 2.948725593724624,
+                "candidate_noise_estimate": 4.688269412141523,
+                "reference_rms": 182.04865920801228,
+                "absolute_channel_error_p95": 5.0,
+                "absolute_channel_error_p99": 13.5,
+                "absolute_channel_error_p999": 78.0,
+                "maximum_absolute_channel_error": 172.0
+              }
+            }
+          },
+          "512": {
+            "foreground": {
+              "hdr": {
+                "pixels": 71592,
+                "rmse": 0.900847898009072,
+                "reference_pair_rmse": 0.4245755121628156,
+                "reference_mean_noise_estimate": 0.2122877560814078,
+                "candidate_noise_estimate": 0.8754774948365515,
+                "reference_rms": 2.3749682511948778,
+                "absolute_channel_error_p95": 0.01058579795062542,
+                "absolute_channel_error_p99": 0.08449373207986355,
+                "absolute_channel_error_p999": 6.849015089869645,
+                "maximum_absolute_channel_error": 77.89981696009636
+              },
+              "display_rgb8": {
+                "pixels": 71592,
+                "rmse": 5.268065402346341,
+                "reference_pair_rmse": 6.217079650102746,
+                "reference_mean_noise_estimate": 3.108539825051373,
+                "candidate_noise_estimate": 4.253174489656884,
+                "reference_rms": 170.81382833399488,
+                "absolute_channel_error_p95": 3.0,
+                "absolute_channel_error_p99": 9.5,
+                "absolute_channel_error_p999": 79.0,
+                "maximum_absolute_channel_error": 182.5
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 53862,
+                "rmse": 0.9468309866229693,
+                "reference_pair_rmse": 0.4582761012531304,
+                "reference_mean_noise_estimate": 0.2291380506265652,
+                "candidate_noise_estimate": 0.9186863833672964,
+                "reference_rms": 2.3337267713900727,
+                "absolute_channel_error_p95": 0.011067492887377739,
+                "absolute_channel_error_p99": 0.08390161395072929,
+                "absolute_channel_error_p999": 8.024530820698066,
+                "maximum_absolute_channel_error": 77.89981696009636
+              },
+              "display_rgb8": {
+                "pixels": 53862,
+                "rmse": 5.351793376951762,
+                "reference_pair_rmse": 6.167002601124145,
+                "reference_mean_noise_estimate": 3.0835013005620726,
+                "candidate_noise_estimate": 4.3742098805403415,
+                "reference_rms": 175.07538821688647,
+                "absolute_channel_error_p95": 3.0,
+                "absolute_channel_error_p99": 8.5,
+                "absolute_channel_error_p999": 80.0,
+                "maximum_absolute_channel_error": 182.5
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 14062,
+                "rmse": 1.2414212966706377,
+                "reference_pair_rmse": 0.47693135775893164,
+                "reference_mean_noise_estimate": 0.23846567887946582,
+                "candidate_noise_estimate": 1.218302489459807,
+                "reference_rms": 3.618469305990326,
+                "absolute_channel_error_p95": 0.011757474392652512,
+                "absolute_channel_error_p99": 0.04564298652113084,
+                "absolute_channel_error_p999": 15.196511688232496,
+                "maximum_absolute_channel_error": 77.89981696009636
+              },
+              "display_rgb8": {
+                "pixels": 14062,
+                "rmse": 4.983077725964436,
+                "reference_pair_rmse": 4.840736152378284,
+                "reference_mean_noise_estimate": 2.420368076189142,
+                "candidate_noise_estimate": 4.3557871847425425,
+                "reference_rms": 183.9190463186911,
+                "absolute_channel_error_p95": 3.0,
+                "absolute_channel_error_p99": 6.5,
+                "absolute_channel_error_p999": 79.90750000000116,
+                "maximum_absolute_channel_error": 169.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 16525,
+                "rmse": 1.0954025973022892,
+                "reference_pair_rmse": 0.6350920733776309,
+                "reference_mean_noise_estimate": 0.3175460366888154,
+                "candidate_noise_estimate": 1.0483660452150416,
+                "reference_rms": 1.5146870984607002,
+                "absolute_channel_error_p95": 0.012772863358259195,
+                "absolute_channel_error_p99": 0.16244968116283445,
+                "absolute_channel_error_p999": 16.96061536902503,
+                "maximum_absolute_channel_error": 69.14004130661488
+              },
+              "display_rgb8": {
+                "pixels": 16525,
+                "rmse": 6.27297310920788,
+                "reference_pair_rmse": 7.6917767224325955,
+                "reference_mean_noise_estimate": 3.8458883612162977,
+                "candidate_noise_estimate": 4.955737517454511,
+                "reference_rms": 163.34110797411284,
+                "absolute_channel_error_p95": 3.5,
+                "absolute_channel_error_p99": 22.5,
+                "absolute_channel_error_p999": 85.42600000000675,
+                "maximum_absolute_channel_error": 182.5
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 11561,
+                "rmse": 0.10642985711095732,
+                "reference_pair_rmse": 0.04276925201909668,
+                "reference_mean_noise_estimate": 0.02138462600954834,
+                "candidate_noise_estimate": 0.10425935092398446,
+                "reference_rms": 0.22274664098988634,
+                "absolute_channel_error_p95": 0.001709423214197159,
+                "absolute_channel_error_p99": 0.026821680814027818,
+                "absolute_channel_error_p999": 0.4347841453031186,
+                "maximum_absolute_channel_error": 7.096476227045059
+              },
+              "display_rgb8": {
+                "pixels": 11561,
+                "rmse": 4.369445638240346,
+                "reference_pair_rmse": 6.035195048641693,
+                "reference_mean_noise_estimate": 3.0175975243208466,
+                "candidate_noise_estimate": 3.1600886643811563,
+                "reference_rms": 150.65256143406125,
+                "absolute_channel_error_p95": 1.0,
+                "absolute_channel_error_p99": 8.5,
+                "absolute_channel_error_p999": 58.81800000000658,
+                "maximum_absolute_channel_error": 124.0
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 8826,
+                "rmse": 1.0475102703166022,
+                "reference_pair_rmse": 0.42388319729725876,
+                "reference_mean_noise_estimate": 0.21194159864862938,
+                "candidate_noise_estimate": 1.0258452735091312,
+                "reference_rms": 3.5449605991676627,
+                "absolute_channel_error_p95": 0.01007987856864929,
+                "absolute_channel_error_p99": 0.06147866457700689,
+                "absolute_channel_error_p999": 7.5919927613108635,
+                "maximum_absolute_channel_error": 74.99894714355469
+              },
+              "display_rgb8": {
+                "pixels": 8826,
+                "rmse": 5.061640402599138,
+                "reference_pair_rmse": 5.897451187449248,
+                "reference_mean_noise_estimate": 2.948725593724624,
+                "candidate_noise_estimate": 4.114027338039615,
+                "reference_rms": 182.04865920801228,
+                "absolute_channel_error_p95": 3.0,
+                "absolute_channel_error_p99": 8.5,
+                "absolute_channel_error_p999": 79.52300000000469,
+                "maximum_absolute_channel_error": 169.0
+              }
+            }
+          },
+          "2048": {
+            "foreground": {
+              "hdr": {
+                "pixels": 71592,
+                "rmse": 0.4627075091919902,
+                "reference_pair_rmse": 0.4245755121628156,
+                "reference_mean_noise_estimate": 0.2122877560814078,
+                "candidate_noise_estimate": 0.4111351939211437,
+                "reference_rms": 2.3749682511948778,
+                "absolute_channel_error_p95": 0.005920730531215668,
+                "absolute_channel_error_p99": 0.11002111621201038,
+                "absolute_channel_error_p999": 5.044185602013255,
+                "maximum_absolute_channel_error": 70.4273681640625
+              },
+              "display_rgb8": {
+                "pixels": 71592,
+                "rmse": 5.276779715880309,
+                "reference_pair_rmse": 6.217079650102746,
+                "reference_mean_noise_estimate": 3.108539825051373,
+                "candidate_noise_estimate": 4.2639634527040045,
+                "reference_rms": 170.81382833399488,
+                "absolute_channel_error_p95": 1.5,
+                "absolute_channel_error_p99": 13.0,
+                "absolute_channel_error_p999": 83.0,
+                "maximum_absolute_channel_error": 180.0
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 53862,
+                "rmse": 0.4950551706001325,
+                "reference_pair_rmse": 0.4582761012531304,
+                "reference_mean_noise_estimate": 0.2291380506265652,
+                "candidate_noise_estimate": 0.4388341095368316,
+                "reference_rms": 2.3337267713900727,
+                "absolute_channel_error_p95": 0.006126172840595245,
+                "absolute_channel_error_p99": 0.11052835471928088,
+                "absolute_channel_error_p999": 5.850153630115274,
+                "maximum_absolute_channel_error": 70.4273681640625
+              },
+              "display_rgb8": {
+                "pixels": 53862,
+                "rmse": 5.277906435089012,
+                "reference_pair_rmse": 6.167002601124145,
+                "reference_mean_noise_estimate": 3.0835013005620726,
+                "candidate_noise_estimate": 4.283493441921675,
+                "reference_rms": 175.07538821688647,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 10.0,
+                "absolute_channel_error_p999": 80.5,
+                "maximum_absolute_channel_error": 180.0
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 14062,
+                "rmse": 0.7059120607488159,
+                "reference_pair_rmse": 0.47693135775893164,
+                "reference_mean_noise_estimate": 0.23846567887946582,
+                "candidate_noise_estimate": 0.6644139955684222,
+                "reference_rms": 3.618469305990326,
+                "absolute_channel_error_p95": 0.006411399692296982,
+                "absolute_channel_error_p99": 0.07397954687476203,
+                "absolute_channel_error_p999": 7.7375544635952,
+                "maximum_absolute_channel_error": 70.4273681640625
+              },
+              "display_rgb8": {
+                "pixels": 14062,
+                "rmse": 4.57921540443246,
+                "reference_pair_rmse": 4.840736152378284,
+                "reference_mean_noise_estimate": 2.420368076189142,
+                "candidate_noise_estimate": 3.8872910999764354,
+                "reference_rms": 183.9190463186911,
+                "absolute_channel_error_p95": 1.5,
+                "absolute_channel_error_p99": 4.0,
+                "absolute_channel_error_p999": 74.81500000000233,
+                "maximum_absolute_channel_error": 169.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 16525,
+                "rmse": 0.5531592659826019,
+                "reference_pair_rmse": 0.6350920733776309,
+                "reference_mean_noise_estimate": 0.3175460366888154,
+                "candidate_noise_estimate": 0.45293452962391423,
+                "reference_rms": 1.5146870984607002,
+                "absolute_channel_error_p95": 0.007027246057987212,
+                "absolute_channel_error_p99": 0.20574708335101696,
+                "absolute_channel_error_p999": 7.394295559883208,
+                "maximum_absolute_channel_error": 34.854854583740234
+              },
+              "display_rgb8": {
+                "pixels": 16525,
+                "rmse": 6.438922475264081,
+                "reference_pair_rmse": 7.6917767224325955,
+                "reference_mean_noise_estimate": 3.8458883612162977,
+                "candidate_noise_estimate": 5.164190677688222,
+                "reference_rms": 163.34110797411284,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 24.5,
+                "absolute_channel_error_p999": 93.71300000000338,
+                "maximum_absolute_channel_error": 180.0
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 11561,
+                "rmse": 0.04838434541769468,
+                "reference_pair_rmse": 0.04276925201909668,
+                "reference_mean_noise_estimate": 0.02138462600954834,
+                "candidate_noise_estimate": 0.04340210423390253,
+                "reference_rms": 0.22274664098988634,
+                "absolute_channel_error_p95": 0.0009504780173301697,
+                "absolute_channel_error_p99": 0.06489682555198677,
+                "absolute_channel_error_p999": 0.8205896266700546,
+                "maximum_absolute_channel_error": 1.9657517597079277
+              },
+              "display_rgb8": {
+                "pixels": 11561,
+                "rmse": 4.894656942030663,
+                "reference_pair_rmse": 6.035195048641693,
+                "reference_mean_noise_estimate": 3.0175975243208466,
+                "candidate_noise_estimate": 3.8537996524704883,
+                "reference_rms": 150.65256143406125,
+                "absolute_channel_error_p95": 1.0,
+                "absolute_channel_error_p99": 19.0,
+                "absolute_channel_error_p999": 84.31800000000658,
+                "maximum_absolute_channel_error": 132.0
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 8826,
+                "rmse": 0.4881946213569561,
+                "reference_pair_rmse": 0.42388319729725876,
+                "reference_mean_noise_estimate": 0.21194159864862938,
+                "candidate_noise_estimate": 0.4397894349391821,
+                "reference_rms": 3.5449605991676627,
+                "absolute_channel_error_p95": 0.005591983348131177,
+                "absolute_channel_error_p99": 0.07911270551383463,
+                "absolute_channel_error_p999": 4.390608002648631,
+                "maximum_absolute_channel_error": 39.19993591308594
+              },
+              "display_rgb8": {
+                "pixels": 8826,
+                "rmse": 4.975412580095329,
+                "reference_pair_rmse": 5.897451187449248,
+                "reference_mean_noise_estimate": 2.948725593724624,
+                "candidate_noise_estimate": 4.00746150512818,
+                "reference_rms": 182.04865920801228,
+                "absolute_channel_error_p95": 1.5,
+                "absolute_channel_error_p99": 6.0,
+                "absolute_channel_error_p999": 81.26150000000234,
+                "maximum_absolute_channel_error": 150.0
+              }
+            }
+          }
+        },
+        "reference_seeds": [
+          19,
+          43
+        ],
+        "reference_samples_per_seed": 4096,
+        "region_pixels": {
+          "foreground": 71592,
+          "dragon_interior": 53862,
+          "head_thin_features": 14062,
+          "lower_body_slab_crop": 16525,
+          "primary_slab_interior": 11561,
+          "dragon_silhouette_band": 8826
+        }
+      },
+      "elevated": {
+        "width": 960,
+        "height": 540,
+        "comparisons": {
+          "32": {
+            "foreground": {
+              "hdr": {
+                "pixels": 70719,
+                "rmse": 5.411479733656348,
+                "reference_pair_rmse": 0.4996308606163181,
+                "reference_mean_noise_estimate": 0.24981543030815906,
+                "candidate_noise_estimate": 5.405710421263178,
+                "reference_rms": 2.9697233753881855,
+                "absolute_channel_error_p95": 0.044815072417259086,
+                "absolute_channel_error_p99": 0.1358003553748131,
+                "absolute_channel_error_p999": 9.291933666826178,
+                "maximum_absolute_channel_error": 1114.3979187011719
+              },
+              "display_rgb8": {
+                "pixels": 70719,
+                "rmse": 8.108616806863452,
+                "reference_pair_rmse": 7.300121862082297,
+                "reference_mean_noise_estimate": 3.6500609310411485,
+                "candidate_noise_estimate": 7.240629925651185,
+                "reference_rms": 158.4047117105741,
+                "absolute_channel_error_p95": 12.5,
+                "absolute_channel_error_p99": 28.5,
+                "absolute_channel_error_p999": 97.0,
+                "maximum_absolute_channel_error": 212.5
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 53194,
+                "rmse": 6.230493331986428,
+                "reference_pair_rmse": 0.5497198748760839,
+                "reference_mean_noise_estimate": 0.27485993743804193,
+                "candidate_noise_estimate": 6.224427618240805,
+                "reference_rms": 3.407741503684117,
+                "absolute_channel_error_p95": 0.047918753325939055,
+                "absolute_channel_error_p99": 0.15562873151153334,
+                "absolute_channel_error_p999": 12.86916325830183,
+                "maximum_absolute_channel_error": 1114.3979187011719
+              },
+              "display_rgb8": {
+                "pixels": 53194,
+                "rmse": 8.744189726957291,
+                "reference_pair_rmse": 7.411741688196661,
+                "reference_mean_noise_estimate": 3.7058708440983303,
+                "candidate_noise_estimate": 7.920061569703064,
+                "reference_rms": 160.93096706030602,
+                "absolute_channel_error_p95": 13.5,
+                "absolute_channel_error_p99": 30.5,
+                "absolute_channel_error_p999": 103.0,
+                "maximum_absolute_channel_error": 212.5
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 15116,
+                "rmse": 4.164764889747063,
+                "reference_pair_rmse": 0.8357590514967767,
+                "reference_mean_noise_estimate": 0.4178795257483883,
+                "candidate_noise_estimate": 4.143747493372414,
+                "reference_rms": 3.1590822797792484,
+                "absolute_channel_error_p95": 0.05364001616835595,
+                "absolute_channel_error_p99": 0.1277220571041095,
+                "absolute_channel_error_p999": 17.447938491539308,
+                "maximum_absolute_channel_error": 500.49623107910156
+              },
+              "display_rgb8": {
+                "pixels": 15116,
+                "rmse": 8.049665766155222,
+                "reference_pair_rmse": 5.894815799680573,
+                "reference_mean_noise_estimate": 2.9474078998402864,
+                "candidate_noise_estimate": 7.490654552091586,
+                "reference_rms": 175.81017108063648,
+                "absolute_channel_error_p95": 13.0,
+                "absolute_channel_error_p99": 26.0,
+                "absolute_channel_error_p999": 96.0,
+                "maximum_absolute_channel_error": 177.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 14806,
+                "rmse": 6.666266911181496,
+                "reference_pair_rmse": 0.3963937533533682,
+                "reference_mean_noise_estimate": 0.1981968766766841,
+                "candidate_noise_estimate": 6.6633199329755195,
+                "reference_rms": 5.262787544796841,
+                "absolute_channel_error_p95": 0.05287456028163434,
+                "absolute_channel_error_p99": 0.21113213330507324,
+                "absolute_channel_error_p999": 10.375761383218052,
+                "maximum_absolute_channel_error": 752.2213610559702
+              },
+              "display_rgb8": {
+                "pixels": 14806,
+                "rmse": 9.926773294615195,
+                "reference_pair_rmse": 8.785513087915223,
+                "reference_mean_noise_estimate": 4.392756543957612,
+                "candidate_noise_estimate": 8.901939001599763,
+                "reference_rms": 152.27294458732226,
+                "absolute_channel_error_p95": 15.0,
+                "absolute_channel_error_p99": 37.0,
+                "absolute_channel_error_p999": 111.0,
+                "maximum_absolute_channel_error": 212.5
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 11587,
+                "rmse": 0.05334563380989575,
+                "reference_pair_rmse": 0.03203134309596865,
+                "reference_mean_noise_estimate": 0.016015671547984323,
+                "candidate_noise_estimate": 0.050884721788043395,
+                "reference_rms": 0.20398369855354997,
+                "absolute_channel_error_p95": 0.0055268555879592896,
+                "absolute_channel_error_p99": 0.022300067543983587,
+                "absolute_channel_error_p999": 0.23035293400287699,
+                "maximum_absolute_channel_error": 5.633416913449764
+              },
+              "display_rgb8": {
+                "pixels": 11587,
+                "rmse": 3.8231582035845815,
+                "reference_pair_rmse": 6.241410771871447,
+                "reference_mean_noise_estimate": 3.1207053859357234,
+                "candidate_noise_estimate": 2.208559834785522,
+                "reference_rms": 144.52596164285515,
+                "absolute_channel_error_p95": 3.0,
+                "absolute_channel_error_p99": 9.0,
+                "absolute_channel_error_p999": 43.62000000000262,
+                "maximum_absolute_channel_error": 182.0
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 7766,
+                "rmse": 1.2188343773162997,
+                "reference_pair_rmse": 0.45834897778520206,
+                "reference_mean_noise_estimate": 0.22917448889260103,
+                "candidate_noise_estimate": 1.1970949389955783,
+                "reference_rms": 1.2107286470409406,
+                "absolute_channel_error_p95": 0.04306591376662254,
+                "absolute_channel_error_p99": 0.11741644941270296,
+                "absolute_channel_error_p999": 5.641850403673973,
+                "maximum_absolute_channel_error": 87.54830127954483
+              },
+              "display_rgb8": {
+                "pixels": 7766,
+                "rmse": 7.405868348735223,
+                "reference_pair_rmse": 7.225026254489197,
+                "reference_mean_noise_estimate": 3.6125131272445987,
+                "candidate_noise_estimate": 6.465031701723018,
+                "reference_rms": 165.2403909568974,
+                "absolute_channel_error_p95": 12.0,
+                "absolute_channel_error_p99": 26.0,
+                "absolute_channel_error_p999": 86.40600000000268,
+                "maximum_absolute_channel_error": 154.0
+              }
+            }
+          },
+          "128": {
+            "foreground": {
+              "hdr": {
+                "pixels": 70719,
+                "rmse": 2.704361799385897,
+                "reference_pair_rmse": 0.4996308606163181,
+                "reference_mean_noise_estimate": 0.24981543030815906,
+                "candidate_noise_estimate": 2.6927987286014665,
+                "reference_rms": 2.9697233753881855,
+                "absolute_channel_error_p95": 0.020409378409385632,
+                "absolute_channel_error_p99": 0.12820469081401892,
+                "absolute_channel_error_p999": 8.86638876152245,
+                "maximum_absolute_channel_error": 505.8161087036133
+              },
+              "display_rgb8": {
+                "pixels": 70719,
+                "rmse": 6.550932307941738,
+                "reference_pair_rmse": 7.300121862082297,
+                "reference_mean_noise_estimate": 3.6500609310411485,
+                "candidate_noise_estimate": 5.439831734798595,
+                "reference_rms": 158.4047117105741,
+                "absolute_channel_error_p95": 6.0,
+                "absolute_channel_error_p99": 23.5,
+                "absolute_channel_error_p999": 92.0,
+                "maximum_absolute_channel_error": 212.5
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 53194,
+                "rmse": 3.0834290604998156,
+                "reference_pair_rmse": 0.5497198748760839,
+                "reference_mean_noise_estimate": 0.27485993743804193,
+                "candidate_noise_estimate": 3.0711539827768863,
+                "reference_rms": 3.407741503684117,
+                "absolute_channel_error_p95": 0.02182444781064984,
+                "absolute_channel_error_p99": 0.1521402764320374,
+                "absolute_channel_error_p999": 11.032076216847308,
+                "maximum_absolute_channel_error": 505.8161087036133
+              },
+              "display_rgb8": {
+                "pixels": 53194,
+                "rmse": 6.979360373168769,
+                "reference_pair_rmse": 7.411741688196661,
+                "reference_mean_noise_estimate": 3.7058708440983303,
+                "candidate_noise_estimate": 5.914219517858668,
+                "reference_rms": 160.93096706030602,
+                "absolute_channel_error_p95": 6.5,
+                "absolute_channel_error_p99": 25.0,
+                "absolute_channel_error_p999": 99.20950000001176,
+                "maximum_absolute_channel_error": 212.5
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 15116,
+                "rmse": 2.184498798099791,
+                "reference_pair_rmse": 0.8357590514967767,
+                "reference_mean_noise_estimate": 0.4178795257483883,
+                "candidate_noise_estimate": 2.1441575737010874,
+                "reference_rms": 3.1590822797792484,
+                "absolute_channel_error_p95": 0.023918949812650695,
+                "absolute_channel_error_p99": 0.09141094516962756,
+                "absolute_channel_error_p999": 16.966940133992995,
+                "maximum_absolute_channel_error": 163.72208881378174
+              },
+              "display_rgb8": {
+                "pixels": 15116,
+                "rmse": 6.049993767205308,
+                "reference_pair_rmse": 5.894815799680573,
+                "reference_mean_noise_estimate": 2.9474078998402864,
+                "candidate_noise_estimate": 5.283484764356016,
+                "reference_rms": 175.81017108063648,
+                "absolute_channel_error_p95": 6.0,
+                "absolute_channel_error_p99": 14.0,
+                "absolute_channel_error_p999": 87.6530000000057,
+                "maximum_absolute_channel_error": 173.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 14806,
+                "rmse": 3.860388274082747,
+                "reference_pair_rmse": 0.3963937533533682,
+                "reference_mean_noise_estimate": 0.1981968766766841,
+                "candidate_noise_estimate": 3.8552970864449834,
+                "reference_rms": 5.262787544796841,
+                "absolute_channel_error_p95": 0.024274802953004847,
+                "absolute_channel_error_p99": 0.2150018875300885,
+                "absolute_channel_error_p999": 9.398252669978604,
+                "maximum_absolute_channel_error": 505.8161087036133
+              },
+              "display_rgb8": {
+                "pixels": 14806,
+                "rmse": 7.893696755439606,
+                "reference_pair_rmse": 8.785513087915223,
+                "reference_mean_noise_estimate": 4.392756543957612,
+                "candidate_noise_estimate": 6.558516479536768,
+                "reference_rms": 152.27294458732226,
+                "absolute_channel_error_p95": 7.0,
+                "absolute_channel_error_p99": 35.0,
+                "absolute_channel_error_p999": 107.291500000003,
+                "maximum_absolute_channel_error": 212.5
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 11587,
+                "rmse": 0.02355746667587672,
+                "reference_pair_rmse": 0.03203134309596865,
+                "reference_mean_noise_estimate": 0.016015671547984323,
+                "candidate_noise_estimate": 0.017275777871115602,
+                "reference_rms": 0.20398369855354997,
+                "absolute_channel_error_p95": 0.0020933784544467926,
+                "absolute_channel_error_p99": 0.018790175020694824,
+                "absolute_channel_error_p999": 0.2431709182262527,
+                "maximum_absolute_channel_error": 1.408678077161312
+              },
+              "display_rgb8": {
+                "pixels": 11587,
+                "rmse": 3.7382825190566398,
+                "reference_pair_rmse": 6.241410771871447,
+                "reference_mean_noise_estimate": 3.1207053859357234,
+                "candidate_noise_estimate": 2.0581433590681244,
+                "reference_rms": 144.52596164285515,
+                "absolute_channel_error_p95": 1.0,
+                "absolute_channel_error_p99": 7.200000000000728,
+                "absolute_channel_error_p999": 46.62000000000262,
+                "maximum_absolute_channel_error": 159.0
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 7766,
+                "rmse": 1.48652512164765,
+                "reference_pair_rmse": 0.45834897778520206,
+                "reference_mean_noise_estimate": 0.22917448889260103,
+                "candidate_noise_estimate": 1.4687532096749187,
+                "reference_rms": 1.2107286470409406,
+                "absolute_channel_error_p95": 0.019544292241334898,
+                "absolute_channel_error_p99": 0.10892398387193575,
+                "absolute_channel_error_p999": 9.611923490824486,
+                "maximum_absolute_channel_error": 104.50628116726875
+              },
+              "display_rgb8": {
+                "pixels": 7766,
+                "rmse": 6.1843539341051414,
+                "reference_pair_rmse": 7.225026254489197,
+                "reference_mean_noise_estimate": 3.6125131272445987,
+                "candidate_noise_estimate": 5.019559989457959,
+                "reference_rms": 165.2403909568974,
+                "absolute_channel_error_p95": 5.5,
+                "absolute_channel_error_p99": 19.0,
+                "absolute_channel_error_p999": 86.70300000000134,
+                "maximum_absolute_channel_error": 159.0
+              }
+            }
+          },
+          "512": {
+            "foreground": {
+              "hdr": {
+                "pixels": 70719,
+                "rmse": 1.1342396854663448,
+                "reference_pair_rmse": 0.4996308606163181,
+                "reference_mean_noise_estimate": 0.24981543030815906,
+                "candidate_noise_estimate": 1.1063868739580844,
+                "reference_rms": 2.9697233753881855,
+                "absolute_channel_error_p95": 0.01081043183803556,
+                "absolute_channel_error_p99": 0.15263639867305817,
+                "absolute_channel_error_p999": 10.293280382424788,
+                "maximum_absolute_channel_error": 130.39996337890625
+              },
+              "display_rgb8": {
+                "pixels": 70719,
+                "rmse": 6.277042628351908,
+                "reference_pair_rmse": 7.300121862082297,
+                "reference_mean_noise_estimate": 3.6500609310411485,
+                "candidate_noise_estimate": 5.106693583703065,
+                "reference_rms": 158.4047117105741,
+                "absolute_channel_error_p95": 3.0,
+                "absolute_channel_error_p99": 24.5,
+                "absolute_channel_error_p999": 94.0,
+                "maximum_absolute_channel_error": 181.0
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 53194,
+                "rmse": 1.2865144103989767,
+                "reference_pair_rmse": 0.5497198748760839,
+                "reference_mean_noise_estimate": 0.27485993743804193,
+                "candidate_noise_estimate": 1.2568099868141493,
+                "reference_rms": 3.407741503684117,
+                "absolute_channel_error_p95": 0.011403502896428106,
+                "absolute_channel_error_p99": 0.17610348731279427,
+                "absolute_channel_error_p999": 14.889089168048203,
+                "maximum_absolute_channel_error": 130.39996337890625
+              },
+              "display_rgb8": {
+                "pixels": 53194,
+                "rmse": 6.643625508540712,
+                "reference_pair_rmse": 7.411741688196661,
+                "reference_mean_noise_estimate": 3.7058708440983303,
+                "candidate_noise_estimate": 5.51400772438657,
+                "reference_rms": 160.93096706030602,
+                "absolute_channel_error_p95": 3.5,
+                "absolute_channel_error_p99": 25.0,
+                "absolute_channel_error_p999": 99.70950000001176,
+                "maximum_absolute_channel_error": 181.0
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 15116,
+                "rmse": 1.2588621673416887,
+                "reference_pair_rmse": 0.8357590514967767,
+                "reference_mean_noise_estimate": 0.4178795257483883,
+                "candidate_noise_estimate": 1.1874808033498965,
+                "reference_rms": 3.1590822797792484,
+                "absolute_channel_error_p95": 0.012222160398960114,
+                "absolute_channel_error_p99": 0.10824363693594584,
+                "absolute_channel_error_p999": 16.97502907327224,
+                "maximum_absolute_channel_error": 92.39899074286222
+              },
+              "display_rgb8": {
+                "pixels": 15116,
+                "rmse": 5.4031007819076775,
+                "reference_pair_rmse": 5.894815799680573,
+                "reference_mean_noise_estimate": 2.9474078998402864,
+                "candidate_noise_estimate": 4.528386548364707,
+                "reference_rms": 175.81017108063648,
+                "absolute_channel_error_p95": 3.0,
+                "absolute_channel_error_p99": 8.0,
+                "absolute_channel_error_p999": 83.0,
+                "maximum_absolute_channel_error": 171.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 14806,
+                "rmse": 1.2850447288144917,
+                "reference_pair_rmse": 0.3963937533533682,
+                "reference_mean_noise_estimate": 0.1981968766766841,
+                "candidate_noise_estimate": 1.2696684422043094,
+                "reference_rms": 5.262787544796841,
+                "absolute_channel_error_p95": 0.012779517471790314,
+                "absolute_channel_error_p99": 0.2733090680837639,
+                "absolute_channel_error_p999": 15.783030650499402,
+                "maximum_absolute_channel_error": 123.02848052978516
+              },
+              "display_rgb8": {
+                "pixels": 14806,
+                "rmse": 7.743308999154208,
+                "reference_pair_rmse": 8.785513087915223,
+                "reference_mean_noise_estimate": 4.392756543957612,
+                "candidate_noise_estimate": 6.376717353144965,
+                "reference_rms": 152.27294458732226,
+                "absolute_channel_error_p95": 4.0,
+                "absolute_channel_error_p99": 36.0,
+                "absolute_channel_error_p999": 110.374500000009,
+                "maximum_absolute_channel_error": 181.0
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 11587,
+                "rmse": 0.03451652055057115,
+                "reference_pair_rmse": 0.03203134309596865,
+                "reference_mean_noise_estimate": 0.016015671547984323,
+                "candidate_noise_estimate": 0.03057594570549023,
+                "reference_rms": 0.20398369855354997,
+                "absolute_channel_error_p95": 0.0010821335017681122,
+                "absolute_channel_error_p99": 0.03467334508896243,
+                "absolute_channel_error_p999": 0.24308840900659606,
+                "maximum_absolute_channel_error": 3.128637582063675
+              },
+              "display_rgb8": {
+                "pixels": 11587,
+                "rmse": 3.90659513808536,
+                "reference_pair_rmse": 6.241410771871447,
+                "reference_mean_noise_estimate": 3.1207053859357234,
+                "candidate_noise_estimate": 2.3500390352298277,
+                "reference_rms": 144.52596164285515,
+                "absolute_channel_error_p95": 1.0,
+                "absolute_channel_error_p99": 11.5,
+                "absolute_channel_error_p999": 49.62000000000262,
+                "maximum_absolute_channel_error": 125.0
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 7766,
+                "rmse": 0.6375955809761106,
+                "reference_pair_rmse": 0.45834897778520206,
+                "reference_mean_noise_estimate": 0.22917448889260103,
+                "candidate_noise_estimate": 0.5949850237788167,
+                "reference_rms": 1.2107286470409406,
+                "absolute_channel_error_p95": 0.010130105167627327,
+                "absolute_channel_error_p99": 0.1290215235948553,
+                "absolute_channel_error_p999": 8.711426504612424,
+                "maximum_absolute_channel_error": 32.23730751872063
+              },
+              "display_rgb8": {
+                "pixels": 7766,
+                "rmse": 5.923336846087897,
+                "reference_pair_rmse": 7.225026254489197,
+                "reference_mean_noise_estimate": 3.6125131272445987,
+                "candidate_noise_estimate": 4.694216473247474,
+                "reference_rms": 165.2403909568974,
+                "absolute_channel_error_p95": 3.0,
+                "absolute_channel_error_p99": 20.014999999999418,
+                "absolute_channel_error_p999": 88.70300000000134,
+                "maximum_absolute_channel_error": 161.0
+              }
+            }
+          },
+          "2048": {
+            "foreground": {
+              "hdr": {
+                "pixels": 70719,
+                "rmse": 0.6129415605413913,
+                "reference_pair_rmse": 0.4996308606163181,
+                "reference_mean_noise_estimate": 0.24981543030815906,
+                "candidate_noise_estimate": 0.5597227951574469,
+                "reference_rms": 2.9697233753881855,
+                "absolute_channel_error_p95": 0.0060419768095016455,
+                "absolute_channel_error_p99": 0.1758604136109355,
+                "absolute_channel_error_p999": 6.582877594858922,
+                "maximum_absolute_channel_error": 95.7227783203125
+              },
+              "display_rgb8": {
+                "pixels": 70719,
+                "rmse": 6.23631332274173,
+                "reference_pair_rmse": 7.300121862082297,
+                "reference_mean_noise_estimate": 3.6500609310411485,
+                "candidate_noise_estimate": 5.056546159098424,
+                "reference_rms": 158.4047117105741,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 25.0,
+                "absolute_channel_error_p999": 90.92200000000594,
+                "maximum_absolute_channel_error": 182.0
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 53194,
+                "rmse": 0.6946072729830334,
+                "reference_pair_rmse": 0.5497198748760839,
+                "reference_mean_noise_estimate": 0.27485993743804193,
+                "candidate_noise_estimate": 0.6379116541281261,
+                "reference_rms": 3.407741503684117,
+                "absolute_channel_error_p95": 0.006267851591110221,
+                "absolute_channel_error_p99": 0.19619392961263704,
+                "absolute_channel_error_p999": 7.460399674661862,
+                "maximum_absolute_channel_error": 95.7227783203125
+              },
+              "display_rgb8": {
+                "pixels": 53194,
+                "rmse": 6.415371004364089,
+                "reference_pair_rmse": 7.411741688196661,
+                "reference_mean_noise_estimate": 3.7058708440983303,
+                "candidate_noise_estimate": 5.2367457844063265,
+                "reference_rms": 160.93096706030602,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 25.095000000001164,
+                "absolute_channel_error_p999": 95.0,
+                "maximum_absolute_channel_error": 182.0
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 15116,
+                "rmse": 0.7493010408481313,
+                "reference_pair_rmse": 0.8357590514967767,
+                "reference_mean_noise_estimate": 0.4178795257483883,
+                "candidate_noise_estimate": 0.6219555866590436,
+                "reference_rms": 3.1590822797792484,
+                "absolute_channel_error_p95": 0.006517698615789421,
+                "absolute_channel_error_p99": 0.12646882072091092,
+                "absolute_channel_error_p999": 8.731157979279864,
+                "maximum_absolute_channel_error": 59.01305389404297
+              },
+              "display_rgb8": {
+                "pixels": 15116,
+                "rmse": 5.313970741369778,
+                "reference_pair_rmse": 5.894815799680573,
+                "reference_mean_noise_estimate": 2.9474078998402864,
+                "candidate_noise_estimate": 4.421659384449819,
+                "reference_rms": 175.81017108063648,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 7.0,
+                "absolute_channel_error_p999": 83.6530000000057,
+                "maximum_absolute_channel_error": 170.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 14806,
+                "rmse": 0.8695800495041764,
+                "reference_pair_rmse": 0.3963937533533682,
+                "reference_mean_noise_estimate": 0.1981968766766841,
+                "candidate_noise_estimate": 0.8466920695100983,
+                "reference_rms": 5.262787544796841,
+                "absolute_channel_error_p95": 0.0071058776229620015,
+                "absolute_channel_error_p99": 0.3637841543555415,
+                "absolute_channel_error_p999": 7.620011780069132,
+                "maximum_absolute_channel_error": 95.7227783203125
+              },
+              "display_rgb8": {
+                "pixels": 14806,
+                "rmse": 7.681140618626627,
+                "reference_pair_rmse": 8.785513087915223,
+                "reference_mean_noise_estimate": 4.392756543957612,
+                "candidate_noise_estimate": 6.301080157293147,
+                "reference_rms": 152.27294458732226,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 37.0,
+                "absolute_channel_error_p999": 105.374500000009,
+                "maximum_absolute_channel_error": 182.0
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 11587,
+                "rmse": 0.029638605579501754,
+                "reference_pair_rmse": 0.03203134309596865,
+                "reference_mean_noise_estimate": 0.016015671547984323,
+                "candidate_noise_estimate": 0.024938829274133097,
+                "reference_rms": 0.20398369855354997,
+                "absolute_channel_error_p95": 0.0006256029009819031,
+                "absolute_channel_error_p99": 0.06475116610527049,
+                "absolute_channel_error_p999": 0.4951411885023178,
+                "maximum_absolute_channel_error": 0.9428882896900177
+              },
+              "display_rgb8": {
+                "pixels": 11587,
+                "rmse": 4.6344944888798585,
+                "reference_pair_rmse": 6.241410771871447,
+                "reference_mean_noise_estimate": 3.1207053859357234,
+                "candidate_noise_estimate": 3.4263299697562037,
+                "reference_rms": 144.52596164285515,
+                "absolute_channel_error_p95": 1.0,
+                "absolute_channel_error_p99": 19.0,
+                "absolute_channel_error_p999": 73.74000000000524,
+                "maximum_absolute_channel_error": 132.0
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 7766,
+                "rmse": 0.33984195877074563,
+                "reference_pair_rmse": 0.45834897778520206,
+                "reference_mean_noise_estimate": 0.22917448889260103,
+                "candidate_noise_estimate": 0.25094144851329814,
+                "reference_rms": 1.2107286470409406,
+                "absolute_channel_error_p95": 0.005495161563158028,
+                "absolute_channel_error_p99": 0.20292876761406523,
+                "absolute_channel_error_p999": 5.139981099762046,
+                "maximum_absolute_channel_error": 18.15127593278885
+              },
+              "display_rgb8": {
+                "pixels": 7766,
+                "rmse": 6.478785781866378,
+                "reference_pair_rmse": 7.225026254489197,
+                "reference_mean_noise_estimate": 3.6125131272445987,
+                "candidate_noise_estimate": 5.378142254793879,
+                "reference_rms": 165.2403909568974,
+                "absolute_channel_error_p95": 1.5,
+                "absolute_channel_error_p99": 27.0,
+                "absolute_channel_error_p999": 88.85150000000067,
+                "maximum_absolute_channel_error": 161.0
+              }
+            }
+          }
+        },
+        "reference_seeds": [
+          19,
+          43
+        ],
+        "reference_samples_per_seed": 4096,
+        "region_pixels": {
+          "foreground": 70719,
+          "dragon_interior": 53194,
+          "head_thin_features": 15116,
+          "lower_body_slab_crop": 14806,
+          "primary_slab_interior": 11587,
+          "dragon_silhouette_band": 7766
+        }
+      },
+      "grazing": {
+        "width": 960,
+        "height": 540,
+        "comparisons": {
+          "32": {
+            "foreground": {
+              "hdr": {
+                "pixels": 45374,
+                "rmse": 4.01139599723912,
+                "reference_pair_rmse": 0.42343388574680757,
+                "reference_mean_noise_estimate": 0.21171694287340379,
+                "candidate_noise_estimate": 4.005805010577321,
+                "reference_rms": 1.0641964669511106,
+                "absolute_channel_error_p95": 0.04854056537151336,
+                "absolute_channel_error_p99": 0.11191598512232369,
+                "absolute_channel_error_p999": 5.2944530355044295,
+                "maximum_absolute_channel_error": 652.8258908241987
+              },
+              "display_rgb8": {
+                "pixels": 45374,
+                "rmse": 7.895070585579642,
+                "reference_pair_rmse": 7.017764025370291,
+                "reference_mean_noise_estimate": 3.5088820126851457,
+                "candidate_noise_estimate": 7.072473865087061,
+                "reference_rms": 166.10144654993468,
+                "absolute_channel_error_p95": 13.5,
+                "absolute_channel_error_p99": 26.0,
+                "absolute_channel_error_p999": 85.0,
+                "maximum_absolute_channel_error": 175.5
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 33121,
+                "rmse": 4.692591129100119,
+                "reference_pair_rmse": 0.48109722159415136,
+                "reference_mean_noise_estimate": 0.24054861079707568,
+                "candidate_noise_estimate": 4.686421648843895,
+                "reference_rms": 1.2252577162901503,
+                "absolute_channel_error_p95": 0.053135564923286416,
+                "absolute_channel_error_p99": 0.13008246108889657,
+                "absolute_channel_error_p999": 7.13389436575793,
+                "maximum_absolute_channel_error": 652.8258908241987
+              },
+              "display_rgb8": {
+                "pixels": 33121,
+                "rmse": 8.505454920395282,
+                "reference_pair_rmse": 7.217739954809397,
+                "reference_mean_noise_estimate": 3.6088699774046984,
+                "candidate_noise_estimate": 7.701871258925543,
+                "reference_rms": 169.36156513261903,
+                "absolute_channel_error_p95": 14.0,
+                "absolute_channel_error_p99": 27.5,
+                "absolute_channel_error_p999": 88.0,
+                "maximum_absolute_channel_error": 175.5
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 8032,
+                "rmse": 3.900112082547854,
+                "reference_pair_rmse": 0.43064255491247716,
+                "reference_mean_noise_estimate": 0.21532127745623858,
+                "candidate_noise_estimate": 3.894163710466006,
+                "reference_rms": 0.7539915022473482,
+                "absolute_channel_error_p95": 0.05412600561976433,
+                "absolute_channel_error_p99": 0.12844507545232764,
+                "absolute_channel_error_p999": 4.6654986243697145,
+                "maximum_absolute_channel_error": 482.9524345397949
+              },
+              "display_rgb8": {
+                "pixels": 8032,
+                "rmse": 7.578367817778476,
+                "reference_pair_rmse": 6.801128846423759,
+                "reference_mean_noise_estimate": 3.4005644232118795,
+                "candidate_noise_estimate": 6.772578562491997,
+                "reference_rms": 176.5026624003512,
+                "absolute_channel_error_p95": 14.0,
+                "absolute_channel_error_p99": 26.0,
+                "absolute_channel_error_p999": 67.45250000000124,
+                "maximum_absolute_channel_error": 157.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 12343,
+                "rmse": 6.92235621388004,
+                "reference_pair_rmse": 0.5481690368237655,
+                "reference_mean_noise_estimate": 0.27408451841188275,
+                "candidate_noise_estimate": 6.916928019620453,
+                "reference_rms": 1.542133776583666,
+                "absolute_channel_error_p95": 0.05504480153322218,
+                "absolute_channel_error_p99": 0.1666097456216812,
+                "absolute_channel_error_p999": 13.989566752732525,
+                "maximum_absolute_channel_error": 652.8258908241987
+              },
+              "display_rgb8": {
+                "pixels": 12343,
+                "rmse": 9.398699261806158,
+                "reference_pair_rmse": 7.75023292204467,
+                "reference_mean_noise_estimate": 3.875116461022335,
+                "candidate_noise_estimate": 8.56265263965492,
+                "reference_rms": 163.05769244964046,
+                "absolute_channel_error_p95": 15.0,
+                "absolute_channel_error_p99": 31.0,
+                "absolute_channel_error_p999": 101.0,
+                "maximum_absolute_channel_error": 175.5
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 8881,
+                "rmse": 0.03974009461124524,
+                "reference_pair_rmse": 0.07474410077047008,
+                "reference_mean_noise_estimate": 0.03737205038523504,
+                "candidate_noise_estimate": 0.013513140631036754,
+                "reference_rms": 0.235027860690972,
+                "absolute_channel_error_p95": 0.01850571036338806,
+                "absolute_channel_error_p99": 0.04217327401041983,
+                "absolute_channel_error_p999": 0.6872003860324797,
+                "maximum_absolute_channel_error": 1.4501255303621292
+              },
+              "display_rgb8": {
+                "pixels": 8881,
+                "rmse": 4.850003027815108,
+                "reference_pair_rmse": 6.187438072096781,
+                "reference_mean_noise_estimate": 3.0937190360483906,
+                "candidate_noise_estimate": 3.735161562209529,
+                "reference_rms": 152.35881862943663,
+                "absolute_channel_error_p95": 7.5,
+                "absolute_channel_error_p99": 17.0,
+                "absolute_channel_error_p999": 51.0,
+                "maximum_absolute_channel_error": 136.5
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 4284,
+                "rmse": 0.42523093031436804,
+                "reference_pair_rmse": 0.31302948438534134,
+                "reference_mean_noise_estimate": 0.15651474219267067,
+                "candidate_noise_estimate": 0.3953789063321218,
+                "reference_rms": 0.6435812647262813,
+                "absolute_channel_error_p95": 0.04326093085110187,
+                "absolute_channel_error_p99": 0.1181561253219841,
+                "absolute_channel_error_p999": 5.9800507123328615,
+                "maximum_absolute_channel_error": 19.85027614235878
+              },
+              "display_rgb8": {
+                "pixels": 4284,
+                "rmse": 7.14948921800931,
+                "reference_pair_rmse": 6.284853023642581,
+                "reference_mean_noise_estimate": 3.1424265118212906,
+                "candidate_noise_estimate": 6.421865125976569,
+                "reference_rms": 186.50385004065612,
+                "absolute_channel_error_p95": 11.5,
+                "absolute_channel_error_p99": 24.5,
+                "absolute_channel_error_p999": 84.2980000000025,
+                "maximum_absolute_channel_error": 161.5
+              }
+            }
+          },
+          "128": {
+            "foreground": {
+              "hdr": {
+                "pixels": 45374,
+                "rmse": 2.0456455157375064,
+                "reference_pair_rmse": 0.42343388574680757,
+                "reference_mean_noise_estimate": 0.21171694287340379,
+                "candidate_noise_estimate": 2.0346600483022486,
+                "reference_rms": 1.0641964669511106,
+                "absolute_channel_error_p95": 0.02240607440471649,
+                "absolute_channel_error_p99": 0.0751652772724631,
+                "absolute_channel_error_p999": 7.100921793311839,
+                "maximum_absolute_channel_error": 176.42839813232422
+              },
+              "display_rgb8": {
+                "pixels": 45374,
+                "rmse": 5.989892396330357,
+                "reference_pair_rmse": 7.017764025370291,
+                "reference_mean_noise_estimate": 3.5088820126851457,
+                "candidate_noise_estimate": 4.854539930896734,
+                "reference_rms": 166.10144654993468,
+                "absolute_channel_error_p95": 6.5,
+                "absolute_channel_error_p99": 15.5,
+                "absolute_channel_error_p999": 82.0,
+                "maximum_absolute_channel_error": 172.5
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 33121,
+                "rmse": 2.156500784597607,
+                "reference_pair_rmse": 0.48109722159415136,
+                "reference_mean_noise_estimate": 0.24054861079707568,
+                "candidate_noise_estimate": 2.1430426966847143,
+                "reference_rms": 1.2252577162901503,
+                "absolute_channel_error_p95": 0.024324931204318993,
+                "absolute_channel_error_p99": 0.10807537302374996,
+                "absolute_channel_error_p999": 8.196228648633069,
+                "maximum_absolute_channel_error": 176.42839813232422
+              },
+              "display_rgb8": {
+                "pixels": 33121,
+                "rmse": 6.452624554114677,
+                "reference_pair_rmse": 7.217739954809397,
+                "reference_mean_noise_estimate": 3.6088699774046984,
+                "candidate_noise_estimate": 5.34905796589929,
+                "reference_rms": 169.36156513261903,
+                "absolute_channel_error_p95": 7.0,
+                "absolute_channel_error_p99": 18.0,
+                "absolute_channel_error_p999": 89.81900000000314,
+                "maximum_absolute_channel_error": 172.5
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 8032,
+                "rmse": 1.957712052318341,
+                "reference_pair_rmse": 0.43064255491247716,
+                "reference_mean_noise_estimate": 0.21532127745623858,
+                "candidate_noise_estimate": 1.9458348406961739,
+                "reference_rms": 0.7539915022473482,
+                "absolute_channel_error_p95": 0.02343600243330002,
+                "absolute_channel_error_p99": 0.08798526823520585,
+                "absolute_channel_error_p999": 8.158142197355813,
+                "maximum_absolute_channel_error": 110.41451916098595
+              },
+              "display_rgb8": {
+                "pixels": 8032,
+                "rmse": 5.356881930185154,
+                "reference_pair_rmse": 6.801128846423759,
+                "reference_mean_noise_estimate": 3.4005644232118795,
+                "candidate_noise_estimate": 4.139123774125374,
+                "reference_rms": 176.5026624003512,
+                "absolute_channel_error_p95": 6.5,
+                "absolute_channel_error_p99": 15.0,
+                "absolute_channel_error_p999": 64.45250000000124,
+                "maximum_absolute_channel_error": 159.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 12343,
+                "rmse": 2.5594591307901604,
+                "reference_pair_rmse": 0.5481690368237655,
+                "reference_mean_noise_estimate": 0.27408451841188275,
+                "candidate_noise_estimate": 2.5447413854755556,
+                "reference_rms": 1.542133776583666,
+                "absolute_channel_error_p95": 0.025419241189956657,
+                "absolute_channel_error_p99": 0.16472007751464904,
+                "absolute_channel_error_p999": 13.370611156109158,
+                "maximum_absolute_channel_error": 176.42839813232422
+              },
+              "display_rgb8": {
+                "pixels": 12343,
+                "rmse": 7.177720652770482,
+                "reference_pair_rmse": 7.75023292204467,
+                "reference_mean_noise_estimate": 3.875116461022335,
+                "candidate_noise_estimate": 6.041783361121255,
+                "reference_rms": 163.05769244964046,
+                "absolute_channel_error_p95": 7.0,
+                "absolute_channel_error_p99": 23.360000000000582,
+                "absolute_channel_error_p999": 98.97200000000157,
+                "maximum_absolute_channel_error": 172.5
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 8881,
+                "rmse": 0.03860739549944813,
+                "reference_pair_rmse": 0.07474410077047008,
+                "reference_mean_noise_estimate": 0.03737205038523504,
+                "candidate_noise_estimate": 0.009688180286011467,
+                "reference_rms": 0.235027860690972,
+                "absolute_channel_error_p95": 0.005523908138275139,
+                "absolute_channel_error_p99": 0.010900537371635252,
+                "absolute_channel_error_p999": 0.6990263083428597,
+                "maximum_absolute_channel_error": 1.452708676457405
+              },
+              "display_rgb8": {
+                "pixels": 8881,
+                "rmse": 3.5443091023108853,
+                "reference_pair_rmse": 6.187438072096781,
+                "reference_mean_noise_estimate": 3.0937190360483906,
+                "candidate_noise_estimate": 1.7294593197631478,
+                "reference_rms": 152.35881862943663,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 4.5,
+                "absolute_channel_error_p999": 49.679000000001906,
+                "maximum_absolute_channel_error": 152.5
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 4284,
+                "rmse": 2.892112887143556,
+                "reference_pair_rmse": 0.31302948438534134,
+                "reference_mean_noise_estimate": 0.15651474219267067,
+                "candidate_noise_estimate": 2.887874666161639,
+                "reference_rms": 0.6435812647262813,
+                "absolute_channel_error_p95": 0.018569552525877945,
+                "absolute_channel_error_p99": 0.07125744238495808,
+                "absolute_channel_error_p999": 8.58925077165726,
+                "maximum_absolute_channel_error": 161.94661808013916
+              },
+              "display_rgb8": {
+                "pixels": 4284,
+                "rmse": 5.6607283379353355,
+                "reference_pair_rmse": 6.284853023642581,
+                "reference_mean_noise_estimate": 3.1424265118212906,
+                "candidate_noise_estimate": 4.708396853888468,
+                "reference_rms": 186.50385004065612,
+                "absolute_channel_error_p95": 5.0,
+                "absolute_channel_error_p99": 14.0,
+                "absolute_channel_error_p999": 78.596000000005,
+                "maximum_absolute_channel_error": 172.5
+              }
+            }
+          },
+          "512": {
+            "foreground": {
+              "hdr": {
+                "pixels": 45374,
+                "rmse": 0.8031059745739317,
+                "reference_pair_rmse": 0.42343388574680757,
+                "reference_mean_noise_estimate": 0.21171694287340379,
+                "candidate_noise_estimate": 0.7746968068197291,
+                "reference_rms": 1.0641964669511106,
+                "absolute_channel_error_p95": 0.011598294600844383,
+                "absolute_channel_error_p99": 0.08638678662478988,
+                "absolute_channel_error_p999": 7.7523602134141605,
+                "maximum_absolute_channel_error": 76.14106750488281
+              },
+              "display_rgb8": {
+                "pixels": 45374,
+                "rmse": 5.512608582288915,
+                "reference_pair_rmse": 7.017764025370291,
+                "reference_mean_noise_estimate": 3.5088820126851457,
+                "candidate_noise_estimate": 4.251658547270705,
+                "reference_rms": 166.10144654993468,
+                "absolute_channel_error_p95": 3.5,
+                "absolute_channel_error_p99": 13.0,
+                "absolute_channel_error_p999": 82.43950000000768,
+                "maximum_absolute_channel_error": 172.0
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 33121,
+                "rmse": 0.871079712300809,
+                "reference_pair_rmse": 0.48109722159415136,
+                "reference_mean_noise_estimate": 0.24054861079707568,
+                "candidate_noise_estimate": 0.8372074002453974,
+                "reference_rms": 1.2252577162901503,
+                "absolute_channel_error_p95": 0.012664362788200375,
+                "absolute_channel_error_p99": 0.1242220418155199,
+                "absolute_channel_error_p999": 9.84499358868709,
+                "maximum_absolute_channel_error": 76.14106750488281
+              },
+              "display_rgb8": {
+                "pixels": 33121,
+                "rmse": 5.861161143268858,
+                "reference_pair_rmse": 7.217739954809397,
+                "reference_mean_noise_estimate": 3.6088699774046984,
+                "candidate_noise_estimate": 4.618361985980713,
+                "reference_rms": 169.36156513261903,
+                "absolute_channel_error_p95": 3.5,
+                "absolute_channel_error_p99": 16.5,
+                "absolute_channel_error_p999": 86.0,
+                "maximum_absolute_channel_error": 172.0
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 8032,
+                "rmse": 0.8237534192534026,
+                "reference_pair_rmse": 0.43064255491247716,
+                "reference_mean_noise_estimate": 0.21532127745623858,
+                "candidate_noise_estimate": 0.7951141070351385,
+                "reference_rms": 0.7539915022473482,
+                "absolute_channel_error_p95": 0.012010149657726288,
+                "absolute_channel_error_p99": 0.0970247447490681,
+                "absolute_channel_error_p999": 12.395904849320965,
+                "maximum_absolute_channel_error": 42.43775554001331
+              },
+              "display_rgb8": {
+                "pixels": 8032,
+                "rmse": 4.766263353116529,
+                "reference_pair_rmse": 6.801128846423759,
+                "reference_mean_noise_estimate": 3.4005644232118795,
+                "candidate_noise_estimate": 3.339674827711117,
+                "reference_rms": 176.5026624003512,
+                "absolute_channel_error_p95": 3.5,
+                "absolute_channel_error_p99": 13.0,
+                "absolute_channel_error_p999": 63.95250000000124,
+                "maximum_absolute_channel_error": 126.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 12343,
+                "rmse": 0.9349119734256002,
+                "reference_pair_rmse": 0.5481690368237655,
+                "reference_mean_noise_estimate": 0.27408451841188275,
+                "candidate_noise_estimate": 0.8938333596490323,
+                "reference_rms": 1.542133776583666,
+                "absolute_channel_error_p95": 0.013313525915145874,
+                "absolute_channel_error_p99": 0.1931052058935174,
+                "absolute_channel_error_p999": 12.76789147949299,
+                "maximum_absolute_channel_error": 59.3848297894001
+              },
+              "display_rgb8": {
+                "pixels": 12343,
+                "rmse": 6.519810290184043,
+                "reference_pair_rmse": 7.75023292204467,
+                "reference_mean_noise_estimate": 3.875116461022335,
+                "candidate_noise_estimate": 5.243224068595912,
+                "reference_rms": 163.05769244964046,
+                "absolute_channel_error_p95": 4.0,
+                "absolute_channel_error_p99": 22.860000000000582,
+                "absolute_channel_error_p999": 96.0,
+                "maximum_absolute_channel_error": 169.5
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 8881,
+                "rmse": 0.04239882612716847,
+                "reference_pair_rmse": 0.07474410077047008,
+                "reference_mean_noise_estimate": 0.03737205038523504,
+                "candidate_noise_estimate": 0.020024742369511704,
+                "reference_rms": 0.235027860690972,
+                "absolute_channel_error_p95": 0.002876418828964233,
+                "absolute_channel_error_p99": 0.007081139087676757,
+                "absolute_channel_error_p999": 0.7406241531968275,
+                "maximum_absolute_channel_error": 1.8464203029870987
+              },
+              "display_rgb8": {
+                "pixels": 8881,
+                "rmse": 3.6659163501960035,
+                "reference_pair_rmse": 6.187438072096781,
+                "reference_mean_noise_estimate": 3.0937190360483906,
+                "candidate_noise_estimate": 1.966683811044929,
+                "reference_rms": 152.35881862943663,
+                "absolute_channel_error_p95": 1.0,
+                "absolute_channel_error_p99": 3.0,
+                "absolute_channel_error_p999": 55.46900000002097,
+                "maximum_absolute_channel_error": 154.5
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 4284,
+                "rmse": 0.9804080231347704,
+                "reference_pair_rmse": 0.31302948438534134,
+                "reference_mean_noise_estimate": 0.15651474219267067,
+                "candidate_noise_estimate": 0.967834194117665,
+                "reference_rms": 0.6435812647262813,
+                "absolute_channel_error_p95": 0.009367739036679262,
+                "absolute_channel_error_p99": 0.06656584322452538,
+                "absolute_channel_error_p999": 11.2691128352452,
+                "maximum_absolute_channel_error": 60.59916615486145
+              },
+              "display_rgb8": {
+                "pixels": 4284,
+                "rmse": 5.329432951701252,
+                "reference_pair_rmse": 6.284853023642581,
+                "reference_mean_noise_estimate": 3.1424265118212906,
+                "candidate_noise_estimate": 4.304417638250475,
+                "reference_rms": 186.50385004065612,
+                "absolute_channel_error_p95": 2.5,
+                "absolute_channel_error_p99": 11.24499999999989,
+                "absolute_channel_error_p999": 77.72350000000188,
+                "maximum_absolute_channel_error": 168.5
+              }
+            }
+          },
+          "2048": {
+            "foreground": {
+              "hdr": {
+                "pixels": 45374,
+                "rmse": 0.44077310264984176,
+                "reference_pair_rmse": 0.42343388574680757,
+                "reference_mean_noise_estimate": 0.21171694287340379,
+                "candidate_noise_estimate": 0.3865965133312868,
+                "reference_rms": 1.0641964669511106,
+                "absolute_channel_error_p95": 0.006442824751138685,
+                "absolute_channel_error_p99": 0.14957369718700717,
+                "absolute_channel_error_p999": 6.206932985276099,
+                "maximum_absolute_channel_error": 37.17669415473938
+              },
+              "display_rgb8": {
+                "pixels": 45374,
+                "rmse": 5.846306416646933,
+                "reference_pair_rmse": 7.017764025370291,
+                "reference_mean_noise_estimate": 3.5088820126851457,
+                "candidate_noise_estimate": 4.676221309816478,
+                "reference_rms": 166.10144654993468,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 18.5,
+                "absolute_channel_error_p999": 88.5,
+                "maximum_absolute_channel_error": 172.0
+              }
+            },
+            "dragon_interior": {
+              "hdr": {
+                "pixels": 33121,
+                "rmse": 0.4942162932707756,
+                "reference_pair_rmse": 0.48109722159415136,
+                "reference_mean_noise_estimate": 0.24054861079707568,
+                "candidate_noise_estimate": 0.4317245769908198,
+                "reference_rms": 1.2252577162901503,
+                "absolute_channel_error_p95": 0.007012972235679626,
+                "absolute_channel_error_p99": 0.19573179423809098,
+                "absolute_channel_error_p999": 7.279626559883446,
+                "maximum_absolute_channel_error": 37.17669415473938
+              },
+              "display_rgb8": {
+                "pixels": 33121,
+                "rmse": 6.016663989641123,
+                "reference_pair_rmse": 7.217739954809397,
+                "reference_mean_noise_estimate": 3.6088699774046984,
+                "candidate_noise_estimate": 4.814177297361538,
+                "reference_rms": 169.36156513261903,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 22.5,
+                "absolute_channel_error_p999": 88.31900000000314,
+                "maximum_absolute_channel_error": 167.0
+              }
+            },
+            "head_thin_features": {
+              "hdr": {
+                "pixels": 8032,
+                "rmse": 0.471817497496744,
+                "reference_pair_rmse": 0.43064255491247716,
+                "reference_mean_noise_estimate": 0.21532127745623858,
+                "candidate_noise_estimate": 0.41981960223255843,
+                "reference_rms": 0.7539915022473482,
+                "absolute_channel_error_p95": 0.006554778665304184,
+                "absolute_channel_error_p99": 0.1402552649378775,
+                "absolute_channel_error_p999": 7.762500146329441,
+                "maximum_absolute_channel_error": 28.160930633544922
+              },
+              "display_rgb8": {
+                "pixels": 8032,
+                "rmse": 5.091205220861718,
+                "reference_pair_rmse": 6.801128846423759,
+                "reference_mean_noise_estimate": 3.4005644232118795,
+                "candidate_noise_estimate": 3.7890014785580743,
+                "reference_rms": 176.5026624003512,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 16.549999999999272,
+                "absolute_channel_error_p999": 68.45250000000124,
+                "maximum_absolute_channel_error": 132.0
+              }
+            },
+            "lower_body_slab_crop": {
+              "hdr": {
+                "pixels": 12343,
+                "rmse": 0.6194514970370941,
+                "reference_pair_rmse": 0.5481690368237655,
+                "reference_mean_noise_estimate": 0.27408451841188275,
+                "candidate_noise_estimate": 0.5555158269108301,
+                "reference_rms": 1.542133776583666,
+                "absolute_channel_error_p95": 0.007327502965927122,
+                "absolute_channel_error_p99": 0.3378557521104813,
+                "absolute_channel_error_p999": 9.259665237755728,
+                "maximum_absolute_channel_error": 37.17669415473938
+              },
+              "display_rgb8": {
+                "pixels": 12343,
+                "rmse": 6.709554451097501,
+                "reference_pair_rmse": 7.75023292204467,
+                "reference_mean_noise_estimate": 3.875116461022335,
+                "candidate_noise_estimate": 5.477371025022499,
+                "reference_rms": 163.05769244964046,
+                "absolute_channel_error_p95": 2.0,
+                "absolute_channel_error_p99": 29.360000000000582,
+                "absolute_channel_error_p999": 96.94400000000314,
+                "maximum_absolute_channel_error": 167.0
+              }
+            },
+            "primary_slab_interior": {
+              "hdr": {
+                "pixels": 8881,
+                "rmse": 0.11687868100627058,
+                "reference_pair_rmse": 0.07474410077047008,
+                "reference_mean_noise_estimate": 0.03737205038523504,
+                "candidate_noise_estimate": 0.11074274659664628,
+                "reference_rms": 0.235027860690972,
+                "absolute_channel_error_p95": 0.0015690989792346952,
+                "absolute_channel_error_p99": 0.024157159626483765,
+                "absolute_channel_error_p999": 1.562260842979685,
+                "maximum_absolute_channel_error": 5.844338998198509
+              },
+              "display_rgb8": {
+                "pixels": 8881,
+                "rmse": 5.4012956821121145,
+                "reference_pair_rmse": 6.187438072096781,
+                "reference_mean_noise_estimate": 3.0937190360483906,
+                "candidate_noise_estimate": 4.427515959496339,
+                "reference_rms": 152.35881862943663,
+                "absolute_channel_error_p95": 1.0,
+                "absolute_channel_error_p99": 8.0,
+                "absolute_channel_error_p999": 97.0,
+                "maximum_absolute_channel_error": 172.0
+              }
+            },
+            "dragon_silhouette_band": {
+              "hdr": {
+                "pixels": 4284,
+                "rmse": 0.37554529237165524,
+                "reference_pair_rmse": 0.31302948438534134,
+                "reference_mean_noise_estimate": 0.15651474219267067,
+                "candidate_noise_estimate": 0.34137574913703794,
+                "reference_rms": 0.6435812647262813,
+                "absolute_channel_error_p95": 0.005375003814697264,
+                "absolute_channel_error_p99": 0.09439021363854369,
+                "absolute_channel_error_p999": 5.916325523987703,
+                "maximum_absolute_channel_error": 15.705575227737427
+              },
+              "display_rgb8": {
+                "pixels": 4284,
+                "rmse": 4.653555511458519,
+                "reference_pair_rmse": 6.284853023642581,
+                "reference_mean_noise_estimate": 3.1424265118212906,
+                "candidate_noise_estimate": 3.4323074623390943,
+                "reference_rms": 186.50385004065612,
+                "absolute_channel_error_p95": 1.5,
+                "absolute_channel_error_p99": 8.489999999999782,
+                "absolute_channel_error_p999": 67.0,
+                "maximum_absolute_channel_error": 126.0
+              }
+            }
+          }
+        },
+        "reference_seeds": [
+          19,
+          43
+        ],
+        "reference_samples_per_seed": 4096,
+        "region_pixels": {
+          "foreground": 45374,
+          "dragon_interior": 33121,
+          "head_thin_features": 8032,
+          "lower_body_slab_crop": 12343,
+          "primary_slab_interior": 8881,
+          "dragon_silhouette_band": 4284
+        }
+      }
+    },
+    "ablations": {
+      "canonical-combined": {
+        "foreground": {
+          "pixels": 71592,
+          "rmse": 1.6851466215348934,
+          "reference_pair_rmse": 0.7007835080660134,
+          "reference_mean_noise_estimate": 0.3503917540330067,
+          "candidate_noise_estimate": 1.648315732733307,
+          "reference_rms": 2.3846725991340727,
+          "absolute_channel_error_p95": 0.019862860441207886,
+          "absolute_channel_error_p99": 0.03997921571135521,
+          "absolute_channel_error_p999": 7.178446264565907,
+          "maximum_absolute_channel_error": 258.08282470703125
+        },
+        "dragon_interior": {
+          "pixels": 53862,
+          "rmse": 1.6795700630889712,
+          "reference_pair_rmse": 0.6718957092376178,
+          "reference_mean_noise_estimate": 0.3359478546188089,
+          "candidate_noise_estimate": 1.6456289483968463,
+          "reference_rms": 2.306579154264329,
+          "absolute_channel_error_p95": 0.02101023867726326,
+          "absolute_channel_error_p99": 0.04133288189768787,
+          "absolute_channel_error_p999": 9.24503812901697,
+          "maximum_absolute_channel_error": 159.7419147491455
+        },
+        "head_thin_features": {
+          "pixels": 14062,
+          "rmse": 1.889632034547734,
+          "reference_pair_rmse": 0.8449906296467521,
+          "reference_mean_noise_estimate": 0.42249531482337604,
+          "candidate_noise_estimate": 1.8417944877052121,
+          "reference_rms": 3.6045930884097017,
+          "absolute_channel_error_p95": 0.02252904698252678,
+          "absolute_channel_error_p99": 0.04045931249856955,
+          "absolute_channel_error_p999": 9.837421899587588,
+          "maximum_absolute_channel_error": 157.7572984099388
+        },
+        "lower_body_slab_crop": {
+          "pixels": 16525,
+          "rmse": 1.9497919751669317,
+          "reference_pair_rmse": 0.8379820956629268,
+          "reference_mean_noise_estimate": 0.4189910478314634,
+          "candidate_noise_estimate": 1.9042413839275885,
+          "reference_rms": 1.4179782849498193,
+          "absolute_channel_error_p95": 0.02400043830275535,
+          "absolute_channel_error_p99": 0.0530913437902929,
+          "absolute_channel_error_p999": 13.823708328665129,
+          "maximum_absolute_channel_error": 159.7419147491455
+        },
+        "primary_slab_interior": {
+          "pixels": 11561,
+          "rmse": 0.1326902635776702,
+          "reference_pair_rmse": 0.05748550482730205,
+          "reference_mean_noise_estimate": 0.028742752413651027,
+          "candidate_noise_estimate": 0.1295398017290406,
+          "reference_rms": 0.22360282362987233,
+          "absolute_channel_error_p95": 0.003112060576677324,
+          "absolute_channel_error_p99": 0.020208667069673576,
+          "absolute_channel_error_p999": 0.6952362221628601,
+          "maximum_absolute_channel_error": 15.050874970853329
+        },
+        "dragon_silhouette_band": {
+          "pixels": 8826,
+          "rmse": 2.407798237448395,
+          "reference_pair_rmse": 1.1091611416714862,
+          "reference_mean_noise_estimate": 0.5545805708357431,
+          "candidate_noise_estimate": 2.343060550372333,
+          "reference_rms": 3.702828176454471,
+          "absolute_channel_error_p95": 0.019075015187263476,
+          "absolute_channel_error_p99": 0.03838573105633257,
+          "absolute_channel_error_p999": 5.61076854996578,
+          "maximum_absolute_channel_error": 258.08282470703125
+        }
+      },
+      "canonical-sky": {
+        "foreground": {
+          "pixels": 71592,
+          "rmse": 0.008229898329915143,
+          "reference_pair_rmse": 0.002893042102753684,
+          "reference_mean_noise_estimate": 0.001446521051376842,
+          "candidate_noise_estimate": 0.00810177779062495,
+          "reference_rms": 0.3389031624807815,
+          "absolute_channel_error_p95": 0.018903883174061775,
+          "absolute_channel_error_p99": 0.03035113215446472,
+          "absolute_channel_error_p999": 0.0459321897476919,
+          "maximum_absolute_channel_error": 0.08198313415050507
+        },
+        "dragon_interior": {
+          "pixels": 53862,
+          "rmse": 0.008935399695220768,
+          "reference_pair_rmse": 0.0031455818585206176,
+          "reference_mean_noise_estimate": 0.0015727909292603088,
+          "candidate_noise_estimate": 0.008795890881894107,
+          "reference_rms": 0.3761430420895404,
+          "absolute_channel_error_p95": 0.020193742588162422,
+          "absolute_channel_error_p99": 0.03157287091016764,
+          "absolute_channel_error_p999": 0.04737170025706307,
+          "maximum_absolute_channel_error": 0.08198313415050507
+        },
+        "head_thin_features": {
+          "pixels": 14062,
+          "rmse": 0.010101346187800711,
+          "reference_pair_rmse": 0.0035460351507483963,
+          "reference_mean_noise_estimate": 0.0017730175753741982,
+          "candidate_noise_estimate": 0.009944526307633268,
+          "reference_rms": 0.42678052724373866,
+          "absolute_channel_error_p95": 0.021742217242717743,
+          "absolute_channel_error_p99": 0.033412692695856096,
+          "absolute_channel_error_p999": 0.049235051125288705,
+          "maximum_absolute_channel_error": 0.06704658269882202
+        },
+        "lower_body_slab_crop": {
+          "pixels": 16525,
+          "rmse": 0.010668002961503985,
+          "reference_pair_rmse": 0.0037522863141692306,
+          "reference_mean_noise_estimate": 0.0018761431570846153,
+          "candidate_noise_estimate": 0.010501731954338882,
+          "reference_rms": 0.2896172245735084,
+          "absolute_channel_error_p95": 0.02288262248039244,
+          "absolute_channel_error_p99": 0.034318010658025755,
+          "absolute_channel_error_p999": 0.05006225815415452,
+          "maximum_absolute_channel_error": 0.07379426062107086
+        },
+        "primary_slab_interior": {
+          "pixels": 11561,
+          "rmse": 0.0013941486642881987,
+          "reference_pair_rmse": 0.0004859562555835011,
+          "reference_mean_noise_estimate": 0.00024297812779175055,
+          "candidate_noise_estimate": 0.0013728117596929974,
+          "reference_rms": 0.07755520076976155,
+          "absolute_channel_error_p95": 0.002865818515419961,
+          "absolute_channel_error_p99": 0.0039883092045784,
+          "absolute_channel_error_p999": 0.005450279191136605,
+          "maximum_absolute_channel_error": 0.007358677685260773
+        },
+        "dragon_silhouette_band": {
+          "pixels": 8826,
+          "rmse": 0.008042019165853165,
+          "reference_pair_rmse": 0.002783820723231637,
+          "reference_mean_noise_estimate": 0.0013919103616158186,
+          "candidate_noise_estimate": 0.007920647562489834,
+          "reference_rms": 0.42620111354053564,
+          "absolute_channel_error_p95": 0.018219977617263777,
+          "absolute_channel_error_p99": 0.02932668671011924,
+          "absolute_channel_error_p999": 0.04321639017015701,
+          "maximum_absolute_channel_error": 0.06287653744220734
+        }
+      },
+      "canonical-sun": {
+        "foreground": {
+          "pixels": 71592,
+          "rmse": 1.6851742975167847,
+          "reference_pair_rmse": 0.7007398463042649,
+          "reference_mean_noise_estimate": 0.35036992315213245,
+          "candidate_noise_estimate": 1.6483486675948016,
+          "reference_rms": 2.352694617007453,
+          "absolute_channel_error_p95": 0.0036498222034424543,
+          "absolute_channel_error_p99": 0.020557782700052485,
+          "absolute_channel_error_p999": 7.2086978398459785,
+          "maximum_absolute_channel_error": 258.0815124511719
+        },
+        "dragon_interior": {
+          "pixels": 53862,
+          "rmse": 1.6796059236754666,
+          "reference_pair_rmse": 0.6718418168260998,
+          "reference_mean_noise_estimate": 0.3359209084130499,
+          "candidate_noise_estimate": 1.645671049188345,
+          "reference_rms": 2.267443056197587,
+          "absolute_channel_error_p95": 0.0034931072732433677,
+          "absolute_channel_error_p99": 0.017531747277825922,
+          "absolute_channel_error_p999": 9.271372035750694,
+          "maximum_absolute_channel_error": 159.74907302856445
+        },
+        "head_thin_features": {
+          "pixels": 14062,
+          "rmse": 1.8896747450870295,
+          "reference_pair_rmse": 0.8449534336178631,
+          "reference_mean_noise_estimate": 0.42247671680893156,
+          "candidate_noise_estimate": 1.8418425736131945,
+          "reference_rms": 3.5687126743374193,
+          "absolute_channel_error_p95": 0.003240891150198877,
+          "absolute_channel_error_p99": 0.015407442534342449,
+          "absolute_channel_error_p999": 9.82487695921393,
+          "maximum_absolute_channel_error": 157.75331753026694
+        },
+        "lower_body_slab_crop": {
+          "pixels": 16525,
+          "rmse": 1.9498534773757663,
+          "reference_pair_rmse": 0.8379095458572502,
+          "reference_mean_noise_estimate": 0.4189547729286251,
+          "candidate_noise_estimate": 1.9043123382141627,
+          "reference_rms": 1.3765518236240892,
+          "absolute_channel_error_p95": 0.004587739333510394,
+          "absolute_channel_error_p99": 0.03908092509955227,
+          "absolute_channel_error_p999": 13.831850488789188,
+          "maximum_absolute_channel_error": 159.74907302856445
+        },
+        "primary_slab_interior": {
+          "pixels": 11561,
+          "rmse": 0.1326645904259376,
+          "reference_pair_rmse": 0.05748310446176486,
+          "reference_mean_noise_estimate": 0.02874155223088243,
+          "candidate_noise_estimate": 0.12951377041936982,
+          "reference_rms": 0.16086734632458094,
+          "absolute_channel_error_p95": 0.0007241323590278632,
+          "absolute_channel_error_p99": 0.019451100677251816,
+          "absolute_channel_error_p999": 0.69443943711372,
+          "maximum_absolute_channel_error": 15.046302881091833
+        },
+        "dragon_silhouette_band": {
+          "pixels": 8826,
+          "rmse": 2.407805470910865,
+          "reference_pair_rmse": 1.1091353149108396,
+          "reference_mean_noise_estimate": 0.5545676574554198,
+          "candidate_noise_estimate": 2.343071040120786,
+          "reference_rms": 3.6875013182346055,
+          "absolute_channel_error_p95": 0.009920985251665095,
+          "absolute_channel_error_p99": 0.02572200091555713,
+          "absolute_channel_error_p999": 5.600071090434016,
+          "maximum_absolute_channel_error": 258.0815124511719
+        }
+      },
+      "elevated-combined": {
+        "foreground": {
+          "pixels": 70719,
+          "rmse": 2.7262998438287758,
+          "reference_pair_rmse": 0.6927666233813659,
+          "reference_mean_noise_estimate": 0.3463833116906829,
+          "candidate_noise_estimate": 2.704205879707202,
+          "reference_rms": 2.8885255639774523,
+          "absolute_channel_error_p95": 0.019813507795333852,
+          "absolute_channel_error_p99": 0.044293719530105656,
+          "absolute_channel_error_p999": 9.169182850838325,
+          "maximum_absolute_channel_error": 505.81524658203125
+        },
+        "dragon_interior": {
+          "pixels": 53194,
+          "rmse": 3.106970100958173,
+          "reference_pair_rmse": 0.7698502073123996,
+          "reference_mean_noise_estimate": 0.3849251036561998,
+          "candidate_noise_estimate": 3.083033550388854,
+          "reference_rms": 3.312274267169067,
+          "absolute_channel_error_p95": 0.021135995537042606,
+          "absolute_channel_error_p99": 0.0518561653792862,
+          "absolute_channel_error_p999": 11.185161723043038,
+          "maximum_absolute_channel_error": 505.81524658203125
+        },
+        "head_thin_features": {
+          "pixels": 15116,
+          "rmse": 2.2661124473833456,
+          "reference_pair_rmse": 1.0193449672221742,
+          "reference_mean_noise_estimate": 0.5096724836110871,
+          "candidate_noise_estimate": 2.208053347099078,
+          "reference_rms": 2.9820164683706945,
+          "absolute_channel_error_p95": 0.023258343338966373,
+          "absolute_channel_error_p99": 0.043143806681036824,
+          "absolute_channel_error_p999": 14.11865161264014,
+          "maximum_absolute_channel_error": 158.43890190124512
+        },
+        "lower_body_slab_crop": {
+          "pixels": 14806,
+          "rmse": 3.872883114784616,
+          "reference_pair_rmse": 0.749518212007085,
+          "reference_mean_noise_estimate": 0.3747591060035425,
+          "candidate_noise_estimate": 3.8547087092608194,
+          "reference_rms": 5.153194543865257,
+          "absolute_channel_error_p95": 0.023266610503196717,
+          "absolute_channel_error_p99": 0.1909917589277072,
+          "absolute_channel_error_p999": 9.176700057223968,
+          "maximum_absolute_channel_error": 505.81524658203125
+        },
+        "primary_slab_interior": {
+          "pixels": 11587,
+          "rmse": 0.028419133082754264,
+          "reference_pair_rmse": 0.04602428831799165,
+          "reference_mean_noise_estimate": 0.023012144158995825,
+          "candidate_noise_estimate": 0.016675981121987763,
+          "reference_rms": 0.2045515860688859,
+          "absolute_channel_error_p95": 0.0019042044878005981,
+          "absolute_channel_error_p99": 0.018926654756069246,
+          "absolute_channel_error_p999": 0.434722693860535,
+          "maximum_absolute_channel_error": 1.4086483493447304
+        },
+        "dragon_silhouette_band": {
+          "pixels": 7766,
+          "rmse": 1.492351441130389,
+          "reference_pair_rmse": 0.6135907726663243,
+          "reference_mean_noise_estimate": 0.30679538633316217,
+          "candidate_noise_estimate": 1.4604757494626999,
+          "reference_rms": 1.2078201320249549,
+          "absolute_channel_error_p95": 0.01899718195199962,
+          "absolute_channel_error_p99": 0.03940658345818516,
+          "absolute_channel_error_p999": 8.075954726562886,
+          "maximum_absolute_channel_error": 106.16592153161764
+        }
+      },
+      "elevated-sky": {
+        "foreground": {
+          "pixels": 70719,
+          "rmse": 0.008132251906206655,
+          "reference_pair_rmse": 0.0028219875413140892,
+          "reference_mean_noise_estimate": 0.0014109937706570446,
+          "candidate_noise_estimate": 0.008008908642578512,
+          "reference_rms": 0.26213069029473623,
+          "absolute_channel_error_p95": 0.01863572001457213,
+          "absolute_channel_error_p99": 0.029948417544364933,
+          "absolute_channel_error_p999": 0.0456745295822627,
+          "maximum_absolute_channel_error": 0.07766132056713104
+        },
+        "dragon_interior": {
+          "pixels": 53194,
+          "rmse": 0.008888948972816486,
+          "reference_pair_rmse": 0.003085066504569654,
+          "reference_mean_noise_estimate": 0.001542533252284827,
+          "candidate_noise_estimate": 0.008754085046818476,
+          "reference_rms": 0.2883684699801084,
+          "absolute_channel_error_p95": 0.019951219856739033,
+          "absolute_channel_error_p99": 0.03124071642756462,
+          "absolute_channel_error_p999": 0.04732951420545642,
+          "maximum_absolute_channel_error": 0.07766132056713104
+        },
+        "head_thin_features": {
+          "pixels": 15116,
+          "rmse": 0.010381427122148667,
+          "reference_pair_rmse": 0.0035568274972858954,
+          "reference_mean_noise_estimate": 0.0017784137486429477,
+          "candidate_noise_estimate": 0.010227965273265336,
+          "reference_rms": 0.36358988690556554,
+          "absolute_channel_error_p95": 0.022502988949418073,
+          "absolute_channel_error_p99": 0.033662949576973876,
+          "absolute_channel_error_p999": 0.050343501254916594,
+          "maximum_absolute_channel_error": 0.07134571671485901
+        },
+        "lower_body_slab_crop": {
+          "pixels": 14806,
+          "rmse": 0.009788802565634339,
+          "reference_pair_rmse": 0.003438605763859999,
+          "reference_mean_noise_estimate": 0.0017193028819299995,
+          "candidate_noise_estimate": 0.00963663080485896,
+          "reference_rms": 0.2271176564094585,
+          "absolute_channel_error_p95": 0.021423438936471945,
+          "absolute_channel_error_p99": 0.03306566089391709,
+          "absolute_channel_error_p999": 0.050132658511401584,
+          "maximum_absolute_channel_error": 0.0772601068019867
+        },
+        "primary_slab_interior": {
+          "pixels": 11587,
+          "rmse": 0.0008480113057205121,
+          "reference_pair_rmse": 0.00029251581442131427,
+          "reference_mean_noise_estimate": 0.00014625790721065713,
+          "candidate_noise_estimate": 0.0008353034174527043,
+          "reference_rms": 0.07555358882876492,
+          "absolute_channel_error_p95": 0.001692410558462143,
+          "absolute_channel_error_p99": 0.0023225575685501105,
+          "absolute_channel_error_p999": 0.003226931393146548,
+          "maximum_absolute_channel_error": 0.006620932370424271
+        },
+        "dragon_silhouette_band": {
+          "pixels": 7766,
+          "rmse": 0.007983678299820158,
+          "reference_pair_rmse": 0.0027609646205184538,
+          "reference_mean_noise_estimate": 0.0013804823102592269,
+          "candidate_noise_estimate": 0.007863420870466023,
+          "reference_rms": 0.29683713602839107,
+          "absolute_channel_error_p95": 0.01821619793772697,
+          "absolute_channel_error_p99": 0.028635463267564738,
+          "absolute_channel_error_p999": 0.04361881998181355,
+          "maximum_absolute_channel_error": 0.06843973696231842
+        }
+      },
+      "elevated-sun": {
+        "foreground": {
+          "pixels": 70719,
+          "rmse": 2.7261734989315753,
+          "reference_pair_rmse": 0.6927364762097569,
+          "reference_mean_noise_estimate": 0.34636823810487843,
+          "candidate_noise_estimate": 2.704080433328297,
+          "reference_rms": 2.869614660845526,
+          "absolute_channel_error_p95": 0.0038152359426021553,
+          "absolute_channel_error_p99": 0.027632941156625963,
+          "absolute_channel_error_p999": 9.1657306849517,
+          "maximum_absolute_channel_error": 505.8008575439453
+        },
+        "dragon_interior": {
+          "pixels": 53194,
+          "rmse": 3.1068228849160526,
+          "reference_pair_rmse": 0.7698184438383986,
+          "reference_mean_noise_estimate": 0.3849092219191993,
+          "candidate_noise_estimate": 3.0828871742442443,
+          "reference_rms": 3.292486351364929,
+          "absolute_channel_error_p95": 0.0039029786828905285,
+          "absolute_channel_error_p99": 0.03444816185161481,
+          "absolute_channel_error_p999": 11.187759827078395,
+          "maximum_absolute_channel_error": 505.8008575439453
+        },
+        "head_thin_features": {
+          "pixels": 15116,
+          "rmse": 2.2661488171462763,
+          "reference_pair_rmse": 1.0193193718480822,
+          "reference_mean_noise_estimate": 0.5096596859240411,
+          "candidate_noise_estimate": 2.208093627090408,
+          "reference_rms": 2.9508130947318216,
+          "absolute_channel_error_p95": 0.0033436889760196237,
+          "absolute_channel_error_p99": 0.013699020333588118,
+          "absolute_channel_error_p999": 14.133446914946315,
+          "maximum_absolute_channel_error": 158.44167184829712
+        },
+        "lower_body_slab_crop": {
+          "pixels": 14806,
+          "rmse": 3.8727172616437806,
+          "reference_pair_rmse": 0.7494646926701231,
+          "reference_mean_noise_estimate": 0.37473234633506153,
+          "candidate_noise_estimate": 3.854544675735893,
+          "reference_rms": 5.141670809546719,
+          "absolute_channel_error_p95": 0.004657045751810077,
+          "absolute_channel_error_p99": 0.19078300889930713,
+          "absolute_channel_error_p999": 9.17165804007757,
+          "maximum_absolute_channel_error": 505.8008575439453
+        },
+        "primary_slab_interior": {
+          "pixels": 11587,
+          "rmse": 0.028396462492986146,
+          "reference_pair_rmse": 0.046025737957257465,
+          "reference_mean_noise_estimate": 0.023012868978628732,
+          "candidate_noise_estimate": 0.016636313999442195,
+          "reference_rms": 0.14174957330732266,
+          "absolute_channel_error_p95": 0.0007272586226463318,
+          "absolute_channel_error_p99": 0.019647917151451234,
+          "absolute_channel_error_p999": 0.43473803460598137,
+          "maximum_absolute_channel_error": 1.4081416428089142
+        },
+        "dragon_silhouette_band": {
+          "pixels": 7766,
+          "rmse": 1.4923173827723635,
+          "reference_pair_rmse": 0.6135811163799143,
+          "reference_mean_noise_estimate": 0.30679055818995715,
+          "candidate_noise_estimate": 1.4604419619861828,
+          "reference_rms": 1.1766635909333758,
+          "absolute_channel_error_p95": 0.006273702904582023,
+          "absolute_channel_error_p99": 0.01921781140379607,
+          "absolute_channel_error_p999": 8.063069589313152,
+          "maximum_absolute_channel_error": 106.16663430258632
+        }
+      }
+    },
+    "deep": {
+      "canonical": {
+        "whole_image_hdr_rmse": 2.512462135441391e-10,
+        "maximum_absolute_channel_error": 5.960464477539063e-08
+      },
+      "elevated": {
+        "whole_image_hdr_rmse": 1.5545337239946922e-09,
+        "maximum_absolute_channel_error": 1.9073486328125e-06
+      },
+      "grazing": {
+        "whole_image_hdr_rmse": 1.6378023342275387e-10,
+        "maximum_absolute_channel_error": 5.960464477539063e-08
+      }
+    },
+    "extended": {
+      "canonical-32": {
+        "foreground": {
+          "pixels": 71592,
+          "rmse": 4.095609618686263,
+          "reference_pair_rmse": 0.3222874267656911,
+          "reference_mean_noise_estimate": 0.16114371338284555,
+          "candidate_noise_estimate": 4.092438252718375,
+          "reference_rms": 2.3201260509867456,
+          "absolute_channel_error_p95": 0.046634068712592125,
+          "absolute_channel_error_p99": 0.11864728853106499,
+          "absolute_channel_error_p999": 6.341561035814471,
+          "maximum_absolute_channel_error": 614.4378714710474
+        },
+        "dragon_interior": {
+          "pixels": 53862,
+          "rmse": 4.514638423036711,
+          "reference_pair_rmse": 0.3494188952853856,
+          "reference_mean_noise_estimate": 0.1747094476426928,
+          "candidate_noise_estimate": 4.5112566652390536,
+          "reference_rms": 2.303100290397489,
+          "absolute_channel_error_p95": 0.04927067086100578,
+          "absolute_channel_error_p99": 0.12018688544631004,
+          "absolute_channel_error_p999": 8.422212348469898,
+          "maximum_absolute_channel_error": 614.4378714710474
+        },
+        "head_thin_features": {
+          "pixels": 14062,
+          "rmse": 2.948487039907474,
+          "reference_pair_rmse": 0.43451422844031556,
+          "reference_mean_noise_estimate": 0.21725711422015778,
+          "candidate_noise_estimate": 2.940471929949862,
+          "reference_rms": 3.559577003584077,
+          "absolute_channel_error_p95": 0.05482242628931999,
+          "absolute_channel_error_p99": 0.13327445089817064,
+          "absolute_channel_error_p999": 9.898267382979613,
+          "maximum_absolute_channel_error": 232.36631479859352
+        },
+        "lower_body_slab_crop": {
+          "pixels": 16525,
+          "rmse": 5.584143532483992,
+          "reference_pair_rmse": 0.4339057809413985,
+          "reference_mean_noise_estimate": 0.21695289047069924,
+          "candidate_noise_estimate": 5.579927457834842,
+          "reference_rms": 1.4613349202372756,
+          "absolute_channel_error_p95": 0.056770083308219886,
+          "absolute_channel_error_p99": 0.19221312791109224,
+          "absolute_channel_error_p999": 16.28625539341679,
+          "maximum_absolute_channel_error": 614.4378714710474
+        },
+        "primary_slab_interior": {
+          "pixels": 11561,
+          "rmse": 0.06742216287844115,
+          "reference_pair_rmse": 0.031719614404763466,
+          "reference_mean_noise_estimate": 0.015859807202381733,
+          "candidate_noise_estimate": 0.06553025684911,
+          "reference_rms": 0.2222734356037345,
+          "absolute_channel_error_p95": 0.009653458744287495,
+          "absolute_channel_error_p99": 0.0907664112746716,
+          "absolute_channel_error_p999": 0.22531485975534257,
+          "maximum_absolute_channel_error": 7.508291222155094
+        },
+        "dragon_silhouette_band": {
+          "pixels": 8826,
+          "rmse": 3.416549409370337,
+          "reference_pair_rmse": 0.313031137943254,
+          "reference_mean_noise_estimate": 0.156515568971627,
+          "candidate_noise_estimate": 3.412962458530461,
+          "reference_rms": 3.3682693245256345,
+          "absolute_channel_error_p95": 0.04534908533096305,
+          "absolute_channel_error_p99": 0.12928709506988523,
+          "absolute_channel_error_p999": 6.058307262332211,
+          "maximum_absolute_channel_error": 361.4423599243164
+        }
+      },
+      "canonical-128": {
+        "foreground": {
+          "pixels": 71592,
+          "rmse": 1.6374993117963348,
+          "reference_pair_rmse": 0.3222874267656911,
+          "reference_mean_noise_estimate": 0.16114371338284555,
+          "candidate_noise_estimate": 1.6295510730783058,
+          "reference_rms": 2.3201260509867456,
+          "absolute_channel_error_p95": 0.021214565262198448,
+          "absolute_channel_error_p99": 0.1063055470585823,
+          "absolute_channel_error_p999": 6.662716662139101,
+          "maximum_absolute_channel_error": 221.1220245361328
+        },
+        "dragon_interior": {
+          "pixels": 53862,
+          "rmse": 1.689447833162649,
+          "reference_pair_rmse": 0.3494188952853856,
+          "reference_mean_noise_estimate": 0.1747094476426928,
+          "candidate_noise_estimate": 1.6803900112421388,
+          "reference_rms": 2.303100290397489,
+          "absolute_channel_error_p95": 0.022391121834516525,
+          "absolute_channel_error_p99": 0.1004107624292368,
+          "absolute_channel_error_p999": 8.100506635904743,
+          "maximum_absolute_channel_error": 173.25528806447983
+        },
+        "head_thin_features": {
+          "pixels": 14062,
+          "rmse": 1.8891136123076548,
+          "reference_pair_rmse": 0.43451422844031556,
+          "reference_mean_noise_estimate": 0.21725711422015778,
+          "candidate_noise_estimate": 1.876579224686985,
+          "reference_rms": 3.559577003584077,
+          "absolute_channel_error_p95": 0.02345021441578865,
+          "absolute_channel_error_p99": 0.09595706164836972,
+          "absolute_channel_error_p999": 10.020382541269438,
+          "maximum_absolute_channel_error": 173.25528806447983
+        },
+        "lower_body_slab_crop": {
+          "pixels": 16525,
+          "rmse": 1.967054951516774,
+          "reference_pair_rmse": 0.4339057809413985,
+          "reference_mean_noise_estimate": 0.21695289047069924,
+          "candidate_noise_estimate": 1.955054123445964,
+          "reference_rms": 1.4613349202372756,
+          "absolute_channel_error_p95": 0.026044042408466337,
+          "absolute_channel_error_p99": 0.20300960004329718,
+          "absolute_channel_error_p999": 14.016720960323209,
+          "maximum_absolute_channel_error": 161.40807151794434
+        },
+        "primary_slab_interior": {
+          "pixels": 11561,
+          "rmse": 0.13027254426119597,
+          "reference_pair_rmse": 0.031719614404763466,
+          "reference_mean_noise_estimate": 0.015859807202381733,
+          "candidate_noise_estimate": 0.1293035278087514,
+          "reference_rms": 0.2222734356037345,
+          "absolute_channel_error_p95": 0.0037876181304454825,
+          "absolute_channel_error_p99": 0.09598210051655785,
+          "absolute_channel_error_p999": 0.26009133617585106,
+          "maximum_absolute_channel_error": 15.050550639629364
+        },
+        "dragon_silhouette_band": {
+          "pixels": 8826,
+          "rmse": 2.0760593841489183,
+          "reference_pair_rmse": 0.313031137943254,
+          "reference_mean_noise_estimate": 0.156515568971627,
+          "candidate_noise_estimate": 2.070151067720004,
+          "reference_rms": 3.3682693245256345,
+          "absolute_channel_error_p95": 0.020520851016044617,
+          "absolute_channel_error_p99": 0.11576568078249627,
+          "absolute_channel_error_p999": 6.074934665084853,
+          "maximum_absolute_channel_error": 221.1220245361328
+        }
+      },
+      "canonical-512": {
+        "foreground": {
+          "pixels": 71592,
+          "rmse": 0.9118093187728029,
+          "reference_pair_rmse": 0.3222874267656911,
+          "reference_mean_noise_estimate": 0.16114371338284555,
+          "candidate_noise_estimate": 0.8974569279013396,
+          "reference_rms": 2.3201260509867456,
+          "absolute_channel_error_p95": 0.010955078527331352,
+          "absolute_channel_error_p99": 0.11324876826256514,
+          "absolute_channel_error_p999": 6.710023500025788,
+          "maximum_absolute_channel_error": 94.60061645507812
+        },
+        "dragon_interior": {
+          "pixels": 53862,
+          "rmse": 0.9394555615311054,
+          "reference_pair_rmse": 0.3494188952853856,
+          "reference_mean_noise_estimate": 0.1747094476426928,
+          "candidate_noise_estimate": 0.9230673653618731,
+          "reference_rms": 2.303100290397489,
+          "absolute_channel_error_p95": 0.011482411995530128,
+          "absolute_channel_error_p99": 0.10632180646061738,
+          "absolute_channel_error_p999": 8.337104071974796,
+          "maximum_absolute_channel_error": 83.11421203613281
+        },
+        "head_thin_features": {
+          "pixels": 14062,
+          "rmse": 1.2215692123841895,
+          "reference_pair_rmse": 0.43451422844031556,
+          "reference_mean_noise_estimate": 0.21725711422015778,
+          "candidate_noise_estimate": 1.2020942920443713,
+          "reference_rms": 3.559577003584077,
+          "absolute_channel_error_p95": 0.011969424784183502,
+          "absolute_channel_error_p99": 0.104550836980344,
+          "absolute_channel_error_p999": 14.65884655252262,
+          "maximum_absolute_channel_error": 83.11421203613281
+        },
+        "lower_body_slab_crop": {
+          "pixels": 16525,
+          "rmse": 1.0760950590927854,
+          "reference_pair_rmse": 0.4339057809413985,
+          "reference_mean_noise_estimate": 0.21695289047069924,
+          "candidate_noise_estimate": 1.0539981117252128,
+          "reference_rms": 1.4613349202372756,
+          "absolute_channel_error_p95": 0.013441377878189067,
+          "absolute_channel_error_p99": 0.22544926464558263,
+          "absolute_channel_error_p999": 16.12737102020703,
+          "maximum_absolute_channel_error": 69.13954377174377
+        },
+        "primary_slab_interior": {
+          "pixels": 11561,
+          "rmse": 0.10541116939428882,
+          "reference_pair_rmse": 0.031719614404763466,
+          "reference_mean_noise_estimate": 0.015859807202381733,
+          "candidate_noise_estimate": 0.10421123331279951,
+          "reference_rms": 0.2222734356037345,
+          "absolute_channel_error_p95": 0.0020140457898378383,
+          "absolute_channel_error_p99": 0.10713827952742579,
+          "absolute_channel_error_p999": 0.28985895486180197,
+          "maximum_absolute_channel_error": 7.096610315144062
+        },
+        "dragon_silhouette_band": {
+          "pixels": 8826,
+          "rmse": 1.1591887007675905,
+          "reference_pair_rmse": 0.313031137943254,
+          "reference_mean_noise_estimate": 0.156515568971627,
+          "candidate_noise_estimate": 1.1485736026292537,
+          "reference_rms": 3.3682693245256345,
+          "absolute_channel_error_p95": 0.010577743314206588,
+          "absolute_channel_error_p99": 0.12611787565052485,
+          "absolute_channel_error_p999": 9.474400745011685,
+          "maximum_absolute_channel_error": 94.60061645507812
+        }
+      },
+      "canonical-2048": {
+        "foreground": {
+          "pixels": 71592,
+          "rmse": 0.40532280283451533,
+          "reference_pair_rmse": 0.3222874267656911,
+          "reference_mean_noise_estimate": 0.16114371338284555,
+          "candidate_noise_estimate": 0.3719129980718807,
+          "reference_rms": 2.3201260509867456,
+          "absolute_channel_error_p95": 0.006054498255252838,
+          "absolute_channel_error_p99": 0.12769151106476784,
+          "absolute_channel_error_p999": 4.819194576144587,
+          "maximum_absolute_channel_error": 60.56946563720703
+        },
+        "dragon_interior": {
+          "pixels": 53862,
+          "rmse": 0.4448292082563324,
+          "reference_pair_rmse": 0.3494188952853856,
+          "reference_mean_noise_estimate": 0.1747094476426928,
+          "candidate_noise_estimate": 0.40908389533485756,
+          "reference_rms": 2.303100290397489,
+          "absolute_channel_error_p95": 0.0061834827065467834,
+          "absolute_channel_error_p99": 0.13241514936089374,
+          "absolute_channel_error_p999": 5.710434697717454,
+          "maximum_absolute_channel_error": 60.56946563720703
+        },
+        "head_thin_features": {
+          "pixels": 14062,
+          "rmse": 0.6171764088687528,
+          "reference_pair_rmse": 0.43451422844031556,
+          "reference_mean_noise_estimate": 0.21725711422015778,
+          "candidate_noise_estimate": 0.5776729749476422,
+          "reference_rms": 3.559577003584077,
+          "absolute_channel_error_p95": 0.0063044726848602295,
+          "absolute_channel_error_p99": 0.13903396874666524,
+          "absolute_channel_error_p999": 7.40016980648089,
+          "maximum_absolute_channel_error": 60.56946563720703
+        },
+        "lower_body_slab_crop": {
+          "pixels": 16525,
+          "rmse": 0.4929301774801407,
+          "reference_pair_rmse": 0.4339057809413985,
+          "reference_mean_noise_estimate": 0.21695289047069924,
+          "candidate_noise_estimate": 0.4426190271407362,
+          "reference_rms": 1.4613349202372756,
+          "absolute_channel_error_p95": 0.007335214316844937,
+          "absolute_channel_error_p99": 0.2782794764637997,
+          "absolute_channel_error_p999": 7.65174945691231,
+          "maximum_absolute_channel_error": 27.719494819641113
+        },
+        "primary_slab_interior": {
+          "pixels": 11561,
+          "rmse": 0.046064278403804795,
+          "reference_pair_rmse": 0.031719614404763466,
+          "reference_mean_noise_estimate": 0.015859807202381733,
+          "candidate_noise_estimate": 0.04324793937711389,
+          "reference_rms": 0.2222734356037345,
+          "absolute_channel_error_p95": 0.001108537614345552,
+          "absolute_channel_error_p99": 0.10774582311511051,
+          "absolute_channel_error_p999": 0.8207214985640549,
+          "maximum_absolute_channel_error": 1.9660099521279335
+        },
+        "dragon_silhouette_band": {
+          "pixels": 8826,
+          "rmse": 0.35035090636420346,
+          "reference_pair_rmse": 0.313031137943254,
+          "reference_mean_noise_estimate": 0.156515568971627,
+          "candidate_noise_estimate": 0.313446381793931,
+          "reference_rms": 3.3682693245256345,
+          "absolute_channel_error_p95": 0.005641182512044904,
+          "absolute_channel_error_p99": 0.12830676212906808,
+          "absolute_channel_error_p999": 3.1671028269233714,
+          "maximum_absolute_channel_error": 21.48159408569336
+        }
+      }
+    }
+  },
+  "native": {
+    "native-final-540": {
+      "recording": false,
+      "validation": false,
+      "width": 960,
+      "height": 540,
+      "phases": {
+        "orbit-outward": {
+          "groups": {
+            "reset": {
+              "frames": 120,
+              "host_delta_ms": {
+                "count": 120,
+                "p50": 14.8069555,
+                "p95": 16.134478549999997,
+                "maximum": 17.130814
+              },
+              "cpu_record_ms": {
+                "count": 120,
+                "p50": 0.1032605,
+                "p95": 0.134759,
+                "maximum": 0.193181
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 120,
+                  "p50": 14.80335,
+                  "p95": 16.070097949999997,
+                  "maximum": 17.087534
+                },
+                "host.acquire_image": {
+                  "count": 120,
+                  "p50": 0.00104,
+                  "p95": 0.0017915,
+                  "maximum": 0.00225
+                },
+                "host.queue_submit": {
+                  "count": 120,
+                  "p50": 0.007959999999999998,
+                  "p95": 0.012710999999999998,
+                  "maximum": 0.01607
+                },
+                "host.present": {
+                  "count": 120,
+                  "p50": 14.206752999999999,
+                  "p95": 15.54599655,
+                  "maximum": 16.608322
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 120,
+                "p50": 4.029999999999999,
+                "p95": 5.0579728,
+                "maximum": 5.91728
+              },
+              "sample_counts": {
+                "count": 120,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 38,
+              "host_delta_ms": {
+                "count": 38,
+                "p50": 14.466778999999999,
+                "p95": 16.04808815,
+                "maximum": 17.093974000000003
+              },
+              "cpu_record_ms": {
+                "count": 38,
+                "p50": 0.090951,
+                "p95": 0.1222885,
+                "maximum": 0.145611
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 38,
+                  "p50": 14.4947595,
+                  "p95": 16.12470065,
+                  "maximum": 16.925243
+                },
+                "host.acquire_image": {
+                  "count": 38,
+                  "p50": 0.000985,
+                  "p95": 0.0016024999999999995,
+                  "maximum": 0.00195
+                },
+                "host.queue_submit": {
+                  "count": 38,
+                  "p50": 0.00724,
+                  "p95": 0.0118655,
+                  "maximum": 0.01236
+                },
+                "host.present": {
+                  "count": 38,
+                  "p50": 13.952002,
+                  "p95": 15.65835965,
+                  "maximum": 16.445231
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 38,
+                "p50": 3.9064639999999997,
+                "p95": 5.2120592,
+                "maximum": 5.9453439999999995
+              },
+              "sample_counts": {
+                "count": 38,
+                "p50": 6.5,
+                "p95": 182.15,
+                "maximum": 184.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 120,
+            "samples_after": {
+              "count": 120,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": 0.44999998807907104,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499985218048096,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-outward": {
+          "groups": {
+            "accumulating": {
+              "frames": 498,
+              "host_delta_ms": {
+                "count": 498,
+                "p50": 13.537651,
+                "p95": 15.311726,
+                "maximum": 17.136934
+              },
+              "cpu_record_ms": {
+                "count": 498,
+                "p50": 0.069345,
+                "p95": 0.13036884999999998,
+                "maximum": 0.222031
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 498,
+                  "p50": 13.5417205,
+                  "p95": 15.278585999999999,
+                  "maximum": 16.971563
+                },
+                "host.acquire_image": {
+                  "count": 498,
+                  "p50": 0.00053,
+                  "p95": 0.0016429999999999995,
+                  "maximum": 0.00446
+                },
+                "host.queue_submit": {
+                  "count": 498,
+                  "p50": 0.00575,
+                  "p95": 0.01139,
+                  "maximum": 0.02824
+                },
+                "host.present": {
+                  "count": 498,
+                  "p50": 13.115574,
+                  "p95": 14.641258,
+                  "maximum": 16.352881
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 498,
+                "p50": 3.224736,
+                "p95": 4.1157455999999994,
+                "maximum": 4.83184
+              },
+              "sample_counts": {
+                "count": 498,
+                "p50": 263.5,
+                "p95": 487.15,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 820,
+              "host_delta_ms": {
+                "count": 820,
+                "p50": 10.0297875,
+                "p95": 10.801897449999998,
+                "maximum": 12.664036999999999
+              },
+              "cpu_record_ms": {
+                "count": 820,
+                "p50": 0.0463,
+                "p95": 0.08556549999999996,
+                "maximum": 0.14791
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 820,
+                  "p50": 10.027473,
+                  "p95": 10.76594195,
+                  "maximum": 12.500907
+                },
+                "host.acquire_image": {
+                  "count": 820,
+                  "p50": 0.00037,
+                  "p95": 0.0009119999999999982,
+                  "maximum": 0.00551
+                },
+                "host.queue_submit": {
+                  "count": 820,
+                  "p50": 0.00481,
+                  "p95": 0.008241499999999999,
+                  "maximum": 0.01858
+                },
+                "host.present": {
+                  "count": 820,
+                  "p50": 9.6888315,
+                  "p95": 10.299836999999998,
+                  "maximum": 11.874014
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 820,
+                "p50": 0.029248,
+                "p95": 0.0494096,
+                "maximum": 0.088416
+              },
+              "sample_counts": {
+                "count": 820,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 432.129576,
+            "128": 1815.563929,
+            "512": 6880.523646
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": -1.5499985218048096,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499985218048096,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "orbit-return": {
+          "groups": {
+            "reset": {
+              "frames": 115,
+              "host_delta_ms": {
+                "count": 115,
+                "p50": 12.890409,
+                "p95": 19.132163099999957,
+                "maximum": 32.665112
+              },
+              "cpu_record_ms": {
+                "count": 115,
+                "p50": 0.05263,
+                "p95": 0.0848553,
+                "maximum": 0.108921
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 115,
+                  "p50": 12.879808,
+                  "p95": 18.885971399999956,
+                  "maximum": 32.587482
+                },
+                "host.acquire_image": {
+                  "count": 115,
+                  "p50": 0.00042,
+                  "p95": 0.00094,
+                  "maximum": 0.00144
+                },
+                "host.queue_submit": {
+                  "count": 115,
+                  "p50": 0.00539,
+                  "p95": 0.008655,
+                  "maximum": 0.0141
+                },
+                "host.present": {
+                  "count": 115,
+                  "p50": 12.516747,
+                  "p95": 18.462121399999955,
+                  "maximum": 32.294081
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 115,
+                "p50": 2.821088,
+                "p95": 8.758543999999958,
+                "maximum": 22.37264
+              },
+              "sample_counts": {
+                "count": 115,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 44,
+              "host_delta_ms": {
+                "count": 44,
+                "p50": 13.044179,
+                "p95": 14.203195000000001,
+                "maximum": 14.449844
+              },
+              "cpu_record_ms": {
+                "count": 44,
+                "p50": 0.052915000000000004,
+                "p95": 0.0784745,
+                "maximum": 0.10303
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 44,
+                  "p50": 13.129614,
+                  "p95": 14.3662465,
+                  "maximum": 14.708505
+                },
+                "host.acquire_image": {
+                  "count": 44,
+                  "p50": 0.0004,
+                  "p95": 0.0011610000000000001,
+                  "maximum": 0.00153
+                },
+                "host.queue_submit": {
+                  "count": 44,
+                  "p50": 0.0053355,
+                  "p95": 0.008653000000000001,
+                  "maximum": 0.01195
+                },
+                "host.present": {
+                  "count": 44,
+                  "p50": 12.7076425,
+                  "p95": 13.868556,
+                  "maximum": 14.125323
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 44,
+                "p50": 2.904336,
+                "p95": 4.07336,
+                "maximum": 4.112416
+              },
+              "sample_counts": {
+                "count": 44,
+                "p50": 2.0,
+                "p95": 12.850000000000001,
+                "maximum": 15.0
+              }
+            },
+            "settled": {
+              "frames": 16,
+              "host_delta_ms": {
+                "count": 16,
+                "p50": 10.440394000000001,
+                "p95": 10.915196,
+                "maximum": 11.044331
+              },
+              "cpu_record_ms": {
+                "count": 16,
+                "p50": 0.050835500000000006,
+                "p95": 0.076101,
+                "maximum": 0.076461
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 16,
+                  "p50": 10.410799,
+                  "p95": 10.886713499999999,
+                  "maximum": 10.932201
+                },
+                "host.acquire_image": {
+                  "count": 16,
+                  "p50": 0.00039,
+                  "p95": 0.000755,
+                  "maximum": 0.00077
+                },
+                "host.queue_submit": {
+                  "count": 16,
+                  "p50": 0.00568,
+                  "p95": 0.00795,
+                  "maximum": 0.00834
+                },
+                "host.present": {
+                  "count": 16,
+                  "p50": 10.040947500000001,
+                  "p95": 10.50347,
+                  "maximum": 10.61255
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 16,
+                "p50": 0.032816,
+                "p95": 0.122696,
+                "maximum": 0.23676799999999998
+              },
+              "sample_counts": {
+                "count": 16,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 115,
+            "samples_after": {
+              "count": 115,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": -1.5499985218048096,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": 0.4500000476837158,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-return": {
+          "groups": {
+            "accumulating": {
+              "frames": 497,
+              "host_delta_ms": {
+                "count": 497,
+                "p50": 13.220569,
+                "p95": 14.44171,
+                "maximum": 16.322551
+              },
+              "cpu_record_ms": {
+                "count": 497,
+                "p50": 0.05056,
+                "p95": 0.0859542,
+                "maximum": 0.136001
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 497,
+                  "p50": 13.240269,
+                  "p95": 14.428992,
+                  "maximum": 16.0762
+                },
+                "host.acquire_image": {
+                  "count": 497,
+                  "p50": 0.00042,
+                  "p95": 0.00099,
+                  "maximum": 0.0069
+                },
+                "host.queue_submit": {
+                  "count": 497,
+                  "p50": 0.00544,
+                  "p95": 0.00887,
+                  "maximum": 0.015761
+                },
+                "host.present": {
+                  "count": 497,
+                  "p50": 12.825768,
+                  "p95": 14.00234,
+                  "maximum": 15.655299
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 497,
+                "p50": 3.05056,
+                "p95": 4.1274239999999995,
+                "maximum": 4.625216
+              },
+              "sample_counts": {
+                "count": 497,
+                "p50": 264.0,
+                "p95": 487.2,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 813,
+              "host_delta_ms": {
+                "count": 813,
+                "p50": 10.139968,
+                "p95": 10.8323364,
+                "maximum": 13.896482
+              },
+              "cpu_record_ms": {
+                "count": 813,
+                "p50": 0.04613,
+                "p95": 0.084622,
+                "maximum": 0.668563
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 813,
+                  "p50": 10.140438,
+                  "p95": 10.794959,
+                  "maximum": 12.037255
+                },
+                "host.acquire_image": {
+                  "count": 813,
+                  "p50": 0.00038,
+                  "p95": 0.00098,
+                  "maximum": 0.01008
+                },
+                "host.queue_submit": {
+                  "count": 813,
+                  "p50": 0.005241,
+                  "p95": 0.009147999999999998,
+                  "maximum": 0.02053
+                },
+                "host.present": {
+                  "count": 813,
+                  "p50": 9.792787,
+                  "p95": 10.3304284,
+                  "maximum": 11.465103
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 813,
+                "p50": 0.028064,
+                "p95": 0.04369279999999999,
+                "maximum": 0.39289599999999997
+              },
+              "sample_counts": {
+                "count": 813,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 429.440298,
+            "128": 1731.941355,
+            "512": 6878.523722
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": 0.4500000476837158,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": 0.4500000476837158,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        }
+      },
+      "camera_rejections": 0,
+      "history_epochs": 236,
+      "as_builds": 3,
+      "resident_requested_bytes": 108840008,
+      "peak_requested_bytes": 108840008,
+      "scope": "Native Xvfb. Settle times end at CPU command recording; GPU execution/presentation follow. host.present is vkQueuePresentKHR CPU call duration, not display latency."
+    },
+    "native-final-1080": {
+      "recording": false,
+      "validation": false,
+      "width": 1920,
+      "height": 1080,
+      "phases": {
+        "orbit-outward": {
+          "groups": {
+            "reset": {
+              "frames": 42,
+              "host_delta_ms": {
+                "count": 42,
+                "p50": 50.176788,
+                "p95": 52.945985900000004,
+                "maximum": 54.490875
+              },
+              "cpu_record_ms": {
+                "count": 42,
+                "p50": 0.10743549999999999,
+                "p95": 0.14196944999999997,
+                "maximum": 0.16645
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 42,
+                  "p50": 50.140888000000004,
+                  "p95": 52.97588285,
+                  "maximum": 54.447905
+                },
+                "host.acquire_image": {
+                  "count": 42,
+                  "p50": 0.00156,
+                  "p95": 0.0021074999999999996,
+                  "maximum": 0.00333
+                },
+                "host.queue_submit": {
+                  "count": 42,
+                  "p50": 0.01139,
+                  "p95": 0.017651999999999998,
+                  "maximum": 0.776423
+                },
+                "host.present": {
+                  "count": 42,
+                  "p50": 49.3461395,
+                  "p95": 52.12448035,
+                  "maximum": 53.756141
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 42,
+                "p50": 9.709264,
+                "p95": 11.937889599999998,
+                "maximum": 12.156255999999999
+              },
+              "sample_counts": {
+                "count": 42,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 5,
+              "host_delta_ms": {
+                "count": 5,
+                "p50": 50.414949,
+                "p95": 52.4249664,
+                "maximum": 52.553857
+              },
+              "cpu_record_ms": {
+                "count": 5,
+                "p50": 0.08377,
+                "p95": 0.118814,
+                "maximum": 0.12367
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 5,
+                  "p50": 50.196918,
+                  "p95": 51.973788799999994,
+                  "maximum": 52.018435
+                },
+                "host.acquire_image": {
+                  "count": 5,
+                  "p50": 0.00122,
+                  "p95": 0.0015619999999999998,
+                  "maximum": 0.00162
+                },
+                "host.queue_submit": {
+                  "count": 5,
+                  "p50": 0.00968,
+                  "p95": 0.011404000000000001,
+                  "maximum": 0.01165
+                },
+                "host.present": {
+                  "count": 5,
+                  "p50": 49.570706,
+                  "p95": 51.1944958,
+                  "maximum": 51.247752
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 5,
+                "p50": 9.802016,
+                "p95": 11.5581184,
+                "maximum": 11.817984
+              },
+              "sample_counts": {
+                "count": 5,
+                "p50": 51.0,
+                "p95": 52.8,
+                "maximum": 53.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 42,
+            "samples_after": {
+              "count": 42,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": 0.44999998807907104,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-outward": {
+          "groups": {
+            "accumulating": {
+              "frames": 509,
+              "host_delta_ms": {
+                "count": 509,
+                "p50": 50.052848,
+                "p95": 53.684731,
+                "maximum": 60.128575
+              },
+              "cpu_record_ms": {
+                "count": 509,
+                "p50": 0.10384,
+                "p95": 0.13563459999999994,
+                "maximum": 1.179855
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 509,
+                  "p50": 50.041678,
+                  "p95": 53.75290719999998,
+                  "maximum": 60.153716
+                },
+                "host.acquire_image": {
+                  "count": 509,
+                  "p50": 0.00153,
+                  "p95": 0.0020859999999999993,
+                  "maximum": 0.073371
+                },
+                "host.queue_submit": {
+                  "count": 509,
+                  "p50": 0.01133,
+                  "p95": 0.015375999999999996,
+                  "maximum": 0.03401
+                },
+                "host.present": {
+                  "count": 509,
+                  "p50": 49.322006,
+                  "p95": 52.812194,
+                  "maximum": 59.287873
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 509,
+                "p50": 9.435456,
+                "p95": 11.754528,
+                "maximum": 13.070784
+              },
+              "sample_counts": {
+                "count": 509,
+                "p50": 258.0,
+                "p95": 486.59999999999997,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 110,
+              "host_delta_ms": {
+                "count": 110,
+                "p50": 40.042950000000005,
+                "p95": 41.60095105,
+                "maximum": 50.163398
+              },
+              "cpu_record_ms": {
+                "count": 110,
+                "p50": 0.10166049999999999,
+                "p95": 0.133377,
+                "maximum": 0.191781
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 110,
+                  "p50": 40.014925500000004,
+                  "p95": 41.56273845,
+                  "maximum": 44.285977
+                },
+                "host.acquire_image": {
+                  "count": 110,
+                  "p50": 0.00145,
+                  "p95": 0.0020349999999999995,
+                  "maximum": 0.00253
+                },
+                "host.queue_submit": {
+                  "count": 110,
+                  "p50": 0.00969,
+                  "p95": 0.014077,
+                  "maximum": 0.02093
+                },
+                "host.present": {
+                  "count": 110,
+                  "p50": 39.340293,
+                  "p95": 40.681484499999996,
+                  "maximum": 43.374843
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 110,
+                "p50": 0.125728,
+                "p95": 0.1376368,
+                "maximum": 0.14271999999999999
+              },
+              "sample_counts": {
+                "count": 110,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 1519.767761,
+            "128": 6338.681741,
+            "512": 25662.80256
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "orbit-return": {
+          "groups": {
+            "reset": {
+              "frames": 41,
+              "host_delta_ms": {
+                "count": 41,
+                "p50": 51.160962,
+                "p95": 54.049763,
+                "maximum": 55.292967999999995
+              },
+              "cpu_record_ms": {
+                "count": 41,
+                "p50": 0.103831,
+                "p95": 0.12753,
+                "maximum": 0.13301
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 41,
+                  "p50": 51.106513,
+                  "p95": 53.974133,
+                  "maximum": 55.150148
+                },
+                "host.acquire_image": {
+                  "count": 41,
+                  "p50": 0.00127,
+                  "p95": 0.00181,
+                  "maximum": 0.00203
+                },
+                "host.queue_submit": {
+                  "count": 41,
+                  "p50": 0.01057,
+                  "p95": 0.01701,
+                  "maximum": 0.16475
+                },
+                "host.present": {
+                  "count": 41,
+                  "p50": 50.51331,
+                  "p95": 53.26108,
+                  "maximum": 54.526475
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 41,
+                "p50": 11.28112,
+                "p95": 13.919903999999999,
+                "maximum": 15.059488
+              },
+              "sample_counts": {
+                "count": 41,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 2,
+              "host_delta_ms": {
+                "count": 2,
+                "p50": 49.829592500000004,
+                "p95": 50.817377150000006,
+                "maximum": 50.927131
+              },
+              "cpu_record_ms": {
+                "count": 2,
+                "p50": 0.1047155,
+                "p95": 0.11159645,
+                "maximum": 0.112361
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 2,
+                  "p50": 50.8941815,
+                  "p95": 50.970123949999994,
+                  "maximum": 50.978562
+                },
+                "host.acquire_image": {
+                  "count": 2,
+                  "p50": 0.00166,
+                  "p95": 0.0018310000000000002,
+                  "maximum": 0.00185
+                },
+                "host.queue_submit": {
+                  "count": 2,
+                  "p50": 0.012945000000000002,
+                  "p95": 0.0155235,
+                  "maximum": 0.01581
+                },
+                "host.present": {
+                  "count": 2,
+                  "p50": 50.014913,
+                  "p95": 50.0297135,
+                  "maximum": 50.031358
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 2,
+                "p50": 10.734639999999999,
+                "p95": 10.7887696,
+                "maximum": 10.794784
+              },
+              "sample_counts": {
+                "count": 2,
+                "p50": 2.5,
+                "p95": 2.95,
+                "maximum": 3.0
+              }
+            },
+            "settled": {
+              "frames": 4,
+              "host_delta_ms": {
+                "count": 4,
+                "p50": 39.660269,
+                "p95": 39.8476035,
+                "maximum": 39.86595
+              },
+              "cpu_record_ms": {
+                "count": 4,
+                "p50": 0.0926005,
+                "p95": 0.0977415,
+                "maximum": 0.09795
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 4,
+                  "p50": 39.658909,
+                  "p95": 39.7515555,
+                  "maximum": 39.755829
+                },
+                "host.acquire_image": {
+                  "count": 4,
+                  "p50": 0.0014650000000000002,
+                  "p95": 0.0017375000000000001,
+                  "maximum": 0.00176
+                },
+                "host.queue_submit": {
+                  "count": 4,
+                  "p50": 0.00869,
+                  "p95": 0.0109115,
+                  "maximum": 0.01124
+                },
+                "host.present": {
+                  "count": 4,
+                  "p50": 39.066027,
+                  "p95": 39.1854765,
+                  "maximum": 39.192837
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 4,
+                "p50": 0.131184,
+                "p95": 0.1372,
+                "maximum": 0.138016
+              },
+              "sample_counts": {
+                "count": 4,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 41,
+            "samples_after": {
+              "count": 41,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": 0.4499998986721039,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-return": {
+          "groups": {
+            "accumulating": {
+              "frames": 509,
+              "host_delta_ms": {
+                "count": 509,
+                "p50": 52.105786,
+                "p95": 56.202768,
+                "maximum": 60.384718
+              },
+              "cpu_record_ms": {
+                "count": 509,
+                "p50": 0.10484,
+                "p95": 0.13167799999999996,
+                "maximum": 0.164781
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 509,
+                  "p50": 52.097996,
+                  "p95": 56.1034956,
+                  "maximum": 60.194957
+                },
+                "host.acquire_image": {
+                  "count": 509,
+                  "p50": 0.00142,
+                  "p95": 0.00215,
+                  "maximum": 0.01196
+                },
+                "host.queue_submit": {
+                  "count": 509,
+                  "p50": 0.0106,
+                  "p95": 0.014957999999999999,
+                  "maximum": 0.02401
+                },
+                "host.present": {
+                  "count": 509,
+                  "p50": 51.432844,
+                  "p95": 55.387638599999995,
+                  "maximum": 59.419864
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 509,
+                "p50": 10.837856,
+                "p95": 13.732415999999997,
+                "maximum": 16.357088
+              },
+              "sample_counts": {
+                "count": 509,
+                "p50": 258.0,
+                "p95": 486.59999999999997,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 79,
+              "host_delta_ms": {
+                "count": 79,
+                "p50": 42.254059,
+                "p95": 45.0066504,
+                "maximum": 54.927897
+              },
+              "cpu_record_ms": {
+                "count": 79,
+                "p50": 0.10977,
+                "p95": 0.13615389999999997,
+                "maximum": 0.166001
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 79,
+                  "p50": 42.232148,
+                  "p95": 44.9577471,
+                  "maximum": 48.248601
+                },
+                "host.acquire_image": {
+                  "count": 79,
+                  "p50": 0.0016,
+                  "p95": 0.0021669999999999997,
+                  "maximum": 0.01426
+                },
+                "host.queue_submit": {
+                  "count": 79,
+                  "p50": 0.01173,
+                  "p95": 0.016134099999999988,
+                  "maximum": 0.0215
+                },
+                "host.present": {
+                  "count": 79,
+                  "p50": 41.467697,
+                  "p95": 43.99933719999999,
+                  "maximum": 47.442208
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 79,
+                "p50": 0.126464,
+                "p95": 0.13892480000000001,
+                "maximum": 0.146816
+              },
+              "sample_counts": {
+                "count": 79,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 1567.959274,
+            "128": 6535.865754,
+            "512": 26733.985748
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": 0.4499998986721039,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": 0.4499998986721039,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        }
+      },
+      "camera_rejections": 0,
+      "history_epochs": 84,
+      "as_builds": 3,
+      "resident_requested_bytes": 158606408,
+      "peak_requested_bytes": 158606408,
+      "scope": "Native Xvfb. Settle times end at CPU command recording; GPU execution/presentation follow. host.present is vkQueuePresentKHR CPU call duration, not display latency."
+    },
+    "native-recording": {
+      "recording": true,
+      "validation": true,
+      "width": 1920,
+      "height": 1080,
+      "phases": {
+        "orbit-outward": {
+          "groups": {
+            "reset": {
+              "frames": 40,
+              "host_delta_ms": {
+                "count": 40,
+                "p50": 50.604195000000004,
+                "p95": 52.206346499999995,
+                "maximum": 54.725046
+              },
+              "cpu_record_ms": {
+                "count": 40,
+                "p50": 0.361391,
+                "p95": 0.4443069499999999,
+                "maximum": 0.509632
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 40,
+                  "p50": 50.6234605,
+                  "p95": 52.1588535,
+                  "maximum": 54.765476
+                },
+                "host.acquire_image": {
+                  "count": 40,
+                  "p50": 0.0195705,
+                  "p95": 0.02618649999999999,
+                  "maximum": 0.03073
+                },
+                "host.queue_submit": {
+                  "count": 40,
+                  "p50": 0.06994,
+                  "p95": 0.10125404999999989,
+                  "maximum": 0.871503
+                },
+                "host.present": {
+                  "count": 40,
+                  "p50": 49.316291,
+                  "p95": 50.92163655,
+                  "maximum": 53.354011
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 40,
+                "p50": 8.723824,
+                "p95": 10.683089599999999,
+                "maximum": 12.291647999999999
+              },
+              "sample_counts": {
+                "count": 40,
+                "p50": 1.0,
+                "p95": 1.0,
+                "maximum": 1.0
+              }
+            },
+            "accumulating": {
+              "frames": 7,
+              "host_delta_ms": {
+                "count": 7,
+                "p50": 51.346903,
+                "p95": 54.8211334,
+                "maximum": 55.81828
+              },
+              "cpu_record_ms": {
+                "count": 7,
+                "p50": 0.331601,
+                "p95": 0.39424799999999993,
+                "maximum": 0.408981
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 7,
+                  "p50": 51.193153,
+                  "p95": 54.7201185,
+                  "maximum": 55.845741
+                },
+                "host.acquire_image": {
+                  "count": 7,
+                  "p50": 0.01945,
+                  "p95": 0.021466,
+                  "maximum": 0.02224
+                },
+                "host.queue_submit": {
+                  "count": 7,
+                  "p50": 0.071461,
+                  "p95": 0.074324,
+                  "maximum": 0.07457
+                },
+                "host.present": {
+                  "count": 7,
+                  "p50": 50.192519,
+                  "p95": 53.50039149999999,
+                  "maximum": 54.679306
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 7,
+                "p50": 9.95328,
+                "p95": 10.6174016,
+                "maximum": 10.662656
+              },
+              "sample_counts": {
+                "count": 7,
+                "p50": 51.0,
+                "p95": 53.7,
+                "maximum": 54.0
+              }
+            }
+          },
+          "settle_recorded_ms": {},
+          "motion_receipts": {
+            "frames": 40,
+            "samples_after": {
+              "count": 40,
+              "p50": 1.0,
+              "p95": 1.0,
+              "maximum": 1.0
+            }
+          },
+          "first_camera": {
+            "yaw": 0.44999998807907104,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        },
+        "settle-outward": {
+          "groups": {
+            "accumulating": {
+              "frames": 508,
+              "host_delta_ms": {
+                "count": 508,
+                "p50": 51.476879,
+                "p95": 54.884088649999995,
+                "maximum": 60.113517
+              },
+              "cpu_record_ms": {
+                "count": 508,
+                "p50": 0.352641,
+                "p95": 0.4516949999999999,
+                "maximum": 0.701133
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 508,
+                  "p50": 51.491693999999995,
+                  "p95": 54.876553,
+                  "maximum": 60.099737
+                },
+                "host.acquire_image": {
+                  "count": 508,
+                  "p50": 0.019975,
+                  "p95": 0.028282999999999996,
+                  "maximum": 0.951664
+                },
+                "host.queue_submit": {
+                  "count": 508,
+                  "p50": 0.07194500000000001,
+                  "p95": 0.0932475,
+                  "maximum": 0.16005
+                },
+                "host.present": {
+                  "count": 508,
+                  "p50": 50.2338195,
+                  "p95": 53.4652795,
+                  "maximum": 58.730391
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 508,
+                "p50": 9.322864,
+                "p95": 11.654484799999999,
+                "maximum": 13.447999999999999
+              },
+              "sample_counts": {
+                "count": 508,
+                "p50": 258.5,
+                "p95": 486.65,
+                "maximum": 512.0
+              }
+            },
+            "settled": {
+              "frames": 302,
+              "host_delta_ms": {
+                "count": 302,
+                "p50": 45.147765500000006,
+                "p95": 52.011434949999995,
+                "maximum": 55.292489
+              },
+              "cpu_record_ms": {
+                "count": 302,
+                "p50": 0.35550649999999995,
+                "p95": 0.46313055,
+                "maximum": 0.574982
+              },
+              "cpu_spans_ms": {
+                "host.frame_service": {
+                  "count": 302,
+                  "p50": 45.171670500000005,
+                  "p95": 52.045174949999996,
+                  "maximum": 61.549613
+                },
+                "host.acquire_image": {
+                  "count": 302,
+                  "p50": 0.021335,
+                  "p95": 0.03183949999999999,
+                  "maximum": 0.186211
+                },
+                "host.queue_submit": {
+                  "count": 302,
+                  "p50": 0.0721955,
+                  "p95": 0.09947549999999998,
+                  "maximum": 0.438841
+                },
+                "host.present": {
+                  "count": 302,
+                  "p50": 43.8136255,
+                  "p95": 50.5581285,
+                  "maximum": 60.401518
+                }
+              },
+              "gpu_trace_ms": {
+                "count": 302,
+                "p50": 1.057616,
+                "p95": 3.5089951999999993,
+                "maximum": 5.509119999999999
+              },
+              "sample_counts": {
+                "count": 302,
+                "p50": 512.0,
+                "p95": 512.0,
+                "maximum": 512.0
+              }
+            }
+          },
+          "settle_recorded_ms": {
+            "32": 1602.434778,
+            "128": 6561.894731,
+            "512": 26343.368922
+          },
+          "motion_receipts": null,
+          "first_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          },
+          "last_camera": {
+            "yaw": -1.5499992370605469,
+            "pitch": 0.3499999940395355,
+            "distance": 1.75
+          }
+        }
+      },
+      "camera_rejections": 0,
+      "history_epochs": 41,
+      "as_builds": 3,
+      "resident_requested_bytes": 158606408,
+      "peak_requested_bytes": 158606408,
+      "scope": "Native Xvfb. Settle times end at CPU command recording; GPU execution/presentation follow. host.present is vkQueuePresentKHR CPU call duration, not display latency."
+    }
+  },
+  "fullhd_quality_gate": {
+    "state": "failed",
+    "reference_suite_completed": false,
+    "reason": "invalid-medium event; partial captures are not qualified high-SPP references"
+  }
+}

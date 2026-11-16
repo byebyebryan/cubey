@@ -1,0 +1,35 @@
+{
+  "url": "http://starship:8787/reports/e8329c35c16c73e15901c249aa050cc2cff262d02495a1dce086bdadc3dadd47/",
+  "assets": {
+    "images/baseline-1336.png": {
+      "status": 200,
+      "bytes": 1033778
+    },
+    "captures.json": {
+      "status": 200,
+      "bytes": 35379
+    },
+    "fidelity.json": {
+      "status": 200,
+      "bytes": 448
+    },
+    "exact-local.json": {
+      "status": 200,
+      "bytes": 4545
+    },
+    "acceptance.json": {
+      "status": 200,
+      "bytes": 5352
+    }
+  },
+  "browser_acceptance": {
+    "image_loaded": true,
+    "horizontal_overflow": false,
+    "viewport_width": 1602,
+    "document_width": 1587,
+    "original_multiplier_control_nm": 126.03,
+    "independent_case_nm": -71.95,
+    "visual_overview_checked": true,
+    "physical_native_acceptance": false
+  }
+}

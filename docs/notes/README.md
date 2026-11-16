@@ -43,6 +43,34 @@ the architecture and project guides remain current authority.
 - [Dragon glass review fixes](raytracing-dragon-glass-review-fixes.md) and
   [regression evidence](../evidence/raytracing-dragon-glass-review-fixes-2026-11/README.md):
   complete adjacency-memory accounting and enforced preset transport acceptance.
+- [Dragon glass quality research and proposed G3 plan](raytracing-dragon-glass-quality-plan.md) and
+  [research evidence](../evidence/raytracing-dragon-glass-quality-research-2026-11/README.md):
+  separate convergence, optical-normal and filtering experiments before choosing
+  a live sampling or temporal reconstruction budget.
+- [Dragon glass Q0 measurement results](raytracing-dragon-glass-q0-results.md) and
+  [measurement evidence](../evidence/raytracing-dragon-glass-q0-2026-11/README.md):
+  raw convergence, solar variance and native motion costs; the high-SPP full-HD
+  medium failure it exposed was subsequently corrected and requalified in Q0.1.
+- [Dragon glass Q0.1 numerical replay research and plan](raytracing-dragon-glass-q01-plan.md) and
+  [research evidence](../evidence/raytracing-dragon-glass-q01-research-2026-11/README.md):
+  distinguish missing exits, wrong-instance hits and facing disagreements;
+  select a correction from an exact failing-path journal before requalification.
+- [Dragon glass Q0.1 replay results](raytracing-dragon-glass-q01-results.md) and
+  [replay evidence](../evidence/raytracing-dragon-glass-q01-2026-11/README.md):
+  exact origin-offset/exit crossing, a fixed tracing frame and projected crease
+  bounds; the original controls and all six independent full-HD references pass.
+- [Dragon glass Q1 optical-normal plan](raytracing-dragon-glass-q1-plan.md) and
+  [research record](../evidence/raytracing-dragon-glass-q1-research-2026-11/README.md):
+  one guarded smooth-interface experiment with whole-interface fallback,
+  analytic/dragon controls and a separate textured-filtering promotion gate.
+- [Dragon glass Q1 results](raytracing-dragon-glass-q1-results.md) and
+  [control evidence](../evidence/raytracing-dragon-glass-q1-2026-11/README.md):
+  GPU-reproduced fallback jumps and nonconservative flux reject the first
+  candidate before native/dragon integration; geometric rendering is retained.
+- [Dragon glass visual normal comparison](raytracing-dragon-glass-normal-looks.md) and
+  [paired capture evidence](../evidence/raytracing-dragon-glass-normal-looks-2026-11/README.md):
+  actual geometric/smooth dragon stills in private builds, with full-scene
+  toggles, detail crops, independent-seed and sky-only controls for demo review.
 - [Forward glass transmission research](forward-transmission-research-plan.md):
   measured sphere geometry and camera/environment direction mismatch, pinned
   renderer references and a proposed environment-transmission comparison pass.

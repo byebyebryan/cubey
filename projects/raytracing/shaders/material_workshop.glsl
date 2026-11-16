@@ -180,6 +180,7 @@ struct WorkshopPath {
     int medium,depth;
     bool environmentOnly,trunk;
     uint sequence;
+    RT_PATH_FIELDS
 };
 void traceWorkshop() {
     ivec2 pixel=ivec2(gl_LaunchIDEXT.xy);
@@ -187,6 +188,17 @@ void traceWorkshop() {
     vec4 history=imageLoad(sampleHistory,pixel);
     uint completed=uint(history.w);
     int mode=int(camera.options.z+.5);
+#ifdef CUBEY_RT_RAY_JOURNAL
+    bool jPixel=all(equal(gl_LaunchIDEXT.xy,rayJournal.control.xy));
+    if((rayJournal.control.w&1u)!=0u) {
+        if(!jPixel){imageStore(outputImage,pixel,vec4(0,0,0,1));return;}
+        completed=rayJournal.control.z;
+    }
+    bool jFind=(rayJournal.control.w&2u)!=0u;
+    jActive=jPixel&&(jFind?rayJournal.state.w==0u:completed==rayJournal.control.z);
+    if(jActive&&jFind){rayJournal.state.y=0u;rayJournal.state.z=0u;}
+    jBranch=0u;jDepth=0u;jMedium=-1;jSequence=completed;jNextBranch=1u;
+#endif
     if(completed>=workshop.sampling.y) {
         imageStore(outputImage,pixel,vec4(history.rgb/max(history.w,1),1));
         return;
@@ -198,6 +210,9 @@ void traceWorkshop() {
     vec2 uv=(vec2(pixel)+rtStratified(completed,0u))/vec2(gl_LaunchSizeEXT.xy),screen=uv*2-1;
     vec3 origin=camera.eye.xyz;
     vec3 direction=normalize(mat3(camera.inverseView)*vec3(screen.x*camera.eye.w*camera.light.z,-screen.y*camera.light.z,-1));
+#ifdef CUBEY_RT_RAY_JOURNAL
+    jRecord(1u,vec4(uv,screen),vec4(direction,0),camera.eye,camera.light,uintBitsToFloat(uvec4(linearPixel,randomKey,completed,workshop.sampling.x)),vec4(gl_LaunchSizeEXT.xy,0,0),vec4(0));
+#endif
     vec3 weight=vec3(1),color=vec3(0);
     vec3 diffuseContribution=vec3(0),sheenContribution=vec3(0),emissionContribution=vec3(0);
     float priorSolarPdf=-1;
@@ -210,7 +225,7 @@ void traceWorkshop() {
     float width=0,spread=2*camera.light.z/float(gl_LaunchSizeEXT.y);
     int view=int(camera.options.y+.5);
     if(view==10)color=textureLod(visibleBackground,uv,0).rgb*environment.options.w;
-    Surface primary=Surface(vec3(0),vec3(0),vec3(0),vec3(0),-1,-1,0u,0u,0,vec3(0));
+    Surface primary=Surface(vec3(0),vec3(0),vec3(0),vec3(0),-1,-1,0u,0u,0,vec3(0) RT_JOURNAL_ARG(0xffffffffu));
     if(view!=10){primary=surfaceRayMedium(origin,direction,255u,medium);++radianceQueries;}
     uint trials=1u;
     if(primary.id>=0) {
@@ -223,7 +238,7 @@ void traceWorkshop() {
     bool knownEmptyOutside=workshop.options.x==1u&&workshop.sampling.z<3u;
     WorkshopPath pending[16];int pendingCount=int(trials);
     for(uint trial=0u;trial<trials;++trial)
-        pending[trial]=WorkshopPath(origin,direction,weight/float(trials),segmentStart,width,spread,priorSolarPdf,solarMisWeight,medium,0,environmentOnly,true,completed*trials+trial);
+        pending[trial]=WorkshopPath(origin,direction,weight/float(trials),segmentStart,width,spread,priorSolarPdf,solarMisWeight,medium,0,environmentOnly,true,completed*trials+trial RT_PATH_ARGS(jNextBranch++,0u));
     while(pendingCount>0) {
     WorkshopPath path=pending[--pendingCount];
     origin=path.origin;direction=path.direction;weight=path.weight;segmentStart=path.segmentStart;
@@ -231,7 +246,15 @@ void traceWorkshop() {
     medium=path.medium;environmentOnly=path.environmentOnly;
     bool trunk=path.trunk;
     uint sequence=path.sequence;
+#ifdef CUBEY_RT_RAY_JOURNAL
+    jBranch=path.journalBranch;jDepth=uint(path.depth);jMedium=medium;jSequence=sequence;
+    jRecord(20u,vec4(origin,0),vec4(direction,0),vec4(weight,0),vec4(segmentStart,0),vec4(width,spread,priorSolarPdf,solarMisWeight),uintBitsToFloat(uvec4(path.journalParent,sequence,uint(pendingCount),trunk?1u:0u)),vec4(0));
+#endif
     for(int depth=path.depth;depth<=environment.limits.x&&view!=10;++depth) {
+#ifdef CUBEY_RT_RAY_JOURNAL
+        jDepth=uint(depth);jMedium=medium;
+        jRecord(21u,vec4(origin,0),vec4(direction,0),vec4(weight,0),vec4(segmentStart,0),uintBitsToFloat(uvec4(sequence,uint(totalQueries),uint(radianceQueries),uint(shadowQueries))),vec4(0),vec4(0));
+#endif
         if(environmentOnly&&medium<0) {
             color+=weight*transportSky(direction,priorSolarPdf,solarMisWeight);
             break;
@@ -244,7 +267,11 @@ void traceWorkshop() {
         if(depth==1&&trunk)observation[8]=vec4(s.p,float(s.id));
         maximumDepth=max(maximumDepth,depth);
         if(medium>=0) {
-            if(s.id!=medium){status|=16u;discarded+=weight;++terminatedBranches;break;}
+            if(s.id!=medium){
+#ifdef CUBEY_RT_RAY_JOURNAL
+                jRecord(s.id<0?101u:102u,vec4(origin,0),vec4(direction,0),vec4(weight,0),uintBitsToFloat(uvec4(uint(s.id),uint(medium),s.primitive,s.journalHitKind)),vec4(s.p,s.t),vec4(s.outward,dot(direction,s.outward)),vec4(0));
+#endif
+                status|=16u;discarded+=weight;++terminatedBranches;break;}
             float distance=length(s.p-segmentStart);
             vec3 absorption=workshopAbsorption(workshopRecipe(medium),distance);
             weight*=absorption;if(trunk)observation[9]=vec4(absorption,distance);
@@ -260,13 +287,20 @@ void traceWorkshop() {
         if(boundaryRecipe.optics.y>.5) {
             if(trunk)++trunkBoundaries;
             bool entering=dot(direction,s.outward)<0;
-            if(entering!=(medium<0)){status|=16u;discarded+=weight;++terminatedBranches;break;}
+            if(entering!=(medium<0)){
+#ifdef CUBEY_RT_RAY_JOURNAL
+                jRecord(103u,vec4(origin,0),vec4(direction,0),vec4(weight,0),uintBitsToFloat(uvec4(uint(s.id),uint(medium),s.primitive,s.journalHitKind)),vec4(s.p,s.t),vec4(s.outward,dot(direction,s.outward)),vec4(0));
+#endif
+                status|=16u;discarded+=weight;++terminatedBranches;break;}
             vec3 n=faceforward(s.outward,direction,s.outward),v=-direction;
             mat3 frame=rtDirectionFrame(n);
             vec3 localV=transpose(frame)*v;
             float eta=medium>=0?1/boundaryRecipe.optics.z:boundaryRecipe.optics.z;
             bool delta=m.roughGlass<.5||eta==1;
             bool split=depth<2&&eta!=1;
+#ifdef CUBEY_RT_RAY_JOURNAL
+            jRecord(40u,vec4(n,dot(direction,n)),vec4(localV,eta),vec4(direction,entering?1:0),vec4(weight,0),uintBitsToFloat(uvec4(uint(s.id),s.primitive,s.journalHitKind,split?1u:0u)),vec4(s.p,s.spawnOffset),vec4(s.spawnNormal,0));
+#endif
             if(depth==0) {
                 Interface b=opticalInterface(direction,s.outward,medium>=0,boundaryRecipe.optics.z);
                 observation[0]=vec4(s.t,float(s.id),float(s.primitive),1);
@@ -320,13 +354,22 @@ void traceWorkshop() {
                     float solarMis=delta||solarPdf<=0?1:reflectedPdf/(reflectedPdf+solarPdf);
                     vec3 residual=weight*reflectedWeight;
                     if(pendingCount>=16){status|=64u;discarded+=residual;++terminatedBranches;}
-                    else if(reflectedWeight>0)pending[pendingCount++]=WorkshopPath(offsetOrigin(s,reflectedDirection),reflectedDirection,residual,s.p,width,spread+angularIncrease,solarPdf,solarMis,medium,depth+1,environmentOnly||environment.transport.x<.5||(knownEmptyOutside&&medium<0),false,sequence);
+                    else if(reflectedWeight>0) {
+#ifdef CUBEY_RT_RAY_JOURNAL
+                        uint jChild=jNextBranch++;
+                        jRecord(42u,vec4(reflected.direction,reflectedWeight),vec4(reflectedDirection,dot(reflectedDirection,n)),vec4(residual,0),vec4(n,eta),uintBitsToFloat(uvec4(jChild,jBranch,uint(medium),sequence)),vec4(s.p,s.spawnOffset),vec4(s.spawnNormal,0));
+#endif
+                        pending[pendingCount++]=WorkshopPath(offsetOrigin(s,reflectedDirection),reflectedDirection,residual,s.p,width,spread+angularIncrease,solarPdf,solarMis,medium,depth+1,environmentOnly||environment.transport.x<.5||(knownEmptyOutside&&medium<0),false,sequence RT_PATH_ARGS(jChild,jBranch));
+                    }
                 }
             }
             if(!sampled.valid){++rejectedBranches;break;}
             vec3 next=normalize(frame*sampled.direction);
             bool transmitted=sampled.transmitted;
             vec3 localNext=transpose(frame)*next;
+#ifdef CUBEY_RT_RAY_JOURNAL
+            jRecord(41u,vec4(sampled.direction,sampled.transmitted?1:0),vec4(next,dot(next,n)),vec4(n,eta),vec4(sampled.pdf,sampled.weight,sampled.value,sampled.tir?1:0),vec4(localV,0),vec4(weight,0),uintBitsToFloat(uvec4(uint(s.id),s.primitive,s.journalHitKind,sequence)));
+#endif
             if(transmitted?dot(next,n)>=0:dot(next,n)<=0){++rejectedBranches;break;}
             priorSolarPdf=rtConePdf(next,sunAxis,solarConeSize());
             float bsdfPdf=delta?0:split?rtDielectricComponentPdf(localV,localNext,m.roughness,eta):rtDielectricEvalPdf(localV,localNext,m.roughness,eta).y;
@@ -444,6 +487,9 @@ void traceWorkshop() {
     if(view==16)color=max(color-diffuseContribution-sheenContribution-emissionContribution,vec3(0));
     if(view==17)color=sheenContribution;
     history+=vec4(color,1);
+#ifdef CUBEY_RT_RAY_JOURNAL
+    jRecord(2u,vec4(color,float(status)),vec4(discarded,0),uintBitsToFloat(uvec4(uint(totalQueries),uint(radianceQueries),uint(shadowQueries),uint(maximumDepth))),uintBitsToFloat(uvec4(rejectedBranches,terminatedBranches,uint(tirEvents),jNextBranch)),vec4(0),vec4(0),vec4(0));
+#endif
     imageStore(sampleHistory,pixel,history);
     vec3 average=history.rgb/history.w;
     imageStore(outputImage,pixel,vec4(average,1));

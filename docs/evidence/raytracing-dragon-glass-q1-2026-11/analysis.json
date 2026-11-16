@@ -1,0 +1,1834 @@
+{
+  "experiment_analysis_complete": true,
+  "decision": "reject v1 whole-interface fallback before dragon integration",
+  "candidate_promotion_passed": false,
+  "decision_basis": [
+    "finite large discontinuity at a smooth normal field boundary",
+    "nonconservative radiance operator independently reproduced in GLSL",
+    "reselected normal policy fails reverse-path consistency"
+  ],
+  "calibration": {
+    "passed": true,
+    "normal_incidence_fresnel": 0.04000000000000001,
+    "snell_transmission_angle_degrees": 19.471220634490695,
+    "expected_transmission_angle_degrees": 19.47122063449069,
+    "critical_angle_degrees": 41.810314895778596,
+    "index_match_exact": true,
+    "direction_vector_tolerance": 1e-05,
+    "fresnel_absolute_tolerance": 1e-05,
+    "critical_discriminant_band": 1e-05,
+    "tolerance_source": "same 1e-5 direction/Fresnel and critical band as existing dielectric qualifier; actual float operands are audited"
+  },
+  "interface": {
+    "arithmetic_passed": true,
+    "observations": 65536,
+    "selected_outputs_finite": true,
+    "invalid_raw_input_observations": 2048,
+    "regular_observations": 57312,
+    "critical_fixture_observations": 8192,
+    "maximum_regular_reflection_vector_error": 1.4574156839697086e-07,
+    "maximum_regular_transmission_vector_error": 3.221506710746916e-06,
+    "maximum_regular_fresnel_absolute_error": 9.209986955749372e-06,
+    "wrong_geometric_reflections": 0,
+    "wrong_geometric_transmissions": 0,
+    "index_match_observations": 12288,
+    "index_match_bit_exact": true,
+    "equal_normal_observations": 6144,
+    "equal_normal_bit_exact": false,
+    "equal_normal_regular_max_reflection_and_fresnel_component_error": 0.0,
+    "equal_normal_regular_max_transmission_component_error": 6.183981895446777e-07,
+    "equal_normal_critical_max_transmission_component_difference": 0.00017175584798678756,
+    "equal_normal_float_tolerance_passed": true,
+    "whole_interface_reason_counts": {
+      "0": 31284,
+      "2": 2048,
+      "4": 2048,
+      "8": 512,
+      "16": 3414,
+      "24": 1536,
+      "32": 10056,
+      "64": 2350,
+      "256": 12288
+    },
+    "policy_reason_mismatches": 6,
+    "noncritical_fixture_reason_mismatches": 0,
+    "critical_reason_mismatch_locations": [
+      [
+        115,
+        257
+      ],
+      [
+        119,
+        257
+      ],
+      [
+        119,
+        258
+      ],
+      [
+        123,
+        257
+      ],
+      [
+        123,
+        258
+      ],
+      [
+        127,
+        258
+      ]
+    ],
+    "reverse_selected_reflection_max_degrees": 120.00000754451854,
+    "reverse_selected_transmission_max_degrees": 42.54393771907014,
+    "fixed_interface_reverse_reflection_max_degrees": 2.3403590300919337e-05,
+    "fixed_interface_reverse_transmission_max_degrees": 0.0017968059908522085,
+    "reduced_radiance_local_furnace_max_error": 1.1920928955078125e-07,
+    "furnace_scope": "single-interface reduced-radiance algebra, not a complete-body furnace or flux conservation test",
+    "seams": [
+      {
+        "row": 68,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 1.100000023841858,
+        "normal_tilt_degrees": -2.0,
+        "incidence_angles_degrees": [
+          85.99911499023438,
+          85.99915313720703
+        ],
+        "input_angle_step_degrees": 3.193848770441401e-05,
+        "reflection_jump_degrees": 3.999966207706657,
+        "transmission_jump_degrees": 1.7731702237186968,
+        "fresnel_before_after": [
+          0.714562177658081,
+          0.5119165182113647
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 69,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 1.100000023841858,
+        "normal_tilt_degrees": -5.0,
+        "incidence_angles_degrees": [
+          79.99911499023438,
+          79.99915313720703
+        ],
+        "input_angle_step_degrees": 3.2295778725701166e-05,
+        "reflection_jump_degrees": 9.999953443672593,
+        "transmission_jump_degrees": 3.6357724055677356,
+        "fresnel_before_after": [
+          0.43386831879615784,
+          0.1935369074344635
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 70,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 1.100000023841858,
+        "normal_tilt_degrees": -10.0,
+        "incidence_angles_degrees": [
+          69.99911499023438,
+          69.99915313720703
+        ],
+        "input_angle_step_degrees": 4.274529664073303e-05,
+        "reflection_jump_degrees": 19.999941883941112,
+        "transmission_jump_degrees": 5.134159680785647,
+        "fresnel_before_after": [
+          0.19353532791137695,
+          0.044456157833337784
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 71,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 1.100000023841858,
+        "normal_tilt_degrees": -20.0,
+        "incidence_angles_degrees": [
+          49.999114990234375,
+          49.99915313720703
+        ],
+        "input_angle_step_degrees": 3.148389330584034e-05,
+        "reflection_jump_degrees": 39.9999569924825,
+        "transmission_jump_degrees": 5.460298274041488,
+        "fresnel_before_after": [
+          0.04445597156882286,
+          0.00526799401268363
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 72,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 1.5,
+        "normal_tilt_degrees": -2.0,
+        "incidence_angles_degrees": [
+          85.99911499023438,
+          85.99915313720703
+        ],
+        "input_angle_step_degrees": 3.193848770441401e-05,
+        "reflection_jump_degrees": 3.999966207706657,
+        "transmission_jump_degrees": 1.9064706936959188,
+        "fresnel_before_after": [
+          0.8186640739440918,
+          0.6739987730979919
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 73,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 1.5,
+        "normal_tilt_degrees": -5.0,
+        "incidence_angles_degrees": [
+          79.99911499023438,
+          79.99915313720703
+        ],
+        "input_angle_step_degrees": 3.2295778725701166e-05,
+        "reflection_jump_degrees": 9.999953443672593,
+        "transmission_jump_degrees": 4.420744261876249,
+        "fresnel_before_after": [
+          0.6127480268478394,
+          0.38767513632774353
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 74,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 1.5,
+        "normal_tilt_degrees": -10.0,
+        "incidence_angles_degrees": [
+          69.99911499023438,
+          69.99915313720703
+        ],
+        "input_angle_step_degrees": 4.274529664073303e-05,
+        "reflection_jump_degrees": 19.999941883941112,
+        "transmission_jump_degrees": 7.753031290181134,
+        "fresnel_before_after": [
+          0.3876734673976898,
+          0.17103171348571777
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 75,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 1.5,
+        "normal_tilt_degrees": -20.0,
+        "incidence_angles_degrees": [
+          49.999114990234375,
+          49.99915313720703
+        ],
+        "input_angle_step_degrees": 3.148389330584034e-05,
+        "reflection_jump_degrees": 39.9999569924825,
+        "transmission_jump_degrees": 11.920493567442334,
+        "fresnel_before_after": [
+          0.17103131115436554,
+          0.05766135826706886
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 76,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 2.0,
+        "normal_tilt_degrees": -2.0,
+        "incidence_angles_degrees": [
+          85.99911499023438,
+          85.99915313720703
+        ],
+        "input_angle_step_degrees": 3.193848770441401e-05,
+        "reflection_jump_degrees": 3.999966207706657,
+        "transmission_jump_degrees": 1.939583838240765,
+        "fresnel_before_after": [
+          0.8231964707374573,
+          0.686724066734314
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 77,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 2.0,
+        "normal_tilt_degrees": -5.0,
+        "incidence_angles_degrees": [
+          79.99911499023438,
+          79.99915313720703
+        ],
+        "input_angle_step_degrees": 3.2295778725701166e-05,
+        "reflection_jump_degrees": 9.999953443672593,
+        "transmission_jump_degrees": 4.624459330332668,
+        "fresnel_before_after": [
+          0.6301065683364868,
+          0.4272802174091339
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 78,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 2.0,
+        "normal_tilt_degrees": -10.0,
+        "incidence_angles_degrees": [
+          69.99911499023438,
+          69.99915313720703
+        ],
+        "input_angle_step_degrees": 4.274529664073303e-05,
+        "reflection_jump_degrees": 19.999941883941112,
+        "transmission_jump_degrees": 8.525536625375643,
+        "fresnel_before_after": [
+          0.4272787272930145,
+          0.23613430559635162
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 79,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 2.0,
+        "normal_tilt_degrees": -20.0,
+        "incidence_angles_degrees": [
+          49.999114990234375,
+          49.99915313720703
+        ],
+        "input_angle_step_degrees": 3.148389330584034e-05,
+        "reflection_jump_degrees": 39.9999569924825,
+        "transmission_jump_degrees": 14.49656048229061,
+        "fresnel_before_after": [
+          0.23613393306732178,
+          0.1304217278957367
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 84,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.9090909361839294,
+        "normal_tilt_degrees": -2.0,
+        "incidence_angles_degrees": [
+          85.99911499023438,
+          85.99915313720703
+        ],
+        "input_angle_step_degrees": 3.193848770441401e-05,
+        "reflection_jump_degrees": 3.999966207706657,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 85,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.9090909361839294,
+        "normal_tilt_degrees": -5.0,
+        "incidence_angles_degrees": [
+          79.99911499023438,
+          79.99915313720703
+        ],
+        "input_angle_step_degrees": 3.2295778725701166e-05,
+        "reflection_jump_degrees": 9.999953443672593,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 86,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.9090909361839294,
+        "normal_tilt_degrees": -10.0,
+        "incidence_angles_degrees": [
+          69.99911499023438,
+          69.99915313720703
+        ],
+        "input_angle_step_degrees": 4.274529664073303e-05,
+        "reflection_jump_degrees": 19.999941883941112,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 87,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.9090909361839294,
+        "normal_tilt_degrees": -20.0,
+        "incidence_angles_degrees": [
+          49.999114990234375,
+          49.99915313720703
+        ],
+        "input_angle_step_degrees": 3.148389330584034e-05,
+        "reflection_jump_degrees": 39.9999569924825,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          0.00999609287828207
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 88,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.6666666865348816,
+        "normal_tilt_degrees": -2.0,
+        "incidence_angles_degrees": [
+          85.99911499023438,
+          85.99915313720703
+        ],
+        "input_angle_step_degrees": 3.193848770441401e-05,
+        "reflection_jump_degrees": 3.999966207706657,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 89,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.6666666865348816,
+        "normal_tilt_degrees": -5.0,
+        "incidence_angles_degrees": [
+          79.99911499023438,
+          79.99915313720703
+        ],
+        "input_angle_step_degrees": 3.2295778725701166e-05,
+        "reflection_jump_degrees": 9.999953443672593,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 90,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.6666666865348816,
+        "normal_tilt_degrees": -10.0,
+        "incidence_angles_degrees": [
+          69.99911499023438,
+          69.99915313720703
+        ],
+        "input_angle_step_degrees": 4.274529664073303e-05,
+        "reflection_jump_degrees": 19.999941883941112,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 91,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.6666666865348816,
+        "normal_tilt_degrees": -20.0,
+        "incidence_angles_degrees": [
+          49.999114990234375,
+          49.99915313720703
+        ],
+        "input_angle_step_degrees": 3.148389330584034e-05,
+        "reflection_jump_degrees": 39.9999569924825,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 92,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.5,
+        "normal_tilt_degrees": -2.0,
+        "incidence_angles_degrees": [
+          85.99911499023438,
+          85.99915313720703
+        ],
+        "input_angle_step_degrees": 3.193848770441401e-05,
+        "reflection_jump_degrees": 3.999966207706657,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 93,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.5,
+        "normal_tilt_degrees": -5.0,
+        "incidence_angles_degrees": [
+          79.99911499023438,
+          79.99915313720703
+        ],
+        "input_angle_step_degrees": 3.2295778725701166e-05,
+        "reflection_jump_degrees": 9.999953443672593,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 94,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.5,
+        "normal_tilt_degrees": -10.0,
+        "incidence_angles_degrees": [
+          69.99911499023438,
+          69.99915313720703
+        ],
+        "input_angle_step_degrees": 4.274529664073303e-05,
+        "reflection_jump_degrees": 19.999941883941112,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      },
+      {
+        "row": 95,
+        "columns": [
+          233,
+          234
+        ],
+        "eta": 0.5,
+        "normal_tilt_degrees": -20.0,
+        "incidence_angles_degrees": [
+          49.999114990234375,
+          49.99915313720703
+        ],
+        "input_angle_step_degrees": 3.148389330584034e-05,
+        "reflection_jump_degrees": 39.9999569924825,
+        "transmission_jump_degrees": null,
+        "fresnel_before_after": [
+          1.0,
+          1.0
+        ],
+        "reasons_before_after": [
+          0,
+          32
+        ]
+      }
+    ]
+  },
+  "gpu_flux": {
+    "candidate_reflection": 0.17705085249480582,
+    "candidate_transmission": 1.141036878570772,
+    "candidate_total": 1.3180877310655779,
+    "geometric_reflection": 0.09490176512944429,
+    "geometric_transmission": 0.905174299658214,
+    "geometric_total": 1.0000760647876583,
+    "method": "actual GLSL; outgoing uniform cosine/phi quadrature 1024 x 4096; exterior beam at 60 degrees, radius 15 degrees; normal tilt 20 degrees; IOR 1.5",
+    "preimage_reference": 1.3182232211911562,
+    "independent_method_difference": 0.0001354901255783414
+  },
+  "flux_crosscheck": [
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 15,
+      "ior": 1.5,
+      "order": 64,
+      "reflection_ratio": 0.09490459563749042,
+      "transmission_ratio": 0.9050954043625092,
+      "total_ratio": 0.9999999999999997,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.09490459563749042,
+          "transmission_ratio": 0.9050954043625092,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+      "candidate": false
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 15,
+      "ior": 1.5,
+      "order": 64,
+      "reflection_ratio": 0.1770711274574409,
+      "transmission_ratio": 1.1411720030159591,
+      "total_ratio": 1.3182431304734,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.08673477148924309,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.882568359375,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.09033635596819782,
+          "transmission_ratio": 1.1411720030159591,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+      "candidate": true
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 15,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.0949045956374904,
+      "transmission_ratio": 0.9050954043625091,
+      "total_ratio": 0.9999999999999996,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0949045956374904,
+          "transmission_ratio": 0.9050954043625091,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+      "candidate": false
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 15,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.17705836356202162,
+      "transmission_ratio": 1.1411720030159591,
+      "total_ratio": 1.3182303665779807,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0867220075938238,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.88250732421875,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.09033635596819782,
+          "transmission_ratio": 1.1411720030159591,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+      "candidate": true
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 15,
+      "ior": 1.5,
+      "order": 256,
+      "reflection_ratio": 0.09490459563749043,
+      "transmission_ratio": 0.9050954043625092,
+      "total_ratio": 0.9999999999999997,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.09490459563749043,
+          "transmission_ratio": 0.9050954043625092,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+      "candidate": false
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 15,
+      "ior": 1.5,
+      "order": 256,
+      "reflection_ratio": 0.1770512181751971,
+      "transmission_ratio": 1.1411720030159591,
+      "total_ratio": 1.3182232211911562,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.08671486220699925,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.8823318481445312,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.09033635596819783,
+          "transmission_ratio": 1.1411720030159591,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages",
+      "candidate": true
+    }
+  ],
+  "energy_curves": [
+    {
+      "tilt_degrees": 2,
+      "beam_angle_degrees": -80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.2607990453104119,
+      "transmission_ratio": 0.45842327308596104,
+      "total_ratio": 0.719222318396373,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.2607990453104119,
+          "transmission_ratio": 0.45842327308596104,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 2,
+      "beam_angle_degrees": -60,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.0881670393855943,
+      "transmission_ratio": 0.8652503327660191,
+      "total_ratio": 0.9534173721516135,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.0881670393855943,
+          "transmission_ratio": 0.8652503327660191,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 2,
+      "beam_angle_degrees": -30,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.04034188984365234,
+      "transmission_ratio": 0.9497294398593316,
+      "total_ratio": 0.990071329702984,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.04034188984365234,
+          "transmission_ratio": 0.9497294398593316,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 2,
+      "beam_angle_degrees": 0,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.03990320413290294,
+      "transmission_ratio": 0.959607685990846,
+      "total_ratio": 0.9995108901237489,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.03990320413290294,
+          "transmission_ratio": 0.959607685990846,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 2,
+      "beam_angle_degrees": 30,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.042761284432019174,
+      "transmission_ratio": 0.9657248289503706,
+      "total_ratio": 1.0084861133823897,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.042761284432019174,
+          "transmission_ratio": 0.9657248289503706,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 2,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.09054794262991309,
+      "transmission_ratio": 0.9503007338031793,
+      "total_ratio": 1.0408486764330924,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.09054794262991309,
+          "transmission_ratio": 0.9503007338031793,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 2,
+      "beam_angle_degrees": 80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.449067958235152,
+      "transmission_ratio": 0.7892267608045627,
+      "total_ratio": 1.2382947190397147,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.449067958235152,
+          "transmission_ratio": 0.7892267608045627,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 5,
+      "beam_angle_degrees": -80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.05011345965286642,
+      "transmission_ratio": 0.23772485587671244,
+      "total_ratio": 0.28783831552957884,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.05011345965286642,
+          "transmission_ratio": 0.23772485587671244,
+          "reflected_preimage_fraction": 0.5,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 5,
+      "beam_angle_degrees": -60,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.08254863283407396,
+      "transmission_ratio": 0.7887809127949406,
+      "total_ratio": 0.8713295456290145,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.08254863283407396,
+          "transmission_ratio": 0.7887809127949406,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 5,
+      "beam_angle_degrees": -30,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.03820659128033262,
+      "transmission_ratio": 0.9341183211069316,
+      "total_ratio": 0.9723249123872643,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.03820659128033262,
+          "transmission_ratio": 0.9341183211069316,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 5,
+      "beam_angle_degrees": 0,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.039395432977534624,
+      "transmission_ratio": 0.9575454106592712,
+      "total_ratio": 0.9969408436368059,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.039395432977534624,
+          "transmission_ratio": 0.9575454106592712,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 5,
+      "beam_angle_degrees": 30,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.04421325553141583,
+      "transmission_ratio": 0.9744251627574854,
+      "total_ratio": 1.0186384182889012,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.04421325553141583,
+          "transmission_ratio": 0.9744251627574854,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 5,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.09044701037503133,
+      "transmission_ratio": 1.002144004609003,
+      "total_ratio": 1.0925910149840345,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.09044701037503133,
+          "transmission_ratio": 1.002144004609003,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 5,
+      "beam_angle_degrees": 80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.6824263742445587,
+      "transmission_ratio": 1.0304971894872204,
+      "total_ratio": 1.712923563731779,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.18314345968571283,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.500091552734375,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.49928291455884577,
+          "transmission_ratio": 1.0304971894872204,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 10,
+      "beam_angle_degrees": -80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.0,
+      "transmission_ratio": 0.030183328001866,
+      "total_ratio": 0.030183328001866,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.030183328001866,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.5
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 10,
+      "beam_angle_degrees": -60,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.05804551501851701,
+      "transmission_ratio": 0.6368903982263906,
+      "total_ratio": 0.6949359132449076,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.05804551501851701,
+          "transmission_ratio": 0.6368903982263906,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 10,
+      "beam_angle_degrees": -30,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.03407856712031472,
+      "transmission_ratio": 0.9003776744948168,
+      "total_ratio": 0.9344562416151315,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.03407856712031472,
+          "transmission_ratio": 0.9003776744948168,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 10,
+      "beam_angle_degrees": 0,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.03760980881895592,
+      "transmission_ratio": 0.9501212348893749,
+      "total_ratio": 0.9877310437083309,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.03760980881895592,
+          "transmission_ratio": 0.9501212348893749,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 10,
+      "beam_angle_degrees": 30,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.04583057075722738,
+      "transmission_ratio": 0.983266847455679,
+      "total_ratio": 1.0290974182129065,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.04583057075722738,
+          "transmission_ratio": 0.983266847455679,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 10,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.08908900315988748,
+      "transmission_ratio": 1.0681003602184054,
+      "total_ratio": 1.1571893633782928,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.08908900315988748,
+          "transmission_ratio": 1.0681003602184054,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 10,
+      "beam_angle_degrees": 80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.874758488200791,
+      "transmission_ratio": 1.3810457506658957,
+      "total_ratio": 2.255804238866687,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.37740720973050057,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.49735127847029054,
+          "transmission_ratio": 1.3810457506658957,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": -80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.0,
+      "transmission_ratio": 0.0,
+      "total_ratio": 0.0,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": -60,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.0,
+      "transmission_ratio": 0.26706716823185017,
+      "total_ratio": 0.26706716823185017,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.26706716823185017,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": -30,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.02280697541484048,
+      "transmission_ratio": 0.798443875807841,
+      "total_ratio": 0.8212508512226815,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.02280697541484048,
+          "transmission_ratio": 0.798443875807841,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 0,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.030870419818229706,
+      "transmission_ratio": 0.9194970354720664,
+      "total_ratio": 0.9503674552902961,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.030870419818229706,
+          "transmission_ratio": 0.9194970354720664,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 30,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.0455135664220055,
+      "transmission_ratio": 0.9823899182208231,
+      "total_ratio": 1.0279034846428285,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.0,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 0.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.0455135664220055,
+          "transmission_ratio": 0.9823899182208231,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 60,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.1762762074460163,
+      "transmission_ratio": 1.1371909083703318,
+      "total_ratio": 1.313467115816348,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.08986627984696714,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.08640992759904917,
+          "transmission_ratio": 1.1371909083703318,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.7759971670211911,
+      "transmission_ratio": 1.8318826172056852,
+      "total_ratio": 2.6078797842268764,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.37740720973050057,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.3985899572906905,
+          "transmission_ratio": 1.8318826172056852,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    }
+  ],
+  "fine_grazing_witness": [
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 64,
+      "reflection_ratio": 0.7759971670211911,
+      "transmission_ratio": 1.8318826172056855,
+      "total_ratio": 2.607879784226877,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.37740720973050057,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.3985899572906905,
+          "transmission_ratio": 1.8318826172056855,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 128,
+      "reflection_ratio": 0.7759971670211911,
+      "transmission_ratio": 1.8318826172056852,
+      "total_ratio": 2.6078797842268764,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.37740720973050057,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.3985899572906905,
+          "transmission_ratio": 1.8318826172056852,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    },
+    {
+      "tilt_degrees": 20,
+      "beam_angle_degrees": 80,
+      "beam_radius_degrees": 5,
+      "ior": 1.5,
+      "order": 256,
+      "reflection_ratio": 0.7759971670211911,
+      "transmission_ratio": 1.8318826172056855,
+      "total_ratio": 2.607879784226877,
+      "pieces": [
+        {
+          "piece": "geometric",
+          "reflection_ratio": 0.37740720973050057,
+          "transmission_ratio": 0.0,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 0.0
+        },
+        {
+          "piece": "smooth",
+          "reflection_ratio": 0.3985899572906906,
+          "transmission_ratio": 1.8318826172056855,
+          "reflected_preimage_fraction": 1.0,
+          "transmitted_preimage_fraction": 1.0
+        }
+      ],
+      "exact_geometric_ratio": 1.0,
+      "method": "source-cap quadrature with all analytic piecewise-normal preimages"
+    }
+  ],
+  "spheres": [
+    {
+      "latitude": 8,
+      "longitude": 16,
+      "triangles": 224,
+      "front_face_centroids": 64,
+      "interior_comparisons": 58,
+      "all_front_fallbacks": 4,
+      "scope": "first entering interface; camera (0,0,3), unit sphere; centroid rays; analytic hit and polygon hit positions differ; excludes silhouette score and exit/TIR qualification",
+      "geometric_reflected_median_degrees": 10.133081087107389,
+      "geometric_reflected_p99_degrees": 19.294634899313344,
+      "geometric_transmitted_median_degrees": 2.915781657434702,
+      "geometric_transmitted_p99_degrees": 7.658030549096613,
+      "guarded_reflected_median_degrees": 6.4624804829173215,
+      "guarded_reflected_p99_degrees": 17.037229210054065,
+      "guarded_transmitted_median_degrees": 1.964724529055673,
+      "guarded_transmitted_p99_degrees": 7.015139420879901
+    },
+    {
+      "latitude": 16,
+      "longitude": 32,
+      "triangles": 960,
+      "front_face_centroids": 264,
+      "interior_comparisons": 174,
+      "all_front_fallbacks": 6,
+      "scope": "first entering interface; camera (0,0,3), unit sphere; centroid rays; analytic hit and polygon hit positions differ; excludes silhouette score and exit/TIR qualification",
+      "geometric_reflected_median_degrees": 4.308486347566971,
+      "geometric_reflected_p99_degrees": 6.63340148449303,
+      "geometric_transmitted_median_degrees": 1.1390096959621134,
+      "geometric_transmitted_p99_degrees": 2.421159584305412,
+      "guarded_reflected_median_degrees": 1.3093725955725253,
+      "guarded_reflected_p99_degrees": 3.324698481431627,
+      "guarded_transmitted_median_degrees": 0.3794274152787642,
+      "guarded_transmitted_p99_degrees": 1.2909089444871984
+    },
+    {
+      "latitude": 32,
+      "longitude": 64,
+      "triangles": 3968,
+      "front_face_centroids": 1088,
+      "interior_comparisons": 682,
+      "all_front_fallbacks": 32,
+      "scope": "first entering interface; camera (0,0,3), unit sphere; centroid rays; analytic hit and polygon hit positions differ; excludes silhouette score and exit/TIR qualification",
+      "geometric_reflected_median_degrees": 2.175321057824254,
+      "geometric_reflected_p99_degrees": 2.849000854046864,
+      "geometric_transmitted_median_degrees": 0.6228324981575648,
+      "geometric_transmitted_p99_degrees": 1.1230091040954058,
+      "guarded_reflected_median_degrees": 0.32965705250275285,
+      "guarded_reflected_p99_degrees": 0.8403817591539131,
+      "guarded_transmitted_median_degrees": 0.09372871623134889,
+      "guarded_transmitted_p99_degrees": 0.3228362417207641
+    }
+  ],
+  "scope": "stage-1 diagnostic decision; no smooth dragon capture, native selector, Q2/Q3 or default promotion",
+  "interface_probe": {
+    "passed": true,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/probe-02/build/raytracing",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "512",
+      "--height",
+      "128",
+      "--require-validation",
+      "--dielectric-contract",
+      "--optics-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/probe-02/probe.bin",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/probe-02/probe.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/probe-02/metrics.json"
+    ],
+    "exit_code": 0,
+    "fixture": "Q1 interface, private substituted dielectric-contract entry point",
+    "logical_extent": [
+      512,
+      128
+    ],
+    "record_bytes": 256,
+    "binary_sha256": "6db5ab1fe2be9bde33a19a7e9cf98134b2c252fcd6d2fcd0045aeda7c694f416",
+    "shader_sha256": "fed1c34defd806e446f79a71bc7fb48ae03b13018d6ee1e9cb95ac58e00f7c80",
+    "source_sha256": {
+      "shaders/optical_normal_experiment.glsl": "0f2ce738a4b7732d88490424adc1f3d73b0c3b2cfaf35668b442d15b5a85017c",
+      "tools/fixtures/optical-normal-probe.glsl": "6dd03107e41cabdc2b004636014d2253025c1f54dc54ef95b3393b37f30df070",
+      "tools/run_optical_normal_probe.py": "f5792485a4c12095f507b37620da754b26ece58286108d5add280d84ebfa674e"
+    },
+    "probe_sha256": "13ab181bbc23c8c8dc9428bd962b6a39ae2a9fbd33cbeaa60b61ffae97a728f2"
+  },
+  "flux_probe": {
+    "passed": true,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/flux-probe-03/build/raytracing",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "512",
+      "--height",
+      "128",
+      "--require-validation",
+      "--dielectric-contract",
+      "--optics-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/flux-probe-03/probe.bin",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/flux-probe-03/probe.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-q1-20261114/flux-probe-03/metrics.json"
+    ],
+    "exit_code": 0,
+    "fixture": "Q1 flux, private substituted dielectric-contract entry point",
+    "logical_extent": [
+      512,
+      128
+    ],
+    "record_bytes": 256,
+    "binary_sha256": "e3685faa8451a3d3577d30586f93fd5b4596cc8d332ab386298415a38f5d76f3",
+    "shader_sha256": "619c18c61cc8ea1ded7b16b91373ac574f7296b76363125739a8b5c611d999f7",
+    "source_sha256": {
+      "shaders/optical_normal_experiment.glsl": "0f2ce738a4b7732d88490424adc1f3d73b0c3b2cfaf35668b442d15b5a85017c",
+      "tools/fixtures/optical-normal-flux-probe.glsl": "e8997af7ed0d57666c390a1e5b437f718329cf3a2d8fe4f3ee3dd320069cf484",
+      "tools/run_optical_normal_probe.py": "80f6c58c06a9a66c4f81147a6ff3e8dc15f8e4c92497e7bc67fef63eaa442753"
+    },
+    "probe_sha256": "986c8105b3872a46e1f0f3d9a3bee2678d7fcd2c5ed4bf49f351d3d22923688b"
+  },
+  "source_sha256": {
+    "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/analyze_optical_normal.py": "8d03b0980bb15be79d7d4532ce1e20b88c5a89996913d18b605a43db37a4829a",
+    "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/optical_normal_reference.py": "8701f3a9002473076114599507b6143cd1286c3c788e14f5fbfab9560ea2a9bc"
+  }
+}
