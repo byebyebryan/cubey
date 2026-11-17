@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-17",
+  "scope": "Close the two findings from the RT/forward review before committing the reviewed change set",
+  "source_head_before_commit": "2e86702d701211a6f0394583ec485075f3ec3c93",
+  "binary_sha256": "34b7cd8af5f854ec072d21792b9cb9ecc39d95c00dc46112eb4edc7415709911",
+  "fixed": [
+    "Hybrid GPU qualification now requires retained outgoing sky refraction as well as marble visibility",
+    "Native transmission-source label sits above a 210-pixel combo and is fully visible"
+  ],
+  "sky_refraction": {
+    "glass_pixels": 16858,
+    "environment_mean_rgb_code_error": 0.0,
+    "environment_max_rgb_code_error": 0,
+    "screen_mean_rgb_code_difference": 26.9661090679005
+  },
+  "negative_controls": {
+    "intentional_hybrid_to_screen": "Rejected by outgoing-sky agreement assertion",
+    "intentional_hybrid_to_environment": "Rejected by marble visibility assertion"
+  },
+  "native_ui": {
+    "passed": true,
+    "renderer": "forward",
+    "as_bytes": 0,
+    "samples": 1,
+    "frames": 635,
+    "validation": true,
+    "recording": true
+  },
+  "native_screenshot_sha256": "71b44be7e857e78c54ad9da5c35cb7ee4b709604a30a0b750479bfceeb5ff136",
+  "native_screenshot": "outputs/raytracing/review-fixes-20261117/native-ui/outward-settled.png",
+  "ui_visual_inspection": "Full transmission label and all controls visible at 800x600",
+  "ctest": {
+    "regression_and_sync_probe_passed": 24,
+    "documentation_passed": 9,
+    "failed": 0
+  },
+  "large_artifact_root": "outputs/raytracing/review-fixes-20261117",
+  "published_report": "Original report and native motion clips retain their dated capture identities",
+  "evidence_log_normalization": [
+    {
+      "path": "docs/evidence/raytracing-dragon-demo-2026-11/documentation.log",
+      "original_sha256": "b966f39d7122171192e4a708d779cd6e2793169bd6e52351b0e49fa5f2e9ff35",
+      "normalized_sha256": "2ff295aa58743d8fab1c1906f8157d3b3fe48e1b961a8aab5ced0426bf3bbd9f",
+      "raw_copy": "outputs/raytracing/review-fixes-20261117/raw-evidence-logs/docs/evidence/raytracing-dragon-demo-2026-11/documentation.log",
+      "change": "Remove blank lines at EOF only"
+    },
+    {
+      "path": "docs/evidence/raytracing-dragon-demo-2026-11/rt-tests.log",
+      "original_sha256": "3651b601deb614941b0d8bf70bfa20b151fe3b9eb52f19ec729527afe8408ea1",
+      "normalized_sha256": "aa172538e104e2bb9b4c2b335b3aa2aba59a29914e62070097d289882b12bfaf",
+      "raw_copy": "outputs/raytracing/review-fixes-20261117/raw-evidence-logs/docs/evidence/raytracing-dragon-demo-2026-11/rt-tests.log",
+      "change": "Remove blank lines at EOF only"
+    },
+    {
+      "path": "docs/evidence/raytracing-forward-dragon-audit-2026-11/documentation.log",
+      "original_sha256": "2de5db506a6bc0cb3b630d8640fc9f85bf5d93d3e3e2ccf545d446eab1577418",
+      "normalized_sha256": "aeedaa80d25ad6a03920398a821a9bfd465092cf87bf52a6731ad5abcd6f8797",
+      "raw_copy": "outputs/raytracing/review-fixes-20261117/raw-evidence-logs/docs/evidence/raytracing-forward-dragon-audit-2026-11/documentation.log",
+      "change": "Remove blank lines at EOF only"
+    },
+    {
+      "path": "docs/evidence/raytracing-forward-dragon-audit-2026-11/rt-tests.log",
+      "original_sha256": "14e711950af207158017e23afa8932d0ce82b9bf98d43b12329643eef150234a",
+      "normalized_sha256": "01155763bbe94dc1d76959d369969162d8c2babb9c904bde146be4fa121d8145",
+      "raw_copy": "outputs/raytracing/review-fixes-20261117/raw-evidence-logs/docs/evidence/raytracing-forward-dragon-audit-2026-11/rt-tests.log",
+      "change": "Remove blank lines at EOF only"
+    },
+    {
+      "path": "docs/evidence/raytracing-forward-transparency-2026-11/documentation-tests.log",
+      "original_sha256": "33117b167ba0c576c002db7580f4668a00e0e017e0821456fbfb57567395ba28",
+      "normalized_sha256": "5745dac2c9c2d77bb1faf9b3f90419e27581071c944ee31b5899d222b682eaec",
+      "raw_copy": "outputs/raytracing/review-fixes-20261117/raw-evidence-logs/docs/evidence/raytracing-forward-transparency-2026-11/documentation-tests.log",
+      "change": "Remove blank lines at EOF only"
+    },
+    {
+      "path": "docs/evidence/raytracing-forward-transparency-2026-11/regression-tests.log",
+      "original_sha256": "160141c15b2f2f76cf01a92cb09242b1497783eb962e2575c9c9a3d198e6be8c",
+      "normalized_sha256": "f68d5ad01602655208e13feb5d5d68e06a492b75129eda163d42e0857ede33b8",
+      "raw_copy": "outputs/raytracing/review-fixes-20261117/raw-evidence-logs/docs/evidence/raytracing-forward-transparency-2026-11/regression-tests.log",
+      "change": "Remove blank lines at EOF only"
+    }
+  ],
+  "documentation_index_fixes": [
+    "Link demo research evidence from its transport plan",
+    "Link motion research evidence from its survey"
+  ],
+  "documentation_test_scope": "Full tracked tree, including all newly tracked evidence Markdown; final nine documentation checks passed"
+}

@@ -1,0 +1,18 @@
+{
+  "scope": "opt-in bounded appearance demo, not zero-truncation optical acceptance",
+  "rt_ctests_passed": 20,
+  "original_asset_bound_controls_passed": 16,
+  "documentation_checks_passed": 9,
+  "demo_gpu_controls_passed": true,
+  "final_metrics_schema_compatible": true,
+  "final_demo_hdr_equals_capture_hdr": true,
+  "model_and_recipes_and_original_preset_preserved": true,
+  "fullhd_pending_capacity_limit_pixels": {
+    "wide": 0,
+    "detail": 1
+  },
+  "fullhd_invalid_medium_pixels": 0,
+  "default_promoted": false,
+  "no_commit_push_or_public_site_update": true,
+  "report_url": "http://starship:8787/reports/a9552bb10b43a53f3fb280516ebd1791f964c895352447c9d19c858e1846a619/"
+}

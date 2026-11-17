@@ -1,0 +1,82 @@
+{
+  "scope": "Read-only reuse and simplification audit",
+  "source_sha256": {
+    "projects/raytracing/shaders/trace.rgen": "5e945f0eff288879b421ac013898d6c4e0eca2a9a597b26ef587e7e133dc12d3",
+    "projects/raytracing/shaders/material_workshop.glsl": "09ed4d015ab7fb0e763ba630424bf14be40780ebf463f8b9cef84d2c00d45dc0",
+    "projects/raytracing/shaders/optics.glsl": "5a9161acd408276e515fb4b09b5b8f74339f4ac85dd9082691fbade8e01b76fe",
+    "projects/raytracing/raytracing_environment.cpp": "b406734c0da9c3c6ab8929490d2a183c57a1606ef887480559b6a14887427883",
+    "shaders/cubey/atmosphere/atmosphere_sun.glsl": "03fff46915fef5f9a9cb33443b44b7d47af216a326108807d89d88d6d361f52c"
+  },
+  "reuse_points": [
+    {
+      "location": "projects/raytracing/shaders/trace.rgen:314-345",
+      "finding": "Existing deterministic optical control has a bounded reflected/transmitted worklist; borrow structure, not its unqualified dragon medium/shading assumptions"
+    },
+    {
+      "location": "projects/raytracing/shaders/material_workshop.glsl:463-478",
+      "finding": "Workshop environment branch already provides analytic direct plus cached specular PBR; reuse it at opaque hits without globally disabling scene glass rays"
+    },
+    {
+      "location": "projects/raytracing/shaders/material_workshop.glsl:43-52",
+      "finding": "Current sampled escape subtracts visual solar texture and injects analytic high-radiance small-sun signal"
+    },
+    {
+      "location": "projects/raytracing/raytracing_environment.cpp:275-282",
+      "finding": "Shared visual sky cube and filtered environment cubes are already bound"
+    },
+    {
+      "location": "shaders/cubey/atmosphere/atmosphere_sun.glsl:24-28",
+      "finding": "Visual solar disk already smooths its edge using raster derivatives; reusing it is an appearance approximation, not a new curved-glass footprint solution"
+    }
+  ],
+  "solar_witnesses": [
+    {
+      "name": "unstable",
+      "pixel": [
+        818,
+        372
+      ],
+      "sample_index": 873,
+      "status": 0,
+      "internal_events": [
+        "R",
+        "R",
+        "R"
+      ],
+      "internal_reflections_are_tir": true
+    },
+    {
+      "name": "persistent",
+      "pixel": [
+        738,
+        527
+      ],
+      "sample_index": 1793,
+      "status": 0,
+      "internal_events": [
+        "R",
+        "R"
+      ],
+      "internal_reflections_are_tir": true
+    }
+  ],
+  "motion_baseline": {
+    "path": "outputs/raytracing/dragon-motion-preview-20261116/native/metrics.json",
+    "moving_input_frames": 202,
+    "trace_samples": 202,
+    "trace_ms_median": 10.703024,
+    "trace_ms_max": 12.209408,
+    "scope": "Previously recorded native Xvfb run; not candidate performance or desktop FPS"
+  },
+  "proposal": {
+    "mode": "demo versus retained sampled",
+    "fixed_primary_samples": 4,
+    "branch_cutoff_max_rgb": 0.01,
+    "existing_event_query_ceilings_retained_initially": true,
+    "secondary_escape": "existing visual sky, no additional analytic solar spike",
+    "opaque_shading": "cached shared PBR, no sampled rough secondary chains",
+    "progressive_history": false,
+    "only_cost_fallback": "two fixed samples",
+    "stop_before_denoiser_or_optical_scope_expansion": true
+  }
+}

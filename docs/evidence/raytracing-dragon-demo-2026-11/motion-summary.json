@@ -1,0 +1,62 @@
+{
+  "rt4": {
+    "moving_samples": 150,
+    "gpu_median_ms": 27.681791999999998,
+    "gpu_p95_ms": 34.375071999999996,
+    "gpu_max_ms": 35.472128,
+    "frames": 344,
+    "fixed_samples": [
+      4
+    ],
+    "native_cadence_median_ms": 67.523526,
+    "receipt": {
+      "passed": true,
+      "renderer": "rt",
+      "as_bytes": 53847808,
+      "samples": 4,
+      "frames": 344,
+      "validation": true,
+      "recording": true
+    }
+  },
+  "rt2": {
+    "moving_samples": 185,
+    "gpu_median_ms": 14.187071999999999,
+    "gpu_p95_ms": 15.988959999999999,
+    "gpu_max_ms": 16.328768,
+    "frames": 433,
+    "fixed_samples": [
+      2
+    ],
+    "native_cadence_median_ms": 53.697337999999995,
+    "receipt": {
+      "passed": true,
+      "renderer": "rt",
+      "as_bytes": 53847808,
+      "samples": 2,
+      "frames": 433,
+      "validation": true,
+      "recording": true
+    }
+  },
+  "forward": {
+    "moving_samples": 215,
+    "gpu_median_ms": 4.410528,
+    "gpu_p95_ms": 4.4657599999999995,
+    "gpu_max_ms": 4.749664,
+    "frames": 514,
+    "fixed_samples": [
+      1
+    ],
+    "native_cadence_median_ms": 46.480081,
+    "receipt": {
+      "passed": true,
+      "renderer": "forward",
+      "as_bytes": 0,
+      "samples": 1,
+      "frames": 514,
+      "validation": true,
+      "recording": true
+    }
+  }
+}

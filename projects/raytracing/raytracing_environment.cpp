@@ -28,7 +28,7 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
                          std::uint32_t slots) {
     const auto start = std::chrono::steady_clock::now();
     active_ = c.environment == "atmosphere";
-    sampled_ = sampled_material_scene(c);
+    sampled_ = sampled_material_scene(c) && c.renderer == "rt";
     if (c.scene == "materials")
         probe_ground_mode_ = render::AtmosphereEnvironmentGroundMode::Ground;
     slots_ = slots;
@@ -47,13 +47,16 @@ Environment::Environment(vulkan::Device& device, vulkan::GpuRuntime& gpu, const 
             placeholders_.emplace(
                 render::create_atmosphere_background_placeholder_textures(device, gpu));
             atmosphere_.create_resources(
-                device, {.reflection_extent = 128,
-                         .reflection_mip_levels = 5,
-                         .reflection_update_hz = c.lighting_cycle == "frozen" ? 4.F : 30.F,
-                         .frame_slot_count = slots,
-                         .atmosphere_textures = placeholders_->bindings(),
-                         .reflection_ground_mode = probe_ground_mode_,
-                         .consumer_stage_mask = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR});
+                device,
+                {.reflection_extent = 128,
+                 .reflection_mip_levels = 5,
+                 .reflection_update_hz = c.lighting_cycle == "frozen" ? 4.F : 30.F,
+                 .frame_slot_count = slots,
+                 .atmosphere_textures = placeholders_->bindings(),
+                 .reflection_ground_mode = probe_ground_mode_,
+                 .consumer_stage_mask = c.renderer == "forward"
+                                            ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                            : VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR});
             if (sampled_)
                 background_.create_materials(
                     device, {.frame_slot_count = slots, .textures = placeholders_->bindings()});
@@ -139,6 +142,8 @@ EnvironmentUniform Environment::prepare(const Config& c, VkCommandBuffer command
     // It is part of the environment/history identity; other scenes keep zero.
     result.attenuation = {c.attenuation_red, c.attenuation_green, c.attenuation_blue,
                           c.scene == "dragon-optics" && c.smooth_normals ? 1.F : 0.F};
+    result.noise.x = c.scene == "dragon-optics" ? c.firefly_clamp : 0.F;
+    result.noise.y = demo_transport(c) ? 1.F : 0.F;
     if (active_) {
         atmosphere_.set_environment(state(c, eye.y));
         const auto now = std::chrono::steady_clock::now();

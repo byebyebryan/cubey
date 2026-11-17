@@ -1,0 +1,25 @@
+{
+  "scope": "Bounded opt-in dragon demo and matched forward baseline",
+  "reviewed": [
+    "Sampled defaults and raw-cap-zero route preserved",
+    "Forward baseline returns before RT feature loading, AS construction or pipeline creation",
+    "Forward shader package uses the existing raster target without optional Vulkan 1.3 demote requirements",
+    "Cached diffuse lighting matches the shared forward convention in demo mode only",
+    "Glass uses existing certified interfaces, facing checks, medium handling and safe spawning",
+    "Demo fixed-sample policy applies equally to native, PNG and native-style frames",
+    "Pruning, pending-capacity loss and invalid transport retain distinct status accounting",
+    "Saved configuration retains renderer and transport choice",
+    "Sampled metrics retain their numeric split-depth field; demo adds an explicit split policy",
+    "Report presents GPU cost separately from native recording cadence and mismatched AA sample counts"
+  ],
+  "retained_limits": [
+    "Fine spatial shimmer in intricate glass",
+    "One full-HD close-up pixel reaches the existing pending-branch cap",
+    "Four-sample P95 GPU cost exceeds the provisional 33 ms target at some angles",
+    "Forward constant-thickness approximation is not a boundary solver",
+    "Native Xvfb recordings do not establish physical desktop FPS"
+  ],
+  "acceptance": "Ready for user visual review as an opt-in appearance prototype; not optical-reference or default-promotion acceptance",
+  "no_gi_or_denoiser_or_optics_scope_expansion": true,
+  "no_commit_push_or_public_site_update": true
+}

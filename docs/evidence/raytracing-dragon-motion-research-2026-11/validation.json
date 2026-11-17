@@ -1,0 +1,47 @@
+{
+  "research_only": true,
+  "renderer_identity_unchanged": {
+    "binary": "42b31f9cc2865fd5a7633ccf01b71ff44e1c61b2d1742b5421a8defa3e4ae2e5",
+    "shaders": {
+      "atmosphere.frag.spv": "621b4073823ab3f46b7449ad36311ca30e1d9b8633668aa8ed709e96751ae6a7",
+      "atmosphere.vert.spv": "ef76215d4ceda1d2cbbfdb66c84727acd83acb33045c0613b1feafc32b311dba",
+      "atmosphere_reflection_prefilter.frag.spv": "ce2b2109bd6ee82f0340ae64ea8bc913e50364b15fe09fb124d0627975192233",
+      "forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+      "forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+      "primary.rahit.spv": "3bebdb476fea5cc1cda821516ed18c5c01e35a5f908ba826dd9c87338b294dd7",
+      "primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+      "primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+      "shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+      "trace.rgen.spv": "57198a9ce09f4a1fbc73260a9cc3ca3cd532ae902e379fffb7c36086cd635b40"
+    },
+    "preset": "62fac1acda4161a7f1fda7ca7bd80f106af7cabe21b57c139047aab45319ff2e",
+    "model": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+    "recipes": {
+      "bronze.json": "fe9474f73eda0389f43596ada8857527802e1911867bc5002f6f932f5c9012ae",
+      "catalog.json": "f4701d806b2e517e5cfe705777de54454f43e6bf13a5d161035432271656ea6d",
+      "ceramic.json": "b0697acafe549744f5f8a259e3d35cca4e20efd0f47691bbbed8264f015f9304",
+      "clay.json": "a84d85caabc22353a9ec601bc7fb56a0e1941a780f4ed4ff65058e960472dfc8",
+      "frosted-glass.json": "18dbb3c951418635ada6944ef44284ff2fdf5305ab27d1b5620295a6266957cb",
+      "glass.json": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537",
+      "kraft-cardboard.json": "499f05ba5309bc5c81024103f78babff6d63a001831ef7309e7f993f60e94e94",
+      "limestone.json": "cccc023571523d052823b6e27658ca88b461c3b6b2a90763919687943db372e3",
+      "marble.json": "dce3505445117ba30ee642eed6b8263a67a585eed81764aea47bd9fc4083eda5",
+      "plain.json": "401cfb72ff2e41fb3bcd8a07c0a0f751abda1002959a74920aba769934438ea7",
+      "rusted-steel.json": "78643660334fcdf353e34bd7a70615f33c034cc537329d4fe58ded6c21f15a07",
+      "wood.json": "2aa55215acdae9b64fa0518f511445a9e50f9592e09f21069bb7db279807cfde",
+      "woven-cloth.json": "9e376270d7a174ea67709eb82a148237c749c480b621e3f50f3ed69c72ab2f80"
+    }
+  },
+  "documentation_checks_passed": 9,
+  "documentation_command": [
+    "ctest",
+    "--preset",
+    "dev-docs",
+    "--output-on-failure"
+  ],
+  "runtime_tests_rerun": false,
+  "sdk_built_installed_or_integrated": false,
+  "renderer_modified": false,
+  "plan_is_proposed": true,
+  "no_commit_push_or_site_update": true
+}

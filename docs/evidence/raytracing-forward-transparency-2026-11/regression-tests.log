@@ -1,0 +1,523 @@
+Start testing: Nov 16 18:31 PST
+----------------------------------------------------------
+16/327 Testing: cubey_core_tests
+16/327 Test: cubey_core_tests
+Command: "/home/bryan/code/cubey-raytracing-first-pass/build/dev/tests/cubey/cubey_core_tests"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/tests/cubey
+"cubey_core_tests" start time: Nov 16 18:31 PST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.42 sec
+----------------------------------------------------------
+Test Passed.
+"cubey_core_tests" end time: Nov 16 18:31 PST
+"cubey_core_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+301/327 Testing: pbr_materials_environment_transmission_depth_reuse
+301/327 Test: pbr_materials_environment_transmission_depth_reuse
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "pbr_materials_environment_transmission_depth_reuse" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials/environment-depth-reuse.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials/environment-depth-reuse.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials/pbr_materials" "128" "96" "--require-validation" "--frames" "4" "--material" "gallery" "--lighting" "clear" "--transmission-source" "environment"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials
+"pbr_materials_environment_transmission_depth_reuse" start time: Nov 16 18:31 PST
+Output:
+----------------------------------------------------------
+pbr_materials: environment ready source=clear setup_ms=495.779
+pbr_materials: transmission_source=environment hdr_output_format=none
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials/environment-depth-reuse.png at 128x96
+<end of output>
+Test time =   1.66 sec
+----------------------------------------------------------
+Test Passed.
+"pbr_materials_environment_transmission_depth_reuse" end time: Nov 16 18:32 PST
+"pbr_materials_environment_transmission_depth_reuse" time elapsed: 00:00:01
+----------------------------------------------------------
+
+302/327 Testing: pbr_materials_transmission_hdr_readback
+302/327 Test: pbr_materials_transmission_hdr_readback
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "pbr_materials_transmission_hdr_readback" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials/transmission-hdr-readback.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials/transmission-hdr-readback.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials/pbr_materials" "128" "96" "--require-validation" "--frames" "1" "--material" "glass" "--lighting" "clear" "--debug-view" "transmission-ray" "--hdr-output" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials/transmission-hdr-readback.f32"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials
+"pbr_materials_transmission_hdr_readback" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+pbr_materials: environment ready source=clear setup_ms=9.95672
+pbr_materials: transmission_source=screen hdr_output_format=RGBA32F
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/pbr_materials/transmission-hdr-readback.png at 128x96
+<end of output>
+Test time =   0.76 sec
+----------------------------------------------------------
+Test Passed.
+"pbr_materials_transmission_hdr_readback" end time: Nov 16 18:32 PST
+"pbr_materials_transmission_hdr_readback" time elapsed: 00:00:00
+----------------------------------------------------------
+
+308/327 Testing: raytracing_dragon_glass_acceptance
+308/327 Test: raytracing_dragon_glass_acceptance
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/test_dragon_glass_acceptance.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_dragon_glass_acceptance" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.000s
+
+OK
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_dragon_glass_acceptance" end time: Nov 16 18:32 PST
+"raytracing_dragon_glass_acceptance" time elapsed: 00:00:00
+----------------------------------------------------------
+
+309/327 Testing: raytracing_spawn_geometry
+309/327 Test: raytracing_spawn_geometry
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/test_ray_spawn_geometry.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_spawn_geometry" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_spawn_geometry" end time: Nov 16 18:32 PST
+"raytracing_spawn_geometry" time elapsed: 00:00:00
+----------------------------------------------------------
+
+310/327 Testing: raytracing_material_comparison_inputs
+310/327 Test: raytracing_material_comparison_inputs
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/author_material_comparison.py" "--check"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_material_comparison_inputs" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+Checked 27 comparison inputs
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_material_comparison_inputs" end time: Nov 16 18:32 PST
+"raytracing_material_comparison_inputs" time elapsed: 00:00:00
+----------------------------------------------------------
+
+311/327 Testing: raytracing_config_and_layout
+311/327 Test: raytracing_config_and_layout
+Command: "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/cubey_project_raytracing_tests"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_config_and_layout" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+raytracing: SBT boundaries and config admission pass
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_config_and_layout" end time: Nov 16 18:32 PST
+"raytracing_config_and_layout" time elapsed: 00:00:00
+----------------------------------------------------------
+
+312/327 Testing: raytracing_device_contract
+312/327 Test: raytracing_device_contract
+Command: "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/cubey_project_raytracing_device_tests"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_device_contract" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+raytracing: opt-in device and address lifetime pass
+<end of output>
+Test time =   0.21 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_device_contract" end time: Nov 16 18:32 PST
+"raytracing_device_contract" time elapsed: 00:00:00
+----------------------------------------------------------
+
+313/327 Testing: raytracing_headless_writes_png
+313/327 Test: raytracing_headless_writes_png
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_headless_writes_png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing-smoke.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing-smoke.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "64" "64"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_headless_writes_png" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing-smoke.png at 64x64
+raytracing: triangles=4 AS=7552 bytes, scene=3.915596 ms, pipeline=18.035713 ms
+<end of output>
+Test time =   0.27 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_headless_writes_png" end time: Nov 16 18:32 PST
+"raytracing_headless_writes_png" time elapsed: 00:00:00
+----------------------------------------------------------
+
+314/327 Testing: raytracing_retry_scene
+314/327 Test: raytracing_retry_scene
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_retry_scene" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/retry-scene.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/retry-scene.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--fault" "scene" "--exercise-retry"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_retry_scene" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+raytracing: recovered owned RT creation fault: scene
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/retry-scene.png at 128x96
+raytracing: triangles=4 AS=7552 bytes, scene=2.46618 ms, pipeline=18.102014 ms
+<end of output>
+Test time =   0.28 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_retry_scene" end time: Nov 16 18:32 PST
+"raytracing_retry_scene" time elapsed: 00:00:00
+----------------------------------------------------------
+
+315/327 Testing: raytracing_retry_pipeline
+315/327 Test: raytracing_retry_pipeline
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_retry_pipeline" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/retry-pipeline.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/retry-pipeline.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--fault" "pipeline" "--exercise-retry"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_retry_pipeline" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+raytracing: recovered owned RT creation fault: pipeline
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/retry-pipeline.png at 128x96
+raytracing: triangles=4 AS=7552 bytes, scene=2.801141 ms, pipeline=5.924404 ms
+<end of output>
+Test time =   0.30 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_retry_pipeline" end time: Nov 16 18:32 PST
+"raytracing_retry_pipeline" time elapsed: 00:00:00
+----------------------------------------------------------
+
+316/327 Testing: raytracing_retry_target
+316/327 Test: raytracing_retry_target
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_retry_target" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/retry-target.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/retry-target.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--fault" "target" "--exercise-retry"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_retry_target" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+raytracing: recovered owned RT creation fault: target
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/retry-target.png at 128x96
+raytracing: triangles=4 AS=7552 bytes, scene=3.987336 ms, pipeline=18.098903 ms
+<end of output>
+Test time =   0.28 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_retry_target" end time: Nov 16 18:32 PST
+"raytracing_retry_target" time elapsed: 00:00:00
+----------------------------------------------------------
+
+317/327 Testing: raytracing_atmosphere_reflection
+317/327 Test: raytracing_atmosphere_reflection
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_atmosphere_reflection" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/reflection-smoke.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/reflection-smoke.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "reflection-fixture" "--environment" "atmosphere" "--target-y" ".55"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_atmosphere_reflection" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/reflection-smoke.png at 128x96
+raytracing: triangles=16178 AS=1024128 bytes, scene=6.546457 ms, pipeline=17.608871 ms
+<end of output>
+Test time =   0.48 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_atmosphere_reflection" end time: Nov 16 18:32 PST
+"raytracing_atmosphere_reflection" time elapsed: 00:00:00
+----------------------------------------------------------
+
+318/327 Testing: raytracing_atmosphere_refraction
+318/327 Test: raytracing_atmosphere_refraction
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_atmosphere_refraction" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/refraction-smoke.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/refraction-smoke.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "refraction-fixture" "--environment" "atmosphere" "--target-y" ".55"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_atmosphere_refraction" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/refraction-smoke.png at 128x96
+raytracing: triangles=58 AS=22400 bytes, scene=5.134871 ms, pipeline=17.40682 ms
+<end of output>
+Test time =   0.47 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_atmosphere_refraction" end time: Nov 16 18:32 PST
+"raytracing_atmosphere_refraction" time elapsed: 00:00:00
+----------------------------------------------------------
+
+319/327 Testing: raytracing_atmosphere_retry
+319/327 Test: raytracing_atmosphere_retry
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_atmosphere_retry" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/atmosphere-retry.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/atmosphere-retry.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "reflection-fixture" "--environment" "atmosphere" "--fault" "pipeline" "--exercise-retry"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_atmosphere_retry" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+raytracing: recovered owned RT creation fault: pipeline
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/atmosphere-retry.png at 128x96
+raytracing: triangles=16178 AS=1024128 bytes, scene=4.86991 ms, pipeline=5.808074 ms
+<end of output>
+Test time =   0.72 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_atmosphere_retry" end time: Nov 16 18:32 PST
+"raytracing_atmosphere_retry" time elapsed: 00:00:00
+----------------------------------------------------------
+
+320/327 Testing: raytracing_materials_environment
+320/327 Test: raytracing_materials_environment
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_materials_environment" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-environment.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-environment.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "materials" "--samples" "8"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_materials_environment" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-environment.png at 128x96
+raytracing: triangles=229504 AS=3265152 bytes, scene=10.897684 ms, pipeline=16.953609 ms
+<end of output>
+Test time =   0.51 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_materials_environment" end time: Nov 16 18:32 PST
+"raytracing_materials_environment" time elapsed: 00:00:00
+----------------------------------------------------------
+
+321/327 Testing: raytracing_materials_scene
+321/327 Test: raytracing_materials_scene
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_materials_scene" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-scene.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-scene.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "materials" "--samples" "8" "--reflection-source" "scene"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_materials_scene" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-scene.png at 128x96
+raytracing: triangles=229504 AS=3265152 bytes, scene=10.598603 ms, pipeline=16.638408 ms
+<end of output>
+Test time =   0.52 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_materials_scene" end time: Nov 16 18:32 PST
+"raytracing_materials_scene" time elapsed: 00:00:00
+----------------------------------------------------------
+
+322/327 Testing: raytracing_materials_retry_pipeline
+322/327 Test: raytracing_materials_retry_pipeline
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_materials_retry_pipeline" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-retry-pipeline.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-retry-pipeline.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "materials" "--samples" "8" "--fault" "pipeline" "--exercise-retry"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_materials_retry_pipeline" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+raytracing: recovered owned RT creation fault: pipeline
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-retry-pipeline.png at 128x96
+raytracing: triangles=229504 AS=3265152 bytes, scene=7.848172 ms, pipeline=5.875343 ms
+<end of output>
+Test time =   0.74 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_materials_retry_pipeline" end time: Nov 16 18:32 PST
+"raytracing_materials_retry_pipeline" time elapsed: 00:00:00
+----------------------------------------------------------
+
+323/327 Testing: raytracing_materials_retry_target
+323/327 Test: raytracing_materials_retry_target
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_materials_retry_target" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-retry-target.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-retry-target.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "materials" "--samples" "8" "--fault" "target" "--exercise-retry"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_materials_retry_target" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+raytracing: recovered owned RT creation fault: target
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-retry-target.png at 128x96
+raytracing: triangles=229504 AS=3265152 bytes, scene=10.125361 ms, pipeline=16.451057 ms
+<end of output>
+Test time =   0.51 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_materials_retry_target" end time: Nov 16 18:32 PST
+"raytracing_materials_retry_target" time elapsed: 00:00:00
+----------------------------------------------------------
+
+324/327 Testing: raytracing_materials_glass
+324/327 Test: raytracing_materials_glass
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_materials_glass" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-glass.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-glass.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "materials" "--material" "glass" "--samples" "8"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_materials_glass" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-glass.png at 128x96
+raytracing: triangles=229504 AS=3265152 bytes, scene=10.266231 ms, pipeline=16.130445 ms
+<end of output>
+Test time =   0.50 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_materials_glass" end time: Nov 16 18:32 PST
+"raytracing_materials_glass" time elapsed: 00:00:00
+----------------------------------------------------------
+
+325/327 Testing: raytracing_materials_frosted-glass
+325/327 Test: raytracing_materials_frosted-glass
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_materials_frosted-glass" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-frosted-glass.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-frosted-glass.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "materials" "--material" "frosted-glass" "--samples" "8"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_materials_frosted-glass" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-frosted-glass.png at 128x96
+raytracing: triangles=229504 AS=3265152 bytes, scene=10.719964 ms, pipeline=16.244326 ms
+<end of output>
+Test time =   0.50 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_materials_frosted-glass" end time: Nov 16 18:32 PST
+"raytracing_materials_frosted-glass" time elapsed: 00:00:00
+----------------------------------------------------------
+
+326/327 Testing: raytracing_materials_gallery
+326/327 Test: raytracing_materials_gallery
+Command: "/bin/sh" "-c" "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f "$output" "$skip_marker"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS "$target" --headless --width "$width" --height "$height" "$@" --output "$output" 2>&1); status=$?; printf '%s
+' "$out"; if printf '%s
+' "$out" | grep -q 'vulkan validation error'; then exit 1; fi; if [ "$status" -ne 0 ]; then if printf '%s
+' "$out" | grep -Eq "$skip_re"; then touch "$skip_marker"; exit 77; fi; exit "$status"; fi; if ! printf '%s
+' "$out" | grep -q 'headless_png:'; then printf 'headless PNG marker missing
+'; exit 1; fi; test -s "$output"; sig=$(od -An -tx1 -N8 "$output" | tr -d ' \n'); test "$sig" = "89504e470d0a1a0a"" "raytracing_materials_gallery" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-gallery.png" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-gallery.png.skip" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "128" "96" "--require-validation" "--scene" "materials" "--material" "gallery" "--samples" "8"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_materials_gallery" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/materials-gallery.png at 128x96
+raytracing: triangles=229504 AS=3265152 bytes, scene=10.532402 ms, pipeline=17.25405 ms
+<end of output>
+Test time =   0.57 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_materials_gallery" end time: Nov 16 18:32 PST
+"raytracing_materials_gallery" time elapsed: 00:00:00
+----------------------------------------------------------
+
+327/327 Testing: raytracing_sky_refresh
+327/327 Test: raytracing_sky_refresh
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/check_refresh.py" "--binary" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing" "--output" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/sky-refresh"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing
+"raytracing_sky_refresh" start time: Nov 16 18:32 PST
+Output:
+----------------------------------------------------------
+{
+  "passed": true,
+  "command": [
+    "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+    "--headless",
+    "--headless-render-only",
+    "--frames",
+    "90",
+    "--width",
+    "192",
+    "--height",
+    "128",
+    "--require-validation",
+    "--scene",
+    "reflection-fixture",
+    "--environment",
+    "atmosphere",
+    "--target-y",
+    ".55",
+    "--sun-speed",
+    ".2",
+    "--metrics",
+    "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/sky-refresh/metrics.json"
+  ],
+  "sky_generations": 7,
+  "as_builds": 7,
+  "target_generations": 1,
+  "completed_frames": 90
+}
+
+<end of output>
+Test time =   0.48 sec
+----------------------------------------------------------
+Test Passed.
+"raytracing_sky_refresh" end time: Nov 16 18:32 PST
+"raytracing_sky_refresh" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Nov 16 18:32 PST
+
+core =   0.42 sec*proc
+
+gltf =   0.42 sec*proc
+
+gpu =   9.55 sec*proc
+
+headless =   9.55 sec*proc
+
+material =   3.85 sec*proc
+
+sky =   6.00 sec*proc

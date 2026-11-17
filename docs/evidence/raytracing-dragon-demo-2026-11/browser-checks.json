@@ -1,0 +1,13 @@
+{
+  "url": "http://starship:8787/reports/a9552bb10b43a53f3fb280516ebd1791f964c895352447c9d19c858e1846a619/",
+  "http_delivery_verified": true,
+  "wide_detail_sample_and_bare_slab_images_loaded": true,
+  "comparison_split_buttons_checked": true,
+  "rt4_rt2_forward_videos_play_pause_and_chapter_seek_checked": true,
+  "decoded_video_extent": [
+    1920,
+    1080
+  ],
+  "horizontal_overflow": false,
+  "scope": "desktop Chrome report controls; no mobile or physical-display acceptance claim"
+}

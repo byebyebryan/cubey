@@ -6,6 +6,10 @@ namespace cubey::projects::raytracing {
 struct Config {
     host::CommonRunConfig common;
     std::string scene = "fixture", view = "final";
+    std::string renderer = "rt", transport_mode = "sampled";
+    std::string forward_transmission_source = "screen";
+    std::uint32_t demo_samples = 4;
+    float forward_thickness = .2F;
     std::filesystem::path model, metrics, save_config, query_output;
     std::filesystem::path optics_output, hdr_output, scene_output;
     std::string environment = "legacy", reflection_source = "scene", transmission_source = "scene";
@@ -40,6 +44,7 @@ struct Config {
     bool pattern = true, bump = true;
     float ior = 1.5F, attenuation_red = .94F, attenuation_green = .98F, attenuation_blue = .99F;
     float attenuation_distance = 1.F, throughput_cutoff = .0001F;
+    float firefly_clamp = 0;
     float orbit_speed = 0, sun_speed = 0;
     int max_events = 8, max_path_rays = 32, max_total_rays = 128;
 #ifdef CUBEY_RT_RAY_JOURNAL
@@ -53,6 +58,12 @@ inline bool sampled_material_scene(const Config& c) {
 }
 inline bool sampled_dragon_scene(const Config& c) {
     return c.scene == "dragon-materials" || c.scene == "dragon-optics";
+}
+inline bool demo_transport(const Config& c) {
+    return c.renderer == "rt" && c.transport_mode == "demo";
+}
+inline std::uint32_t frame_sample_target(const Config& c) {
+    return demo_transport(c) ? c.demo_samples : c.samples;
 }
 inline int dump_mode(const Config& c) {
     return !c.query_output.empty()
@@ -83,14 +94,41 @@ inline config::Schema schema(Config& c) {
                          "refraction-fixture", "refraction-dragon", "slab",
                          "materials",          "dragon-materials",  "dragon-optics"};
     auto view = opt("view", ValueType::Enum);
-    view.enum_values = {
-        "final",       "geometric-normal", "shading-normal", "depth",       "instance-id",
-        "barycentric", "secondary-id",     "path-class",     "path-events", "transport-limit",
-        "environment", "base-color",       "roughness",      "metallic",    "footprint",
-        "diffuse",     "specular",         "sheen"};
+    view.enum_values = {"final",
+                        "geometric-normal",
+                        "shading-normal",
+                        "depth",
+                        "instance-id",
+                        "barycentric",
+                        "secondary-id",
+                        "path-class",
+                        "path-events",
+                        "transport-limit",
+                        "environment",
+                        "base-color",
+                        "roughness",
+                        "metallic",
+                        "footprint",
+                        "diffuse",
+                        "specular",
+                        "sheen",
+                        "transmission-ray",
+                        "transmission-exit",
+                        "transmission-radiance"};
     auto fault = opt("fault", ValueType::Enum);
     fault.enum_values = {"none", "scene", "pipeline", "target"};
     b.bind(scene, c.scene).bind(view, c.view).bind(fault, c.fault);
+    auto renderer = opt("renderer", ValueType::Enum);
+    renderer.enum_values = {"rt", "forward"};
+    auto transport = opt("transport-mode", ValueType::Enum);
+    transport.enum_values = {"sampled", "demo"};
+    b.bind(renderer, c.renderer)
+        .bind(transport, c.transport_mode)
+        .bind(opt("demo-samples", ValueType::UInt32), c.demo_samples)
+        .bind(opt("forward-thickness", ValueType::Float), c.forward_thickness);
+    auto forward_source = opt("forward-transmission-source", ValueType::Enum);
+    forward_source.enum_values = {"screen", "environment", "hybrid"};
+    b.bind(forward_source, c.forward_transmission_source);
     auto environment = opt("environment", ValueType::Enum);
     environment.enum_values = {"legacy", "atmosphere"};
     auto reflection = opt("reflection-source", ValueType::Enum);
@@ -119,6 +157,9 @@ inline config::Schema schema(Config& c) {
     b.bind(opt("max-events", ValueType::Int), c.max_events)
         .bind(opt("max-path-rays", ValueType::Int), c.max_path_rays)
         .bind(opt("max-total-rays", ValueType::Int), c.max_total_rays);
+    auto firefly_clamp = opt("firefly-clamp", ValueType::Float);
+    firefly_clamp.help = "Maximum mean RGB of an HDR contribution; zero keeps raw dragon transport";
+    b.bind(firefly_clamp, c.firefly_clamp);
     for (auto [name, value] : {std::pair{"yaw", &c.yaw},
                                {"pitch", &c.pitch},
                                {"distance", &c.distance},
@@ -205,6 +246,16 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
     auto c = host::parse_configured_app<Config>(argc, argv, schema, parsed);
     if (parsed->write_config_template_path)
         return c;
+    if ((c.renderer == "forward" || c.transport_mode == "demo") && c.scene != "dragon-optics")
+        throw std::invalid_argument("forward comparison and demo transport require dragon-optics");
+    if (c.demo_samples != 2 && c.demo_samples != 4)
+        throw std::invalid_argument("demo samples must be 2 or 4 fixed samples per frame");
+    if (!std::isfinite(c.forward_thickness) || c.forward_thickness <= 0 || c.forward_thickness > 2)
+        throw std::invalid_argument("forward thickness must be in (0,2]");
+    if (c.renderer == "forward" &&
+        (dump_mode(c) == 1 || dump_mode(c) == 2 || c.exercise_retry || c.fault != "none"))
+        throw std::invalid_argument(
+            "forward comparison does not support RT query dumps or retry faults");
     const bool sampled_dragon = sampled_dragon_scene(c);
     if (sampled_dragon) {
         auto fallback = [&](const char* path, auto& value, auto next) {
@@ -223,6 +274,7 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         fallback("throughput-cutoff", c.throughput_cutoff, 0.F);
         if (c.scene == "dragon-optics") {
             fallback("material", c.material, std::string("glass"));
+            fallback("firefly-clamp", c.firefly_clamp, 100.F);
             fallback("max-events", c.max_events, 128);
             fallback("max-path-rays", c.max_path_rays, 1024);
             fallback("max-total-rays", c.max_total_rays, 4096);
@@ -279,6 +331,26 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         (c.material_roughness != -1 && (c.material_roughness < .05F || c.material_roughness > 1)) ||
         c.samples < 1 || c.samples > 8192 || c.stress_edits > 10000)
         throw std::invalid_argument("invalid workshop sample target or material roughness");
+    if (!std::isfinite(c.firefly_clamp) || c.firefly_clamp < 0 || c.firefly_clamp > 1000000)
+        throw std::invalid_argument("firefly clamp must be finite and between zero and 1000000");
+    if (c.firefly_clamp > 0 && c.scene != "dragon-optics")
+        throw std::invalid_argument("firefly clamp currently requires the optical dragon scene");
+    const bool forward_view = c.view == "final" || c.view == "shading-normal" ||
+                              c.view == "geometric-normal" || c.view == "base-color" ||
+                              c.view == "roughness" || c.view == "metallic" ||
+                              c.view == "transmission-ray" || c.view == "transmission-exit" ||
+                              c.view == "transmission-radiance";
+    if (c.renderer != "forward" && c.view.starts_with("transmission-"))
+        throw std::invalid_argument("transmission component views require the forward renderer");
+    if (c.renderer == "forward" &&
+        (c.shadows || !forward_view || c.stress_edits || c.material_contract || c.bsdf_contract ||
+         c.optics_contract || c.dielectric_contract || c.workshop_lighting != "combined" ||
+         c.intensity != 3 || !c.smooth_normals))
+        throw std::invalid_argument("forward comparison requires --no-shadows, a supported view, "
+                                    "combined default lighting, smooth normals and no RT probes");
+    if (demo_transport(c) &&
+        (c.material_contract || c.bsdf_contract || c.optics_contract || c.dielectric_contract))
+        throw std::invalid_argument("demo transport does not support sampled contract probes");
     if (c.optical_pair != "none" &&
         (c.scene != "materials" || !c.common.headless || c.material != "gallery"))
         throw std::invalid_argument("optical pair controls require the headless materials gallery");

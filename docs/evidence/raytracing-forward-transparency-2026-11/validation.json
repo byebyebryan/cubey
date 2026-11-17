@@ -1,0 +1,29 @@
+{
+  "report_http_delivery": "verified 200, entrypoint bytes verified",
+  "report_browser": "Chrome: wide/detail, all three pair selections, split buttons, marble pattern toggle, all images decoded; both clips readyState4, duration19.5333; playback reached end and seek controls work; no desktop horizontal overflow",
+  "report_ui_identical_to_prior_snapshot": true,
+  "final_report_changed_asset": "visibility.json records final executable; rendered page and media unchanged",
+  "regression_tests": {
+    "passed": 23,
+    "failed": 0
+  },
+  "documentation_tests": {
+    "passed": 9,
+    "failed": 0
+  },
+  "production_source_controls": {
+    "captures": 18,
+    "passed": true
+  },
+  "final_scene_visibility": {
+    "captures": 7,
+    "passed": true
+  },
+  "native_hybrid": {
+    "frames": 464,
+    "validation_clean": true,
+    "ray_tracing_enabled": false,
+    "as_bytes": 0
+  },
+  "scope": "Clear atmosphere, sharp glass; no desktop FPS, rough hybrid, GI, or optical accuracy claim"
+}

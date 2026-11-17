@@ -1,0 +1,187 @@
+Start testing: Nov 16 18:39 PST
+----------------------------------------------------------
+6/327 Testing: project_layout_hygiene
+6/327 Test: project_layout_hygiene
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tools/check_project_layout.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"project_layout_hygiene" start time: Nov 16 18:39 PST
+Output:
+----------------------------------------------------------
+PASS: project layout and current navigation
+<end of output>
+Test time =   0.25 sec
+----------------------------------------------------------
+Test Passed.
+"project_layout_hygiene" end time: Nov 16 18:39 PST
+"project_layout_hygiene" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/327 Testing: project_layout_rules
+7/327 Test: project_layout_rules
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tests/tools/test_project_layout.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"project_layout_rules" start time: Nov 16 18:39 PST
+Output:
+----------------------------------------------------------
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 0.192s
+
+OK
+<end of output>
+Test time =   0.23 sec
+----------------------------------------------------------
+Test Passed.
+"project_layout_rules" end time: Nov 16 18:39 PST
+"project_layout_rules" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/327 Testing: documentation_hygiene
+8/327 Test: documentation_hygiene
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tools/check_documentation.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"documentation_hygiene" start time: Nov 16 18:39 PST
+Output:
+----------------------------------------------------------
+PASS: documentation navigation
+<end of output>
+Test time =   0.62 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_hygiene" end time: Nov 16 18:39 PST
+"documentation_hygiene" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/327 Testing: documentation_media
+9/327 Test: documentation_media
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tools/check_documentation.py" "--check" "media"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"documentation_media" start time: Nov 16 18:39 PST
+Output:
+----------------------------------------------------------
+PASS: documentation media
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_media" end time: Nov 16 18:39 PST
+"documentation_media" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/327 Testing: documentation_rules
+10/327 Test: documentation_rules
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tests/tools/test_documentation.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"documentation_rules" start time: Nov 16 18:39 PST
+Output:
+----------------------------------------------------------
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 0.096s
+
+OK
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_rules" end time: Nov 16 18:39 PST
+"documentation_rules" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/327 Testing: documentation_cli_recipes
+11/327 Test: documentation_cli_recipes
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tools/check_documentation.py" "--check" "recipes" "--app-manifest" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/documented-apps.json"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"documentation_cli_recipes" start time: Nov 16 18:39 PST
+Output:
+----------------------------------------------------------
+PASS: documentation recipes
+<end of output>
+Test time =   2.03 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_cli_recipes" end time: Nov 16 18:39 PST
+"documentation_cli_recipes" time elapsed: 00:00:02
+----------------------------------------------------------
+
+101/327 Testing: fluid_25d_presentation_docs
+101/327 Test: fluid_25d_presentation_docs
+Command: "/home/bryan/.local/bin/python3.12" "-B" "-m" "unittest" "discover" "-s" "/home/bryan/code/cubey-raytracing-first-pass/studies/fluid_25d/harness" "-p" "test_presentation_docs_v1.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/fluid/fluid_25d
+"fluid_25d_presentation_docs" start time: Nov 16 18:39 PST
+Output:
+----------------------------------------------------------
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 0.061s
+
+OK
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Passed.
+"fluid_25d_presentation_docs" end time: Nov 16 18:39 PST
+"fluid_25d_presentation_docs" time elapsed: 00:00:00
+----------------------------------------------------------
+
+103/327 Testing: fluid_25d_presentation_media
+103/327 Test: fluid_25d_presentation_media
+Command: "/home/bryan/.local/bin/python3.12" "-B" "-m" "unittest" "discover" "-s" "/home/bryan/code/cubey-raytracing-first-pass/studies/fluid_25d/harness" "-p" "test_presentation_media_v1.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/fluid/fluid_25d
+"fluid_25d_presentation_media" start time: Nov 16 18:39 PST
+Output:
+----------------------------------------------------------
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.012s
+
+OK
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"fluid_25d_presentation_media" end time: Nov 16 18:39 PST
+"fluid_25d_presentation_media" time elapsed: 00:00:00
+----------------------------------------------------------
+
+218/327 Testing: gltf_viewer_showcase_media
+218/327 Test: gltf_viewer_showcase_media
+Command: "/home/bryan/.local/bin/python3.12" "-B" "-m" "unittest" "discover" "-s" "/home/bryan/code/cubey-raytracing-first-pass/studies/gltf_viewer" "-p" "test_showcase_media_v1.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/gltf_viewer
+"gltf_viewer_showcase_media" start time: Nov 16 18:39 PST
+Output:
+----------------------------------------------------------
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.008s
+
+OK
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"gltf_viewer_showcase_media" end time: Nov 16 18:39 PST
+"gltf_viewer_showcase_media" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Nov 16 18:39 PST
+
+config =   2.03 sec*proc
+
+docs =   3.30 sec*proc
+
+fluid =   0.14 sec*proc
+
+gltf =   0.04 sec*proc
+
+media =   0.04 sec*proc
+
+policy =   1.27 sec*proc
+
+presentation =   0.14 sec*proc
+
+structural =   0.04 sec*proc
+
+unit =   3.44 sec*proc
+
+viewer =   0.04 sec*proc

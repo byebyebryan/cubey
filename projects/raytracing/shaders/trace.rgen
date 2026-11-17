@@ -16,7 +16,7 @@ layout(set=0,binding=9) uniform samplerCube previousEnvironment;
 layout(set=0,binding=10) uniform sampler2D brdfLut;
 layout(std140,set=0,binding=11) uniform Environment {
  vec4 directColor; vec4 irradiance[9]; vec4 options; vec4 transport;
- ivec4 limits; vec4 glass; vec4 attenuation;
+ ivec4 limits; vec4 glass; vec4 attenuation; vec4 noise;
 } environment;
 struct Material { vec4 base; vec4 optics; vec4 attenuation; vec4 reflectance; };
 layout(std430,set=0,binding=12) readonly buffer Materials { Material materials[]; };

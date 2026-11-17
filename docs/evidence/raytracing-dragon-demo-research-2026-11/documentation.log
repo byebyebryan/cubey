@@ -1,0 +1,35 @@
+Test project /home/bryan/code/cubey-raytracing-first-pass/build/dev
+    Start   6: project_layout_hygiene
+1/9 Test   #6: project_layout_hygiene ...........   Passed    0.23 sec
+    Start   7: project_layout_rules
+2/9 Test   #7: project_layout_rules .............   Passed    0.22 sec
+    Start   8: documentation_hygiene
+3/9 Test   #8: documentation_hygiene ............   Passed    0.62 sec
+    Start   9: documentation_media
+4/9 Test   #9: documentation_media ..............   Passed    0.04 sec
+    Start  10: documentation_rules
+5/9 Test  #10: documentation_rules ..............   Passed    0.13 sec
+    Start  11: documentation_cli_recipes
+6/9 Test  #11: documentation_cli_recipes ........   Passed    2.04 sec
+    Start 101: fluid_25d_presentation_docs
+7/9 Test #101: fluid_25d_presentation_docs ......   Passed    0.10 sec
+    Start 103: fluid_25d_presentation_media
+8/9 Test #103: fluid_25d_presentation_media .....   Passed    0.05 sec
+    Start 218: gltf_viewer_showcase_media
+9/9 Test #218: gltf_viewer_showcase_media .......   Passed    0.04 sec
+
+100% tests passed out of 9
+
+Label Time Summary:
+config          =   2.04 sec*proc (1 test)
+docs            =   3.28 sec*proc (6 tests)
+fluid           =   0.14 sec*proc (2 tests)
+gltf            =   0.04 sec*proc (1 test)
+media           =   0.04 sec*proc (1 test)
+policy          =   1.23 sec*proc (5 tests)
+presentation    =   0.14 sec*proc (2 tests)
+structural      =   0.04 sec*proc (1 test)
+unit            =   3.42 sec*proc (8 tests)
+viewer          =   0.04 sec*proc (1 test)
+
+Total Test time (real) =   3.47 sec

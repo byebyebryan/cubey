@@ -1,0 +1,24 @@
+{
+  "ordinary_runtime_preserved": true,
+  "ordinary_raytracing_source_preserved": true,
+  "accepted_model_and_recipes_preserved": true,
+  "ordinary_commit": "2e86702d701211a6f0394583ec485075f3ec3c93",
+  "broad_preview_compiled_shader_bytes_match_ordinary": true,
+  "ordinary_extra_shader_artifacts": [
+    "primary.rahit.spv"
+  ],
+  "foundation_libraries_preserved": true,
+  "documentation_exit_code": 0,
+  "ordinary_captures": 12,
+  "private_lighting_captures": 4,
+  "private_pixel_probes": 3,
+  "sample_journal_sha256": {
+    "unstable-s19.journal.json": "71905a89ddcada4cacf6102513caf2638f96127a2ad66e0f0a15eeee8b68aed2",
+    "unstable-s43.journal.json": "226285fb2d6110901d5ac81be51e84dd51cf7a80014acd3672e0bae4635af8cd",
+    "persistent-s19.journal.json": "4cb3f4bba73cd5cc1f4aa30d529962f03a06e2559f82a4fe7c1d16c8e8895808"
+  },
+  "browser_comparisons_checked": 14,
+  "report_url": "http://starship:8787/reports/f708b465ab998d9f25ef9e0090b34d00b95e514d163823badc044e604d38e891/",
+  "research_committed": false,
+  "public_site_changed": false
+}

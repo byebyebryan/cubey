@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "renderer": "forward",
+  "as_bytes": 0,
+  "samples": 1,
+  "frames": 464,
+  "validation": true,
+  "recording": true
+}

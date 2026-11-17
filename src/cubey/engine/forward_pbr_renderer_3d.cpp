@@ -84,7 +84,8 @@ void validate_forward_pbr_renderer_3d_render_request(
         throw std::runtime_error("forward PBR render request requires scene resources");
     }
     if (request.settings.transmission_source != ForwardPbrTransmissionSource::Screen &&
-        request.settings.transmission_source != ForwardPbrTransmissionSource::Environment)
+        request.settings.transmission_source != ForwardPbrTransmissionSource::Environment &&
+        request.settings.transmission_source != ForwardPbrTransmissionSource::Hybrid)
         throw std::runtime_error("unknown forward transmission source");
     if (request.scene_readback && (request.scene_readback->buffer == VK_NULL_HANDLE ||
                                    request.scene_readback->byte_size <

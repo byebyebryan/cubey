@@ -16,8 +16,9 @@ struct EnvironmentUniform {
     math::Vec4 options{}, transport{};
     glm::ivec4 limits{};
     math::Vec4 glass{}, attenuation{}; // attenuation.w: guarded smooth dragon interface
+    math::Vec4 noise{};                // x: mean-RGB cap per weighted HDR deposit; zero disables it
 };
-static_assert(sizeof(EnvironmentUniform) == 240);
+static_assert(sizeof(EnvironmentUniform) == 256);
 class Environment {
   public:
     Environment(vulkan::Device&, vulkan::GpuRuntime&, const Config&, std::uint32_t slots);
@@ -47,6 +48,12 @@ class Environment {
     std::uint64_t texture_allocation_bytes(const vulkan::Device&) const;
     const render::GeneratedPbrEnvironment& fallback() const {
         return *fallback_;
+    }
+    const AtmosphereEnvironmentRuntime& shared_atmosphere() const {
+        return atmosphere_;
+    }
+    render::AtmosphereBackgroundTextureBindings background_bindings() const {
+        return placeholders_->bindings();
     }
 
   private:

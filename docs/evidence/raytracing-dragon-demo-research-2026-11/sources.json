@@ -1,0 +1,26 @@
+{
+  "researched_on": "2026-11-16",
+  "primary_sources": [
+    {
+      "name": "PBRT Whitted integrator",
+      "url": "https://www.pbr-book.org/3ed-2018/Introduction/pbrt_System_Overview#AnIntegratorforWhittedRayTracing",
+      "relevance": "Explicit sharp reflection/transmission and bounded recursion; no promise of arbitrary-depth branching at low cost"
+    },
+    {
+      "name": "NVIDIA UE4 ray tracing integration, historical precedent",
+      "url": "https://developer.nvidia.com/blog/?p=17382",
+      "relevance": "Hybrid cached/environment shading for rougher reflections; not an engine/SDK adoption proposal"
+    },
+    {
+      "name": "Epic UE4.27 ray traced translucency",
+      "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/real-time-ray-tracing?application_version=4.27",
+      "relevance": "Insufficient refraction depth darkens volumes; do not apply a naive two-interface limit to the nonconvex dragon"
+    },
+    {
+      "name": "Simple Environment Map Filtering Using Ray Cones and Ray Differentials",
+      "url": "https://research.nvidia.com/publication/2019-03_simple-environment-map-filtering-using-ray-cones-and-ray-differentials",
+      "relevance": "Filtering is distinct from deterministic branching; no new differential/cone solver is included in the proposed first pass"
+    }
+  ],
+  "candidate_not_implemented": true
+}

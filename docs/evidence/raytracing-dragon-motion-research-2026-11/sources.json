@@ -1,0 +1,70 @@
+{
+  "researched_on": "2026-11-16",
+  "scope": "Research only: moving-camera reconstruction for the current sharp-glass dragon",
+  "repositories": [
+    {
+      "name": "NRD",
+      "version": "4.18.0",
+      "sha": "90dea8bd91ec6b58d0f90cb6adf53c7da613b82c",
+      "url": "https://github.com/NVIDIA-RTX/NRD/blob/90dea8bd91ec6b58d0f90cb6adf53c7da613b82c/README.md",
+      "findings": [
+        "Spatiotemporal denoiser guides, not an RGB-only drop-in",
+        "Linux scripts, Vulkan integration and embedded SPIR-V documented",
+        "Core denoisers target opaque surfaces; transparency needs application handling"
+      ]
+    },
+    {
+      "name": "RTXPT",
+      "version": "1.9.0",
+      "sha": "303b408ab81790a5051abd7573830b7a4112eb8e",
+      "url": "https://github.com/NVIDIA-RTX/RTXPT/blob/303b408ab81790a5051abd7573830b7a4112eb8e/Docs/Design.md",
+      "findings": [
+        "Pure specular pre-pass and path decomposition",
+        "Separate guides for primary/reflected/transmitted layers",
+        "NRD instances per layer; DLSS-RR blends guides and uses dominant depth/motion"
+      ]
+    },
+    {
+      "name": "NRD-Sample simplex",
+      "sha": "35f5432ccbec3d234230b43a7216b40e65a58bdc",
+      "url": "https://github.com/NVIDIA-RTX/NRD-Sample/blob/35f5432ccbec3d234230b43a7216b40e65a58bdc/Shaders/TraceTransparent.cs.hlsl",
+      "supporting_url": "https://github.com/NVIDIA-RTX/NRD-Sample/blob/35f5432ccbec3d234230b43a7216b40e65a58bdc/Shaders/RaytracingShared.hlsli",
+      "findings": [
+        "Separate transparent pass traces reflection and refraction at the first glass hit",
+        "Reuses current denoised opaque radiance with confidence checks; SHARC/lighting fallback",
+        "Curved-glass motion uses a documented heuristic, then TAA/upscaling",
+        "Glass extinction has a nonconvex-geometry TODO; not a replacement for Cubey's qualified boundary tracking"
+      ]
+    }
+  ],
+  "other_primary_sources": [
+    {
+      "name": "SVGF",
+      "url": "https://research.nvidia.com/labs/rtr/publication/schied2017spatiotemporal/",
+      "finding": "Temporal reuse plus variance-guided spatial reconstruction from low-sample input"
+    },
+    {
+      "name": "Primary surface replacement",
+      "url": "https://developer.nvidia.com/blog/rendering-perfect-reflections-and-refractions-in-path-traced-games/",
+      "finding": "Secondary-surface guides; simple mirror transform restricted to static flat mirrors"
+    },
+    {
+      "name": "OIDN RT filter",
+      "url": "https://www.openimagedenoise.org/documentation.html#rt",
+      "finding": "Documentation explicitly says the RT filter is not temporally stable"
+    },
+    {
+      "name": "DLSS-RR programming guide",
+      "version": "2.14.16 as read",
+      "url": "https://github.com/NVIDIA-RTX/Streamline/blob/main/docs/ProgrammingGuideDLSS_RR.md",
+      "finding": "Requires color, albedo, normal/roughness, depth/motion and specular tracking inputs; Linux deployment not qualified in this pass"
+    },
+    {
+      "name": "Spatiotemporal blue noise",
+      "url": "https://developer.nvidia.com/blog/rendering-in-real-time-with-spatiotemporal-blue-noise-textures-part-1/",
+      "finding": "Sampling aid; not a standalone reconstruction solution; motion and high-dimensional-path limitations documented"
+    }
+  ],
+  "local_evidence": "outputs/raytracing/dragon-motion-preview-20261116/summary.json",
+  "no_sdk_build_install_or_renderer_change": true
+}

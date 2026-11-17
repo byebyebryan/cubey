@@ -1,0 +1,14 @@
+{
+  "hybrid-wide": {
+    "finite_hdr": true,
+    "min": 0.07161257416009903,
+    "max": 1.1021556854248047,
+    "sync_validation_clean": true
+  },
+  "hybrid-detail": {
+    "finite_hdr": true,
+    "min": 0.06656236946582794,
+    "max": 1.1038600206375122,
+    "sync_validation_clean": true
+  }
+}

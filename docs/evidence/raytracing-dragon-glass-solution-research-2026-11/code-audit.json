@@ -1,0 +1,22 @@
+{
+  "two_event_fresnel_split": {
+    "file": "projects/raytracing/shaders/material_workshop.glsl",
+    "line": 312,
+    "source": "bool split=depth<2&&eta!=1;"
+  },
+  "point_solar_membership": {
+    "file": "projects/raytracing/shaders/material_workshop.glsl",
+    "line": 49,
+    "source": "vec3 solar=solarPdf>0?"
+  },
+  "zero_optical_normal_curvature": {
+    "file": "projects/raytracing/shaders/material_workshop.glsl",
+    "line": 355,
+    "source": "float curvature=environment.glass.w>.5?0:workshopCurvature(s,m.objectScale);"
+  },
+  "stratified_primary_camera": {
+    "file": "projects/raytracing/shaders/material_workshop.glsl",
+    "line": 210,
+    "source": "vec2 uv=(vec2(pixel)+rtStratified(completed,0u))/vec2(gl_LaunchSizeEXT.xy),screen=uv*2-1;"
+  }
+}

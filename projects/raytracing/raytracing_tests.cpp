@@ -1,6 +1,7 @@
 #include "raytracing_config.h"
 #include "raytracing_dragon_support.h"
 #include "raytracing_environment.h"
+#include "raytracing_forward.h"
 #include "raytracing_layout.h"
 #include "raytracing_material_geometry.h"
 #include "raytracing_materials.h"
@@ -206,18 +207,94 @@ int main() {
         const auto existing_file =
             (std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "glass.json").string();
         auto optics_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str()});
+        require(optics_config.renderer == "rt" && optics_config.transport_mode == "sampled",
+                "sampled RT remains the ordinary default");
+        auto demo_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                                  "--transport-mode", "demo", "--samples", "8192"});
+        require(frame_sample_target(demo_config) == 4,
+                "demo frames never acquire an offline sample advantage");
+        Config demo_copy;
+        schema(demo_copy).apply_json(schema(demo_config).template_json());
+        require(demo_copy.transport_mode == "demo" && frame_sample_target(demo_copy) == 4,
+                "demo policy survives saved views");
+        auto forward_config =
+            parse({"--scene", "dragon-optics", "--model", existing_file.c_str(), "--renderer",
+                   "forward", "--no-shadows", "--forward-thickness", ".2"});
+        require(forward_config.renderer == "forward" && !demo_transport(forward_config),
+                "forward comparison is a separate non-RT rendering path");
+        forward_config.forward_transmission_source = "environment";
+        Config forward_copy;
+        schema(forward_copy).apply_json(schema(forward_config).template_json());
+        require(forward_copy.forward_transmission_source == "environment",
+                "forward transmission source survives saved views");
+        schema(forward_copy).apply_json({{"forward-transmission-source", "hybrid"}});
+        Config hybrid_copy;
+        schema(hybrid_copy).apply_json(schema(forward_copy).template_json());
+        require(hybrid_copy.forward_transmission_source == "hybrid",
+                "hybrid transmission survives saved views");
+        for (auto n :
+             {cubey::math::Vec3(1, 0, 0), cubey::math::Vec3(0, 1, 0), cubey::math::Vec3(0, 0, 1),
+              glm::normalize(cubey::math::Vec3(.3F, .8F, .2F))}) {
+            Vertex source{{.1F, .2F, .3F, 1}, {n, 0}};
+            const auto converted = forward_vertex(source);
+            const cubey::math::Vec3 tangent(converted.tangent);
+            require(converted.position == cubey::math::Vec3(source.position) &&
+                        converted.normal == n && std::abs(glm::length(tangent) - 1) < 1e-6F &&
+                        std::abs(glm::dot(n, tangent)) < 1e-6F && converted.tangent.w == 1,
+                    "forward conversion preserves geometry and supplies a valid tangent frame");
+        }
+        auto forward_debug = parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                                    "--renderer", "forward", "--no-shadows", "--headless", "--view",
+                                    "transmission-ray", "--hdr-output", "audit.bin"});
+        require(forward_debug.view == "transmission-ray",
+                "forward exposes production ray diagnostics");
+        rejects([] { (void)parse({"--view", "transmission-ray"}); });
+        rejects([] { (void)parse({"--transport-mode", "demo"}); });
+        rejects([] { (void)parse({"--renderer", "forward"}); });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-optics", "--model", existing_file.c_str(), "--renderer",
+                         "forward"});
+        });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                         "--forward-thickness", "nan"});
+        });
         require(optics_config.material == "glass" && optics_config.max_events == 128 &&
-                    optics_config.smooth_normals &&
-                    optics_config.max_path_rays == 1024 && optics_config.max_total_rays == 4096 &&
+                    optics_config.smooth_normals && optics_config.max_path_rays == 1024 &&
+                    optics_config.max_total_rays == 4096 &&
                     optics_config.reflection_source == "scene" &&
                     optics_config.transmission_source == "scene",
                 "optical dragon uses full-scene sharp glass defaults");
-        auto geometric_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
-                                        "--no-smooth-normals"});
+        auto geometric_config = parse(
+            {"--scene", "dragon-optics", "--model", existing_file.c_str(), "--no-smooth-normals"});
         require(!geometric_config.smooth_normals, "geometric glass remains selectable");
         Config geometric_copy;
         schema(geometric_copy).apply_json(schema(geometric_config).template_json());
         require(!geometric_copy.smooth_normals, "glass normal choice survives saved config");
+        require(optics_config.firefly_clamp == 100,
+                "optical dragon defaults to the reviewed HDR contribution cap");
+        auto raw_config = parse(
+            {"--scene", "dragon-optics", "--model", existing_file.c_str(), "--firefly-clamp", "0"});
+        Config raw_copy;
+        schema(raw_copy).apply_json(schema(raw_config).template_json());
+        require(raw_config.firefly_clamp == 0 && raw_copy.firefly_clamp == 0,
+                "explicit raw transport survives scene defaults and saved config");
+        require(parse({}).firefly_clamp == 0 && workshop.firefly_clamp == 0 &&
+                    parse({"--scene", "dragon-materials", "--model", existing_file.c_str()})
+                            .firefly_clamp == 0,
+                "other scenes retain raw defaults");
+        auto clamped_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                                     "--firefly-clamp", "1000"});
+        Config clamped_copy;
+        schema(clamped_copy).apply_json(schema(clamped_config).template_json());
+        require(clamped_copy.firefly_clamp == 1000,
+                "HDR clamp survives saved config independently");
+        rejects([] { (void)parse({"--firefly-clamp", "1"}); });
+        for (const char* invalid : {"-1", "nan", "inf", "1000001"})
+            rejects([&] {
+                (void)parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                             "--firefly-clamp", invalid});
+            });
         require(parse({"--scene", "dragon-optics", "--model", existing_file.c_str(), "--max-events",
                        "256", "--max-path-rays", "2048", "--max-total-rays", "8192"})
                         .max_events == 256,

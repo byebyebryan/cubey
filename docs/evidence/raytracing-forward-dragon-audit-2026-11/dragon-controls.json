@@ -1,0 +1,588 @@
+{
+  "passed": true,
+  "binary_sha256": "e5729d03fe8c0d431da835297ce4da9477dc1e8e6fd32a6622d632ee53c52add",
+  "calls": [
+    {
+      "name": "ray",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-ray",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ray.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ray.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ray.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "exit",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-exit",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/exit.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/exit.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/exit.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "normal",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "shading-normal",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/normal.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/normal.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/normal.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "input-normal",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "geometric-normal",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/input-normal.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/input-normal.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/input-normal.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "base-color",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "base-color",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/base-color.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/base-color.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/base-color.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "roughness",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "roughness",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/roughness.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/roughness.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/roughness.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "metallic",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "metallic",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/metallic.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/metallic.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/metallic.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "ior-1.0",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-ray",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-1p0.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-1p0.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-1p0.json",
+        "--recipe-input",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-1.0.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "ior-1.33",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-ray",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-1p33.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-1p33.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-1p33.json",
+        "--recipe-input",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-1.33.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "ior-1.5",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-ray",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-1p5.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-1p5.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-1p5.json",
+        "--recipe-input",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-1.5.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "ior-2.5",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-ray",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-2p5.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-2p5.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/ior-2p5.json",
+        "--recipe-input",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-2.5.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "thin-ray",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-ray",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/thin-ray.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/thin-ray.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/thin-ray.json",
+        "--forward-thickness",
+        ".1"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "hidden-ray",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-ray",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/hidden-ray.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/hidden-ray.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/hidden-ray.json",
+        "--hide-dragon"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "final-screen",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "final",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/final-screen.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/final-screen.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/final-screen.json",
+        "--forward-transmission-source",
+        "screen"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "null-screen",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-radiance",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/null-screen.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/null-screen.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/null-screen.json",
+        "--forward-transmission-source",
+        "screen",
+        "--recipe-input",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-1.0.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "final-environment",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "final",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/final-environment.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/final-environment.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/final-environment.json",
+        "--forward-transmission-source",
+        "environment"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "null-environment",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "transmission-radiance",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/null-environment.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/null-environment.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/null-environment.json",
+        "--forward-transmission-source",
+        "environment",
+        "--recipe-input",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-1.0.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "neutral-final",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "final",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-final.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-final.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-final.json",
+        "--forward-transmission-source",
+        "environment",
+        "--recipe-input",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/neutral-1.5.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    },
+    {
+      "name": "absorbing-final",
+      "command": [
+        "build/dev/projects/raytracing/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-forward.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--view",
+        "final",
+        "--output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/absorbing-final.png",
+        "--hdr-output",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/absorbing-final.bin",
+        "--metrics",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/absorbing-final.json",
+        "--forward-transmission-source",
+        "environment",
+        "--recipe-input",
+        "outputs/raytracing/forward-dragon-audit-20261116/final-source-controls/absorbing.json"
+      ],
+      "validation_clean": true,
+      "finite": true
+    }
+  ],
+  "material_inputs": {
+    "base-color": {
+      "expected": 1,
+      "max_abs_error": 1.1920928955078125e-07
+    },
+    "roughness": {
+      "expected": 0.05,
+      "max_abs_error": 7.450580569168253e-10
+    },
+    "metallic": {
+      "expected": 0,
+      "max_abs_error": 0.0
+    }
+  },
+  "covered_glass_pixels": 6476,
+  "interior_pixels": 6468,
+  "optical_cases": [
+    {
+      "ior": 1.0,
+      "direction_error_degrees": {
+        "mean": 0.0002626325875834429,
+        "p99": 0.0005374015498564732,
+        "max": 0.0006430282805836727
+      },
+      "length_error_m": {
+        "mean": 3.4035766167882835e-07,
+        "p99": 1.2888512381713234e-06,
+        "max": 1.790900922171712e-06
+      }
+    },
+    {
+      "ior": 1.33,
+      "direction_error_degrees": {
+        "mean": 0.00010825649240381065,
+        "p99": 0.0002530528717438365,
+        "max": 0.0006202190038222914
+      },
+      "length_error_m": {
+        "mean": 1.508593870006778e-07,
+        "p99": 5.046218270621239e-07,
+        "max": 7.267762140161782e-07
+      }
+    },
+    {
+      "ior": 1.5,
+      "direction_error_degrees": {
+        "mean": 6.968064552358069e-05,
+        "p99": 0.00020592802115213356,
+        "max": 0.0007131572785707726
+      },
+      "length_error_m": {
+        "mean": 1.1596171258533324e-07,
+        "p99": 3.836091870507152e-07,
+        "max": 5.394939820435596e-07
+      }
+    },
+    {
+      "ior": 2.5,
+      "direction_error_degrees": {
+        "mean": 9.68206079855681e-05,
+        "p99": 0.0004037828645101551,
+        "max": 0.0020858282642024317
+      },
+      "length_error_m": {
+        "mean": 4.818521386279257e-08,
+        "p99": 1.5422646264640073e-07,
+        "max": 1.9944559395690398e-07
+      }
+    }
+  ],
+  "cpu_entry_sample_count": 32,
+  "cpu_entry_position_error_m": {
+    "mean": 9.80301853795062e-06,
+    "p99": 1.653087727832451e-05,
+    "max": 1.6665011680023025e-05
+  },
+  "cpu_vertex_normal_error_degrees": {
+    "mean": 0.024054117014215778,
+    "p99": 0.19141890020311195,
+    "max": 0.22510024423529942
+  },
+  "half_thickness_scales_path_without_changing_direction": true,
+  "ior1_source_null_sky_pixels": 4958,
+  "ior1_source_radiance_difference": {
+    "mean": 0.00032877349651433955,
+    "p99": 0.000955106150395836,
+    "max": 0.0017900695843219088
+  },
+  "final_frame_beer_composition_error": {
+    "mean": 2.21427756313707e-08,
+    "p99": 8.680490500623266e-08,
+    "max": 1.8910727306309383e-07
+  },
+  "median_final_transmitted_rgb_norm": 0.7606554871984674,
+  "scope": "Production forward shader, observed shading normals, existing tangent-sphere approximation; no claim of exact arbitrary-mesh refraction"
+}

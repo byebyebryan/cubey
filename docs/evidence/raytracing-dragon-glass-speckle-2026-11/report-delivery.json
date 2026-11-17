@@ -1,0 +1,28 @@
+{
+  "report_id": "f708b465ab998d9f25ef9e0090b34d00b95e514d163823badc044e604d38e891",
+  "title": "Cubey: glass dragon — solar speckles and practical tradeoffs",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-16T18:49:05.855249+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "published",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/f708b465ab998d9f25ef9e0090b34d00b95e514d163823badc044e604d38e891",
+  "file_count": 22,
+  "byte_count": 15922838,
+  "url": "http://starship:8787/reports/f708b465ab998d9f25ef9e0090b34d00b95e514d163823badc044e604d38e891/",
+  "catalog": {
+    "state": "unchecked"
+  },
+  "delivery": {
+    "checked_at": "2026-11-16T18:54:24.745124+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 72755,
+    "verified_url": "http://starship:8787/reports/f708b465ab998d9f25ef9e0090b34d00b95e514d163823badc044e604d38e891/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey"
+}

@@ -74,6 +74,30 @@ the architecture and project guides remain current authority.
 - [Dragon glass smooth default](raytracing-dragon-glass-smooth-default.md):
   adopts the reviewed smooth appearance for the demo, with a saved native/CLI
   switch and the analytical limitations retained separately.
+- [Dragon glass solar speckles](raytracing-dragon-glass-speckle.md):
+  matched sky/sun, independent seeds, sample tails and a private broader-sun
+  preview; proposes a bounded appearance trial for the solar contribution.
+- [Established glass-noise solutions](raytracing-dragon-glass-noise-solutions.md):
+  production contribution clamping, standard denoising, footprints and layered
+  reconstruction; TIR path replays refine the recommended first comparison.
+- [Dragon glass noise-control results](raytracing-dragon-glass-noise-controls.md):
+  opt-in HDR clamp and offline OIDN compared at 128/512 samples with two seeds;
+  adopts the reviewed cap 100 for the demo, retaining an explicit raw opt-out.
+- [Dragon glass moving-camera research](raytracing-dragon-motion-research.md):
+  retained survey of temporal denoisers and glass-aware path guides; its
+  NRD-first proposal is superseded by the simpler demo direction.
+- [Dragon RT demo transport plan](raytracing-dragon-demo-transport-plan.md):
+  proposed deterministic glass, shared cached PBR/sky and fixed per-frame
+  sampling, with one bounded prototype before deciding on adoption.
+- [Dragon RT demo and forward comparison results](raytracing-dragon-demo-results.md):
+  opt-in fixed-quality glass, a shared-renderer forward baseline, matched native
+  recordings and the measured two/four-sample cost and capacity limits.
+- [Forward dragon correctness audit](raytracing-forward-dragon-audit.md):
+  correct the comparison source choice and tangent attributes; validate actual
+  material inputs, mesh entry, refraction arithmetic and source routing.
+- [Forward dragon scene transparency](raytracing-forward-transparency.md):
+  prove local marble visibility and combine opaque camera data with refracted
+  sky in the hybrid comparison preset.
 - [Forward glass transmission research](forward-transmission-research-plan.md):
   measured sphere geometry and camera/environment direction mismatch, pinned
   renderer references and a proposed environment-transmission comparison pass.

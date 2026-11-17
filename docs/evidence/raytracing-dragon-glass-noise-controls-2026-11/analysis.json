@@ -1,0 +1,3916 @@
+{
+  "scope": "Matched 1080p still images; two seeds, not population variance or accuracy",
+  "rois": {
+    "scene": [
+      0,
+      0,
+      1920,
+      1080
+    ],
+    "head": [
+      610,
+      205,
+      475,
+      335
+    ],
+    "body": [
+      710,
+      375,
+      625,
+      465
+    ],
+    "base": [
+      655,
+      655,
+      700,
+      285
+    ]
+  },
+  "metrics": [
+    {
+      "samples": 128,
+      "clamp": 0,
+      "denoised": false,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 1.1091126368714797,
+          "seed_display_rgb8_rmse": 1.8702321496186185,
+          "seed_display_rgb8_mae": 0.23758696630658435,
+          "white_pixels": [
+            356,
+            347
+          ],
+          "white_pixels_both": 104,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            1.0,
+            1.0
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 2.31986884822919,
+          "seed_display_rgb8_rmse": 3.4588157116646796,
+          "seed_display_rgb8_mae": 0.7995328620057607,
+          "white_pixels": [
+            129,
+            110
+          ],
+          "white_pixels_both": 23,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            1.0,
+            1.0
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 2.6459343354611415,
+          "seed_display_rgb8_rmse": 4.6077330667408365,
+          "seed_display_rgb8_mae": 1.419258494623656,
+          "white_pixels": [
+            288,
+            290
+          ],
+          "white_pixels_both": 96,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            1.0,
+            1.0
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 2.4061984786498027,
+          "seed_display_rgb8_rmse": 3.9573268869560883,
+          "seed_display_rgb8_mae": 1.1257694235588973,
+          "white_pixels": [
+            133,
+            137
+          ],
+          "white_pixels_both": 56,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            1.0,
+            1.0
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "samples": 128,
+      "clamp": 0,
+      "denoised": true,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.22200851365813698,
+          "seed_display_rgb8_rmse": 1.5167063062924624,
+          "seed_display_rgb8_mae": 0.2561593364197531,
+          "white_pixels": [
+            186,
+            126
+          ],
+          "white_pixels_both": 88,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9879515750326574,
+            0.9883904598143949
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.36559413580246913,
+            0.3757907343106996
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.3944850115053121,
+          "seed_display_rgb8_rmse": 3.2330273878517692,
+          "seed_display_rgb8_mae": 0.8885634982979838,
+          "white_pixels": [
+            52,
+            22
+          ],
+          "white_pixels_both": 7,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.952180758372674,
+            0.9631929542023968
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.3061199266823775,
+            1.1088180151872218
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.5916094609556349,
+          "seed_display_rgb8_rmse": 3.7569184352381484,
+          "seed_display_rgb8_mae": 1.4040705376344087,
+          "white_pixels": [
+            185,
+            119
+          ],
+          "white_pixels_both": 88,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9083773315502173,
+            0.9017798687621784
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.7640464516129033,
+            1.9066356989247313
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.6200031865751918,
+          "seed_display_rgb8_rmse": 3.1164896817586185,
+          "seed_display_rgb8_mae": 1.1057443609022557,
+          "white_pixels": [
+            99,
+            84
+          ],
+          "white_pixels_both": 70,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9096244940189263,
+            0.899365311492741
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.2808220551378446,
+            1.5126900584795322
+          ]
+        }
+      }
+    },
+    {
+      "samples": 128,
+      "clamp": 100,
+      "denoised": false,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.017987552220327042,
+          "seed_display_rgb8_rmse": 1.6559254088331823,
+          "seed_display_rgb8_mae": 0.23293772505144034,
+          "white_pixels": [
+            79,
+            77
+          ],
+          "white_pixels_both": 46,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9852934175933177,
+            0.986507558357874
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.002995434670781893,
+            0.0029825745884773662
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.03435306361360205,
+          "seed_display_rgb8_rmse": 3.0140684358962453,
+          "seed_display_rgb8_mae": 0.7774076983503535,
+          "white_pixels": [
+            14,
+            13
+          ],
+          "white_pixels_both": 3,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9469361548523854,
+            0.9577225453892747
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.01478292746792354,
+            0.012642052893427598
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.04408998398664118,
+          "seed_display_rgb8_rmse": 4.090300161624619,
+          "seed_display_rgb8_mae": 1.3930219354838709,
+          "white_pixels": [
+            75,
+            68
+          ],
+          "white_pixels_both": 45,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8852751121710413,
+            0.8850940764921984
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.016892329749103943,
+            0.017746810035842293
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.03838934269510556,
+          "seed_display_rgb8_rmse": 3.5414521090840227,
+          "seed_display_rgb8_mae": 1.109451963241437,
+          "white_pixels": [
+            44,
+            38
+          ],
+          "white_pixels_both": 28,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8766832487691532,
+            0.8794873817258332
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.01087218045112782,
+            0.012175438596491228
+          ]
+        }
+      }
+    },
+    {
+      "samples": 128,
+      "clamp": 100,
+      "denoised": true,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.008335274429620744,
+          "seed_display_rgb8_rmse": 1.0275996936556737,
+          "seed_display_rgb8_mae": 0.20396910365226337,
+          "white_pixels": [
+            34,
+            32
+          ],
+          "white_pixels_both": 23,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.984989034723362,
+            0.9862111379573821
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.23609310699588476,
+            0.2427321244855967
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.015025276423956005,
+          "seed_display_rgb8_rmse": 1.8649754804855356,
+          "seed_display_rgb8_mae": 0.6506457187745484,
+          "white_pixels": [
+            2,
+            5
+          ],
+          "white_pixels_both": 0,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9458745358784422,
+            0.9569309345568818
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.7506991358994501,
+            0.6526399581042157
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.020472247804540294,
+          "seed_display_rgb8_rmse": 2.5100894042253357,
+          "seed_display_rgb8_mae": 1.1154798566308244,
+          "white_pixels": [
+            34,
+            28
+          ],
+          "white_pixels_both": 23,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.882406230000177,
+            0.8821913523156509
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.9983208602150537,
+            1.0992126164874552
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.02082755855544801,
+          "seed_display_rgb8_rmse": 2.235943561233726,
+          "seed_display_rgb8_mae": 0.8966131996658312,
+          "white_pixels": [
+            28,
+            23
+          ],
+          "white_pixels_both": 20,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8737993060714169,
+            0.8764749948098194
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.7222706766917293,
+            0.8421069340016708
+          ]
+        }
+      }
+    },
+    {
+      "samples": 128,
+      "clamp": 1000,
+      "denoised": false,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.15636439067949562,
+          "seed_display_rgb8_rmse": 1.8685277095036958,
+          "seed_display_rgb8_mae": 0.23754677854938272,
+          "white_pixels": [
+            356,
+            347
+          ],
+          "white_pixels_both": 104,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9897554941705043,
+            0.9907192182642823
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            2.4434156378600824e-05,
+            1.800411522633745e-05
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.28637211194057,
+          "seed_display_rgb8_rmse": 3.455989559981516,
+          "seed_display_rgb8_mae": 0.7993799423932967,
+          "white_pixels": [
+            129,
+            110
+          ],
+          "white_pixels_both": 23,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9580203282336731,
+            0.9674048654643768
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.00010054988216810684,
+            5.6559308719560094e-05
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.3862752905609783,
+          "seed_display_rgb8_rmse": 4.603434715817712,
+          "seed_display_rgb8_mae": 1.419017634408602,
+          "white_pixels": [
+            288,
+            290
+          ],
+          "white_pixels_both": 96,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9237467685523544,
+            0.9213824664292775
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.00014566308243727598,
+            0.00011125448028673835
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.3433303624854127,
+          "seed_display_rgb8_rmse": 3.9531965218268357,
+          "seed_display_rgb8_mae": 1.1255873015873017,
+          "white_pixels": [
+            133,
+            137
+          ],
+          "white_pixels_both": 56,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9220278440942613,
+            0.9222322124022766
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.00011027568922305764,
+            8.187134502923976e-05
+          ]
+        }
+      }
+    },
+    {
+      "samples": 128,
+      "clamp": 1000,
+      "denoised": true,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.05420473283182303,
+          "seed_display_rgb8_rmse": 1.1551399548666033,
+          "seed_display_rgb8_mae": 0.21123585390946503,
+          "white_pixels": [
+            118,
+            112
+          ],
+          "white_pixels_both": 81,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9866792034800479,
+            0.9877033662778532
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.32080150462962964,
+            0.32687548225308644
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.07382163723594956,
+          "seed_display_rgb8_rmse": 2.26707665377061,
+          "seed_display_rgb8_mae": 0.693031683686829,
+          "white_pixels": [
+            8,
+            15
+          ],
+          "white_pixels_both": 4,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9480719710851846,
+            0.9591446888129596
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.0815773762765122,
+            0.983413459020686
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.13854955799802846,
+          "seed_display_rgb8_rmse": 2.8711984185045343,
+          "seed_display_rgb8_mae": 1.168830394265233,
+          "white_pixels": [
+            118,
+            105
+          ],
+          "white_pixels_both": 81,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8979299226944506,
+            0.8956264042797866
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.5374589247311827,
+            1.610753835125448
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.15438159817607072,
+          "seed_display_rgb8_rmse": 2.3661515906724513,
+          "seed_display_rgb8_mae": 0.9055672514619884,
+          "white_pixels": [
+            86,
+            80
+          ],
+          "white_pixels_both": 67,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8960909581081092,
+            0.8951584520708322
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.1335672514619883,
+            1.2410409356725147
+          ]
+        }
+      }
+    },
+    {
+      "samples": 128,
+      "clamp": 10000,
+      "denoised": false,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.6861759681501298,
+          "seed_display_rgb8_rmse": 1.8702321496186185,
+          "seed_display_rgb8_mae": 0.23758696630658435,
+          "white_pixels": [
+            356,
+            347
+          ],
+          "white_pixels_both": 104,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9960290892117836,
+            0.9963600138875573
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 1.3590989098640784,
+          "seed_display_rgb8_rmse": 3.4588157116646796,
+          "seed_display_rgb8_mae": 0.7995328620057607,
+          "white_pixels": [
+            129,
+            110
+          ],
+          "white_pixels_both": 23,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9830604977021011,
+            0.9861067640357019
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 1.6842386022163645,
+          "seed_display_rgb8_rmse": 4.6077330667408365,
+          "seed_display_rgb8_mae": 1.419258494623656,
+          "white_pixels": [
+            288,
+            290
+          ],
+          "white_pixels_both": 96,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9721527800304881,
+            0.9698466529084745
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 1.5035849918656279,
+          "seed_display_rgb8_rmse": 3.9573268869560883,
+          "seed_display_rgb8_mae": 1.1257694235588973,
+          "white_pixels": [
+            133,
+            137
+          ],
+          "white_pixels_both": 56,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.969137053575018,
+            0.9694273101281692
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "samples": 128,
+      "clamp": 10000,
+      "denoised": true,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.14021901143885884,
+          "seed_display_rgb8_rmse": 1.4304611057457801,
+          "seed_display_rgb8_mae": 0.24136204346707818,
+          "white_pixels": [
+            160,
+            123
+          ],
+          "white_pixels_both": 83,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9875066033266897,
+            0.9881859492169685
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.3601115612139918,
+            0.3662207433127572
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.2566596750506201,
+          "seed_display_rgb8_rmse": 3.0405561018908607,
+          "seed_display_rgb8_mae": 0.8303262634197434,
+          "white_pixels": [
+            34,
+            21
+          ],
+          "white_pixels_both": 4,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9510095948874947,
+            0.9617575382788501
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.2592259753862267,
+            1.0825388845247448
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.37226863787259135,
+          "seed_display_rgb8_rmse": 3.5677500917028757,
+          "seed_display_rgb8_mae": 1.339836559139785,
+          "white_pixels": [
+            160,
+            116
+          ],
+          "white_pixels_both": 83,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9046447715263787,
+            0.8999797636609006
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.7258689605734767,
+            1.8340954838709678
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.38525289752178077,
+          "seed_display_rgb8_rmse": 2.907808747599276,
+          "seed_display_rgb8_mae": 1.0467635756056808,
+          "white_pixels": [
+            94,
+            82
+          ],
+          "white_pixels_both": 68,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9041437488183078,
+            0.898335084599708
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.253268170426065,
+            1.4426800334168755
+          ]
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "clamp": 0,
+      "denoised": false,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.5325608468245017,
+          "seed_display_rgb8_rmse": 2.493425511599054,
+          "seed_display_rgb8_mae": 0.1712892232510288,
+          "white_pixels": [
+            905,
+            867
+          ],
+          "white_pixels_both": 241,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            1.0,
+            1.0
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 1.1326771049700752,
+          "seed_display_rgb8_rmse": 4.551088023706932,
+          "seed_display_rgb8_mae": 0.6046839486776643,
+          "white_pixels": [
+            375,
+            351
+          ],
+          "white_pixels_both": 88,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            1.0,
+            1.0
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 1.285844311747147,
+          "seed_display_rgb8_rmse": 6.126257161598413,
+          "seed_display_rgb8_mae": 1.0122116129032257,
+          "white_pixels": [
+            700,
+            677
+          ],
+          "white_pixels_both": 198,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            1.0,
+            1.0
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 1.1080754363792824,
+          "seed_display_rgb8_rmse": 5.305618308052656,
+          "seed_display_rgb8_mae": 0.7843191311612364,
+          "white_pixels": [
+            296,
+            292
+          ],
+          "white_pixels_both": 90,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            1.0,
+            1.0
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "clamp": 0,
+      "denoised": true,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.07638410456809877,
+          "seed_display_rgb8_rmse": 1.8295388534845236,
+          "seed_display_rgb8_mae": 0.34273324974279834,
+          "white_pixels": [
+            212,
+            216
+          ],
+          "white_pixels_both": 130,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9897705906744092,
+            0.9907099358683423
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.5494582690329218,
+            0.5398079025205761
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.11199674286191448,
+          "seed_display_rgb8_rmse": 3.138874165853929,
+          "seed_display_rgb8_mae": 1.0406535742340928,
+          "white_pixels": [
+            59,
+            58
+          ],
+          "white_pixels_both": 18,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.963326501716565,
+            0.9667890345573013
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.9253710395391463,
+            1.6945315527625033
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.18831091945118647,
+          "seed_display_rgb8_rmse": 4.4666814315275145,
+          "seed_display_rgb8_mae": 1.7101717562724015,
+          "white_pixels": [
+            195,
+            210
+          ],
+          "white_pixels_both": 130,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9161358332004694,
+            0.9228902603803566
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            2.8425141218637995,
+            2.8767575627240145
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.2137769581988468,
+          "seed_display_rgb8_rmse": 4.028000368348859,
+          "seed_display_rgb8_mae": 1.3607869674185464,
+          "white_pixels": [
+            111,
+            114
+          ],
+          "white_pixels_both": 83,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9227251740557455,
+            0.9244258035617855
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            2.1050827067669173,
+            2.1731862990810358
+          ]
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "clamp": 100,
+      "denoised": false,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.008614518845300186,
+          "seed_display_rgb8_rmse": 1.3678946840928754,
+          "seed_display_rgb8_mae": 0.13927629886831275,
+          "white_pixels": [
+            62,
+            55
+          ],
+          "white_pixels_both": 48,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9856925823081819,
+            0.9869762975682359
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.019312146347736626,
+            0.019076485339506174
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.01734268700611812,
+          "seed_display_rgb8_rmse": 2.456401931232182,
+          "seed_display_rgb8_mae": 0.47128567687876405,
+          "white_pixels": [
+            6,
+            5
+          ],
+          "white_pixels_both": 3,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9489216302524215,
+            0.9560175194157774
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0836407436501702,
+            0.080789735532862
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.02098567056768344,
+          "seed_display_rgb8_rmse": 3.362211424506561,
+          "seed_display_rgb8_mae": 0.8263099641577061,
+          "white_pixels": [
+            60,
+            52
+          ],
+          "white_pixels_both": 46,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8843963707661437,
+            0.8909769136235018
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.1109826523297491,
+            0.1114494623655914
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.01816914859294309,
+          "seed_display_rgb8_rmse": 2.9409785878687424,
+          "seed_display_rgb8_mae": 0.6542840434419381,
+          "white_pixels": [
+            38,
+            36
+          ],
+          "white_pixels_both": 32,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8863545973888306,
+            0.8891973174124022
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.07587134502923977,
+            0.07649958228905597
+          ]
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "clamp": 100,
+      "denoised": true,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.005956343617754798,
+          "seed_display_rgb8_rmse": 0.8299751974887575,
+          "seed_display_rgb8_mae": 0.1362331211419753,
+          "white_pixels": [
+            36,
+            36
+          ],
+          "white_pixels_both": 30,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.985479012816899,
+            0.9867637572922366
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.22248922968106996,
+            0.22781828703703705
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.01066581818889003,
+          "seed_display_rgb8_rmse": 1.5749831356096584,
+          "seed_display_rgb8_mae": 0.4554427860696517,
+          "white_pixels": [
+            1,
+            2
+          ],
+          "white_pixels_both": 0,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9484223292698406,
+            0.9554879338615924
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.6345640219952867,
+            0.6588174914899189
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.014788721860238356,
+          "seed_display_rgb8_rmse": 2.004589143542537,
+          "seed_display_rgb8_mae": 0.7210724014336918,
+          "white_pixels": [
+            36,
+            34
+          ],
+          "white_pixels_both": 30,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8821851766037462,
+            0.8887685079739303
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.9426098924731183,
+            0.9959145519713262
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.015051672723456377,
+          "seed_display_rgb8_rmse": 1.801383483920165,
+          "seed_display_rgb8_mae": 0.5582456140350878,
+          "white_pixels": [
+            29,
+            30
+          ],
+          "white_pixels_both": 26,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8839243895730909,
+            0.8867631467362765
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.6723725981620718,
+            0.7089757727652465
+          ]
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "clamp": 1000,
+      "denoised": false,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.07370249624173002,
+          "seed_display_rgb8_rmse": 2.397243613376085,
+          "seed_display_rgb8_mae": 0.1686455118312757,
+          "white_pixels": [
+            896,
+            858
+          ],
+          "white_pixels_both": 241,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9900471695503971,
+            0.9912433563583181
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0014837319958847736,
+            0.001370241769547325
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.1457078891470586,
+          "seed_display_rgb8_rmse": 4.386861528672466,
+          "seed_display_rgb8_mae": 0.5948468185388845,
+          "white_pixels": [
+            374,
+            349
+          ],
+          "white_pixels_both": 88,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9596208060881148,
+            0.9662252998458213
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.005515579994763027,
+            0.00518879287771668
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.18068695709561966,
+          "seed_display_rgb8_rmse": 5.886425572578437,
+          "seed_display_rgb8_mae": 0.9965327598566308,
+          "white_pixels": [
+            691,
+            669
+          ],
+          "white_pixels_both": 198,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9218400501162247,
+            0.9278496997887857
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.00872831541218638,
+            0.008230537634408602
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.1605498399254509,
+          "seed_display_rgb8_rmse": 5.085784732881087,
+          "seed_display_rgb8_mae": 0.7723241436925647,
+          "white_pixels": [
+            291,
+            291
+          ],
+          "white_pixels_both": 90,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.930731519172595,
+            0.9336473038956032
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.006516290726817042,
+            0.006173767752715121
+          ]
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "clamp": 1000,
+      "denoised": true,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.027471208665686392,
+          "seed_display_rgb8_rmse": 0.9849464953820751,
+          "seed_display_rgb8_mae": 0.1688348765432099,
+          "white_pixels": [
+            121,
+            126
+          ],
+          "white_pixels_both": 94,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9873992317288659,
+            0.9886874932629411
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.3679341885288066,
+            0.36500562628600824
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.035401800721375,
+          "seed_display_rgb8_rmse": 1.7900320432590622,
+          "seed_display_rgb8_mae": 0.5769091385179367,
+          "white_pixels": [
+            10,
+            26
+          ],
+          "white_pixels_both": 5,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9524186977854855,
+            0.9593309581254318
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.2719015449070437,
+            1.2121811992668239
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.07092599791660123,
+          "seed_display_rgb8_rmse": 2.41441263811652,
+          "seed_display_rgb8_mae": 0.906049605734767,
+          "white_pixels": [
+            117,
+            113
+          ],
+          "white_pixels_both": 94,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.8988673544673548,
+            0.9057316627212012
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.8088074551971327,
+            1.815418494623656
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.07818138132744183,
+          "seed_display_rgb8_rmse": 2.1278795419452767,
+          "seed_display_rgb8_mae": 0.6744745196324143,
+          "white_pixels": [
+            88,
+            79
+          ],
+          "white_pixels_both": 73,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.905948859529755,
+            0.9096176426285868
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.3148471177944863,
+            1.324517961570593
+          ]
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "clamp": 10000,
+      "denoised": false,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.3320334996431695,
+          "seed_display_rgb8_rmse": 2.493425511599054,
+          "seed_display_rgb8_mae": 0.1712892232510288,
+          "white_pixels": [
+            905,
+            867
+          ],
+          "white_pixels_both": 241,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9961450756171587,
+            0.9967340960361417
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.6695167131915547,
+          "seed_display_rgb8_rmse": 4.551088023706932,
+          "seed_display_rgb8_mae": 0.6046839486776643,
+          "white_pixels": [
+            375,
+            351
+          ],
+          "white_pixels_both": 88,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9830807898539584,
+            0.9862548766969453
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.8150732388122577,
+          "seed_display_rgb8_rmse": 6.126257161598413,
+          "seed_display_rgb8_mae": 1.0122116129032257,
+          "white_pixels": [
+            700,
+            677
+          ],
+          "white_pixels_both": 198,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9709229599765501,
+            0.9734278947676889
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.6965248470367653,
+          "seed_display_rgb8_rmse": 5.305618308052656,
+          "seed_display_rgb8_mae": 0.7843191311612364,
+          "white_pixels": [
+            296,
+            292
+          ],
+          "white_pixels_both": 90,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9736686911101069,
+            0.9753947590337468
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "clamp": 10000,
+      "denoised": true,
+      "metrics": {
+        "scene": {
+          "seed_hdr_rgb_rmse": 0.04910285152363175,
+          "seed_display_rgb8_rmse": 1.5989809158135073,
+          "seed_display_rgb8_mae": 0.2942084619341564,
+          "white_pixels": [
+            171,
+            179
+          ],
+          "white_pixels_both": 118,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9889555668643918,
+            0.9900706229590672
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            0.491019804526749,
+            0.49080021862139916
+          ]
+        },
+        "head": {
+          "seed_hdr_rgb_rmse": 0.07143292494165755,
+          "seed_display_rgb8_rmse": 2.6333598163739036,
+          "seed_display_rgb8_mae": 0.8678900235663787,
+          "white_pixels": [
+            34,
+            36
+          ],
+          "white_pixels_both": 11,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9593779646035148,
+            0.9642746627664442
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.7012621105001309,
+            1.5489835035349568
+          ]
+        },
+        "body": {
+          "seed_hdr_rgb_rmse": 0.12195877090273247,
+          "seed_display_rgb8_rmse": 3.9438791376422464,
+          "seed_display_rgb8_mae": 1.4882098924731182,
+          "white_pixels": [
+            158,
+            173
+          ],
+          "white_pixels_both": 118,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9103891875673069,
+            0.9174802745488939
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            2.5468501792114697,
+            2.5892633691756273
+          ]
+        },
+        "base": {
+          "seed_hdr_rgb_rmse": 0.13728174654786768,
+          "seed_display_rgb8_rmse": 3.5206679418673144,
+          "seed_display_rgb8_mae": 1.1570710108604845,
+          "white_pixels": [
+            102,
+            106
+          ],
+          "white_pixels_both": 79,
+          "mean_hdr_luminance_ratio_to_matched_raw": [
+            0.9165815932713418,
+            0.9195692270452381
+          ],
+          "display_rgb8_mae_to_matched_raw": [
+            1.8590125313283208,
+            1.928345864661654
+          ]
+        }
+      }
+    }
+  ],
+  "details": [
+    {
+      "name": "front-128-s19-c0",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 0,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.2886637708067894,
+          "rgb8": [
+            135,
+            179,
+            197
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 137.72197958984376,
+          "rgb8": [
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s43-c0",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 0,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.3373140381246805,
+          "rgb8": [
+            153,
+            189,
+            199
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.3538467441409826,
+          "rgb8": [
+            147,
+            193,
+            203
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s19-c0",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 0,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.3006046311527491,
+          "rgb8": [
+            140,
+            182,
+            195
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 2.382221969795227,
+          "rgb8": [
+            248,
+            247,
+            246
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s43-c0",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 0,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31711680893301963,
+          "rgb8": [
+            146,
+            185,
+            196
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.36476085961759086,
+          "rgb8": [
+            151,
+            195,
+            202
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s19-c100",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 100,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.2886637708067894,
+          "rgb8": [
+            135,
+            179,
+            197
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 1.2555704275369644,
+          "rgb8": [
+            233,
+            238,
+            232
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s43-c100",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 100,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.3373140381246805,
+          "rgb8": [
+            153,
+            189,
+            199
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.3538467441409826,
+          "rgb8": [
+            147,
+            193,
+            203
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s19-c100",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 100,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.28497712957561017,
+          "rgb8": [
+            136,
+            179,
+            192
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.30129367527663703,
+          "rgb8": [
+            137,
+            184,
+            188
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s43-c100",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 100,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31805361805856225,
+          "rgb8": [
+            147,
+            186,
+            196
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.32172171593010424,
+          "rgb8": [
+            140,
+            187,
+            198
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s19-c1000",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 1000,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.2886637708067894,
+          "rgb8": [
+            135,
+            179,
+            197
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 9.211300584125519,
+          "rgb8": [
+            255,
+            255,
+            254
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s43-c1000",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 1000,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.3373140381246805,
+          "rgb8": [
+            153,
+            189,
+            199
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.3538467441409826,
+          "rgb8": [
+            147,
+            193,
+            203
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s19-c1000",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 1000,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.28933305875360965,
+          "rgb8": [
+            137,
+            180,
+            193
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.5582511590659618,
+          "rgb8": [
+            196,
+            214,
+            214
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s43-c1000",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 1000,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.3152103923141956,
+          "rgb8": [
+            146,
+            185,
+            196
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.30381169623136517,
+          "rgb8": [
+            133,
+            184,
+            194
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s19-c10000",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 10000,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.2886637708067894,
+          "rgb8": [
+            135,
+            179,
+            197
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 88.76854447250366,
+          "rgb8": [
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s43-c10000",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 10000,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.3373140381246805,
+          "rgb8": [
+            153,
+            189,
+            199
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.3538467441409826,
+          "rgb8": [
+            147,
+            193,
+            203
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s19-c10000",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 10000,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.2950145030081272,
+          "rgb8": [
+            139,
+            181,
+            194
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 1.7142207937717435,
+          "rgb8": [
+            243,
+            243,
+            242
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-128-s43-c10000",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 10000,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31643965684771536,
+          "rgb8": [
+            146,
+            185,
+            196
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.34183661141395566,
+          "rgb8": [
+            146,
+            191,
+            199
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s19-c0",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 0,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31141192891299724,
+          "rgb8": [
+            144,
+            184,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 34.69571787109375,
+          "rgb8": [
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s43-c0",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 0,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31722500384151936,
+          "rgb8": [
+            146,
+            185,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 34.69950250015258,
+          "rgb8": [
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s19-c0",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 0,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.3376846631467342,
+          "rgb8": [
+            151,
+            189,
+            200
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 2.3655594809055325,
+          "rgb8": [
+            250,
+            247,
+            244
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s43-c0",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 0,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.3263965772807598,
+          "rgb8": [
+            147,
+            187,
+            199
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 2.975436181402206,
+          "rgb8": [
+            251,
+            250,
+            246
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s19-c100",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 100,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31141192891299724,
+          "rgb8": [
+            144,
+            184,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.5791244983136654,
+          "rgb8": [
+            196,
+            216,
+            214
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s43-c100",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 100,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31722500384151936,
+          "rgb8": [
+            146,
+            185,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.5838081806480884,
+          "rgb8": [
+            197,
+            216,
+            215
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s19-c100",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 100,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.30125835393965245,
+          "rgb8": [
+            142,
+            182,
+            194
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.31916593531072135,
+          "rgb8": [
+            140,
+            187,
+            193
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s43-c100",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 100,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.30294309327602387,
+          "rgb8": [
+            143,
+            182,
+            194
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.3339012296706438,
+          "rgb8": [
+            146,
+            190,
+            195
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s19-c1000",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 1000,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31141192891299724,
+          "rgb8": [
+            144,
+            184,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 2.56805616838932,
+          "rgb8": [
+            247,
+            249,
+            244
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s43-c1000",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 1000,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31722500384151936,
+          "rgb8": [
+            146,
+            185,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 2.572751434612274,
+          "rgb8": [
+            247,
+            249,
+            244
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s19-c1000",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 1000,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.30485676102638243,
+          "rgb8": [
+            142,
+            183,
+            195
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.5030753236174583,
+          "rgb8": [
+            191,
+            209,
+            208
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s43-c1000",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 1000,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31332049088478087,
+          "rgb8": [
+            144,
+            185,
+            196
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 0.5401290836811066,
+          "rgb8": [
+            197,
+            212,
+            209
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s19-c10000",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 10000,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31141192891299724,
+          "rgb8": [
+            144,
+            184,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 22.457359247398376,
+          "rgb8": [
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s43-c10000",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 10000,
+      "denoised": false,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.31722500384151936,
+          "rgb8": [
+            146,
+            185,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 22.462165319633485,
+          "rgb8": [
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s19-c10000",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 10000,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.32426158232986924,
+          "rgb8": [
+            147,
+            187,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 1.7335675585985182,
+          "rgb8": [
+            246,
+            242,
+            239
+          ]
+        }
+      }
+    },
+    {
+      "name": "front-512-s43-c10000",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 10000,
+      "denoised": true,
+      "points": {
+        "unstable": {
+          "hdr_luminance": 0.3205370270192623,
+          "rgb8": [
+            146,
+            186,
+            198
+          ]
+        },
+        "persistent": {
+          "hdr_luminance": 2.096258324790001,
+          "rgb8": [
+            247,
+            246,
+            241
+          ]
+        }
+      }
+    }
+  ],
+  "transport_status_identical_across_clamps": true,
+  "limitations": [
+    "ROI rectangles include background and are not segmentation masks",
+    "Clamping and denoising are biased; reduced seed difference is not proof of accuracy",
+    "Raw means and the earlier 8192-SPP images are noisy, not ground truth",
+    "Color-only offline OIDN; no native integration, temporal or motion qualification"
+  ],
+  "raw_fidelity": [
+    {
+      "name": "front-128-s19-c0",
+      "png_mean_absolute_rgb8": 0.0,
+      "png_p99_absolute_rgb8": 0.0,
+      "png_max_absolute_rgb8": 0.0,
+      "hdr_bitwise_identical": false
+    },
+    {
+      "name": "front-128-s43-c0",
+      "png_mean_absolute_rgb8": 0.0,
+      "png_p99_absolute_rgb8": 0.0,
+      "png_max_absolute_rgb8": 0.0,
+      "hdr_bitwise_identical": false
+    },
+    {
+      "name": "front-512-s19-c0",
+      "png_mean_absolute_rgb8": 1.6075102880658437e-07,
+      "png_p99_absolute_rgb8": 0.0,
+      "png_max_absolute_rgb8": 1.0,
+      "hdr_bitwise_identical": false
+    },
+    {
+      "name": "front-512-s43-c0",
+      "png_mean_absolute_rgb8": 0.0,
+      "png_p99_absolute_rgb8": 0.0,
+      "png_max_absolute_rgb8": 0.0,
+      "hdr_bitwise_identical": false
+    }
+  ],
+  "captures": {
+    "identity": {
+      "binary": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+      "shaders": {
+        "atmosphere.frag.spv": "621b4073823ab3f46b7449ad36311ca30e1d9b8633668aa8ed709e96751ae6a7",
+        "atmosphere.vert.spv": "ef76215d4ceda1d2cbbfdb66c84727acd83acb33045c0613b1feafc32b311dba",
+        "atmosphere_reflection_prefilter.frag.spv": "ce2b2109bd6ee82f0340ae64ea8bc913e50364b15fe09fb124d0627975192233",
+        "forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+        "forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+        "primary.rahit.spv": "3bebdb476fea5cc1cda821516ed18c5c01e35a5f908ba826dd9c87338b294dd7",
+        "primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+        "primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+        "shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+        "trace.rgen.spv": "57198a9ce09f4a1fbc73260a9cc3ca3cd532ae902e379fffb7c36086cd635b40"
+      },
+      "preset": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+      "model": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+      "recipes": {
+        "bronze.json": "fe9474f73eda0389f43596ada8857527802e1911867bc5002f6f932f5c9012ae",
+        "catalog.json": "f4701d806b2e517e5cfe705777de54454f43e6bf13a5d161035432271656ea6d",
+        "ceramic.json": "b0697acafe549744f5f8a259e3d35cca4e20efd0f47691bbbed8264f015f9304",
+        "clay.json": "a84d85caabc22353a9ec601bc7fb56a0e1941a780f4ed4ff65058e960472dfc8",
+        "frosted-glass.json": "18dbb3c951418635ada6944ef44284ff2fdf5305ab27d1b5620295a6266957cb",
+        "glass.json": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537",
+        "kraft-cardboard.json": "499f05ba5309bc5c81024103f78babff6d63a001831ef7309e7f993f60e94e94",
+        "limestone.json": "cccc023571523d052823b6e27658ca88b461c3b6b2a90763919687943db372e3",
+        "marble.json": "dce3505445117ba30ee642eed6b8263a67a585eed81764aea47bd9fc4083eda5",
+        "plain.json": "401cfb72ff2e41fb3bcd8a07c0a0f751abda1002959a74920aba769934438ea7",
+        "rusted-steel.json": "78643660334fcdf353e34bd7a70615f33c034cc537329d4fe58ded6c21f15a07",
+        "wood.json": "2aa55215acdae9b64fa0518f511445a9e50f9592e09f21069bb7db279807cfde",
+        "woven-cloth.json": "9e376270d7a174ea67709eb82a148237c749c480b621e3f50f3ed69c72ab2f80"
+      }
+    },
+    "captures": [
+      {
+        "name": "front-128-s19-c0",
+        "samples": 128,
+        "seed": 19,
+        "clamp": 0,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c0",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "128",
+              "--seed",
+              "19",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c0.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c0.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c0.bin",
+              "--firefly-clamp",
+              "0"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 128,
+          "seed": 19,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 2.2418531729781535,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 11,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "51a5ab1468552693c9581efa3f37bddc15cb9ed79c0686994e606b1880a85036",
+            ".json": "8603e74863621cc020776b88b5c1c6ee6dc712a3b04489a448b3442698d8c1f6",
+            ".bin": "8e3bbee3956a61491d92c8e54fd127da00c88a8f307b74ffdfc17c7023e58e42",
+            ".log": "29269abf0339fd42de232c999d84fa238c46d0413ea5b19bba375ea29a4b0baf"
+          }
+        }
+      },
+      {
+        "name": "front-128-s43-c0",
+        "samples": 128,
+        "seed": 43,
+        "clamp": 0,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c0",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "128",
+              "--seed",
+              "43",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c0.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c0.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c0.bin",
+              "--firefly-clamp",
+              "0"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 128,
+          "seed": 43,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 2.1620527869963553,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 9,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "70448841014a4a75d6bbff3b15b28ec07fc6d5f83ef1efafe92155e2f271ebe3",
+            ".json": "5cf9452b6a1c2faa603b36169df9b73179fb2e32171144ed1a45597612c1542a",
+            ".bin": "cbaf4c148e18e23f75067186e894af4582e1f6f6605776bdc8056ae97ede989e",
+            ".log": "4c7ef9cda08c7b381afd1f42fb2533efdd97b123119b5f3a9005136381710cac"
+          }
+        }
+      },
+      {
+        "name": "front-128-s19-c100",
+        "samples": 128,
+        "seed": 19,
+        "clamp": 100,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c100",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "128",
+              "--seed",
+              "19",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c100.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c100.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c100.bin",
+              "--firefly-clamp",
+              "100"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 128,
+          "seed": 19,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 2.166290413995739,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 11,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "57d1bea5069a9a7a09f251da359858abfbc6c608a2c67d44f6ca29ccf72a643f",
+            ".json": "0f1057c33213c22a76d541e9aa338e6793a674e32199b1f029bb236760a7dc6e",
+            ".bin": "e849b9007b5f1f286abfa9c96d797266fb352d9e422273fcd764093e210d1567",
+            ".log": "9d087b55208ceb6a0f5c3c0c920c91e96b077f90f4dc97e3f6dc7f05cec69840"
+          }
+        }
+      },
+      {
+        "name": "front-128-s43-c100",
+        "samples": 128,
+        "seed": 43,
+        "clamp": 100,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c100",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "128",
+              "--seed",
+              "43",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c100.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c100.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c100.bin",
+              "--firefly-clamp",
+              "100"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 128,
+          "seed": 43,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 2.159165110992035,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 9,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "a284588775d83a2536650bfe3ffb143981b4a9ae3fc2f2dfcaf24f681587947f",
+            ".json": "6c7e4f63ef274767b95389d8fc5af7365e169dca46b742d728bc98b872da5894",
+            ".bin": "f652e95724f85194d50d9d32c11f2aaea06f622f0aca98c9522a37df00b5e133",
+            ".log": "2c0795529fca71a0a6e946adcc54edbf2e6f6b9229fe890d9f827ac4bd634b46"
+          }
+        }
+      },
+      {
+        "name": "front-128-s19-c1000",
+        "samples": 128,
+        "seed": 19,
+        "clamp": 1000,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c1000",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "128",
+              "--seed",
+              "19",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c1000.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c1000.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c1000.bin",
+              "--firefly-clamp",
+              "1000"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 128,
+          "seed": 19,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 2.165168222010834,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 11,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "e976f8ec4e17f9b1e705a88a905f49e16947e98f663f3ab05315a1b4900a3751",
+            ".json": "f43493505cb3f75e57f68652d0682fe7eee39fd08db3630e43a05314281515d2",
+            ".bin": "6e6c8dde9fd779965c6779fc717a4b95799c3e5f8e1aa20faed1be82e93d8254",
+            ".log": "6f983dcbcc7382630774788dae8e86dd9ec387d2dc409c8b7a9780e36f290db6"
+          }
+        }
+      },
+      {
+        "name": "front-128-s43-c1000",
+        "samples": 128,
+        "seed": 43,
+        "clamp": 1000,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c1000",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "128",
+              "--seed",
+              "43",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c1000.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c1000.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c1000.bin",
+              "--firefly-clamp",
+              "1000"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 128,
+          "seed": 43,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 2.1519740229996387,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 9,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "3dc80b85a508fc9acf51542ed64b3c8c090a391508f2c49425d0c8cabe5ed655",
+            ".json": "6807d73bb2081ee610e6f40eff9a88a27fde6817c8f16f6ab73d6330068bbb59",
+            ".bin": "aec8f485f6c74fbcad763d1746c8cafd37d6ab9d152d6b22f93f84fa18f9ab8d",
+            ".log": "86277fd471c9e91c26dc188fc0fd0d21ee2f9d6f4ffffea0023d56acee98abfa"
+          }
+        }
+      },
+      {
+        "name": "front-128-s19-c10000",
+        "samples": 128,
+        "seed": 19,
+        "clamp": 10000,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c10000",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "128",
+              "--seed",
+              "19",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c10000.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c10000.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s19-c10000.bin",
+              "--firefly-clamp",
+              "10000"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 128,
+          "seed": 19,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 2.1610184780147392,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 11,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "51a5ab1468552693c9581efa3f37bddc15cb9ed79c0686994e606b1880a85036",
+            ".json": "456a33f43d01aaef01e7f25e814f8b98bb74d1289903a765c72cd9ec9d9ce3f4",
+            ".bin": "5406772b680dd4241e43fb4fb24b6199a4c74292fe934d60b864ae23404b8f6e",
+            ".log": "abb9c44651c95f342fcf8fab1af0a5c15cf228747cf87ab964afbf173e5dcfb8"
+          }
+        }
+      },
+      {
+        "name": "front-128-s43-c10000",
+        "samples": 128,
+        "seed": 43,
+        "clamp": 10000,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c10000",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "128",
+              "--seed",
+              "43",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c10000.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c10000.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-128-s43-c10000.bin",
+              "--firefly-clamp",
+              "10000"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 128,
+          "seed": 43,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 2.164184286026284,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 9,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "70448841014a4a75d6bbff3b15b28ec07fc6d5f83ef1efafe92155e2f271ebe3",
+            ".json": "1bdab5c426aaeb16ca7a8a8039c0b1655d9bc968c26e47f5c96eff77490e7d18",
+            ".bin": "803ed2092c4c86018cf4e4382277305a5c13078c93c5da0b66e2c15ddde4bece",
+            ".log": "41fdad3a9f415b5e2969c8f921610fd694ffdeeb10c668272f44b820b54fd602"
+          }
+        }
+      },
+      {
+        "name": "front-512-s19-c0",
+        "samples": 512,
+        "seed": 19,
+        "clamp": 0,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c0",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "512",
+              "--seed",
+              "19",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c0.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c0.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c0.bin",
+              "--firefly-clamp",
+              "0"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 512,
+          "seed": 19,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 5.938142024999252,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 28,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "3320759a2c848a94c096bf5d44665c43dbb87a0b523f95613212ab7e51125f56",
+            ".json": "d8547d5849674a2f92ced18583fd65fac2dd95b063c84feddffb7b410a250f11",
+            ".bin": "d9391933bb1b0ba60821d08401ac89c807d9198c975af5079d8364ad4e80f46f",
+            ".log": "8779163bf9666e58479d55e8ad2b42c0f04e56aa8f3c4a33ca5633eeea4cd99e"
+          }
+        }
+      },
+      {
+        "name": "front-512-s43-c0",
+        "samples": 512,
+        "seed": 43,
+        "clamp": 0,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c0",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "512",
+              "--seed",
+              "43",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c0.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c0.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c0.bin",
+              "--firefly-clamp",
+              "0"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 512,
+          "seed": 43,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 5.9591498090012465,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 37,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "745da2041e3c4e80443596713766e7c3cb71ee1e34c0cafed75fc875007583ec",
+            ".json": "00060745e6d7952e30a72f6471b21be4b7935305ab0041ae5c2bffa8936c33c0",
+            ".bin": "ef3b98af8a3e61f2534cc0b4c727b9b80636ea602bef30c940da6668d6dd76e2",
+            ".log": "87db2eacaff3bb4ba208eead56a86578f3a792aa597a1466835cdcbcbdd0491b"
+          }
+        }
+      },
+      {
+        "name": "front-512-s19-c100",
+        "samples": 512,
+        "seed": 19,
+        "clamp": 100,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c100",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "512",
+              "--seed",
+              "19",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c100.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c100.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c100.bin",
+              "--firefly-clamp",
+              "100"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 512,
+          "seed": 19,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 5.959522594988812,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 28,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "794d6e78b86cb0afc795313b84420ab297ee333490290c1fa9dd2832baa0354e",
+            ".json": "f96898ed95bff3e7c37d6d5113b5eda634be38365769e96870415f536e9f9619",
+            ".bin": "7d47e2da7d47d60f75e3c5348ac43273eacbc739506cc9942824dad02deeb9a5",
+            ".log": "f28e944d287ceb634e9cada4fd253ee93a4146271ddee5f41137781fa6369d7c"
+          }
+        }
+      },
+      {
+        "name": "front-512-s43-c100",
+        "samples": 512,
+        "seed": 43,
+        "clamp": 100,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c100",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "512",
+              "--seed",
+              "43",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c100.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c100.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c100.bin",
+              "--firefly-clamp",
+              "100"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 512,
+          "seed": 43,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 5.951784112025052,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 37,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "046398f6700d62d9657f6865a23bae9180c587be255c7b50bb78026cf087fca4",
+            ".json": "ed69a802ec5d9f09a10161dc07352a4d5e6cbc7fda6079990678bb1b843930d5",
+            ".bin": "019688b58dbec1b50f2aec3fa71c388343e2e82787fb6d31ca3e9ab0d3eb894f",
+            ".log": "09134714dcf0abbba9432edbe60a38d653bbefe9f1e8e8da5cb913e72927819f"
+          }
+        }
+      },
+      {
+        "name": "front-512-s19-c1000",
+        "samples": 512,
+        "seed": 19,
+        "clamp": 1000,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c1000",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "512",
+              "--seed",
+              "19",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c1000.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c1000.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c1000.bin",
+              "--firefly-clamp",
+              "1000"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 512,
+          "seed": 19,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 5.959571382001741,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 28,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "f30b3ac7d0bfc2e53de6aec7d70e0a204c8a3b97544750fddb2661f14fca28e2",
+            ".json": "d3f3d845efcfab36658f856588993722ae324da32e82cc8007df497e6ea6e929",
+            ".bin": "a491b44a319708a73543c60ee8412349a6d5977b62a4d92d4883401692a42f5c",
+            ".log": "65b96fdd28abcf2516fbf6a4ba438d8a0d46b54a5934558b5f7982358ae97e4e"
+          }
+        }
+      },
+      {
+        "name": "front-512-s43-c1000",
+        "samples": 512,
+        "seed": 43,
+        "clamp": 1000,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c1000",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "512",
+              "--seed",
+              "43",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c1000.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c1000.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c1000.bin",
+              "--firefly-clamp",
+              "1000"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 512,
+          "seed": 43,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 5.964913104020525,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 37,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "2421fe34ca9ef0fd975810ca6e4e7dea8f4ffe28ecc6d83db7fd962b13311599",
+            ".json": "46f12f05ac5b92bcecb642466c7d7b99209c4aca17a164b04b5df6e841d2203c",
+            ".bin": "12d3bab3a048d4f29e8e5199200ca63435d9ca6ac5814a0d24f46079f81bc8c7",
+            ".log": "b5b9b8b4ad699bdb97b2d08275760178ecdd10427939d867fc30fcea5a2bdc3f"
+          }
+        }
+      },
+      {
+        "name": "front-512-s19-c10000",
+        "samples": 512,
+        "seed": 19,
+        "clamp": 10000,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c10000",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "512",
+              "--seed",
+              "19",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c10000.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c10000.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s19-c10000.bin",
+              "--firefly-clamp",
+              "10000"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 512,
+          "seed": 19,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 5.941378672985593,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 28,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "3320759a2c848a94c096bf5d44665c43dbb87a0b523f95613212ab7e51125f56",
+            ".json": "a4f4a0a099e4ed2766d69acf8b28d0295229348b89267141c075813bcfaddb74",
+            ".bin": "8531b2d4032b07906f5086da9ab199abfabd0380bab73cfdaa8a394fca727c4f",
+            ".log": "528245f23e0402be918da9857f57d549cc9242ca1f8773c5cb1b8c41eeeb52c0"
+          }
+        }
+      },
+      {
+        "name": "front-512-s43-c10000",
+        "samples": 512,
+        "seed": 43,
+        "clamp": 10000,
+        "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c10000",
+        "receipt": {
+          "identity": {
+            "command": [
+              "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+              "--config",
+              "projects/raytracing/presets/optics/dragon-glass.json",
+              "--headless",
+              "--frames",
+              "1",
+              "--require-validation",
+              "--width",
+              "1920",
+              "--height",
+              "1080",
+              "--samples",
+              "512",
+              "--seed",
+              "43",
+              "--output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c10000.png",
+              "--metrics",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c10000.json",
+              "--hdr-output",
+              "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/captures/front-512-s43-c10000.bin",
+              "--firefly-clamp",
+              "10000"
+            ],
+            "binary_sha256": "4e9b951932c50e2e5f5bfedd4da3bc81d1708836cf5b0e0b23294ebddcf4c0ab",
+            "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+            "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+            "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+          },
+          "width": 1920,
+          "height": 1080,
+          "samples": 512,
+          "seed": 43,
+          "mode": "hdr",
+          "wall_seconds_including_setup": 5.963487097003963,
+          "finite_output": true,
+          "nonnegative_hdr": true,
+          "validation_clean": true,
+          "transport_status_checked": true,
+          "transport_accepted": true,
+          "transport_failure": null,
+          "transport_policy": "diagnostic only",
+          "status_or_pixels": {
+            "1": 0,
+            "2": 0,
+            "4": 0,
+            "8": 37,
+            "16": 0,
+            "32": 0,
+            "64": 0
+          },
+          "budget": {
+            "max-events": 128,
+            "max-path-rays": 1024,
+            "max-total-rays": 4096
+          },
+          "resident_requested_bytes": 175189048,
+          "peak_requested_bytes": 175189048,
+          "artifacts": {
+            ".png": "745da2041e3c4e80443596713766e7c3cb71ee1e34c0cafed75fc875007583ec",
+            ".json": "bfd29174b30ec9f443a2282644564c7a5b37531adfce82dc6e4a90393315fd29",
+            ".bin": "948b65917353d55c384a23d6f4f571d1ed6edc17dcb6d674152e887d49896201",
+            ".log": "046b6debee1846f648a481eb36cd27fba2ef2bfbc8a03b253a55ebef2ca8eab4"
+          }
+        }
+      }
+    ]
+  },
+  "denoised": [
+    {
+      "name": "front-128-s19-c0",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 0,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c0",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c0-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c0.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "8e3bbee3956a61491d92c8e54fd127da00c88a8f307b74ffdfc17c7023e58e42",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.36431499899481423,
+      "display_calibration_mean_rgb8": 0.0462329603909465,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "6b408a49921c4d198f53003c6e9e3f8d6adfcc3c432ac9b219eacd715106a83c",
+        ".png": "9bbde22164323114c0c54ab4ff32c584a0bb216e072d633574970404e1961ba8",
+        ".log": "80c38c7caec05647d644d5de5e165c2df87616bac19081578452af778374c6f8"
+      }
+    },
+    {
+      "name": "front-128-s43-c0",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 0,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c0",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c0-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c0.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "cbaf4c148e18e23f75067186e894af4582e1f6f6605776bdc8056ae97ede989e",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.36923086500610225,
+      "display_calibration_mean_rgb8": 0.04615579989711934,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "ec1510e293fbca97a6f772df4e176c76c0c2e2c15cddb339d4731bb57a761fda",
+        ".png": "25bd406100ba84426fcd9e105b1e27359876dbe88b0a7378f0abaf2968a85a9d",
+        ".log": "6fd41cbaa624c4cccb766a0b0898739ff1e2adfb42840eacdb6f117e4690c880"
+      }
+    },
+    {
+      "name": "front-128-s19-c100",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 100,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c100",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c100-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c100.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "e849b9007b5f1f286abfa9c96d797266fb352d9e422273fcd764093e210d1567",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.3662772119860165,
+      "display_calibration_mean_rgb8": 0.04623890817901235,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "4f32694018b1638cd40b5956a963110fe7112ebec379b4625ace7f458354daf5",
+        ".png": "f54190713d104e8ae9fb56e6bd830b12111dbeb211f5300836b9c920e007b076",
+        ".log": "b507ef6337fa375bf6076b52563b4e216230bc50d1b151a37fec53101c457fab"
+      }
+    },
+    {
+      "name": "front-128-s43-c100",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 100,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c100",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c100-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c100.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "f652e95724f85194d50d9d32c11f2aaea06f622f0aca98c9522a37df00b5e133",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.3677236199728213,
+      "display_calibration_mean_rgb8": 0.04616014017489712,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "fe6db1d0697bec3a784e415bd820191060e2bfecbacb55ea75756ed6cbe6a0ba",
+        ".png": "203e18d6fab9edd77762136ecd4c11600504de6c2bdd16b0a607a85cb4999fc1",
+        ".log": "b0b5d552b26810551261249f2020efc6cd0d2f6f7fdace02f31e65707c284088"
+      }
+    },
+    {
+      "name": "front-128-s19-c1000",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 1000,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c1000",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c1000-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c1000.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "6e6c8dde9fd779965c6779fc717a4b95799c3e5f8e1aa20faed1be82e93d8254",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.3647682679875288,
+      "display_calibration_mean_rgb8": 0.046233442644032924,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "5fef533458122974c36653234441874176e78e999d2d3c85eaca8ba4512fa72f",
+        ".png": "09dcedb712327c8c678cfb5b8884cc5600c32eaa6b7496ab0d519ef24a28a6e3",
+        ".log": "b79c478e730e94c274ddf1e1cbb63ff15cdc87f01520dba8cf625a117e36cf4e"
+      }
+    },
+    {
+      "name": "front-128-s43-c1000",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 1000,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c1000",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c1000-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c1000.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "aec8f485f6c74fbcad763d1746c8cafd37d6ab9d152d6b22f93f84fa18f9ab8d",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.3636536080157384,
+      "display_calibration_mean_rgb8": 0.04615579989711934,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "cdae7de389b5857018b7abe18cfca680080f1146563b3ea83cef1ee9b63f39fc",
+        ".png": "dea003c058e60fac7c39aeda690fd954372af75614b1d7ecd5ce564e92615550",
+        ".log": "64f64588d905803270d550c475660a2aab31c100e3059643b13e3a239d6de86a"
+      }
+    },
+    {
+      "name": "front-128-s19-c10000",
+      "samples": 128,
+      "seed": 19,
+      "clamp": 10000,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c10000",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c10000-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s19-c10000.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "5406772b680dd4241e43fb4fb24b6199a4c74292fe934d60b864ae23404b8f6e",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.3657335010066163,
+      "display_calibration_mean_rgb8": 0.0462329603909465,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "ff21cd0b1a29e49b463bcf4b16e3ee96b2204aec8e0d188b8d27b984b52dc565",
+        ".png": "db16b18f2c80984ac17891c6837ba0b38816cc9fd580472ca6bf6e48efbbeb7a",
+        ".log": "b866a23d89fd20b59ac6659d9b8e088f51ad92a564d12e3554e36ea92678d587"
+      }
+    },
+    {
+      "name": "front-128-s43-c10000",
+      "samples": 128,
+      "seed": 43,
+      "clamp": 10000,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c10000",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c10000-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-128-s43-c10000.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "803ed2092c4c86018cf4e4382277305a5c13078c93c5da0b66e2c15ddde4bece",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.3675158930127509,
+      "display_calibration_mean_rgb8": 0.04615579989711934,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "1c538f5b0d5862012d47ce0350ad2fea92de63d4ba30fb69843f55e3b37623ec",
+        ".png": "e556a49b9c0a8eb4d779f9c36017f2b88488c6df1fbd1c3c53e5e6756e6ac259",
+        ".log": "db2a7a8affb0cd28eabafe661f49de7b300e341cb0f4f3d790e3cd2f2eb1a8cd"
+      }
+    },
+    {
+      "name": "front-512-s19-c0",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 0,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c0",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c0-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c0.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "d9391933bb1b0ba60821d08401ac89c807d9198c975af5079d8364ad4e80f46f",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.36018754701945,
+      "display_calibration_mean_rgb8": 0.04623440715020576,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "c0e435c84bf359b4c976a058985d239b1697d6fcd9ef19566b476ec0c5159b4c",
+        ".png": "1544a61f3ea9564c7a47d3e35bc934fb49129189a8e5a7b8fd4f157195d0e7ed",
+        ".log": "8e1340cf984cb8738f3bdb8679861e06a2236a5018b177389ede096ad6c3b258"
+      }
+    },
+    {
+      "name": "front-512-s43-c0",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 0,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c0",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c0-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c0.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "ef3b98af8a3e61f2534cc0b4c727b9b80636ea602bef30c940da6668d6dd76e2",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.36411160402349196,
+      "display_calibration_mean_rgb8": 0.046305459104938274,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "e88d7508da28a9f154b55f0cab48b20aefaefcc168f0206da6262eb5ccfb2433",
+        ".png": "0496f8ba58b32a056b66bf8e61903675a279506d98d4898e80b49f814e655232",
+        ".log": "430946f46e58ed006ca096f3b14e2aac501c388b20e2bf7d6e881d43e3e85774"
+      }
+    },
+    {
+      "name": "front-512-s19-c100",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 100,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c100",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c100-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c100.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "7d47e2da7d47d60f75e3c5348ac43273eacbc739506cc9942824dad02deeb9a5",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.36094757000682876,
+      "display_calibration_mean_rgb8": 0.046250321502057615,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "633168237c1a072c6bb56817a32b5245f37790d799df2a9b104a30615556aced",
+        ".png": "5a873bb313b6b0af64b061ea7b04d429054680a5ac1ad12ddb32bb25b1dff1a1",
+        ".log": "4796d714f39d9c283ec546482d8c4ba36b734a538ffc29f70a65e229b147850e"
+      }
+    },
+    {
+      "name": "front-512-s43-c100",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 100,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c100",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c100-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c100.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "019688b58dbec1b50f2aec3fa71c388343e2e82787fb6d31ca3e9ab0d3eb894f",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.36396474999492057,
+      "display_calibration_mean_rgb8": 0.04631703317901235,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "5b3864053029a106b89396f978c962c90d2126fd6e42d87bdc1cc46155058e20",
+        ".png": "64872dbeddfcac7c75021eeb4727428bf667cd48a4fac7af3ab9069f31ca37ca",
+        ".log": "8963c3ad4fffd001bde0262cf71fb6143fb8698a57ac1af355cdf8117ca17a9a"
+      }
+    },
+    {
+      "name": "front-512-s19-c1000",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 1000,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c1000",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c1000-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c1000.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "a491b44a319708a73543c60ee8412349a6d5977b62a4d92d4883401692a42f5c",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.37105571999563836,
+      "display_calibration_mean_rgb8": 0.046240997942386834,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "2869c806f343df3ac571f0256ccd5a66a59490406c044df8da84861adcf93441",
+        ".png": "5fb7fa5147227746abd10e642a67971b856cb4640ce82934b1e0ec6f3f91d50b",
+        ".log": "9e5fde8c7a81a177ba314e65dd4222392b4f75899eeafc07c5afc5d597be303a"
+      }
+    },
+    {
+      "name": "front-512-s43-c1000",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 1000,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c1000",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c1000-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c1000.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "12d3bab3a048d4f29e8e5199200ca63435d9ca6ac5814a0d24f46079f81bc8c7",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.36464161198819056,
+      "display_calibration_mean_rgb8": 0.04631060313786008,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "a8e006f1b365d14abe7fdde9fd5831ea24f74455c44300dd146bb659a2fec345",
+        ".png": "f3ceead2d571df19939d86657366558c73759f3612cab7c28b9d40afb21d8404",
+        ".log": "07d5c04727c42d2190a48fbbdf4af92d323bd895bd66b515a75ecf719a4cbe32"
+      }
+    },
+    {
+      "name": "front-512-s19-c10000",
+      "samples": 512,
+      "seed": 19,
+      "clamp": 10000,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c10000",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c10000-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s19-c10000.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "8531b2d4032b07906f5086da9ab199abfabd0380bab73cfdaa8a394fca727c4f",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.3604390590044204,
+      "display_calibration_mean_rgb8": 0.04623440715020576,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "84e48485d783fee8f98ce85a1ce5959fbef7221e6402f6d293890337c8d75248",
+        ".png": "39040c27957e30148fcf344512e9768d6ccae07c512ed9867e1d81a862bee6be",
+        ".log": "5f21943049c62abff94a7ef56b1939372a1baadd2b74e3cee6cbfc2d0aab48cf"
+      }
+    },
+    {
+      "name": "front-512-s43-c10000",
+      "samples": 512,
+      "seed": 43,
+      "clamp": 10000,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c10000",
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/tools/oidn-2.5.1.x86_64.linux/bin/oidnDenoise",
+        "--device",
+        "cuda",
+        "--filter",
+        "RT",
+        "--quality",
+        "high",
+        "--hdr",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c10000-input.pfm",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-noise-controls-20261116/final/denoised/front-512-s43-c10000.pfm",
+        "-n",
+        "3"
+      ],
+      "oidn_sha256": "1cb3a28ebc99b90d7548b0b8b16f70c163cb59abe8582458a254aa303338269c",
+      "input_hdr_sha256": "948b65917353d55c384a23d6f4f571d1ed6edc17dcb6d674152e887d49896201",
+      "finite_nonnegative": true,
+      "scope": "offline OIDN RT color-only CUDA high; auto input scale; no temporal claim",
+      "process_wall_seconds_including_startup_io_and_three_executions": 0.36060012798407115,
+      "display_calibration_mean_rgb8": 0.046305459104938274,
+      "display_calibration_max_rgb8": 1.0,
+      "artifacts": {
+        ".pfm": "acab604c0201a8178f2381281e7a92d3c00951f8be505d5f887f1a80c9cefb49",
+        ".png": "e8c84aa6e90bd1de4a5853440315fe597f40f362b0ee42dffd0c9745aad744df",
+        ".log": "9689b83952523d02ee8c0f5a3b1f02e39eb5ada98e6a319ad753d33d0cecdb80"
+      }
+    }
+  ]
+}

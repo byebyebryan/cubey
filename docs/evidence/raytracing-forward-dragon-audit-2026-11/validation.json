@@ -1,0 +1,32 @@
+{
+  "production_forward_dragon_audit_passed": true,
+  "shared_forward_sphere_and_routing_captures": 18,
+  "rt_ctests_passed": 20,
+  "documentation_checks_passed": 9,
+  "screen_and_environment_save_replay_byte_identical": true,
+  "unwritable_hdr_path_clean_error": true,
+  "native_environment_receipt": {
+    "passed": true,
+    "renderer": "forward",
+    "as_bytes": 0,
+    "samples": 1,
+    "frames": 506,
+    "validation": true,
+    "recording": true
+  },
+  "final_frame_transmission_and_beer_control_passed": true,
+  "report_url": "http://starship:8787/reports/d2e6bc85ea3e7e4ff14a220759d984a3637ee3fb423d8886b0b5984b849e456e/",
+  "browser": {
+    "source_and_rt_wide_detail_comparison_loaded": true,
+    "tangent_isolation_loaded_and_detail_disabled": true,
+    "split_buttons_checked": true,
+    "forward_and_rt_video_play_pause_seek_checked": true,
+    "decoded_extent": [
+      1920,
+      1080
+    ],
+    "no_desktop_horizontal_overflow": true
+  },
+  "shader_model_and_material_recipe_changes": false,
+  "no_commit_push_or_site_update": true
+}

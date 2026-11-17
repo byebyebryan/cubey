@@ -1,0 +1,18 @@
+{
+  "screen-pattern": {
+    "pixel_identical": true,
+    "max_rgb_code_difference": 0
+  },
+  "screen-plain": {
+    "pixel_identical": true,
+    "max_rgb_code_difference": 0
+  },
+  "environment-pattern": {
+    "pixel_identical": true,
+    "max_rgb_code_difference": 0
+  },
+  "environment-plain": {
+    "pixel_identical": true,
+    "max_rgb_code_difference": 0
+  }
+}

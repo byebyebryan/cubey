@@ -1,0 +1,1940 @@
+{
+  "report": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/",
+  "states": [
+    {
+      "n": "128",
+      "s": "19",
+      "c": "100",
+      "region": "scene",
+      "context": "128 samples · seed 19 · Whole scene · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-128-s19-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-128-s19-c100-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-128-s19-c100-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "100",
+      "region": "head",
+      "context": "128 samples · seed 19 · Head detail · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-128-s19-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-128-s19-c100-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-128-s19-c100-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "100",
+      "region": "body",
+      "context": "128 samples · seed 19 · Body detail · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-128-s19-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-128-s19-c100-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-128-s19-c100-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "100",
+      "region": "base",
+      "context": "128 samples · seed 19 · Marble base · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-128-s19-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-128-s19-c100-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-128-s19-c100-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "1000",
+      "region": "scene",
+      "context": "128 samples · seed 19 · Whole scene · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-128-s19-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-128-s19-c1000-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-128-s19-c1000-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "1000",
+      "region": "head",
+      "context": "128 samples · seed 19 · Head detail · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-128-s19-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-128-s19-c1000-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-128-s19-c1000-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "1000",
+      "region": "body",
+      "context": "128 samples · seed 19 · Body detail · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-128-s19-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-128-s19-c1000-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-128-s19-c1000-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "1000",
+      "region": "base",
+      "context": "128 samples · seed 19 · Marble base · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-128-s19-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-128-s19-c1000-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-128-s19-c1000-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "10000",
+      "region": "scene",
+      "context": "128 samples · seed 19 · Whole scene · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-128-s19-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-128-s19-c10000-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-128-s19-c10000-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "10000",
+      "region": "head",
+      "context": "128 samples · seed 19 · Head detail · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-128-s19-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-128-s19-c10000-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-128-s19-c10000-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "10000",
+      "region": "body",
+      "context": "128 samples · seed 19 · Body detail · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-128-s19-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-128-s19-c10000-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-128-s19-c10000-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "19",
+      "c": "10000",
+      "region": "base",
+      "context": "128 samples · seed 19 · Marble base · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-128-s19-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-128-s19-c10000-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-128-s19-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-128-s19-c10000-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "100",
+      "region": "scene",
+      "context": "128 samples · seed 43 · Whole scene · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-128-s43-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-128-s43-c100-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-128-s43-c100-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "100",
+      "region": "head",
+      "context": "128 samples · seed 43 · Head detail · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-128-s43-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-128-s43-c100-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-128-s43-c100-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "100",
+      "region": "body",
+      "context": "128 samples · seed 43 · Body detail · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-128-s43-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-128-s43-c100-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-128-s43-c100-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "100",
+      "region": "base",
+      "context": "128 samples · seed 43 · Marble base · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-128-s43-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-128-s43-c100-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-128-s43-c100-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "1000",
+      "region": "scene",
+      "context": "128 samples · seed 43 · Whole scene · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-128-s43-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-128-s43-c1000-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-128-s43-c1000-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "1000",
+      "region": "head",
+      "context": "128 samples · seed 43 · Head detail · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-128-s43-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-128-s43-c1000-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-128-s43-c1000-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "1000",
+      "region": "body",
+      "context": "128 samples · seed 43 · Body detail · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-128-s43-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-128-s43-c1000-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-128-s43-c1000-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "1000",
+      "region": "base",
+      "context": "128 samples · seed 43 · Marble base · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-128-s43-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-128-s43-c1000-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-128-s43-c1000-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "10000",
+      "region": "scene",
+      "context": "128 samples · seed 43 · Whole scene · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-128-s43-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-128-s43-c10000-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-128-s43-c10000-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "10000",
+      "region": "head",
+      "context": "128 samples · seed 43 · Head detail · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-128-s43-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-128-s43-c10000-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-128-s43-c10000-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "10000",
+      "region": "body",
+      "context": "128 samples · seed 43 · Body detail · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-128-s43-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-128-s43-c10000-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-128-s43-c10000-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "128",
+      "s": "43",
+      "c": "10000",
+      "region": "base",
+      "context": "128 samples · seed 43 · Marble base · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-128-s43-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-128-s43-c10000-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-128-s43-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-128-s43-c10000-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "100",
+      "region": "scene",
+      "context": "512 samples · seed 19 · Whole scene · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-512-s19-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-512-s19-c100-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-512-s19-c100-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "100",
+      "region": "head",
+      "context": "512 samples · seed 19 · Head detail · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-512-s19-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-512-s19-c100-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-512-s19-c100-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "100",
+      "region": "body",
+      "context": "512 samples · seed 19 · Body detail · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-512-s19-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-512-s19-c100-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-512-s19-c100-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "100",
+      "region": "base",
+      "context": "512 samples · seed 19 · Marble base · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-512-s19-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-512-s19-c100-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-512-s19-c100-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "1000",
+      "region": "scene",
+      "context": "512 samples · seed 19 · Whole scene · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-512-s19-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-512-s19-c1000-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-512-s19-c1000-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "1000",
+      "region": "head",
+      "context": "512 samples · seed 19 · Head detail · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-512-s19-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-512-s19-c1000-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-512-s19-c1000-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "1000",
+      "region": "body",
+      "context": "512 samples · seed 19 · Body detail · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-512-s19-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-512-s19-c1000-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-512-s19-c1000-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "1000",
+      "region": "base",
+      "context": "512 samples · seed 19 · Marble base · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-512-s19-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-512-s19-c1000-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-512-s19-c1000-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "10000",
+      "region": "scene",
+      "context": "512 samples · seed 19 · Whole scene · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-512-s19-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-512-s19-c10000-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-512-s19-c10000-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "10000",
+      "region": "head",
+      "context": "512 samples · seed 19 · Head detail · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-512-s19-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-512-s19-c10000-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-512-s19-c10000-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "10000",
+      "region": "body",
+      "context": "512 samples · seed 19 · Body detail · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-512-s19-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-512-s19-c10000-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-512-s19-c10000-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "19",
+      "c": "10000",
+      "region": "base",
+      "context": "512 samples · seed 19 · Marble base · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-512-s19-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-512-s19-c10000-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-512-s19-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-512-s19-c10000-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "100",
+      "region": "scene",
+      "context": "512 samples · seed 43 · Whole scene · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-512-s43-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-512-s43-c100-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-512-s43-c100-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "100",
+      "region": "head",
+      "context": "512 samples · seed 43 · Head detail · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-512-s43-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-512-s43-c100-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-512-s43-c100-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "100",
+      "region": "body",
+      "context": "512 samples · seed 43 · Body detail · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-512-s43-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-512-s43-c100-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-512-s43-c100-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "100",
+      "region": "base",
+      "context": "512 samples · seed 43 · Marble base · cap 100",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-512-s43-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-512-s43-c100-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-512-s43-c100-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "1000",
+      "region": "scene",
+      "context": "512 samples · seed 43 · Whole scene · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-512-s43-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-512-s43-c1000-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-512-s43-c1000-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "1000",
+      "region": "head",
+      "context": "512 samples · seed 43 · Head detail · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-512-s43-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-512-s43-c1000-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-512-s43-c1000-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "1000",
+      "region": "body",
+      "context": "512 samples · seed 43 · Body detail · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-512-s43-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-512-s43-c1000-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-512-s43-c1000-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "1000",
+      "region": "base",
+      "context": "512 samples · seed 43 · Marble base · cap 1,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-512-s43-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-512-s43-c1000-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-512-s43-c1000-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "10000",
+      "region": "scene",
+      "context": "512 samples · seed 43 · Whole scene · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "raw",
+          "src": "front-512-s43-c0-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "clamp",
+          "src": "front-512-s43-c10000-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-scene.png",
+          "width": 1920
+        },
+        {
+          "complete": true,
+          "height": 1080,
+          "id": "combined",
+          "src": "front-512-s43-c10000-oidn-scene.png",
+          "width": 1920
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "10000",
+      "region": "head",
+      "context": "512 samples · seed 43 · Head detail · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 335,
+          "id": "raw",
+          "src": "front-512-s43-c0-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "clamp",
+          "src": "front-512-s43-c10000-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-head.png",
+          "width": 475
+        },
+        {
+          "complete": true,
+          "height": 335,
+          "id": "combined",
+          "src": "front-512-s43-c10000-oidn-head.png",
+          "width": 475
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "10000",
+      "region": "body",
+      "context": "512 samples · seed 43 · Body detail · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 465,
+          "id": "raw",
+          "src": "front-512-s43-c0-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "clamp",
+          "src": "front-512-s43-c10000-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-body.png",
+          "width": 625
+        },
+        {
+          "complete": true,
+          "height": 465,
+          "id": "combined",
+          "src": "front-512-s43-c10000-oidn-body.png",
+          "width": 625
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "n": "512",
+      "s": "43",
+      "c": "10000",
+      "region": "base",
+      "context": "512 samples · seed 43 · Marble base · cap 10,000",
+      "images": [
+        {
+          "complete": true,
+          "height": 285,
+          "id": "raw",
+          "src": "front-512-s43-c0-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "clamp",
+          "src": "front-512-s43-c10000-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "oidn",
+          "src": "front-512-s43-c0-oidn-base.png",
+          "width": 700
+        },
+        {
+          "complete": true,
+          "height": 285,
+          "id": "combined",
+          "src": "front-512-s43-c10000-oidn-base.png",
+          "width": 700
+        }
+      ],
+      "overflow": false
+    }
+  ],
+  "all_loaded": true,
+  "all_correct_files": true,
+  "wipe": {
+    "clip": "inset(0px 35% 0px 0px)",
+    "divider": "65%",
+    "output": "65%"
+  },
+  "wipe_pairs": [
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c0-oidn-head.png"
+    },
+    {
+      "left": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "right": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "leftLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png",
+      "rightLink": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/images/front-512-s19-c100-oidn-head.png"
+    }
+  ],
+  "all_full_size_links_match": true,
+  "validation_disclosure": true,
+  "page_errors": [],
+  "desktop_overflow": false,
+  "screenshot": "outputs/raytracing/dragon-glass-noise-controls-20261116/final/browser-report.png",
+  "scope": "Desktop Chrome report and settled stills, no native temporal or physical-display claim"
+}

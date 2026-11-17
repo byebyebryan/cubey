@@ -43,6 +43,9 @@ vec3 workshopShadowVisibility(Surface receiver,vec3 light) {
 float solarConeSize() { float s=sin(workshop.solar.x*.5); return 2*s*s; }
 vec3 transportSky(vec3 direction,float solarPdf,float solarWeight) {
     if(workshop.solar.w>.5) return vec3(1);
+    // Demo appearance approximation: the existing visual sky includes its
+    // softened solar disk; do not inject the sampled mode's narrow solar spike.
+    if(environment.noise.y>.5) return sky(direction)*workshop.solar.y;
     vec3 visual=textureLod(visualSunComponent,direction,0).rgb*environment.options.w;
     vec3 background=max(sky(direction)-visual,vec3(0))*workshop.solar.y;
     float sine=sin(workshop.solar.x);
@@ -182,6 +185,18 @@ struct WorkshopPath {
     uint sequence;
     RT_PATH_FIELDS
 };
+// Bound a throughput-weighted HDR deposit before accumulation. One RGB scale
+// preserves hue; the cap deliberately removes energy. Zero retains raw transport.
+float rtRadianceDepositScale(vec3 deposit) {
+    float limit=environment.noise.x;
+    if(limit<=0)return 1;
+    float average=(deposit.r+deposit.g+deposit.b)/3;
+    return average>limit?limit/average:1;
+}
+vec3 rtRadianceDeposit(vec3 deposit) {
+    float scale=rtRadianceDepositScale(deposit);
+    return scale<1?deposit*scale:deposit;
+}
 void traceWorkshop() {
     ivec2 pixel=ivec2(gl_LaunchIDEXT.xy);
     uint linearPixel=gl_LaunchIDEXT.x+gl_LaunchIDEXT.y*gl_LaunchSizeEXT.x;
@@ -207,7 +222,10 @@ void traceWorkshop() {
     observation[0]=vec4(-1,-1,0,1);observation[8].w=-3;
     observation[12]=vec4(-1,-1,0,0);
     randomKey=rtHash(linearPixel^rtHash(workshop.sampling.x));
-    vec2 uv=(vec2(pixel)+rtStratified(completed,0u))/vec2(gl_LaunchSizeEXT.xy),screen=uv*2-1;
+    bool demo=environment.noise.y>.5;
+    vec2 pixelOffset=demo?(workshop.sampling.y==2u?vec2(.25+.5*float(completed)):
+        (vec2(completed&1u,completed>>1u)+.5)*.5):rtStratified(completed,0u);
+    vec2 uv=(vec2(pixel)+pixelOffset)/vec2(gl_LaunchSizeEXT.xy),screen=uv*2-1;
     vec3 origin=camera.eye.xyz;
     vec3 direction=normalize(mat3(camera.inverseView)*vec3(screen.x*camera.eye.w*camera.light.z,-screen.y*camera.light.z,-1));
 #ifdef CUBEY_RT_RAY_JOURNAL
@@ -218,6 +236,7 @@ void traceWorkshop() {
     float priorSolarPdf=-1;
     float solarMisWeight=1;
     uint terminatedBranches=0u,rejectedBranches=0u;
+    uint policyPruned=0u;
     uint trunkBoundaries=0u;
     int medium=-1;
     vec3 segmentStart=origin;
@@ -251,12 +270,15 @@ void traceWorkshop() {
     jRecord(20u,vec4(origin,0),vec4(direction,0),vec4(weight,0),vec4(segmentStart,0),vec4(width,spread,priorSolarPdf,solarMisWeight),uintBitsToFloat(uvec4(path.journalParent,sequence,uint(pendingCount),trunk?1u:0u)),vec4(0));
 #endif
     for(int depth=path.depth;depth<=environment.limits.x&&view!=10;++depth) {
+        if(demo&&max(max(weight.r,weight.g),weight.b)<.01) {
+            ++policyPruned; status|=128u; discarded+=weight; break;
+        }
 #ifdef CUBEY_RT_RAY_JOURNAL
         jDepth=uint(depth);jMedium=medium;
         jRecord(21u,vec4(origin,0),vec4(direction,0),vec4(weight,0),vec4(segmentStart,0),uintBitsToFloat(uvec4(sequence,uint(totalQueries),uint(radianceQueries),uint(shadowQueries))),vec4(0),vec4(0));
 #endif
         if(environmentOnly&&medium<0) {
-            color+=weight*transportSky(direction,priorSolarPdf,solarMisWeight);
+            color+=rtRadianceDeposit(weight*transportSky(direction,priorSolarPdf,solarMisWeight));
             break;
         }
         if(depth>0&&(radianceQueries>=environment.limits.y||totalQueries>=environment.limits.z)) {
@@ -277,7 +299,8 @@ void traceWorkshop() {
             weight*=absorption;if(trunk)observation[9]=vec4(absorption,distance);
         }
         if(s.id<0) {
-            color+=weight*(depth==0?textureLod(visibleBackground,uv,0).rgb*environment.options.w:transportSky(direction,priorSolarPdf,solarMisWeight));
+            vec3 deposit=weight*(depth==0?textureLod(visibleBackground,uv,0).rgb*environment.options.w:transportSky(direction,priorSolarPdf,solarMisWeight));
+            color+=depth==0?deposit:rtRadianceDeposit(deposit);
             break;
         }
         width+=s.t*spread;
@@ -309,7 +332,7 @@ void traceWorkshop() {
             mat3 frame=rtDirectionFrame(n);
             vec3 localV=transpose(frame)*v;
             bool delta=m.roughGlass<.5||eta==1;
-            bool split=depth<2&&eta!=1;
+            bool split=(demo||depth<2)&&eta!=1;
 #ifdef CUBEY_RT_RAY_JOURNAL
             jRecord(40u,vec4(n,dot(direction,n)),vec4(localV,eta),vec4(direction,entering?1:0),vec4(weight,0),uintBitsToFloat(uvec4(uint(s.id),s.primitive,s.journalHitKind,split?1u:0u)),vec4(s.p,s.spawnOffset),vec4(s.spawnNormal,0));
 #endif
@@ -321,7 +344,8 @@ void traceWorkshop() {
                 observation[6]=vec4(b.transmitted,b.tir?1:0);
                 observation[13]=vec4(m.base,m.roughness);observation[14]=vec4(0,footprint,0,0);
             }
-            color+=weight*m.emission;emissionContribution+=weight*m.emission;
+            vec3 emitted=rtRadianceDeposit(weight*m.emission);
+            color+=emitted;emissionContribution+=emitted;
             if(depth>=environment.limits.x){status|=2u;discarded+=weight;++terminatedBranches;break;}
             // Sample the direct solar emitter separately, then always continue
             // the BSDF. Repeating a one-sample mixture through glass multiplies
@@ -345,11 +369,11 @@ void traceWorkshop() {
                 if(visible) {
                     float sine=sin(workshop.solar.x);
                     vec3 radiance=environment.directColor.rgb/(CUBEY_PBR_PI*sine*sine)*workshop.solar.z;
-                    color+=weight*response.x*abs(localLight.z)/(sunPdf+proposalPdf)*radiance;
+                    color+=rtRadianceDeposit(weight*response.x*abs(localLight.z)/(sunPdf+proposalPdf)*radiance);
                 }
             }
-            vec2 xi=rtStratified(sequence,1u+uint(depth)*2u);
-            float branch=rtStratified(sequence,97u+uint(depth)).x;
+            vec2 xi=demo?vec2(.5):rtStratified(sequence,1u+uint(depth)*2u);
+            float branch=demo?1:rtStratified(sequence,97u+uint(depth)).x;
             // Retain the existing flat-interface footprint approximation in
             // both normal modes; varying-normal filtering is not qualified.
             float curvature=environment.glass.w>.5?0:workshopCurvature(s,m.objectScale);
@@ -365,7 +389,10 @@ void traceWorkshop() {
                     float solarPdf=rtConePdf(reflectedDirection,sunAxis,solarConeSize());
                     float solarMis=delta||solarPdf<=0?1:reflectedPdf/(reflectedPdf+solarPdf);
                     vec3 residual=weight*reflectedWeight;
-                    if(pendingCount>=16){status|=64u;discarded+=residual;++terminatedBranches;}
+                    if(demo&&max(max(residual.r,residual.g),residual.b)<.01) {
+                        ++policyPruned;status|=128u;discarded+=residual;
+                    }
+                    else if(pendingCount>=16){status|=64u;discarded+=residual;++terminatedBranches;}
                     else if(reflectedWeight>0) {
 #ifdef CUBEY_RT_RAY_JOURNAL
                         uint jChild=jNextBranch++;
@@ -420,7 +447,9 @@ void traceWorkshop() {
         vec3 fv=cubey_pbr_fresnel_schlick(nv,m.f0);
         vec3 visibility=nl>0?workshopShadowVisibility(s,l):vec3(1);
         vec3 directDiffuse=(1-max(max(f.r,f.g),f.b))*diffuse/CUBEY_PBR_PI*environment.directColor.rgb*nl*visibility*workshop.solar.z;
-        vec3 diffuseEnvironment=(1-max(max(fv.r,fv.g),fv.b))*diffuse*(workshop.solar.w>.5?vec3(1):irradiance(n)/CUBEY_PBR_PI)*workshop.solar.y;
+        // Match the shared forward shader's cached SH convention in demo mode.
+        // Preserve the sampled reference's historical normalization unchanged.
+        vec3 diffuseEnvironment=(1-max(max(fv.r,fv.g),fv.b))*diffuse*(workshop.solar.w>.5?vec3(1):irradiance(n)/(demo?1:CUBEY_PBR_PI))*workshop.solar.y;
         if(m.diffuseRoughness>0) {
             directDiffuse*=rtRoughDiffuse(nl,nv,dot(l,v),m.diffuseRoughness);
             diffuseEnvironment*=rtRoughDiffuse(1,1,1,m.diffuseRoughness);
@@ -434,9 +463,6 @@ void traceWorkshop() {
         vec3 sheenEnvironment=(workshop.solar.w>.5?vec3(1):filteredSky(reflected,m.sheen.w))*m.sheen.rgb*sheenEnergy*workshop.solar.y*
             cubey_pbr_horizon_specular_occlusion(reflected,faceforward(s.outward,direction,s.outward));
         vec3 local=m.emission+directDiffuse*directScale+diffuseEnvironment*viewScale+sheenDirect+sheenEnvironment;
-        diffuseContribution+=weight*(directDiffuse*directScale+diffuseEnvironment*viewScale);
-        sheenContribution+=weight*(sheenDirect+sheenEnvironment);
-        emissionContribution+=weight*m.emission;
         vec3 dfg=textureLod(brdfLut,vec2(nv,m.roughness),0).rgb;
         vec3 compensation=cubey_pbr_energy_compensation(m.f0,dfg.b);
         if(depth==0) {
@@ -448,15 +474,18 @@ void traceWorkshop() {
         }
         mat3 frame=rtDirectionFrame(n);
         vec3 localV=transpose(frame)*v,localL=transpose(frame)*l;
-        if(environment.transport.x<.5) {
+        if(demo||environment.transport.x<.5) {
             local+=rtGgxReflectionEval(localV,localL,m.roughness,m.f0)*compensation*environment.directColor.rgb*nl*visibility*workshop.solar.z*directScale;
             vec3 reflection=reflect(direction,n);
             local+=(workshop.solar.w>.5?vec3(1):filteredSky(reflection,m.roughness))*workshop.solar.y*cubey_pbr_indirect_specular(m.f0,vec3(1),dfg)*
                 cubey_pbr_horizon_specular_occlusion(reflection,faceforward(s.outward,direction,s.outward))*viewScale;
-            color+=weight*local;
-            break;
         }
-        color+=weight*local;
+        float retained=rtRadianceDepositScale(weight*local);
+        color+=rtRadianceDeposit(weight*local);
+        diffuseContribution+=weight*(directDiffuse*directScale+diffuseEnvironment*viewScale)*retained;
+        sheenContribution+=weight*(sheenDirect+sheenEnvironment)*retained;
+        emissionContribution+=weight*m.emission*retained;
+        if(demo||environment.transport.x<.5)break;
         if(depth>=environment.limits.x) {status|=2u;discarded+=weight;++terminatedBranches;break;}
         // Depth-indexed digital strata cover joint proposal combinations.
         // Remove this depth's proposal bit before sampling its direction.
@@ -511,7 +540,7 @@ void traceWorkshop() {
         observation[1].w=float(trunkBoundaries);
         observation[2].w=float(terminatedBranches);
         observation[3].w=float(rejectedBranches);
-        observation[14].zw=vec2(float(trials),status!=0u?1:0);
+        observation[14].zw=vec2(float(demo?policyPruned:trials),status!=0u?1:0);
         observation[10]=vec4(average,float(totalQueries));
         observation[11]=vec4(discarded,float(status));
         observation[15]=vec4(float(radianceQueries),float(maximumDepth),1,float(shadowQueries));

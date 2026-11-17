@@ -13,10 +13,12 @@ in the [progress record](../../docs/notes/raytracing-material-workshop-progress.
 
 ## Build and run
 
-The application requires a Vulkan 1.3 GPU with acceleration structures,
+The RT route requires a Vulkan 1.3 GPU with acceleration structures,
 ray-tracing pipelines and buffer device addresses. It reports missing
 capabilities rather than switching to another renderer. Existing Cubey
-applications do not request these features.
+applications do not request these features. The explicitly selected forward
+dragon comparison below uses the shared raster renderer without requesting RT
+features; it is not an automatic fallback.
 
 ```sh
 rtk cmake --preset dev
@@ -188,6 +190,96 @@ decision; the measured continuity and flux limitations remain. See the
 [default integration record](../../docs/notes/raytracing-dragon-glass-smooth-default.md)
 for scope and current validation. A continuous interface and transport-weighting
 model remains an optional analytical follow-up.
+
+The glass demo defaults to `--firefly-clamp 100` to reduce rare bright samples,
+following visual review of the matched comparison. The native
+**Clamp bright samples** checkbox starts enabled; **Max HDR contribution**
+adjusts the cap. The cap is independent of exposure,
+survives saved views and resets accumulation when changed. It scales each
+throughput-weighted HDR deposit uniformly in RGB before accumulation; visible
+primary atmosphere is excluded. This deliberately loses energy and can dim
+real glints. Use `--firefly-clamp 0` or uncheck the checkbox for raw output. Other
+scenes retain zero, and positive caps require
+`dragon-optics`. See the [matched noise-control comparison](../../docs/notes/raytracing-dragon-glass-noise-controls.md)
+for the 128/512-sample results and highlight/detail tradeoff. The OIDN comparison
+is offline only, with no native denoiser or new renderer dependency.
+
+## Fixed-quality dragon demo and forward comparison
+
+Two opt-in presets reuse the certified dragon, its marble slab, shared clear
+atmosphere and material recipes:
+
+```sh
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-demo.json
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-forward.json
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-demo.json --demo-samples 2
+```
+
+`--transport-mode demo` evaluates sharp glass branches deterministically. Each
+frame renders four fixed 2×2 spatial samples; `--demo-samples 2` selects the
+two-sample diagonal alternative. There is no progressive history or cleaner
+offline capture policy. Native UI reports samples per frame and hides the
+progressive target. The mode survives saved views and is restricted to
+`dragon-optics`; ordinary defaults and `dragon-glass.json` remain sampled.
+
+The demo preserves guarded interfaces, Fresnel/Snell/TIR, absorption and safe
+medium handling. It prunes branches below 1% maximum-RGB throughput, retains
+the existing event/query/16-pending-branch bounds, shades opaque hits with
+cached PBR and uses the shared visual sky without the sampled analytic solar
+spike. Its cached diffuse SH convention matches the shared forward shader.
+These are deliberate appearance/cost approximations; fine spatial shimmer and
+capacity truncation can remain. Policy pruning uses status bit 128 and the
+demo optics dump's `14.z` counter; capacity overflow retains bit 64. See the
+[results and limits](../../docs/notes/raytracing-dragon-demo-results.md).
+
+`--renderer forward` is a narrow adapter to `ForwardPbrRenderer3D`, using the
+same admitted scene meshes and recipe inputs. Reflections use the cached
+environment. The comparison preset selects hybrid transmission: projected
+opaque scene color where geometry is present, and the outgoing refracted sky
+elsewhere. This lets the marble show through the lower body and feet.
+`--forward-transmission-source screen|environment|hybrid` and the native selector
+retain all three approximations in saved views. Environment-only cannot show
+nearby objects; screen-only barely distorts the open sky. Shared forward/glTF
+defaults remain screen-based. `--forward-thickness .2` is the
+fixed object-space estimate, not a measured dragon boundary. The first pass
+requires sharp glass, smooth normals, default combined lighting
+and shadows off. It has one raster sample per frame and no RT acceleration
+structures. The matching RT preset also disables shadows. Neither preset
+claims GI, caustics or an optical reference.
+
+The [forward correctness audit](../../docs/notes/raytracing-forward-dragon-audit.md)
+qualifies the adapter and corrects its initially zero tangent attributes.
+The earlier screen-only baseline was a poor open-sky comparison. Its source
+choice explains most of the faint appearance; screen mode remains a useful
+explicit local-image approximation. The subsequent
+[scene-transparency follow-up](../../docs/notes/raytracing-forward-transparency.md)
+adds the missing local-scene visibility control and the hybrid correction.
+
+Forward component views accept `base-color`, `roughness`, `metallic`,
+`geometric-normal`, `shading-normal`, `transmission-ray`, `transmission-exit`
+and `transmission-radiance`. Headless `--hdr-output` exports the shared
+renderer’s RGBA32F scene readback: alpha is scene alpha, Beer path length for
+the ray view, or validity for the exit view, **not RT transport status**.
+Component source-radiance null checks isolate sky pixels; debug shading of
+opaque objects is not a final-scene source-radiance oracle.
+
+Run its GPU controls explicitly with the prepared model:
+
+```sh
+rtk proxy uv run projects/raytracing/tools/qualify_dragon_demo.py --output outputs/raytracing/dragon-demo-check
+```
+
+The [current scene-visibility report](http://starship:8787/reports/b8c6f3111377c9a11eb1ac0b9a82dcd5d7dd4e68d8559f08025dc23f3a5aadfa/)
+includes hybrid/previous/RT splits, a marble-pattern toggle and fresh forward
+motion. The [earlier input audit](http://starship:8787/reports/d2e6bc85ea3e7e4ff14a220759d984a3637ee3fb423d8886b0b5984b849e456e/)
+contains isolated source/tangent comparisons, matched wide/close RT views and
+native outward/stop/return videos. The
+[initial report](http://starship:8787/reports/a9552bb10b43a53f3fb280516ebd1791f964c895352447c9d19c858e1846a619/)
+retains the original screen baseline and performance measurements. Recorded
+Xvfb cadence and GPU timestamps are separate; these captures do not establish
+physical desktop FPS.
+
+## Sampled dragon qualification
 
 Only this scene defaults to 128 events / 1024 radiance rays / 4096 total queries;
 its deeper reference ceiling is 256 / 2048 / 8192. Legacy defaults/ceilings stay

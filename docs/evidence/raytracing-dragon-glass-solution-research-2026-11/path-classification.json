@@ -1,0 +1,186 @@
+{
+  "scope": "two illustrative bright samples, not all scene paths",
+  "samples": [
+    {
+      "name": "unstable",
+      "pixel": [
+        818,
+        372
+      ],
+      "sample_index": 873,
+      "actual_rgb": [
+        23809.94921875,
+        21872.52734375,
+        14482.5947265625
+      ],
+      "prior_rgb": [
+        23809.94921875,
+        21872.52734375,
+        14482.5947265625
+      ],
+      "status": 0,
+      "positive_hit_instance_ids": [
+        0
+      ],
+      "only_certified_glass_hit": true,
+      "branches": [
+        {
+          "branch": 1,
+          "scatters": [
+            {
+              "depth": 0,
+              "kind": "T",
+              "total_internal_reflection": false,
+              "fresnel_selection_pdf": 0.9599794149398804,
+              "continuation_weight": 0.4444444477558136
+            },
+            {
+              "depth": 1,
+              "kind": "R",
+              "total_internal_reflection": true,
+              "fresnel_selection_pdf": 1.0,
+              "continuation_weight": 1.0
+            },
+            {
+              "depth": 2,
+              "kind": "R",
+              "total_internal_reflection": true,
+              "fresnel_selection_pdf": 1.0,
+              "continuation_weight": 1.0
+            },
+            {
+              "depth": 3,
+              "kind": "R",
+              "total_internal_reflection": true,
+              "fresnel_selection_pdf": 1.0,
+              "continuation_weight": 1.0
+            },
+            {
+              "depth": 4,
+              "kind": "T",
+              "total_internal_reflection": false,
+              "fresnel_selection_pdf": 0.947065532207489,
+              "continuation_weight": 2.25
+            }
+          ]
+        }
+      ],
+      "validation_clean": true,
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-solution-research-20261116/journal-build/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--samples",
+        "4096",
+        "--seed",
+        "19",
+        "--journal-x",
+        "818",
+        "--journal-y",
+        "372",
+        "--journal-sample",
+        "873",
+        "--journal-isolate",
+        "--ray-journal",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-solution-research-20261116/paths/unstable.json",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-solution-research-20261116/paths/unstable.png"
+      ]
+    },
+    {
+      "name": "persistent",
+      "pixel": [
+        738,
+        527
+      ],
+      "sample_index": 1793,
+      "actual_rgb": [
+        17093.166015625,
+        18468.173828125,
+        11239.95703125
+      ],
+      "prior_rgb": [
+        17093.166015625,
+        18468.173828125,
+        11239.9560546875
+      ],
+      "status": 0,
+      "positive_hit_instance_ids": [
+        0
+      ],
+      "only_certified_glass_hit": true,
+      "branches": [
+        {
+          "branch": 1,
+          "scatters": [
+            {
+              "depth": 0,
+              "kind": "T",
+              "total_internal_reflection": false,
+              "fresnel_selection_pdf": 0.8542759418487549,
+              "continuation_weight": 0.4444444477558136
+            },
+            {
+              "depth": 1,
+              "kind": "R",
+              "total_internal_reflection": true,
+              "fresnel_selection_pdf": 1.0,
+              "continuation_weight": 1.0
+            },
+            {
+              "depth": 2,
+              "kind": "R",
+              "total_internal_reflection": true,
+              "fresnel_selection_pdf": 1.0,
+              "continuation_weight": 1.0
+            },
+            {
+              "depth": 3,
+              "kind": "T",
+              "total_internal_reflection": false,
+              "fresnel_selection_pdf": 0.9597554206848145,
+              "continuation_weight": 2.25
+            }
+          ]
+        }
+      ],
+      "validation_clean": true,
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-solution-research-20261116/journal-build/raytracing",
+        "--config",
+        "projects/raytracing/presets/optics/dragon-glass.json",
+        "--headless",
+        "--frames",
+        "1",
+        "--require-validation",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--samples",
+        "4096",
+        "--seed",
+        "19",
+        "--journal-x",
+        "738",
+        "--journal-y",
+        "527",
+        "--journal-sample",
+        "1793",
+        "--journal-isolate",
+        "--ray-journal",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-solution-research-20261116/paths/persistent.json",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-solution-research-20261116/paths/persistent.png"
+      ]
+    }
+  ]
+}

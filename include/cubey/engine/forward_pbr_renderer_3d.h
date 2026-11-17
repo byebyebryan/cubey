@@ -73,6 +73,8 @@ struct ForwardPbrRenderer3DTargetResourcesInfo {
 enum class ForwardPbrTransmissionSource : std::uint32_t {
     Screen = 0,
     Environment = 1,
+    // Opaque scene color at the projected exit, outgoing environment for sky.
+    Hybrid = 2,
 };
 
 struct ForwardPbrRenderer3DSceneUniformInfo {

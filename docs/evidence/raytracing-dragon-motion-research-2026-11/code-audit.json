@@ -1,0 +1,42 @@
+{
+  "scope": "Read-only renderer audit for proposed reconstruction",
+  "source_sha256": {
+    "projects/raytracing/raytracing_renderer.cpp": "b35ba1ce681155e4b7187f57207c0035d9d68e9db9f75b45a3ad362d4e54a4ac",
+    "projects/raytracing/raytracing_renderer.h": "db0b92b07ffd1c1d0de938ac9f761fb4913316bc477057838714f48fc6734b12",
+    "projects/raytracing/shaders/material_workshop.glsl": "09ed4d015ab7fb0e763ba630424bf14be40780ebf463f8b9cef84d2c00d45dc0",
+    "projects/raytracing/shaders/trace.rgen": "5e945f0eff288879b421ac013898d6c4e0eca2a9a597b26ef587e7e133dc12d3"
+  },
+  "observations": [
+    {
+      "location": "projects/raytracing/raytracing_renderer.cpp:810-828",
+      "finding": "Current camera is part of global history identity; a camera change resets the whole accumulation"
+    },
+    {
+      "location": "projects/raytracing/raytracing_renderer.cpp:866-872",
+      "finding": "Ordinary native iteration records one primary sample"
+    },
+    {
+      "location": "projects/raytracing/shaders/material_workshop.glsl:200-224",
+      "finding": "History completion count also indexes primary sampling; a temporal mode needs an independent sequence"
+    },
+    {
+      "location": "projects/raytracing/shaders/material_workshop.glsl:521-535",
+      "finding": "Current beauty/diagnostic contributions are accumulated in one history; no reflection/transmission denoiser layer histories"
+    },
+    {
+      "location": "projects/raytracing/shaders/trace.rgen",
+      "finding": "Current renderer bindings do not provide production motion/depth/normal denoiser guide images"
+    }
+  ],
+  "motion_evidence": {
+    "path": "outputs/raytracing/dragon-motion-preview-20261116/summary.json",
+    "moving_input_frames": 202,
+    "all_end_at_one_sample": true,
+    "final_samples": 256,
+    "defaults": {
+      "smooth_normals": true,
+      "firefly_clamp": 100,
+      "samples": 256
+    }
+  }
+}

@@ -195,13 +195,14 @@ vec3 cubey_pbr_transmission_radiance_at_lod(vec2 screen_uv, vec3 fallback_direct
     // Explicit environment transport uses the outgoing ray, independently of
     // whether the estimated exit projects inside the camera image. Keep the
     // legacy screen path below unchanged, including its radiance conventions.
-    if (scene.environment_options.z > 0.5) {
+    if (scene.environment_options.z > 0.5 && scene.environment_options.z < 1.5) {
         return cubey_pbr_prefiltered_environment(fallback_direction, environment_lod) *
                scene.environment_intensity_mip_count.x;
     }
     vec2 extent = vec2(textureSize(refraction_radiance, 0));
-    vec3 screen_radiance =
-        textureLod(refraction_radiance, clamp(screen_uv, 0.0, 1.0), pyramid_lod).rgb;
+    vec4 screen_sample =
+        textureLod(refraction_radiance, clamp(screen_uv, 0.0, 1.0), pyramid_lod);
+    vec3 screen_radiance = screen_sample.rgb;
 
     // The pyramid is same-frame, linear HDR radiance. It is deliberately not
     // scaled by environment intensity or display exposure a second time.
@@ -212,6 +213,12 @@ vec3 cubey_pbr_transmission_radiance_at_lod(vec2 screen_uv, vec3 fallback_direct
     vec2 near_lower = smoothstep(vec2(0.0), edge_width, screen_uv);
     vec2 near_upper = 1.0 - smoothstep(vec2(1.0) - edge_width, vec2(1.0), screen_uv);
     float screen_weight = near_lower.x * near_lower.y * near_upper.x * near_upper.y;
+    if (scene.environment_options.z > 1.5) {
+        // Geometry RGB is premultiplied by coverage before mip filtering.
+        // Sky and unavailable screen pixels retain outgoing-ray refraction.
+        return screen_weight * screen_radiance +
+               (1.0 - screen_weight * clamp(screen_sample.a, 0.0, 1.0)) * fallback_radiance;
+    }
     return mix(fallback_radiance, screen_radiance, screen_weight);
 }
 

@@ -13,6 +13,7 @@ namespace {
 struct HdrColorPyramidFilterPushConstants {
     float copy_source = 0.0F;
     float bright_sample_resistance = 0.0F;
+    float opaque_coverage = 0.0F;
 };
 
 [[nodiscard]] Texture2DConfig hdr_color_pyramid_texture_config(VkExtent2D extent, VkFormat format,
@@ -47,6 +48,11 @@ MaterialPassInfo hdr_color_pyramid_filter_pass_info() {
                         {
                             cubey::vulkan::DescriptorSetBindingConfig{
                                 .binding = 0U,
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 1U,
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
@@ -117,6 +123,8 @@ void HdrColorPyramid::create_resources(const cubey::vulkan::Device& device,
                 MaterialDescriptorWriter(material->set(frame_slot))
                     .combined_image_sampler(0U, slot.texture->sampler().handle(),
                                             slot.mip_views[mip - 1U].handle())
+                    .combined_image_sampler(1U, slot.texture->sampler().handle(),
+                                            slot.mip_views[mip - 1U].handle())
                     .update(device);
             }
         }
@@ -155,25 +163,34 @@ void HdrColorPyramid::destroy() {
 void HdrColorPyramid::update_source_descriptor(const cubey::vulkan::Device& device,
                                                FrameSlot frame_slot, VkSampler sampler,
                                                VkImageView source_view,
-                                               VkImageLayout source_layout) {
+                                               VkImageLayout source_layout,
+                                               VkImageView opaque_depth_view) {
     if (!resources_created() || sampler == VK_NULL_HANDLE || source_view == VK_NULL_HANDLE) {
         throw std::runtime_error("HDR color pyramid source descriptor is invalid");
     }
-    static_cast<void>(buffer(frame_slot));
+    buffer(frame_slot).depth_bound = opaque_depth_view != VK_NULL_HANDLE;
     MaterialDescriptorWriter(filter_material(0U).set(frame_slot))
         .combined_image_sampler(0U, sampler, source_view, source_layout)
+        .combined_image_sampler(1U, sampler,
+                                opaque_depth_view != VK_NULL_HANDLE ? opaque_depth_view : source_view,
+                                opaque_depth_view != VK_NULL_HANDLE
+                                    ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : source_layout)
         .update(device);
 }
 
 void HdrColorPyramid::record_source_copy(const cubey::vulkan::CommandRecorder& recorder,
-                                         FrameSlot frame_slot) {
+                                         FrameSlot frame_slot, bool opaque_coverage) {
     if (!resources_created() || !pipeline_created()) {
         throw std::runtime_error("HDR color pyramid is not initialized");
     }
     Buffer& slot = buffer(frame_slot);
+    if (opaque_coverage && !slot.depth_bound) {
+        throw std::runtime_error("HDR geometry coverage requires opaque depth");
+    }
     if (slot.source_copy_pending) {
         throw std::runtime_error("HDR color pyramid source copy is already pending");
     }
+    slot.opaque_coverage = opaque_coverage;
     transition_mip(
         recorder, slot.texture->handle(), 0U,
         slot.initialized ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED,
@@ -188,7 +205,8 @@ void HdrColorPyramid::record_source_copy(const cubey::vulkan::CommandRecorder& r
         render_target_view(color_target_view(config_.extent, config_.format, slot.texture->handle(),
                                              slot.mip_views.front().handle())),
         RenderClearValues{.color = color_clear_value(0.0F, 0.0F, 0.0F, 1.0F)},
-        [this, &material, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
+        [this, &material, frame_slot, opaque_coverage](
+            const cubey::vulkan::CommandRecorder& pass_recorder) {
             record_fullscreen_pipeline_draw(pass_recorder,
                                             {
                                                 .pipeline = &filter_pipeline_.value(),
@@ -199,6 +217,7 @@ void HdrColorPyramid::record_source_copy(const cubey::vulkan::CommandRecorder& r
                                             HdrColorPyramidFilterPushConstants{
                                                 .copy_source = 1.0F,
                                                 .bright_sample_resistance = 0.0F,
+                                                .opaque_coverage = opaque_coverage ? 1.0F : 0.0F,
                                             });
         });
     slot.source_copy_pending = true;
@@ -245,7 +264,8 @@ void HdrColorPyramid::record_remaining_mips(const cubey::vulkan::CommandRecorder
                                                  slot.mip_views[mip].handle())),
             RenderClearValues{.color = color_clear_value(0.0F, 0.0F, 0.0F, 1.0F)},
             [this, &material, frame_slot,
-             mip](const cubey::vulkan::CommandRecorder& pass_recorder) {
+             mip, opaque_coverage = slot.opaque_coverage](
+                const cubey::vulkan::CommandRecorder& pass_recorder) {
                 record_fullscreen_pipeline_draw(
                     pass_recorder,
                     {
@@ -257,6 +277,7 @@ void HdrColorPyramid::record_remaining_mips(const cubey::vulkan::CommandRecorder
                     HdrColorPyramidFilterPushConstants{
                         .copy_source = 0.0F,
                         .bright_sample_resistance = mip == 1U ? 1.0F : 0.0F,
+                        .opaque_coverage = opaque_coverage ? 1.0F : 0.0F,
                     });
             });
         transition_mip(

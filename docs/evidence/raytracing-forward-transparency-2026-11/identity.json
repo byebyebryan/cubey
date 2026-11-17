@@ -1,0 +1,39 @@
+{
+  "source_head": "2e86702d701211a6f0394583ec485075f3ec3c93",
+  "branch": "raytracing-first-pass-20261104",
+  "source_files": {
+    "include/cubey/render/hdr_color_pyramid.h": "17c3ad3cb5c6706420c8c05f585a436b5c3d1d13939a03f7dc4476346e0e3c26",
+    "src/cubey/render/hdr_color_pyramid.cpp": "81d4f361f2226a19369f4d4b3bce591dd127d011905d0a1b95dda1c03f1388f8",
+    "shaders/cubey/forward_pbr/hdr_color_pyramid.frag": "da562513e217c1fdec5c5349dc1ae447e2cb0f9f27b4d105da4e92dc57f9c47b",
+    "include/cubey/engine/forward_pbr_renderer_3d.h": "4d0c5bd82dd95d7a3258ca643b5f6cd8eb0dbb0c11ac19d687a9b3e6c39eb2fa",
+    "src/cubey/engine/forward_pbr_renderer_3d.cpp": "ac8ca06f5da3577a0788471eb1d999200cdebde274b4daec26180ca582c001cf",
+    "src/cubey/engine/forward_pbr_renderer_3d_internal.h": "9d257956b8d1905a69624599e5de277b1a959613ab6301d9bbe2a34e93a7a764",
+    "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp": "6a8e1dc3c4c7a165c05199bed2dedb4a4db5a05474351c67aabbfe574da3b0f6",
+    "shaders/cubey/forward_pbr/forward_pbr.frag": "8b32867f5fc321ac604ce57d63b44a1efcfd8d97e5c366f9f6e5ea70a596dcbe",
+    "projects/raytracing/raytracing_config.h": "c3dcf66dbc5edd11863acf2eaddd4feb2e2145c6a9ba510b29549516fee357a8",
+    "projects/raytracing/raytracing_forward.cpp": "cc0d4ed3fceeb96955b1559daa4ca8e62246cbf7db3ef153c997bc15ceac5770",
+    "projects/raytracing/raytracing_app.cpp": "00e3a524f92cb559c9c8d46d3f270876ba0f0c2da0bfaf3f6cb354c1a216dc32",
+    "projects/raytracing/presets/optics/dragon-forward.json": "24e7985d99d2688ab9aa20c9e29f5f67a510b6bd2adf16746780860e90915f52",
+    "projects/raytracing/tools/qualify_forward_visibility.py": "e75952af019dc3df74cbcfd7cc227a564e14830a7735f18890b08afaccc2983e",
+    "assets/materials/glass.json": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537",
+    "assets/materials/marble.json": "dce3505445117ba30ee642eed6b8263a67a585eed81764aea47bd9fc4083eda5",
+    "cache/raytracing/stanford-dragon/optical-v1/dragon-optical.glb": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+    "build/dev/projects/raytracing/raytracing": "296bcbc84e09a2054d03c33d4e800902ed400a90bba3cf70706614526b4e85f6",
+    "build/dev/projects/raytracing/shaders/forward/forward_pbr.frag.spv": "cd902fe842cde883f26d2fdd924488cf9fc169540946d6dde108547cd57328b8",
+    "build/dev/projects/raytracing/shaders/forward/hdr_color_pyramid.frag.spv": "99d3f5f11e939ef65aad6f85f3f0a07bfa978bf2c6dcd24255e72622712b04cb"
+  },
+  "initial_capture_binary_sha256": "7457d6b0a79432c03557d2074320c0ae5ef7311bd07ceb9eb4d5e7d645be6a4e",
+  "final_capture_binary_sha256": "296bcbc84e09a2054d03c33d4e800902ed400a90bba3cf70706614526b4e85f6",
+  "initial_build_evidence": [
+    "wide/detail sync captures",
+    "native orbit",
+    "23 CTest regressions"
+  ],
+  "final_build_evidence": [
+    "seven scene-visibility captures",
+    "six PNGs byte-identical to initial build"
+  ],
+  "cleanup": "Error guard now checks pending source copy before updating coverage mode; lambda formatting only otherwise. Render math and shaders are identical.",
+  "report_url": "http://starship:8787/reports/b8c6f3111377c9a11eb1ac0b9a82dcd5d7dd4e68d8559f08025dc23f3a5aadfa/",
+  "preservation": "outputs/raytracing/forward-transparency-check-20261116/before-hybrid"
+}

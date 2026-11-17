@@ -3,6 +3,7 @@
 // Copyright (c) 2019-2026, Sascha Willems. SPDX-License-Identifier: Apache-2.0
 #include "raytracing_renderer.h"
 #include "raytracing_environment.h"
+#include "raytracing_forward.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -79,6 +80,10 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
                    bool collect_metrics, const Config* config)
     : device_(device), slots_(slots), executor_(slots), recorded_(slots), diagnostic_(diagnostic),
       collect_metrics_(collect_metrics) {
+    if (config && config->renderer == "forward") {
+        forward_ = std::make_unique<ForwardComparison>(device, gpu, scene, slots, *config);
+        return;
+    }
     if (!device.ray_tracing_enabled() || !slots || slots > 8)
         throw std::invalid_argument("RT renderer requires an enabled device and 1..8 slots");
     try {
@@ -558,6 +563,10 @@ void Renderer::create_pipeline() {
     }
 }
 void Renderer::resize(VkExtent2D extent, VkFormat format, bool fault) {
+    if (forward_) {
+        forward_->resize(extent, format);
+        return;
+    }
     if (extent.width == extent_.width && extent.height == extent_.height &&
         format == output_format_)
         return;
@@ -642,6 +651,11 @@ void Renderer::collect(std::uint32_t slot) {
 void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                       render::FrameSlot slot, const Config& c, bool present,
                       profiling::ProfileRecorder* profile, std::uint64_t frame) {
+    if (forward_) {
+        forward_->render(command, output, slot, c, present, profile, frame);
+        return;
+    }
+    demo_mode_ = demo_transport(c);
     collect(slot.index);
     profile_ = profile;
     if (workshop_) {
@@ -743,7 +757,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                                     workshop_->selected, c.pattern ? 1U : 0U, c.bump ? 1U : 0U};
         const std::array<std::string_view, 4> shapes{"sphere", "block", "swatch", "cut-block"};
         workshop_uniform.sampling = {
-            c.seed, c.samples,
+            c.seed, frame_sample_target(c),
             c.optical_pair != "none" ? 4U
             : c.material == "gallery"
                 ? 0U
@@ -820,7 +834,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     if (workshop_)
         append_identity(workshop_->revision);
     const bool reset_history =
-        !history_initialized_ || (workshop_ && identity != history_identity_);
+        demo_transport(c) || !history_initialized_ || (workshop_ && identity != history_identity_);
     if (reset_history) {
         history_samples_ = 0;
         history_identity_ = std::move(identity);
@@ -867,7 +881,8 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
 #ifdef CUBEY_RT_RAY_JOURNAL
         c.journal_isolate ? 1U :
 #endif
-        workshop_ && !contract_probe && c.common.headless && !c.common.headless_render_only
+        demo_transport(c) ? frame_sample_target(c)
+        : workshop_ && !contract_probe && c.common.headless && !c.common.headless_render_only
             ? std::max(1U, c.samples > history_samples_ ? c.samples - history_samples_ : 0U)
             : 1U;
     for (std::uint32_t sample = 0; sample < iterations; ++sample) {
@@ -880,7 +895,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                                  nullptr, 0, nullptr);
         }
         rt_.trace(command, &raygen_, &miss_, &hit_, &callable_, extent_.width, extent_.height, 1);
-        if (workshop_ && !contract_probe && history_samples_ < c.samples)
+        if (workshop_ && !contract_probe && history_samples_ < frame_sample_target(c))
             ++history_samples_;
     }
     if (workshop_ && collect_metrics_ && sampling_frames_.size() < 20000)
@@ -904,7 +919,9 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
              {"sun_elevation_degrees", glm::degrees(c.sun_elevation)},
              {"sun_azimuth_degrees", shared_sun_azimuth_degrees(c.sun_azimuth)},
              {"exposure", c.exposure},
-             {"sample_target", c.samples}});
+             {"sample_target", frame_sample_target(c)},
+             {"transport_mode", c.transport_mode},
+             {"sample_scope", demo_transport(c) ? "per-frame" : "progressive"}});
     if (diagnostic_
 #ifdef CUBEY_RT_RAY_JOURNAL
         || ray_journal_
@@ -955,11 +972,16 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         recorder.end("vkEndCommandBuffer raytracing");
 }
 void Renderer::finish() {
+    if (forward_) {
+        forward_->finish();
+        return;
+    }
     for (std::uint32_t i = 0; i < slots_; ++i)
         collect(i);
     profile_ = nullptr;
 }
 void Renderer::save_queries(const std::filesystem::path& path) const {
+    if (forward_) { forward_->save_hdr(path); return; }
     if (!diagnostic_ || !last_slot_)
         throw std::runtime_error("no completed RT geometry queries");
     const auto& buffer = *targets_.at(*last_slot_).queries;
@@ -1035,6 +1057,8 @@ std::uint64_t Renderer::requested_bytes() const {
     return bytes;
 }
 nlohmann::json Renderer::metrics() const {
+    if (forward_)
+        return forward_->metrics();
     auto supported = nlohmann::json::array();
     if (workshop_)
         for (std::size_t i = 0; i < workshop_->catalog.size(); ++i)
@@ -1043,7 +1067,14 @@ nlohmann::json Renderer::metrics() const {
     const auto memory = device_.device_memory_budget();
     return {
         {"format", "cubey.raytracing.metrics"},
+        {"renderer", "rt"},
+        {"transport_mode", demo_mode_ ? "demo" : "sampled"},
+        {"sample_scope", demo_mode_ ? "per-frame" : "progressive"},
+        {"demo_branch_cutoff", demo_mode_ ? .01 : 0},
         {"workshop_enabled", bool(workshop_)},
+        {"firefly_clamp_policy", "mean RGB cap per throughput-weighted HDR deposit; "
+                                 "before accumulation; hue preserving; zero disables; "
+                                 "optical dragon only; visible background excluded"},
         {"material_scene_layout", sampled_dragon_ ? "dragon"
                                   : workshop_     ? "specimens"
                                                   : "legacy"},
@@ -1051,12 +1082,12 @@ nlohmann::json Renderer::metrics() const {
                                  ? "NVIDIA reconstruction/error offset; adjacent-face "
                                    "bisector near edges; tmin=0; medium-aware triangle facing cull"
                                  : "legacy fixed offset"},
-        {"ray_footprint_policy", optical_dragon_ ? "flat-interface approximation in both normal modes; "
-                                                   "fixed-normal Snell angular magnification; "
-                                                   "no edge-jump or varying-normal bound"
-                                 : sampled_dragon_
-                                     ? "world-space triangle shading-normal derivative estimate"
-                                     : "specimen curvature / legacy primary footprint"},
+        {"ray_footprint_policy",
+         optical_dragon_   ? "flat-interface approximation in both normal modes; "
+                             "fixed-normal Snell angular magnification; "
+                             "no edge-jump or varying-normal bound"
+         : sampled_dragon_ ? "world-space triangle shading-normal derivative estimate"
+                           : "specimen curvature / legacy primary footprint"},
         {"support_recipe",
          support_recipe_
              ? nlohmann::json{{"id", support_recipe_->id},
@@ -1064,8 +1095,9 @@ nlohmann::json Renderer::metrics() const {
              : nlohmann::json(nullptr)},
         {"workshop_sampling",
          {{"primary_samples", history_samples_},
-          {"rough_glass_secondary_trials", 10},
-          {"fresnel_split_depths", 2},
+          {"rough_glass_secondary_trials", demo_mode_ ? 1 : 10},
+          {"fresnel_split_depths", demo_mode_ ? nlohmann::json(nullptr) : nlohmann::json(2)},
+          {"fresnel_split_policy", demo_mode_ ? "all bounded events" : "first two"},
           {"budget_scope", "all branches and trials of one primary sample"}}},
         {"workshop_supported_material_ids", supported},
         {"history_samples", history_samples_},
@@ -1087,7 +1119,8 @@ nlohmann::json Renderer::metrics() const {
           {"10.w", "total queries sum"},
           {"11.rgb", "discarded throughput sum"},
           {"11.w", "status bitwise OR"},
-          {"14.z", "root conditional trials sum"},
+          {"14.z", demo_mode_ ? "policy-pruned branches sum" : "root conditional trials sum"},
+          {"status.128", "demo policy pruning; distinct from invalid medium or work-limit status"},
           {"14.w", "primary samples with transport status"},
           {"15.x", "radiance queries sum"},
           {"15.y", "maximum depth"},

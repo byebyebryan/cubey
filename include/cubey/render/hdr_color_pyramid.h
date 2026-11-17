@@ -71,13 +71,18 @@ class HdrColorPyramid {
     // render-graph transient supplies the source view at frame preparation.
     void update_source_descriptor(const cubey::vulkan::Device& device, FrameSlot frame_slot,
                                   VkSampler sampler, VkImageView source_view,
-                                  VkImageLayout source_layout);
+                                  VkImageLayout source_layout,
+                                  VkImageView opaque_depth_view = VK_NULL_HANDLE);
 
     // Copy the externally supplied scene radiance into mip zero and retain the
     // mip as a color attachment. Call source_target() to composite additional
     // radiance into that isolated source, then call record_remaining_mips()
     // before sampling the pyramid.
-    void record_source_copy(const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot);
+    // Optional coverage mode stores premultiplied opaque radiance and geometry
+    // coverage in alpha. Supplied depth must match the source extent, clear to
+    // one, and be sampled-readable during this copy (not a depth attachment).
+    void record_source_copy(const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot,
+                            bool opaque_coverage = false);
     [[nodiscard]] ColorTargetView source_target(FrameSlot frame_slot) const;
     void record_remaining_mips(const cubey::vulkan::CommandRecorder& recorder,
                                FrameSlot frame_slot);
@@ -100,6 +105,8 @@ class HdrColorPyramid {
         bool initialized = false;
         bool valid = false;
         bool source_copy_pending = false;
+        bool opaque_coverage = false;
+        bool depth_bound = false;
     };
 
     void transition_mip(const cubey::vulkan::CommandRecorder& recorder, VkImage image,

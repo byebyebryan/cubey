@@ -16,6 +16,7 @@
 
 namespace cubey::projects::raytracing {
 class Environment;
+class ForwardComparison;
 struct RtFunctions {
     PFN_vkCreateAccelerationStructureKHR create_as{};
     PFN_vkDestroyAccelerationStructureKHR destroy_as{};
@@ -56,13 +57,15 @@ class Renderer {
 #endif
     [[nodiscard]] nlohmann::json metrics() const;
     [[nodiscard]] std::uint32_t sample_count() const {
-        return history_samples_;
+        return forward_ ? 1U : history_samples_;
     }
     [[nodiscard]] std::uint64_t history_epoch() const {
         return history_epochs_;
     }
 
   private:
+    std::unique_ptr<ForwardComparison> forward_;
+    bool demo_mode_ = false;
     void destroy() noexcept;
     void create_scene(vulkan::GpuRuntime& gpu, const Scene& scene);
     void create_pipeline();

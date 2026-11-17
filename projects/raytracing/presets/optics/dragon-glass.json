@@ -20,6 +20,7 @@
   "reflection-source": "scene",
   "transmission-source": "scene",
   "throughput-cutoff": 0,
+  "firefly-clamp": 100,
   "max-events": 128,
   "max-path-rays": 1024,
   "max-total-rays": 4096,

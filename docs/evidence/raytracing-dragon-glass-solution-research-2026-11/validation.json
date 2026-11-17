@@ -1,0 +1,12 @@
+{
+  "ordinary_commit": "2e86702d701211a6f0394583ec485075f3ec3c93",
+  "ordinary_runtime_preserved": true,
+  "ordinary_rt_source_preserved": true,
+  "candidate_noise_algorithm_implemented": false,
+  "diagnostic_replays": 2,
+  "all_observed_internal_reflections_are_tir": true,
+  "replay_status_zero": true,
+  "documentation_exit_code": 0,
+  "scope": "primary-source research and existing diagnostic replay only",
+  "source_count": 13
+}

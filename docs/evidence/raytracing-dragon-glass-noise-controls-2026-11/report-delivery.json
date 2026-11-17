@@ -1,0 +1,37 @@
+{
+  "report_id": "a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d",
+  "title": "Cubey: dragon glass \u2014 raw, clamp and OIDN comparison",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-16T19:55:58.490297+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d",
+  "file_count": 130,
+  "byte_count": 53802582,
+  "url": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-11-16T19:55:58.971422+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 14878,
+    "verified_url": "http://starship:8787/reports/a74e3a575917d5015441ba6d25b6e15248a1913b63a333834237e5008dcbcf3d/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 14569,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.21",
+    "reused": true
+  }
+}

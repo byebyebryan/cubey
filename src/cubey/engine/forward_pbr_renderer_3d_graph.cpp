@@ -214,7 +214,8 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         target.color_final_state, frame_plans, *resources.meshes, resources.frame_meshes,
         resources.deformation_commands, *resources.materials, settings.debug_view,
         settings.background_mode, settings.atmosphere_clouds, terrain, ocean, draw_plan,
-        settings.opaque_linear_output, request.scene_readback);
+        settings.opaque_linear_output,
+        settings.transmission_source == ForwardPbrTransmissionSource::Hybrid, request.scene_readback);
     const Clock::time_point render_graph_end =
         metrics != nullptr ? Clock::now() : Clock::time_point{};
     if (metrics != nullptr) {
@@ -237,6 +238,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         },
         render_graph.graph,
         [this, device = target.device, frame_slot = target.frame_slot, cloud_runtime, &render_graph,
+         hybrid = settings.transmission_source == ForwardPbrTransmissionSource::Hybrid,
          linear =
              settings.opaque_linear_output](const render::RenderGraphResourceSet& graph_resources) {
             if (!linear)
@@ -247,7 +249,8 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
                     render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
                                                           render_graph.post_scene_color);
                 refraction_pyramid().update_source_descriptor(
-                    *device, frame_slot, post_sampler().handle(), source.view, source.layout);
+                    *device, frame_slot, post_sampler().handle(), source.view, source.layout,
+                    hybrid ? depth_attachment().view() : VK_NULL_HANDLE);
             }
             if (render_graph.clouds_enabled) {
                 cloud_runtime->update_surface_descriptors(
@@ -278,7 +281,7 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
     const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
     const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean,
-    const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output,
+    const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output, bool hybrid_transmission,
     const std::optional<ForwardPbrRenderer3DSceneReadback>& readback) {
     if (frame_plans.shadow == nullptr || frame_plans.scene == nullptr) {
         throw std::runtime_error("forward PBR render graph requires shadow and scene plans");
@@ -435,6 +438,17 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
         post_scene_color = cloud_scene_color;
     }
     if (has_transmission) {
+        if (hybrid_transmission) {
+            // Sample opaque depth before rebinding it for the alpha composite.
+            // Splitting these stages avoids depth attachment feedback.
+            graph.add_pass("refraction geometry coverage", render::RenderGraphQueueDomain::Graphics)
+                .read_texture(post_scene_color)
+                .read_texture(scene_depth)
+                .material_pass(render::hdr_color_pyramid_filter_pass_info())
+                .execute([this, frame_slot](const render::RenderGraphExecutionContext& context) {
+                    refraction_pyramid().record_source_copy(context.recorder(), frame_slot, true);
+                });
+        }
         auto refraction_source_pass =
             graph.add_pass("refraction source", render::RenderGraphQueueDomain::Graphics)
                 .read_texture(post_scene_color)
@@ -444,11 +458,12 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
         declare_deformation_vertex_reads(refraction_source_pass, deformation_vertex_buffers);
         refraction_source_pass.execute(
             [this, frame_slot, &scene_plan, &draw_plan, mesh_resolver,
-             &materials](const render::RenderGraphExecutionContext& context) {
+             &materials, hybrid_transmission](const render::RenderGraphExecutionContext& context) {
                 // Mip zero is an isolated radiance source. Ordinary alpha is
                 // composited here for transmission lookup and later once into
                 // the final scene after transmissive geometry.
-                refraction_pyramid().record_source_copy(context.recorder(), frame_slot);
+                if (!hybrid_transmission)
+                    refraction_pyramid().record_source_copy(context.recorder(), frame_slot);
                 record_scene_alpha_pass(context.recorder(),
                                         refraction_pyramid().source_target(frame_slot), scene_plan,
                                         frame_slot, mesh_resolver, materials, draw_plan);

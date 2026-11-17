@@ -1,0 +1,155 @@
+{
+  "url": "http://starship:8787/reports/f708b465ab998d9f25ef9e0090b34d00b95e514d163823badc044e604d38e891/",
+  "comparisonChecks": [
+    {
+      "left": "images/combined-4096-19.png",
+      "right": "images/sky-4096-19.png",
+      "samples": "4096",
+      "seed": "19",
+      "status": "Originals loaded",
+      "test": "lighting"
+    },
+    {
+      "left": "images/combined-4096-43.png",
+      "right": "images/sky-4096-43.png",
+      "samples": "4096",
+      "seed": "43",
+      "status": "Originals loaded",
+      "test": "lighting"
+    },
+    {
+      "left": "images/combined-4096-19.png",
+      "right": "images/sun-4096-19.png",
+      "samples": "4096",
+      "seed": "19",
+      "status": "Originals loaded",
+      "test": "sunonly"
+    },
+    {
+      "left": "images/combined-4096-43.png",
+      "right": "images/sun-4096-43.png",
+      "samples": "4096",
+      "seed": "43",
+      "status": "Originals loaded",
+      "test": "sunonly"
+    },
+    {
+      "left": "images/combined-128-19.png",
+      "right": "images/combined-128-43.png",
+      "samples": "128",
+      "seed": "43",
+      "status": "Originals loaded",
+      "test": "seeds"
+    },
+    {
+      "left": "images/combined-512-19.png",
+      "right": "images/combined-512-43.png",
+      "samples": "512",
+      "seed": "43",
+      "status": "Originals loaded",
+      "test": "seeds"
+    },
+    {
+      "left": "images/combined-4096-19.png",
+      "right": "images/combined-4096-43.png",
+      "samples": "4096",
+      "seed": "43",
+      "status": "Originals loaded",
+      "test": "seeds"
+    },
+    {
+      "left": "images/combined-8192-19.png",
+      "right": "images/combined-8192-43.png",
+      "samples": "8192",
+      "seed": "43",
+      "status": "Originals loaded",
+      "test": "seeds"
+    },
+    {
+      "left": "images/combined-512-19.png",
+      "right": "images/combined-8192-19.png",
+      "samples": "512",
+      "seed": "19",
+      "status": "Originals loaded",
+      "test": "samples"
+    },
+    {
+      "left": "images/combined-512-43.png",
+      "right": "images/combined-8192-43.png",
+      "samples": "512",
+      "seed": "43",
+      "status": "Originals loaded",
+      "test": "samples"
+    },
+    {
+      "left": "images/combined-128-19.png",
+      "right": "images/broad-128-19.png",
+      "samples": "128",
+      "seed": "19",
+      "status": "Originals loaded",
+      "test": "broad"
+    },
+    {
+      "left": "images/combined-128-43.png",
+      "right": "images/broad-128-43.png",
+      "samples": "128",
+      "seed": "43",
+      "status": "Originals loaded",
+      "test": "broad"
+    },
+    {
+      "left": "images/combined-512-19.png",
+      "right": "images/broad-512-19.png",
+      "samples": "512",
+      "seed": "19",
+      "status": "Originals loaded",
+      "test": "broad"
+    },
+    {
+      "left": "images/combined-512-43.png",
+      "right": "images/broad-512-43.png",
+      "samples": "512",
+      "seed": "43",
+      "status": "Originals loaded",
+      "test": "broad"
+    }
+  ],
+  "modeChecks": [
+    {
+      "clip": "none",
+      "display": "none",
+      "mode": "Left",
+      "sliderDisabled": true
+    },
+    {
+      "clip": "none",
+      "display": "block",
+      "mode": "Right",
+      "sliderDisabled": true
+    },
+    {
+      "clip": "inset(0px 0px 0px 50%)",
+      "display": "block",
+      "mode": "Wipe",
+      "sliderDisabled": false
+    },
+    {
+      "clip": "inset(0px 0px 0px 100%)",
+      "display": "block",
+      "mode": "Blink",
+      "sliderDisabled": true
+    }
+  ],
+  "cropChecks": {
+    "body": "710 375 625 465",
+    "scene": "0 0 1920 1080",
+    "head": "610 205 475 335"
+  },
+  "blinkChanges": true,
+  "slider65PercentChecked": true,
+  "markersChecked": true,
+  "figuresLoaded": true,
+  "horizontalOverflow": false,
+  "consoleErrors": [],
+  "screenshot": "outputs/raytracing/dragon-glass-speckle-20261116/report-preview.png"
+}

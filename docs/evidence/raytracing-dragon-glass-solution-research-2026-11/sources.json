@@ -1,0 +1,103 @@
+{
+  "checked_on": "2026-11-16",
+  "scope": "Primary-source research; recommendations are Cubey-specific inferences, not measured candidate results",
+  "sources": [
+    {
+      "id": "omniverse-clamp",
+      "url": "https://docs.omniverse.nvidia.com/materials-and-rendering/latest/rtx-renderer_pt.html#firefly-filtering",
+      "title": "NVIDIA Omniverse path tracing - Firefly Filtering",
+      "supports": "Production HDR ray-intensity caps for glossy/diffuse paths; energy-loss tradeoff is explicit."
+    },
+    {
+      "id": "rtxpt-clamp",
+      "url": "https://github.com/NVIDIA-RTX/RTXPT/blob/303b408ab81790a5051abd7573830b7a4112eb8e/Rtxpt/Shaders/IntroSample/IntroPathTracer.hlsl",
+      "title": "RTXPT IntroPathTracer FireflyClamp",
+      "commit": "303b408ab81790a5051abd7573830b7a4112eb8e",
+      "blob": "0d16fec022c41298ec5c9990bcc113955f5e5d0d",
+      "lines": [
+        79,
+        89
+      ],
+      "supports": "Hue-preserving cap on throughput-weighted per-deposit HDR contributions before accumulation."
+    },
+    {
+      "id": "rtxpt-design",
+      "url": "https://github.com/NVIDIA-RTX/RTXPT/blob/main/Docs/Design.md",
+      "title": "RTXPT Design.md",
+      "document_version": "v1.9.0",
+      "last_document_change": "2026-10-23",
+      "last_document_commit": "303b408ab81790a5051abd7573830b7a4112eb8e",
+      "blob": "6050a580cd5808b91a653b827228d8b9c35e03cb",
+      "supports": "Separate pure-specular tracing and path layers provide inputs for reconstruction; dominant-layer depth/motion and blended material guides."
+    },
+    {
+      "id": "rtxpt-intro",
+      "url": "https://github.com/NVIDIA-RTX/RTXPT/blob/main/Docs/intro-sample.md",
+      "title": "RTXPT Intro Sample reference mode",
+      "blob": "621a0f6da72875e127e4602d00cb23985acc0fd4",
+      "supports": "The accumulating learning reference is itself clamped and approximates transport; distinguish it from ground truth."
+    },
+    {
+      "id": "nrd",
+      "url": "https://github.com/NVIDIA-RTX/NRD/blob/master/README.md",
+      "title": "NRD integration guidance",
+      "document_version": "v4.18.0",
+      "blob": "777fb48a34d7bcc267957d9a5298d32e4a9ca772",
+      "supports": "Surface-guide requirements, transparency limitations, primary surface replacement and anti-firefly support."
+    },
+    {
+      "id": "oidn",
+      "url": "https://www.openimagedenoise.org/documentation.html",
+      "title": "Intel Open Image Denoise - RT filter and auxiliary inputs",
+      "supports": "HDR beauty input can be denoised with optional albedo/normal guides; perfect-glass guides can follow/blend secondary paths."
+    },
+    {
+      "id": "pbrt-regularization",
+      "url": "https://pbr-book.org/4ed/Light_Transport_I_Surface_Reflection/A_Better_Path_Tracer",
+      "title": "PBRT 4e - A Better Path Tracer",
+      "supports": "Solar/specular variance and regularization after a non-specular event; pure-delta prefixes are deliberately excluded."
+    },
+    {
+      "id": "pbrt-whitted",
+      "url": "https://pbr-book.org/3ed-2018/Introduction/pbrt_System_Overview",
+      "title": "PBRT 3e - Whitted integrator",
+      "supports": "Deterministically summing reflected and transmitted specular branches; cost grows with the branch tree."
+    },
+    {
+      "id": "ears",
+      "url": "https://www.dfki.de/web/forschung/projekte-publikationen/publikation/12557",
+      "title": "EARS: Efficiency-Aware Russian Roulette and Splitting",
+      "year": 2022,
+      "supports": "Sampling allocation balances variance reduction against tracing cost.",
+      "read_scope": "Author/institution abstract and evaluation page; full 32 MB PDF exceeded web-tool size."
+    },
+    {
+      "id": "ray-differentials",
+      "url": "https://graphics.stanford.edu/papers/trd/",
+      "title": "Tracing Ray Differentials",
+      "year": 1999,
+      "supports": "Propagate an image-plane footprint through ray transport to guide filtering; not a complete glass/sun filter."
+    },
+    {
+      "id": "ray-cones",
+      "url": "https://research.nvidia.com/publication/2021-04_improved-shader-and-texture-level-detail-using-ray-cones",
+      "title": "Improved Shader and Texture Level of Detail Using Ray Cones",
+      "year": 2021,
+      "supports": "Practical GPU footprint/LOD machinery; texture filtering alone does not filter our separate solar test."
+    },
+    {
+      "id": "decomposition",
+      "url": "https://cs.dartmouth.edu/~wjarosz/publications/zimmer15path.html",
+      "title": "Path-space motion estimation and decomposition for robust animation filtering",
+      "year": 2015,
+      "supports": "Different reflected/refracted components benefit from distinct guides and motion estimates."
+    },
+    {
+      "id": "sms",
+      "url": "https://rgl.epfl.ch/publications/Zeltner2020Specular",
+      "title": "Specular Manifold Sampling for Rendering High-Frequency Caustics and Glints",
+      "year": 2020,
+      "supports": "Solve connections through specular chains rather than finding them only by chance; larger integration effort."
+    }
+  ]
+}

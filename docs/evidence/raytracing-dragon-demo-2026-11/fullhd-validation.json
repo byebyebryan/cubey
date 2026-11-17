@@ -1,0 +1,43 @@
+{
+  "wide": {
+    "finite_nonnegative": true,
+    "status_pixels": {
+      "1": 0,
+      "2": 0,
+      "4": 0,
+      "8": 0,
+      "16": 0,
+      "32": 0,
+      "64": 0,
+      "128": 234889
+    },
+    "invalid_medium_pixels": 0,
+    "pending_capacity_pixels_xy": [],
+    "native_quality_png_matches_hdr_capture": true,
+    "acceptance": "bounded appearance prototype; capacity loss reported separately; not zero-truncation optical acceptance"
+  },
+  "detail": {
+    "finite_nonnegative": true,
+    "status_pixels": {
+      "1": 0,
+      "2": 0,
+      "4": 0,
+      "8": 0,
+      "16": 0,
+      "32": 0,
+      "64": 1,
+      "128": 447235
+    },
+    "invalid_medium_pixels": 0,
+    "pending_capacity_pixels_xy": [
+      [
+        1219,
+        760
+      ]
+    ],
+    "native_quality_png_matches_hdr_capture": true,
+    "acceptance": "bounded appearance prototype; capacity loss reported separately; not zero-truncation optical acceptance"
+  },
+  "bare_slab_rgb_mae_code_values": 0.04104950327932099,
+  "bare_slab_top_interior_mae": 0.3052
+}

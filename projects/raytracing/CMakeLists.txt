@@ -2,7 +2,7 @@ cubey_add_app_target(cubey_project_raytracing
     OUTPUT_NAME raytracing
     SHADER_DEFINE CUBEY_RAYTRACING_SHADER_DIR
     SHADER_TARGET_ENV vulkan1.3
-    SOURCES main.cpp raytracing_app.cpp raytracing_scene.cpp raytracing_renderer.cpp raytracing_environment.cpp raytracing_optical_scene.cpp raytracing_dragon_support.cpp raytracing_materials.cpp raytracing_material_geometry.cpp raytracing_optical_asset.cpp
+    SOURCES main.cpp raytracing_app.cpp raytracing_scene.cpp raytracing_renderer.cpp raytracing_forward.cpp raytracing_environment.cpp raytracing_optical_scene.cpp raytracing_dragon_support.cpp raytracing_materials.cpp raytracing_material_geometry.cpp raytracing_optical_asset.cpp
     SHADERS shaders/trace.rgen shaders/primary.rchit shaders/primary.rmiss shaders/shadow.rmiss
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
@@ -11,6 +11,15 @@ cubey_add_app_target(cubey_project_raytracing
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
     SHADER_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
 )
+# Compile shared raster shaders with their usual Vulkan target. Compiling the
+# discard-heavy forward fragment shader for Vulkan 1.3 emits optional demote
+# capabilities that this app does not request from the device.
+add_custom_target(cubey_raytracing_forward)
+cubey_forward_pbr_shader_sources(dragon_forward_shaders)
+cubey_add_glsl_shaders(cubey_raytracing_forward
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/forward"
+    SOURCES ${dragon_forward_shaders})
+add_dependencies(cubey_project_raytracing cubey_raytracing_forward)
 target_compile_definitions(cubey_project_raytracing PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
 target_compile_definitions(cubey_project_raytracing PRIVATE CUBEY_RAYTRACING_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
 

@@ -1,0 +1,292 @@
+{
+  "scope": "private lighting alternative; not a new default",
+  "radius_multiplier": 4,
+  "solar_angular_radius_radians": 0.0187,
+  "normal_policy": "same guarded smooth sharp glass",
+  "captures": [
+    {
+      "samples": 128,
+      "seed": 19,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-128-s19",
+      "receipt": {
+        "identity": {
+          "command": [
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/broad-sun-build/raytracing",
+            "--config",
+            "projects/raytracing/presets/optics/dragon-glass.json",
+            "--headless",
+            "--frames",
+            "1",
+            "--require-validation",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--samples",
+            "128",
+            "--seed",
+            "19",
+            "--output",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-128-s19.png",
+            "--metrics",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-128-s19.json",
+            "--hdr-output",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-128-s19.bin"
+          ],
+          "binary_sha256": "2494b90bbe158af73fd4a0dd603c400853e3607ba3b0c24afcaf5f047221aaa7",
+          "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+          "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+          "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+        },
+        "width": 1920,
+        "height": 1080,
+        "samples": 128,
+        "seed": 19,
+        "mode": "hdr",
+        "wall_seconds_including_setup": 2.2252424900070764,
+        "finite_output": true,
+        "nonnegative_hdr": true,
+        "validation_clean": true,
+        "transport_status_checked": true,
+        "transport_accepted": true,
+        "transport_failure": null,
+        "transport_policy": "diagnostic only",
+        "status_or_pixels": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "budget": {
+          "max-events": 128,
+          "max-path-rays": 1024,
+          "max-total-rays": 4096
+        },
+        "resident_requested_bytes": 175189032,
+        "peak_requested_bytes": 175189032,
+        "artifacts": {
+          ".png": "9c3371dc1a946acd46c3c7fd66d5c348c20ad2bc15163f7b4132f1d20bef3d5c",
+          ".json": "97b8cda996376e9eec256561548cbd387e7b49cfdf33b02278f62f845bb0a4d0",
+          ".bin": "242ca9a1eec8b13f49480d8c5f9c3b60c4a3f237ae8ce900ac04d5000017bd23",
+          ".log": "b318eb1c8e84141635c5190e68034fe9bf73cb9171d6b3c8088a3356ae41550f"
+        }
+      }
+    },
+    {
+      "samples": 128,
+      "seed": 43,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-128-s43",
+      "receipt": {
+        "identity": {
+          "command": [
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/broad-sun-build/raytracing",
+            "--config",
+            "projects/raytracing/presets/optics/dragon-glass.json",
+            "--headless",
+            "--frames",
+            "1",
+            "--require-validation",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--samples",
+            "128",
+            "--seed",
+            "43",
+            "--output",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-128-s43.png",
+            "--metrics",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-128-s43.json",
+            "--hdr-output",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-128-s43.bin"
+          ],
+          "binary_sha256": "2494b90bbe158af73fd4a0dd603c400853e3607ba3b0c24afcaf5f047221aaa7",
+          "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+          "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+          "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+        },
+        "width": 1920,
+        "height": 1080,
+        "samples": 128,
+        "seed": 43,
+        "mode": "hdr",
+        "wall_seconds_including_setup": 2.1634927339910064,
+        "finite_output": true,
+        "nonnegative_hdr": true,
+        "validation_clean": true,
+        "transport_status_checked": true,
+        "transport_accepted": true,
+        "transport_failure": null,
+        "transport_policy": "diagnostic only",
+        "status_or_pixels": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "budget": {
+          "max-events": 128,
+          "max-path-rays": 1024,
+          "max-total-rays": 4096
+        },
+        "resident_requested_bytes": 175189032,
+        "peak_requested_bytes": 175189032,
+        "artifacts": {
+          ".png": "87e6ec773b8c7ecda824a169920ac1b64e8a2a8289a7da5a26770b425bbbbe3d",
+          ".json": "78a0cdec975da231c39a5e1e7200687d3a2273f5a8f005c98d5f44fd1192996f",
+          ".bin": "4de9be6c0738fe6a3bf3bc315b139eb31ed6c18faf4f1a41d37bb0dac7841480",
+          ".log": "49327de1001b0e1a3ac26b5f26be6f8507e75461b495bfcabc6bb558dbe9d64e"
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "seed": 19,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-512-s19",
+      "receipt": {
+        "identity": {
+          "command": [
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/broad-sun-build/raytracing",
+            "--config",
+            "projects/raytracing/presets/optics/dragon-glass.json",
+            "--headless",
+            "--frames",
+            "1",
+            "--require-validation",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--samples",
+            "512",
+            "--seed",
+            "19",
+            "--output",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-512-s19.png",
+            "--metrics",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-512-s19.json",
+            "--hdr-output",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-512-s19.bin"
+          ],
+          "binary_sha256": "2494b90bbe158af73fd4a0dd603c400853e3607ba3b0c24afcaf5f047221aaa7",
+          "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+          "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+          "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+        },
+        "width": 1920,
+        "height": 1080,
+        "samples": 512,
+        "seed": 19,
+        "mode": "hdr",
+        "wall_seconds_including_setup": 5.956707020988688,
+        "finite_output": true,
+        "nonnegative_hdr": true,
+        "validation_clean": true,
+        "transport_status_checked": true,
+        "transport_accepted": true,
+        "transport_failure": null,
+        "transport_policy": "diagnostic only",
+        "status_or_pixels": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "budget": {
+          "max-events": 128,
+          "max-path-rays": 1024,
+          "max-total-rays": 4096
+        },
+        "resident_requested_bytes": 175189032,
+        "peak_requested_bytes": 175189032,
+        "artifacts": {
+          ".png": "c57c4b32a7227fb010341132b2ae11a42ad173187b3541315ca9b732d795eedd",
+          ".json": "f64e1446863e6b892e997a549894b105c9c4efb6c7e80a247d0f8812c480331e",
+          ".bin": "556e47b84e85fefa1e6d5b5048985e02c168310393174736c302cfc52f602431",
+          ".log": "40b99ac4f6a4fe3e170688fd0d754808672af02024f03c895e9f9c1b2a3e8341"
+        }
+      }
+    },
+    {
+      "samples": 512,
+      "seed": 43,
+      "prefix": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-512-s43",
+      "receipt": {
+        "identity": {
+          "command": [
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/broad-sun-build/raytracing",
+            "--config",
+            "projects/raytracing/presets/optics/dragon-glass.json",
+            "--headless",
+            "--frames",
+            "1",
+            "--require-validation",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--samples",
+            "512",
+            "--seed",
+            "43",
+            "--output",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-512-s43.png",
+            "--metrics",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-512-s43.json",
+            "--hdr-output",
+            "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/dragon-glass-speckle-20261116/captures/broad-sun-512-s43.bin"
+          ],
+          "binary_sha256": "2494b90bbe158af73fd4a0dd603c400853e3607ba3b0c24afcaf5f047221aaa7",
+          "preset_sha256": "37befb28cc0f7bab425248c43289150c12fa03c349aa10c61dbb3f573715a734",
+          "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+          "recipe_sha256": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537"
+        },
+        "width": 1920,
+        "height": 1080,
+        "samples": 512,
+        "seed": 43,
+        "mode": "hdr",
+        "wall_seconds_including_setup": 5.975774168007774,
+        "finite_output": true,
+        "nonnegative_hdr": true,
+        "validation_clean": true,
+        "transport_status_checked": true,
+        "transport_accepted": true,
+        "transport_failure": null,
+        "transport_policy": "diagnostic only",
+        "status_or_pixels": {
+          "1": 0,
+          "2": 0,
+          "4": 0,
+          "8": 0,
+          "16": 0,
+          "32": 0,
+          "64": 0
+        },
+        "budget": {
+          "max-events": 128,
+          "max-path-rays": 1024,
+          "max-total-rays": 4096
+        },
+        "resident_requested_bytes": 175189032,
+        "peak_requested_bytes": 175189032,
+        "artifacts": {
+          ".png": "9c4c57197180a172c1038f97930e7d1b2ce28c849e2a40293d48d6a1a948a6ee",
+          ".json": "e0266091505fcb6361ae095e78ef8040a5fdb9b265486dfface1dce76e0f2f36",
+          ".bin": "7b99594b821ed45df98ff1b61d12fe483730be1e1dfd1eb4f2dff4a30c097863",
+          ".log": "d1c3d1bf0899aacb2568f0c9eaa1e3bd55bae5e3bb8721ff7202b1508e57b8ed"
+        }
+      }
+    }
+  ]
+}

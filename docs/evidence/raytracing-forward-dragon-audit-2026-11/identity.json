@@ -1,0 +1,21 @@
+{
+  "binary_sha256": "e5729d03fe8c0d431da835297ce4da9477dc1e8e6fd32a6622d632ee53c52add",
+  "shared_forward_fragment_sha256": "aa71e2a5a9373a6dd4eb826801d764cf4a4afb06905caf9e0dc6c26e8769969c",
+  "shared_forward_fragment_matches_material_gallery": true,
+  "rt_transport_shader_unchanged": true,
+  "model_sha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+  "source_sha256": {
+    "projects/raytracing/raytracing_forward.h": "fde02df4816dde0f2f2823e4c27003d65ef4d2a28d9729a53039d046406766a0",
+    "projects/raytracing/raytracing_forward.cpp": "65e20095d2f7c5fea65f1403411e05bb06652fe6ddba6af8fc93cd59c3ecb3f3",
+    "projects/raytracing/raytracing_config.h": "0ce66b9ecbe33c4df3fc602d3352c005d504cbd2fb67ef21d915d6cf8614ad37",
+    "projects/raytracing/raytracing_renderer.cpp": "708af9a26359e31ca8441b55df08cfe52f17266e82a59e6eb037fea85526e23d",
+    "projects/raytracing/raytracing_app.cpp": "dc3fd613b2bc008e456b36b691d5c1ec59237ed762e893812d4311c18afb65a8",
+    "projects/raytracing/presets/optics/dragon-forward.json": "f00318e28e72c91aee9d3f36f301336fa1f68c1002fede530a6a56522931467f",
+    "projects/raytracing/tools/qualify_forward_dragon.py": "91dae3dd891fc5f4f40d446685f11eb43708ab8cb0b43cdf1a785e97afe3a27d",
+    "projects/raytracing/raytracing_tests.cpp": "89998d6e19007b160fd1df6a3a403a293b0fb76e5fcf708df04733c79c14b8be"
+  },
+  "input_normal_and_position_preservation": "forward_vertex copies both; CPU orthonormal-frame regression and 32 actual-mesh GPU/CPU entry spot checks",
+  "ordinary_screen_before_tangent_fix_png_retained": true,
+  "rt_wide_and_detail_png_byte_identical": true,
+  "screen_and_environment_saved_replay_png_byte_identical": true
+}

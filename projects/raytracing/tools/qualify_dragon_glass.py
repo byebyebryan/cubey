@@ -69,6 +69,7 @@ def main():
                           transport_policy='shallow diagnostic' if allow_truncation else 'accepted view',
                           budget={key: m['config'][key] for key in
                                   ['max-events', 'max-path-rays', 'max-total-rays']},
+                          firefly_clamp=m['config']['firefly-clamp'],
                           edge_adjacency_bytes=m['edge_adjacency_bytes'],
                           resident_requested_bytes=m['resident_project_requested_bytes'],
                           peak_requested_bytes=m['peak_simultaneous_project_requested_bytes']))
@@ -78,6 +79,7 @@ def main():
     # Check the actual preset before any reference-budget overrides. A broken
     # preset must fail even when all deeper reference controls would pass.
     default, default_metrics = run('preset-default', mode='optics')
+    assert default_metrics['config']['firefly-clamp'] == 100
     depths = [24, 64, 128, 256]
     budget = lambda d: ['--max-events', str(d), '--max-path-rays', str(min(2048, d*8)),
                         '--max-total-rays', str(min(8192, d*32))]

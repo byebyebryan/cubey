@@ -194,18 +194,21 @@ class App {
         renderer_->resize(extent, format, !config_.exercise_retry && config_.fault == "target");
     }
     void shutdown() {
-        if (renderer_) {
-            renderer_->finish();
+        // Keep cleanup inside the host's live-device shutdown callback even
+        // when a diagnostic or metrics file cannot be written.
+        auto completed_renderer = std::move(renderer_);
+        if (completed_renderer) {
+            completed_renderer->finish();
 #ifdef CUBEY_RT_RAY_JOURNAL
-            renderer_->save_ray_journal(config_.ray_journal);
+            completed_renderer->save_ray_journal(config_.ray_journal);
 #endif
             if (dump_mode(config_))
-                renderer_->save_queries(!config_.query_output.empty()
-                                            ? config_.query_output
-                                            : (!config_.optics_output.empty()
-                                                   ? config_.optics_output
-                                                   : config_.hdr_output));
-            auto data = renderer_->metrics();
+                completed_renderer->save_queries(!config_.query_output.empty()
+                                                     ? config_.query_output
+                                                     : (!config_.optics_output.empty()
+                                                            ? config_.optics_output
+                                                            : config_.hdr_output));
+            auto data = completed_renderer->metrics();
             data["cpu_scene_prepare_ms"] = cpu_scene_ms_;
             data["total_app_wall_ms"] =
                 std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start_)
@@ -233,10 +236,30 @@ class App {
             std::cout << "raytracing: triangles=" << data["triangles"] << " AS=" << data["as_bytes"]
                       << " bytes, scene=" << data["scene_upload_and_build_ms"]
                       << " ms, pipeline=" << data["pipeline_setup_ms"] << " ms\n";
-            renderer_.reset();
+            completed_renderer.reset();
         }
     }
     void workshop_ui() {
+        if (config_.renderer == "forward") {
+            ImGui::Begin("Forward dragon comparison");
+            ImGui::TextUnformatted("Environment reflections");
+            const char* sources[] = {"environment", "screen", "hybrid"};
+            int source = config_.forward_transmission_source == "hybrid" ? 2
+                       : config_.forward_transmission_source == "screen" ? 1 : 0;
+            ImGui::TextUnformatted("Transmission source");
+            ImGui::SetNextItemWidth(210);
+            if (ImGui::Combo("##forward_transmission_source", &source, sources, 3))
+                config_.forward_transmission_source = sources[source];
+            ImGui::Text("Estimated thickness: %.3f m", config_.forward_thickness);
+            ImGui::TextUnformatted("One raster sample per frame; no progressive history");
+            ImGui::SliderFloat("Exposure EV", &config_.exposure, -4, 4);
+            if (ImGui::Button("Reset camera"))
+                orbit_.reset();
+            if (!config_.save_config.empty() && ImGui::Button("Save view"))
+                save();
+            ImGui::End();
+            return;
+        }
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         auto& state = *scene_.workshop;
         const bool dragon = scene_.material_layout == Scene::MaterialLayout::Dragon;
@@ -251,7 +274,9 @@ class App {
         ImGui::TextUnformatted(state.catalog.at(state.selected).label.c_str());
         if (dragon)
             ImGui::TextUnformatted("Base: Balanced marble");
-        if (renderer_)
+        if (demo_transport(config_))
+            ImGui::Text("RT demo: %u fixed samples per frame", config_.demo_samples);
+        else if (renderer_)
             ImGui::Text("Samples %u / %u  |  History %llu", renderer_->sample_count(),
                         config_.samples,
                         static_cast<unsigned long long>(renderer_->history_epoch()));
@@ -285,6 +310,22 @@ class App {
         ImGui::Checkbox("Relief normals", &config_.bump);
         if (scene_.optical_dragon && glass)
             ImGui::Checkbox("Smooth glass normals", &config_.smooth_normals);
+        if (scene_.optical_dragon) {
+            const char* modes[] = {"demo", "sampled"};
+            int mode = config_.transport_mode == "sampled" ? 1 : 0;
+            if (ImGui::Combo("Transport", &mode, modes, 2))
+                config_.transport_mode = modes[mode];
+            bool clamp_enabled = config_.firefly_clamp > 0;
+            if (ImGui::Checkbox("Clamp bright samples", &clamp_enabled))
+                config_.firefly_clamp = clamp_enabled ? 100.F : 0.F;
+            ImGui::BeginDisabled(!clamp_enabled);
+            ImGui::SliderFloat("Max HDR contribution", &config_.firefly_clamp, 1, 100000, "%.0f",
+                               ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
+            ImGui::EndDisabled();
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("Reduces rare bright samples before accumulation. May dim "
+                                  "highlights; unchecked keeps raw output.");
+        }
         const char* sources[] = {"environment", "scene"};
         int source = config_.reflection_source == "scene";
         if (scene_.optical_dragon)
@@ -310,8 +351,8 @@ class App {
             config_.sun_azimuth = glm::pi<float>() - glm::radians(azimuth);
         ImGui::SliderFloat("Exposure EV", &config_.exposure, -4, 4);
         int samples = static_cast<int>(config_.samples);
-        if (ImGui::SliderInt("Sample target", &samples, 1, 8192, "%d",
-                             ImGuiSliderFlags_Logarithmic))
+        if (!demo_transport(config_) && ImGui::SliderInt("Sample target", &samples, 1, 8192, "%d",
+                                                         ImGuiSliderFlags_Logarithmic))
             config_.samples = static_cast<std::uint32_t>(samples);
         if (ImGui::Button("Reset material"))
             state.replace(state.selected, state.catalog.at(state.selected).recipe);
@@ -625,7 +666,7 @@ class App {
             h.run_config = config_.common;
             h.output_format = VK_FORMAT_R8G8B8A8_UNORM;
             h.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
-            h.require_ray_tracing = true;
+            h.require_ray_tracing = config_.renderer == "rt";
             host::HeadlessPngHostCallbacks cb;
             cb.create_resources = [&](host::HeadlessPngContext& c) {
                 create(c.device(), c.gpu(), host::headless_capture_frame_slot_count(config_.common),
@@ -653,9 +694,10 @@ class App {
         host::WindowedAppConfig h;
         h.run_config = config_.common;
         h.app_name = "raytracing";
-        h.ready_status = "rendering hardware ray-traced triangles";
+        h.ready_status = config_.renderer == "forward" ? "rendering forward dragon approximation"
+                                                       : "rendering hardware ray-traced triangles";
         h.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
-        h.require_ray_tracing = true;
+        h.require_ray_tracing = config_.renderer == "rt";
         h.close_on_escape = true;
         host::WindowedAppCallbacks cb;
         cb.create_swapchain_resources = [&](host::WindowedAppContext& c) {
