@@ -21,6 +21,7 @@ export const subjects = design.families;
 export const bands = design.browse_bands;
 export const connections = design.connections;
 const publicScope: Record<string,string> = {
+  'stanford-dragon': 'Forward hybrid transmission is a fixed-thickness scene-color approximation. Fixed-quality RT uses four spatial samples per frame without reconstruction. Sampled RT is diagnostic: one fresh sample while moving, with a 256-sample target after stopping. It is not optical ground truth; fine glass shimmer remains during motion. Shadows are disabled consistently across these three captures.',
   'water-3d': 'A tank-scale liquid experiment with a reconstructed surface and whitewater. The long tank is the rendering domain.',
   'fire-3d': 'Fire and smoke evolve on a 3D grid. This visual study has not been validated as a physical combustion model.',
   'explosion-3d': 'Uses the same fire and smoke solver as Fire 3D, with a short impulse that creates the expanding plume.',
@@ -68,6 +69,7 @@ export function rendererLabel(e: Entry): string | undefined {
   if(e.family==='gltf'||e.id==='mesh-materials')return 'Forward PBR';
 }
 export function entryPath(e: Entry): string {
+  if (e.planned_route) return e.planned_route;
   if (e.family === 'simulation' || e.family === 'sdf') return `/demos/${e.family}/${e.id}/`;
   return `/demos/${e.family}/${['terrain','atmosphere','materials','gltf'].includes(e.family) ? '#'+e.id : ''}`;
 }

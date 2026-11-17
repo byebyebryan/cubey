@@ -1,0 +1,10 @@
+{
+  "report_id": "db121962f7a3f6de71e151d48f9a868987ea457ca170d76ded224c58b8e7a03d",
+  "url": "http://starship:8787/reports/db121962f7a3f6de71e151d48f9a868987ea457ca170d76ded224c58b8e7a03d/",
+  "site_snapshot": "site-preview/demos/raytracing/",
+  "http_delivery": "verified 200; entrypoint bytes11780",
+  "published_files": 41,
+  "published_bytes": 13271868,
+  "browser": "Report images, GPU table, playback/seek and prepared site link verified at published URL. Prepared site full-clip RT playback verified separately.",
+  "public_site_deployed": false
+}

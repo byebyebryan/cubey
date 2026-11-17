@@ -3049,6 +3049,78 @@
       }
     },
     {
+      "id": "preview-stanford-dragon",
+      "file": "/media/preview-stanford-dragon.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "8845baab216493df372d0d9cd8aac6e9edeac6c7b79477173d7507e44d39586e",
+      "bytes": 91579,
+      "caption": "Short silent preview. Stanford dragon \u00b7 Fixed-quality RT \u00b7 four spatial samples per frame \u00b7 matched whole view.",
+      "credit": {
+        "label": "Stanford 3D Scanning Repository use terms",
+        "url": "https://graphics.stanford.edu/data/3Dscanrep/",
+        "author": "Bryan (capture); Stanford Computer Graphics Laboratory (model)",
+        "source": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz"
+      },
+      "provenance": {
+        "source": "site/public/media/raytracing-dragon-rt.mp4",
+        "sourceSha256": "aef31aa3544b4cd1730b0d62320b2a05ff1c0e668e134d9202383a4bbc944883",
+        "sourceRevision": null,
+        "parentAsset": "raytracing-dragon-rt-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-stanford-dragon-forward",
+      "file": "/media/preview-stanford-dragon-forward.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "4c65240f4d94155742d188c502ea040a815892b76dddcbdd8c11f54b7df12082",
+      "bytes": 69013,
+      "caption": "Short silent preview. Stanford dragon \u00b7 Forward hybrid transmission \u00b7 matched whole view.",
+      "credit": {
+        "label": "Stanford 3D Scanning Repository use terms",
+        "url": "https://graphics.stanford.edu/data/3Dscanrep/",
+        "author": "Bryan (capture); Stanford Computer Graphics Laboratory (model)",
+        "source": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz"
+      },
+      "provenance": {
+        "source": "site/public/media/raytracing-dragon-forward.mp4",
+        "sourceSha256": "1093a543bc108cd0c8dede3f3ea898d0f79fb4188b80a77ade9d40be049bc578",
+        "sourceRevision": null,
+        "parentAsset": "raytracing-dragon-forward-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-stanford-dragon-sampled",
+      "file": "/media/preview-stanford-dragon-sampled.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "03a56b6d19bf4cd5b8857a222308ccdc3d4ef61f21d6259cf943359b1c935011",
+      "bytes": 123192,
+      "caption": "Short silent preview. Stanford dragon \u00b7 Sampled RT \u00b7 progressive diagnostic \u00b7 matched whole view.",
+      "credit": {
+        "label": "Stanford 3D Scanning Repository use terms",
+        "url": "https://graphics.stanford.edu/data/3Dscanrep/",
+        "author": "Bryan (capture); Stanford Computer Graphics Laboratory (model)",
+        "source": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz"
+      },
+      "provenance": {
+        "source": "site/public/media/raytracing-dragon-sampled.mp4",
+        "sourceSha256": "5c3a231f08379fbb22cd0b1516d06ea474b79281aeeeb891e2b70332cae440b2",
+        "sourceRevision": null,
+        "parentAsset": "raytracing-dragon-sampled-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
       "id": "preview-terrain-water",
       "file": "/media/preview-terrain-water.mp4",
       "kind": "video",
@@ -3115,6 +3187,150 @@
         "parentAsset": "water-3d-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+      }
+    },
+    {
+      "id": "raytracing-dragon-forward",
+      "file": "/media/raytracing-dragon-forward.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "397518d612b642c0c6fa60cbd36b295ec90c4e4d841b36fe1f56c617eae9b119",
+      "bytes": 23880,
+      "caption": "Stanford dragon \u00b7 Forward hybrid transmission \u00b7 matched whole view.",
+      "credit": {
+        "label": "Stanford 3D Scanning Repository use terms",
+        "url": "https://graphics.stanford.edu/data/3Dscanrep/",
+        "author": "Bryan (capture); Stanford Computer Graphics Laboratory (model)",
+        "source": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/closeout-20261117/stills/forward-whole.png",
+        "sourceSha256": "27f6277579e9c85a249aba61446e1f5990b4de025373ef2546757d4bc2448f1f",
+        "sourceRevision": null,
+        "sourceState": "base revision plus uncommitted launch, viewport, evidence, documentation and site presentation changes",
+        "recipe": "site/media/receipts/raytracing-dragon-demo.json",
+        "note": "WebP derivative of the matched 1920x1080 whole-view native still. Source revision is represented by the closeout identity receipt, which records the base revision plus uncommitted closeout changes."
+      }
+    },
+    {
+      "id": "raytracing-dragon-forward-film",
+      "file": "/media/raytracing-dragon-forward.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "1093a543bc108cd0c8dede3f3ea898d0f79fb4188b80a77ade9d40be049bc578",
+      "bytes": 1117146,
+      "caption": "Stanford dragon \u00b7 Forward hybrid transmission \u00b7 matched whole view.",
+      "credit": {
+        "label": "Stanford 3D Scanning Repository use terms",
+        "url": "https://graphics.stanford.edu/data/3Dscanrep/",
+        "author": "Bryan (capture); Stanford Computer Graphics Laboratory (model)",
+        "source": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/closeout-20261117/motion/forward/orbit-settle.mp4",
+        "sourceSha256": "93bc19fa1e1fe4db368af60c651eb11b99ede251b7aaa964aa037c49aeca7d29",
+        "sourceRevision": null,
+        "sourceState": "base revision plus uncommitted launch, viewport, evidence, documentation and site presentation changes",
+        "recipe": "site/media/receipts/raytracing-dragon-demo.json",
+        "note": "1280x720 H.264/yuv420p fast-start derivative of a normal-wall-clock-speed native recording. Recorded cadence is not physical desktop FPS; source identity is in the closeout receipt. It contains no audio stream."
+      }
+    },
+    {
+      "id": "raytracing-dragon-rt",
+      "file": "/media/raytracing-dragon-rt.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "3c1fc24ddf00a438d98e8f60e625fd4c62436cea87ec611f92f94b1ee3fa46e9",
+      "bytes": 33208,
+      "caption": "Stanford dragon \u00b7 Fixed-quality RT \u00b7 four spatial samples per frame \u00b7 matched whole view.",
+      "credit": {
+        "label": "Stanford 3D Scanning Repository use terms",
+        "url": "https://graphics.stanford.edu/data/3Dscanrep/",
+        "author": "Bryan (capture); Stanford Computer Graphics Laboratory (model)",
+        "source": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/closeout-20261117/stills/rt-whole.png",
+        "sourceSha256": "b0d03fddd5ebb735fdc2db5fbc2feffbff604fd37a34cc175086a9a3815075da",
+        "sourceRevision": null,
+        "sourceState": "base revision plus uncommitted launch, viewport, evidence, documentation and site presentation changes",
+        "recipe": "site/media/receipts/raytracing-dragon-demo.json",
+        "note": "WebP derivative of the matched 1920x1080 whole-view native still. Source revision is represented by the closeout identity receipt, which records the base revision plus uncommitted closeout changes."
+      }
+    },
+    {
+      "id": "raytracing-dragon-rt-film",
+      "file": "/media/raytracing-dragon-rt.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "aef31aa3544b4cd1730b0d62320b2a05ff1c0e668e134d9202383a4bbc944883",
+      "bytes": 1755603,
+      "caption": "Stanford dragon \u00b7 Fixed-quality RT \u00b7 four spatial samples per frame \u00b7 matched whole view.",
+      "credit": {
+        "label": "Stanford 3D Scanning Repository use terms",
+        "url": "https://graphics.stanford.edu/data/3Dscanrep/",
+        "author": "Bryan (capture); Stanford Computer Graphics Laboratory (model)",
+        "source": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/closeout-20261117/motion/rt/orbit-settle.mp4",
+        "sourceSha256": "7a3ae8b93e7a5ccd034dc3ff78de063992a70e340c1569a2e7a027435b008202",
+        "sourceRevision": null,
+        "sourceState": "base revision plus uncommitted launch, viewport, evidence, documentation and site presentation changes",
+        "recipe": "site/media/receipts/raytracing-dragon-demo.json",
+        "note": "1280x720 H.264/yuv420p fast-start derivative of a normal-wall-clock-speed native recording. Recorded cadence is not physical desktop FPS; source identity is in the closeout receipt. It contains no audio stream."
+      }
+    },
+    {
+      "id": "raytracing-dragon-sampled",
+      "file": "/media/raytracing-dragon-sampled.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "0278567d6620c5d2bdf8c601f0c5de8793a1fbb6d3c62f0b6ba52951a533eaf1",
+      "bytes": 31964,
+      "caption": "Stanford dragon \u00b7 Sampled RT \u00b7 progressive diagnostic \u00b7 matched whole view.",
+      "credit": {
+        "label": "Stanford 3D Scanning Repository use terms",
+        "url": "https://graphics.stanford.edu/data/3Dscanrep/",
+        "author": "Bryan (capture); Stanford Computer Graphics Laboratory (model)",
+        "source": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/closeout-20261117/stills/sampled-whole.png",
+        "sourceSha256": "2ab5a2564ac7f5ed3f6b5027faa621d01df4c289d93e04ac9eabfd58ce7b1f8e",
+        "sourceRevision": null,
+        "sourceState": "base revision plus uncommitted launch, viewport, evidence, documentation and site presentation changes",
+        "recipe": "site/media/receipts/raytracing-dragon-demo.json",
+        "note": "WebP derivative of the matched 1920x1080 whole-view native still. Source revision is represented by the closeout identity receipt, which records the base revision plus uncommitted closeout changes."
+      }
+    },
+    {
+      "id": "raytracing-dragon-sampled-film",
+      "file": "/media/raytracing-dragon-sampled.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "5c3a231f08379fbb22cd0b1516d06ea474b79281aeeeb891e2b70332cae440b2",
+      "bytes": 3314241,
+      "caption": "Stanford dragon \u00b7 Sampled RT \u00b7 progressive diagnostic \u00b7 matched whole view.",
+      "credit": {
+        "label": "Stanford 3D Scanning Repository use terms",
+        "url": "https://graphics.stanford.edu/data/3Dscanrep/",
+        "author": "Bryan (capture); Stanford Computer Graphics Laboratory (model)",
+        "source": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz"
+      },
+      "provenance": {
+        "source": "outputs/raytracing/closeout-20261117/motion/sampled/orbit-settle.mp4",
+        "sourceSha256": "bb6be635ed379b7a1d575f7096a5f7340577360ae6b7afa0e4d1fcd1b8c7a3f1",
+        "sourceRevision": null,
+        "sourceState": "base revision plus uncommitted launch, viewport, evidence, documentation and site presentation changes",
+        "recipe": "site/media/receipts/raytracing-dragon-demo.json",
+        "note": "1280x720 H.264/yuv420p fast-start derivative of a normal-wall-clock-speed native recording. Recorded cadence is not physical desktop FPS; source identity is in the closeout receipt. It contains no audio stream."
       }
     },
     {
@@ -3656,6 +3872,21 @@
       "poster": "csg-courtyard",
       "film": "csg-courtyard-film",
       "preview": "preview-csg-courtyard"
+    },
+    "stanford-dragon": {
+      "poster": "raytracing-dragon-rt",
+      "film": "raytracing-dragon-rt-film",
+      "preview": "preview-stanford-dragon"
+    },
+    "stanford-dragon-forward": {
+      "poster": "raytracing-dragon-forward",
+      "film": "raytracing-dragon-forward-film",
+      "preview": "preview-stanford-dragon-forward"
+    },
+    "stanford-dragon-sampled": {
+      "poster": "raytracing-dragon-sampled",
+      "film": "raytracing-dragon-sampled-film",
+      "preview": "preview-stanford-dragon-sampled"
     }
   }
 }

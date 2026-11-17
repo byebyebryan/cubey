@@ -1,0 +1,98 @@
+{
+  "rt-whole": {
+    "finite_nonnegative": true,
+    "hdr_max": 3.295999526977539,
+    "status_pixels": {
+      "1": 0,
+      "2": 0,
+      "4": 0,
+      "8": 0,
+      "16": 0,
+      "32": 0,
+      "64": 0,
+      "128": 234889
+    }
+  },
+  "sampled-whole": {
+    "finite_nonnegative": true,
+    "hdr_max": 33.42514419555664,
+    "status_pixels": {
+      "1": 0,
+      "2": 0,
+      "4": 0,
+      "8": 14,
+      "16": 0,
+      "32": 0,
+      "64": 0,
+      "128": 0
+    }
+  },
+  "rt-detail": {
+    "finite_nonnegative": true,
+    "hdr_max": 3.9739162921905518,
+    "status_pixels": {
+      "1": 0,
+      "2": 0,
+      "4": 0,
+      "8": 0,
+      "16": 0,
+      "32": 0,
+      "64": 1,
+      "128": 447235
+    }
+  },
+  "sampled-detail": {
+    "finite_nonnegative": true,
+    "hdr_max": 102.38002014160156,
+    "status_pixels": {
+      "1": 0,
+      "2": 0,
+      "4": 0,
+      "8": 18,
+      "16": 0,
+      "32": 0,
+      "64": 0,
+      "128": 0
+    }
+  },
+  "rt-front": {
+    "finite_nonnegative": true,
+    "hdr_max": 3.3746232986450195,
+    "status_pixels": {
+      "1": 0,
+      "2": 0,
+      "4": 0,
+      "8": 0,
+      "16": 0,
+      "32": 0,
+      "64": 1,
+      "128": 184117
+    }
+  },
+  "sampled-front": {
+    "finite_nonnegative": true,
+    "hdr_max": 25.2330265045166,
+    "status_pixels": {
+      "1": 0,
+      "2": 0,
+      "4": 0,
+      "8": 16,
+      "16": 0,
+      "32": 0,
+      "64": 0,
+      "128": 0
+    }
+  },
+  "forward-whole": {
+    "finite_nonnegative": true,
+    "hdr_max": 1.1021556854248047
+  },
+  "forward-detail": {
+    "finite_nonnegative": true,
+    "hdr_max": 1.1038600206375122
+  },
+  "forward-front": {
+    "finite_nonnegative": true,
+    "hdr_max": 1.1021337509155273
+  }
+}

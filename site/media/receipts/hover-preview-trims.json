@@ -27,6 +27,15 @@
     "robot": {
       "startSeconds": 10,
       "durationSeconds": 3.5
+    },
+    "stanford-dragon": {
+      "startSeconds": 2
+    },
+    "stanford-dragon-forward": {
+      "startSeconds": 2
+    },
+    "stanford-dragon-sampled": {
+      "startSeconds": 2
     }
   }
 }

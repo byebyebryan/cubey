@@ -24,6 +24,8 @@ target_compile_definitions(cubey_project_raytracing PRIVATE CUBEY_MATERIAL_RECIP
 target_compile_definitions(cubey_project_raytracing PRIVATE CUBEY_RAYTRACING_ASSET_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
 
 if(BUILD_TESTING)
+    add_test(NAME raytracing_dragon_demo_launcher
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_dragon_demo.py")
     add_test(NAME raytracing_dragon_glass_acceptance
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_dragon_glass_acceptance.py")
     add_test(NAME raytracing_spawn_geometry

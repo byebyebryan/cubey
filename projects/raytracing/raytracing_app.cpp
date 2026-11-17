@@ -720,7 +720,10 @@ class App {
             }
             orbit_.update_from_input(filtered, t.delta_seconds);
         };
-        cb.draw_ui = [&](host::WindowedAppContext&) { ui(); };
+        cb.draw_ui = [&](host::WindowedAppContext&) {
+            if (config_.controls)
+                ui();
+        };
         cb.record_frame = [&](host::WindowedAppContext& c, const host::WindowedRenderFrame& f) {
             stress_edit(frame_);
             const auto begin = config_.metrics.empty() ? 0 : steady_ns();

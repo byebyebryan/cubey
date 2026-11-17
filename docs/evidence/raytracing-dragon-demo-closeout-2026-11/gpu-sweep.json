@@ -1,0 +1,114 @@
+{
+  "passed": true,
+  "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+  "extent": [
+    1920,
+    1080
+  ],
+  "validation": false,
+  "video_recording": false,
+  "measurement": "Unpaced headless project GPU timestamps; no desktop FPS claim",
+  "camera": {
+    "measured_frames": [
+      30,
+      180
+    ],
+    "yaw": [
+      0.45,
+      -1.55
+    ],
+    "pitch": 0.35,
+    "distance": 1.75,
+    "target_y": 0.32
+  },
+  "routes": {
+    "forward": {
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/forward-config.json",
+        "--headless",
+        "--headless-render-only",
+        "--no-validation",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/forward.json"
+      ],
+      "gpu_pass": "forward.total_frame",
+      "measured_frames": 151,
+      "device": null,
+      "samples_per_moving_frame": 1,
+      "sample_scope": "per-frame",
+      "median_gpu_ms": 1.044896,
+      "p95_gpu_ms": 1.0673119999999998,
+      "max_gpu_ms": 1.0728959999999998,
+      "renderer": "forward",
+      "as_bytes": 0
+    },
+    "rt4": {
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/rt4-config.json",
+        "--headless",
+        "--headless-render-only",
+        "--no-validation",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/rt4.json"
+      ],
+      "gpu_pass": "raytracing.total_frame",
+      "measured_frames": 151,
+      "device": "NVIDIA GeForce RTX 5070 Ti",
+      "samples_per_moving_frame": 4,
+      "sample_scope": "per-frame",
+      "median_gpu_ms": 27.603232,
+      "p95_gpu_ms": 28.85464,
+      "max_gpu_ms": 29.605311999999998,
+      "renderer": "rt",
+      "as_bytes": 53847808
+    },
+    "rt2": {
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/rt2-config.json",
+        "--headless",
+        "--headless-render-only",
+        "--no-validation",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/rt2.json"
+      ],
+      "gpu_pass": "raytracing.total_frame",
+      "measured_frames": 151,
+      "device": "NVIDIA GeForce RTX 5070 Ti",
+      "samples_per_moving_frame": 2,
+      "sample_scope": "per-frame",
+      "median_gpu_ms": 14.119743999999999,
+      "p95_gpu_ms": 14.770432,
+      "max_gpu_ms": 14.882368,
+      "renderer": "rt",
+      "as_bytes": 53847808
+    },
+    "sampled": {
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--config",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/sampled-config.json",
+        "--headless",
+        "--headless-render-only",
+        "--no-validation",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/sampled.json"
+      ],
+      "gpu_pass": "raytracing.total_frame",
+      "measured_frames": 151,
+      "device": "NVIDIA GeForce RTX 5070 Ti",
+      "samples_per_moving_frame": 1,
+      "sample_scope": "progressive; moving view resets history",
+      "median_gpu_ms": 7.004639999999999,
+      "p95_gpu_ms": 7.187552,
+      "max_gpu_ms": 7.2463679999999995,
+      "renderer": "rt",
+      "as_bytes": 53847808
+    }
+  }
+}

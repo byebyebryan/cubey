@@ -680,6 +680,41 @@
       }
     },
     {
+      "id": "stanford-dragon",
+      "family": "materials",
+      "title": "A Stanford dragon, three glass paths",
+      "owner": "projects/raytracing",
+      "dimension": "3D",
+      "summary": "The certified Stanford dragon and convex marble slab compare forward hybrid transmission, fixed-quality ray tracing and sampled ray tracing under the shared clear atmosphere.",
+      "cues": [
+        "Forward hybrid",
+        "Fixed-quality RT · four samples per frame",
+        "Sampled RT diagnostic"
+      ],
+      "variants": [
+        "Fixed-quality RT",
+        "Forward hybrid",
+        "Sampled RT"
+      ],
+      "source": "projects/raytracing/README.md",
+      "media": "site/public/media/raytracing-dragon-rt.mp4",
+      "poster": "site/public/media/raytracing-dragon-rt.webp",
+      "related": [
+        "mesh-materials"
+      ],
+      "kind": "demo",
+      "boundary": "The comparison keeps the certified model, marble slab, shared atmosphere and materials, camera, lighting and exposure matched; source shadows are disabled in all three modes. Fixed-quality RT uses four spatial samples per frame without new antialiasing or reconstruction. The sampled diagnostic uses one fresh sample while moving and a 256-sample target after stopping; it is not optical ground truth. Fine glass shimmer remains during motion.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/raytracing/",
+      "variants_are": "Three selected native comparisons; labels describe the captured transport and sample policy",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "raytracing-dragon-rt",
+        "film": "raytracing-dragon-rt-film"
+      }
+    },
+    {
       "id": "observatory",
       "family": "sdf",
       "title": "Hill observatory",

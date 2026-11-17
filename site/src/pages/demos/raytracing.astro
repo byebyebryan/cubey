@@ -1,0 +1,89 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Media from '../../components/Media.astro';
+import {byId,sourceURL} from '../../data/catalog';
+import {url} from '../../lib/urls';
+import gpuSweep from '../../../../docs/evidence/raytracing-dragon-demo-closeout-2026-11/gpu-sweep.json';
+
+const path='/demos/raytracing/';
+const entry=byId['stanford-dragon'];
+const modes=[
+  {
+    selection:'stanford-dragon',
+    label:'Hardware ray tracing · four spatial samples per frame',
+    title:'Fixed-quality RT',
+    description:'The opt-in deterministic glass path follows reflected and refracted branches with a fixed four-sample frame budget. Fine shimmer remains in intricate glass during motion.',
+  },
+  {
+    selection:'stanford-dragon-forward',
+    label:'Forward PBR · hybrid transmission',
+    title:'Forward hybrid',
+    description:'A matched raster baseline: projected scene color shows the marble where geometry is visible, with the refracted sky used elsewhere. Its fixed-thickness estimate is not a boundary solver.',
+  },
+  {
+    selection:'stanford-dragon-sampled',
+    label:'Hardware ray tracing · progressive diagnostic',
+    title:'Sampled RT',
+    description:'This progressive diagnostic comparison resets history while the camera moves, taking one fresh sample per moving frame and aiming for 256 samples after stopping. It is not optical ground truth.',
+  },
+];
+const timings=[
+  {label:'Forward hybrid · raster',sampling:'1 raster',measurement:gpuSweep.routes.forward},
+  {label:'Fixed-quality RT · showcase',sampling:'4 spatial',measurement:gpuSweep.routes.rt4},
+  {label:'Fixed-quality RT · cost option',sampling:'2 spatial',measurement:gpuSweep.routes.rt2},
+  {label:'Sampled RT · moving diagnostic',sampling:'1 fresh',measurement:gpuSweep.routes.sampled},
+];
+---
+<Layout title="Stanford dragon: three glass paths" description={entry.summary} path={path}>
+  <section class="page-title">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href={url('/demos/',path)}>Demos</a><span aria-hidden="true">/</span><a href={url('/demos/materials/',path)}>Materials</a><span aria-hidden="true">/</span><span aria-current="page">Stanford dragon</span></nav>
+    <span class="eyebrow">Ray tracing / optical comparison</span>
+    <h1>Three ways through glass.</h1>
+    <p class="intro">{entry.summary}</p>
+    <p class="note">Each film shows normal-speed native camera motion: a short orbit, two stops and a return. The dragon stays intact; only the camera moves.</p>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><div><span class="eyebrow">Matched scene</span><h2>Same dragon. Same clear sky.</h2></div><p>The certified Stanford mesh, convex marble slab, material recipes, camera, exposure and shared atmosphere lighting stay matched. Source shadows are disabled in all three captures.</p></div>
+    <div class="dragon-modes">
+      {modes.map((mode,index)=><article class="dragon-mode">
+        <span class="eyebrow">0{index+1} / 03 · {mode.label}</span>
+        <h2>{mode.title}</h2>
+        <p>{mode.description}</p>
+        <Media entry={mode.selection} path={path} title={mode.title} caption="Normal-speed native recording; the shared camera motion is shown at capture speed."/>
+      </article>)}
+    </div>
+    <p class="note">These are recorded comparisons, not an in-browser renderer. Fixed-quality RT uses spatial sampling without temporal reconstruction; the comparison includes no denoiser or global illumination. Sampling policies differ, so the images are not an equal-AA test.</p>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><div><span class="eyebrow">GPU measurements · single-GPU host</span><h2>Cost during the same moving view.</h2></div><p>Unpaced headless project GPU timestamps at 1920×1080: 151 matched moving poses after 30 warmup frames, with recording and validation disabled. The host had an NVIDIA GeForce RTX 5070 Ti and driver 620.70.06. These are not display frame rates.</p></div>
+    <div class="table-scroll"><table class="dragon-timing-table"><caption>Median and P95 GPU time for the matched moving-pose sweep</caption><thead><tr><th scope="col">Mode</th><th scope="col">Moving samples</th><th scope="col">Median GPU</th><th scope="col">P95 GPU</th></tr></thead><tbody>
+      {timings.map(row=><tr><th scope="row">{row.label}</th><td>{row.sampling}</td><td>{row.measurement.median_gpu_ms.toFixed(3)} ms</td><td>{row.measurement.p95_gpu_ms.toFixed(3)} ms</td></tr>)}
+    </tbody></table></div>
+    <p class="note">The sampled mode's 256-sample target applies only after the camera stops; it takes one fresh sample per moving frame. This diagnostic is not a reference solution, and the modes do not use equal sampling or antialiasing policies. The timing sweep is separate from the normal-speed recordings.</p>
+  </section>
+
+  <section class="section about">
+    <h2>Model and source.</h2>
+    <div>
+      <p>The scanned model is from the Stanford Computer Graphics Laboratory's Stanford 3D Scanning Repository. Its use terms are separate from Cubey's code and original capture license; the render shows the dragon intact and in a respectful context.</p>
+      <div class="scene-links"><a href="https://graphics.stanford.edu/data/3Dscanrep/">Stanford model source and usage terms ↗</a><a href={sourceURL(entry)}>Ray tracing project guide ↗</a><a href="https://github.com/byebyebryan/cubey/blob/main/docs/notes/raytracing-dragon-demo-closeout.md">Demo scope and reproduction ↗</a><a href={url('/demos/materials/',path)}>Explore the twelve-material workshop ↗</a></div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .dragon-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px}
+  .dragon-mode:first-child{grid-column:1/-1}
+  .dragon-mode:first-child>p{min-height:0}
+  .dragon-mode{min-width:0;border-top:1px solid var(--line);padding-top:20px}
+  .dragon-mode h2{font-size:clamp(25px,2.5vw,34px);margin:13px 0}
+  .dragon-mode>p{font-size:14px;color:var(--muted);min-height:7.5em;margin-bottom:16px}
+  .dragon-timing-table{border-collapse:collapse;width:100%;font-size:14px}
+  .dragon-timing-table caption{text-align:left;color:var(--muted);font-size:13px;padding:0 0 10px}
+  .dragon-timing-table th,.dragon-timing-table td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:14px 18px 14px 0}
+  .dragon-timing-table td{color:var(--muted);font-variant-numeric:tabular-nums}
+  @media(max-width:1000px){.dragon-mode>p{min-height:0}}
+  @media(max-width:720px){.dragon-modes{grid-template-columns:1fr}.dragon-mode:first-child{grid-column:auto}.dragon-mode>p{min-height:0}.dragon-timing-table{font-size:12px}}
+</style>

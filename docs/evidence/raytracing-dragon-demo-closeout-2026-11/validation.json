@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "runtime_ctest_groups": 23,
+  "repository_ctest_groups": 9,
+  "new_markdown_pages_checked": 502,
+  "site": {
+    "command": "npm --prefix site run verify",
+    "astro_errors": 0,
+    "astro_warnings": 0,
+    "astro_hints": 0,
+    "node_checks": 17,
+    "pages_built": 25,
+    "internal_references": 1070,
+    "max_page_bytes": 420642,
+    "css_followup": "Lead paragraph min-height removed; build and check-build pass"
+  },
+  "browser": {
+    "source_site": "Astro preview at starship:4321 with explicitly allowed starship host",
+    "three_films_play": true,
+    "exclusive_playback": true,
+    "seeking": true,
+    "duration_seconds": 37.533333,
+    "mobile_no_horizontal_overflow": true,
+    "material_workshop_preserved": true,
+    "catalog_entry_resolves": true,
+    "stanford_credit_anchor_resolves": true,
+    "report": {
+      "camera_selection": true,
+      "zoom_and_escape": true,
+      "three_films_play_and_seek": true,
+      "mobile_no_horizontal_overflow": true
+    },
+    "bundled_site": {
+      "three_films_load_full_clip": true,
+      "sampled_play_and_seek": true,
+      "console_errors": 0
+    }
+  },
+  "presentation_limits": "Native Xvfb evidence, not physical desktop acceptance. Fine shimmer retained. Web films downscaled to720p from native1080p with no speed change.",
+  "repository": "Uncommitted closeout patch on raytracing-first-pass-20261104; unrelated SDF worktree preserved. No public deployment."
+}

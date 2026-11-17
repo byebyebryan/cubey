@@ -27,6 +27,8 @@ def main():
     parser.add_argument("--orbit-seconds", type=float, default=5)
     parser.add_argument("--single-orbit", action="store_true")
     parser.add_argument("--validate", action="store_true")
+    parser.add_argument("--hide-controls", action="store_true",
+                        help="record the native viewport without the editor panel")
     parser.add_argument("--settle-seconds", type=float, default=30)
     args = parser.parse_args()
     if os.environ.get("CUBEY_RT_PRIVATE_XVFB") != "1":
@@ -88,6 +90,8 @@ def main():
         "20000",
     ]
     command += ["--require-validation"] if args.validate else ["--no-validation"]
+    if args.hide_controls:
+        command += ["--no-controls"]
     events, phases = [], []
     process, video = None, None
     start_ns = time.monotonic_ns()
@@ -272,6 +276,7 @@ def main():
                         "height": args.height,
                         "recording": args.video,
                         "validation": args.validate,
+                        "controls_visible": not args.hide_controls,
                         "binary_sha256": hashlib.sha256(
                             args.binary.read_bytes()
                         ).hexdigest(),
@@ -313,6 +318,7 @@ def main():
                         "frames": len(metrics["native_frames"]),
                         "validation": args.validate,
                         "recording": args.video,
+                        "controls_visible": config["controls"],
                     },
                     indent=2,
                 )

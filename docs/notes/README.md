@@ -95,6 +95,9 @@ the architecture and project guides remain current authority.
 - [Forward dragon correctness audit](raytracing-forward-dragon-audit.md):
   correct the comparison source choice and tangent attributes; validate actual
   material inputs, mesh entry, refraction arithmetic and source routing.
+- [Dragon demo closeout](raytracing-dragon-demo-closeout.md): three retained
+  rendering modes, matched launch views, current native motion/cost evidence,
+  prepared site entry and accepted motion-shimmer boundary.
 - [Forward dragon scene transparency](raytracing-forward-transparency.md):
   prove local marble visibility and combine opaque camera data with refracted
   sky in the hybrid comparison preset.

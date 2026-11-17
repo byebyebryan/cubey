@@ -1,0 +1,173 @@
+Start testing: Nov 17 11:52 PST
+----------------------------------------------------------
+4/328 Testing: foundation_layers
+4/328 Test: foundation_layers
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tools/check_foundation_layers.py" "--target-graph" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/foundation-targets.json"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"foundation_layers" start time: Nov 17 11:52 PST
+Output:
+----------------------------------------------------------
+PASS: foundation include/configured link boundaries (401 source/header files)
+<end of output>
+Test time =   0.17 sec
+----------------------------------------------------------
+Test Passed.
+"foundation_layers" end time: Nov 17 11:52 PST
+"foundation_layers" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/328 Testing: foundation_layer_rules
+5/328 Test: foundation_layer_rules
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tests/tools/test_foundation_layers.py" "--cmake" "/usr/bin/cmake"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"foundation_layer_rules" start time: Nov 17 11:52 PST
+Output:
+----------------------------------------------------------
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 1.536s
+
+OK
+<end of output>
+Test time =   1.57 sec
+----------------------------------------------------------
+Test Passed.
+"foundation_layer_rules" end time: Nov 17 11:52 PST
+"foundation_layer_rules" time elapsed: 00:00:01
+----------------------------------------------------------
+
+6/328 Testing: project_layout_hygiene
+6/328 Test: project_layout_hygiene
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tools/check_project_layout.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"project_layout_hygiene" start time: Nov 17 11:52 PST
+Output:
+----------------------------------------------------------
+PASS: project layout and current navigation
+<end of output>
+Test time =   0.23 sec
+----------------------------------------------------------
+Test Passed.
+"project_layout_hygiene" end time: Nov 17 11:52 PST
+"project_layout_hygiene" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/328 Testing: project_layout_rules
+7/328 Test: project_layout_rules
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tests/tools/test_project_layout.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"project_layout_rules" start time: Nov 17 11:52 PST
+Output:
+----------------------------------------------------------
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 0.180s
+
+OK
+<end of output>
+Test time =   0.21 sec
+----------------------------------------------------------
+Test Passed.
+"project_layout_rules" end time: Nov 17 11:52 PST
+"project_layout_rules" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/328 Testing: documentation_hygiene
+8/328 Test: documentation_hygiene
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tools/check_documentation.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"documentation_hygiene" start time: Nov 17 11:52 PST
+Output:
+----------------------------------------------------------
+PASS: documentation navigation
+<end of output>
+Test time =   0.61 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_hygiene" end time: Nov 17 11:52 PST
+"documentation_hygiene" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/328 Testing: documentation_media
+9/328 Test: documentation_media
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tools/check_documentation.py" "--check" "media"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"documentation_media" start time: Nov 17 11:52 PST
+Output:
+----------------------------------------------------------
+PASS: documentation media
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_media" end time: Nov 17 11:52 PST
+"documentation_media" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/328 Testing: documentation_rules
+10/328 Test: documentation_rules
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tests/tools/test_documentation.py"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"documentation_rules" start time: Nov 17 11:52 PST
+Output:
+----------------------------------------------------------
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 0.093s
+
+OK
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_rules" end time: Nov 17 11:52 PST
+"documentation_rules" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/328 Testing: documentation_cli_recipes
+11/328 Test: documentation_cli_recipes
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tools/check_documentation.py" "--check" "recipes" "--app-manifest" "/home/bryan/code/cubey-raytracing-first-pass/build/dev/documented-apps.json"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"documentation_cli_recipes" start time: Nov 17 11:52 PST
+Output:
+----------------------------------------------------------
+PASS: documentation recipes
+<end of output>
+Test time =   2.04 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_cli_recipes" end time: Nov 17 11:52 PST
+"documentation_cli_recipes" time elapsed: 00:00:02
+----------------------------------------------------------
+
+12/328 Testing: cmake_app_policy_rules
+12/328 Test: cmake_app_policy_rules
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey-raytracing-first-pass/tests/tools/test_cmake_app_policy.py" "--cmake" "/usr/bin/cmake" "--ctest" "/usr/bin/ctest"
+Directory: /home/bryan/code/cubey-raytracing-first-pass/build/dev
+"cmake_app_policy_rules" start time: Nov 17 11:52 PST
+Output:
+----------------------------------------------------------
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.460s
+
+OK
+<end of output>
+Test time =   0.49 sec
+----------------------------------------------------------
+Test Passed.
+"cmake_app_policy_rules" end time: Nov 17 11:52 PST
+"cmake_app_policy_rules" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Nov 17 11:52 PST
+
+build =   1.74 sec*proc
+
+config =   2.04 sec*proc
+
+docs =   3.75 sec*proc
+
+policy =   3.45 sec*proc
+
+unit =   5.49 sec*proc

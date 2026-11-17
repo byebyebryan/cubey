@@ -13,27 +13,25 @@ new work from a concrete product need. The [design](DESIGN.md),
 [architecture index](architecture/README.md) and
 [project guides](README.md#project-docs) describe those ownership boundaries.
 
-The dedicated [ray-tracing project](../projects/raytracing/README.md) has a
-locally qualified opaque hardware baseline and a shared-sky optics pass.
-Sharp curved-mirror scene reflections and a closed clear-glass prism use
-Cubey's existing atmosphere, lighting and HDR postprocessing. The
-[contained-scene follow-up](notes/raytracing-contained-scene.md) replaces the
-presentation floor with a compact shaped base; planes remain diagnostic controls.
-The [reflective-dragon follow-up](notes/raytracing-reflective-dragon.md) separates
-balls/boxes into proof views and makes the dragon itself the reflector in the
-current showcase. The
-[optics results](notes/raytracing-optics-results.md) retain reference/numerical,
-window, convergence, regression and cost evidence, including visible transport
-limits. The [first-pass results](notes/raytracing-first-pass-results.md) remain
-the historical opaque baseline. Physical interaction and human artistic
-acceptance remain open. The next proposed
-[RT material workshop](notes/raytracing-material-workshop-plan.md) uses the shared
-twelve-recipe catalog and matched forward/SDF/RT specimens under clear atmosphere,
-with rough specular transport and per-material optics. It is a planning contract,
-not current workshop support. Cornell/local-area-light GI, full cloud composition
-and the matched mesh/SDF representation and traversal comparison remain separate.
-These receipts do not replace historical
-qualification of other renderers or authorize public-site promotion.
+The dedicated [ray-tracing project](../projects/raytracing/README.md) now includes
+the shared twelve-material workshop and a bounded glass-dragon demonstration.
+The [demo closeout](notes/raytracing-dragon-demo-closeout.md) keeps forward hybrid,
+fixed-quality RT and progressive sampled RT with matched launch views and
+motion/cost evidence. The certified dragon sits on a convex marble slab under
+shared clear atmosphere; primitive and floor scenes remain diagnostic controls.
+Forward shows local scene color through glass while RT follows repeated scene
+intersections. Fine motion shimmer remains an accepted demo limit. Shared
+temporal AA/reconstruction, Cornell/local-area-light GI, full cloud composition
+and mesh/SDF representation comparisons remain separate choices. The
+[workshop guide](notes/raytracing-material-workshop-guide.md) and
+[progress record](notes/raytracing-material-workshop-progress.md) describe the
+implemented forward/SDF/RT material routes. Earlier
+[first-pass](notes/raytracing-first-pass-results.md) and
+[optics results](notes/raytracing-optics-results.md) retain their historical scope.
+The [dragon showcase](https://dev.byebyebryan.com/cubey/demos/raytracing/) presents
+the three modes; deployment metadata below identifies the served revision. Native
+Xvfb evidence does not establish physical desktop interaction or cadence and
+does not renew qualification of other renderers.
 
 ## Current Readiness Checkpoint
 

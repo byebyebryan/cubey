@@ -46,6 +46,14 @@ for(const [name,html] of pages){
   if(bound>600_000)errors.push(`${name}: HTML/styles/scripts/all maximum-size poster images exceed 600 KB budget`);
 }
 for(const name of ['index.html','demos/index.html','demos/simulation/index.html','demos/sdf/index.html'])if(!pages.get(name)?.includes('<video '))errors.push(`${name}: overview has no playable film`);
+const dragonPage=pages.get('demos/raytracing/index.html')||'';
+if(!dragonPage)errors.push('Ray tracing dragon page is missing');
+else{
+  for(const label of ['Fixed-quality RT','Forward hybrid','Sampled RT','raytracing-dragon-rt.mp4','raytracing-dragon-forward.mp4','raytracing-dragon-sampled.mp4'])
+    if(!dragonPage.includes(label))errors.push(`Ray tracing dragon page is missing its mode or media: ${label}`);
+  if((dragonPage.match(/<video\b/g)||[]).length!==3)errors.push('Ray tracing dragon page must have exactly three native players');
+}
+if((pages.get('demos/materials/index.html')||'').includes('A Stanford dragon, three glass paths'))errors.push('Dragon demo leaked into the existing material workshop page');
 for(const name of ['index.html','about/index.html','demos/index.html','demos/sdf/index.html',...['observatory','robot','canal-mill','courtyard'].map(id=>`demos/sdf/${id}/index.html`),'demos/sdf/inside-a-solid/index.html']){
   if(/media\/guardian|sdf\/guardian\//i.test(pages.get(name)||''))errors.push(`${name}: retired Guardian returned to active presentation`);
 }

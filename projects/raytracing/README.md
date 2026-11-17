@@ -13,6 +13,36 @@ in the [progress record](../../docs/notes/raytracing-material-workshop-progress.
 
 ## Build and run
 
+For the current glass-dragon demo, build the project, explicitly prepare the
+optical model, then use the launcher from the repository root:
+
+```sh
+rtk cmake --build --preset dev --target cubey_project_raytracing
+rtk proxy uv run projects/raytracing/tools/prepare_dragon.py
+rtk proxy uv run --no-project --no-build projects/raytracing/tools/prepare_optical_dragon.py --output cache/raytracing/stanford-dragon/optical-v1
+rtk proxy python3 projects/raytracing/tools/dragon_demo.py
+rtk proxy python3 projects/raytracing/tools/dragon_demo.py --mode forward
+rtk proxy python3 projects/raytracing/tools/dragon_demo.py --mode sampled
+```
+
+Reuse the certified cache if it is already prepared. Optical preparation expects
+a new, empty output directory; it does not replace an existing model.
+
+The default is fixed-quality RT at four samples per frame. `--view whole|detail|front`
+selects a matched camera for any mode; `--mode rt --rt-samples 2` trades edge
+quality for cost. All three launch choices share the certified dragon, marble
+base, clear atmosphere, camera and disabled shadows. Forward uses hybrid
+screen/environment transmission. Sampled mode accumulates while stationary and
+restarts during camera movement; it is a diagnostic comparison, not an optical
+ground truth. The original executable and presets retain their defaults.
+
+The launcher works from any directory; additional native arguments follow `--`
+and resolve relative paths against the repository root. `--print-command` shows
+the exact command. Native `--no-controls` hides the editor panel for a clean
+viewport, and Save view retains that choice. See the
+[demo closeout](../../docs/notes/raytracing-dragon-demo-closeout.md) for matched
+motion, current costs, reproduction and accepted limits.
+
 The RT route requires a Vulkan 1.3 GPU with acceleration structures,
 ray-tracing pipelines and buffer device addresses. It reports missing
 capabilities rather than switching to another renderer. Existing Cubey

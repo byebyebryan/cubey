@@ -56,7 +56,7 @@ errors.push(...hoverPreviewErrors(media,assets,previewReceipt));
 const supported=new Set([...readFileSync(resolve(root,'docs/architecture/gltf-assets.md'),'utf8').matchAll(/^\| `(KHR_[^`]+)` \| supported/gm)].map(m=>m[1]));
 const mapped=new Set(content.entries.flatMap(e=>e.extensions));
 if(supported.size!==mapped.size||[...supported].some(id=>!mapped.has(id)))errors.push('Supported glTF extension map changed');
-if(content.families.length!==7||content.entries.length!==23||new Set(content.entries.map(e=>e.owner)).size!==13)errors.push('Reviewed subject/demo/native-owner roster changed');
+if(content.families.length!==7||content.entries.length!==24||new Set(content.entries.map(e=>e.owner)).size!==14)errors.push('Reviewed subject/demo/native-owner roster changed');
 const csgIds=['observatory','robot','canal-mill','courtyard'];
 if(ids.has('guardian')||content.entries.filter(e=>e.family==='sdf').map(e=>e.id).join(',')!==csgIds.join(','))errors.push('The active CSG showcase must contain the approved quartet; Guardian is a retained study');
 if(content.families.some(f=>f.id==='fractals')||content.entries.some(e=>e.family==='fractals'))errors.push('Deferred fractals returned to the public catalog');
@@ -72,6 +72,42 @@ for(const [id,capture] of Object.entries(materialReceipt.assets)){
   if(asset?.sha256!==capture.webSha256||asset?.provenance.sourceSha256!==capture.nativeSha256||asset?.provenance.sourceRevision!==materialReceipt.sourceRevision)errors.push(`Three-renderer material provenance mismatch: ${id}`);
 }
 for(const [name,expected] of Object.entries(materialReceipt.qualification))if(!existsSync(resolve(root,name))||sha(readFileSync(resolve(root,name)))!==expected)errors.push(`Material qualification receipt changed: ${name}`);
+const dragonReceiptPath='site/media/receipts/raytracing-dragon-demo.json';
+const dragonReceipt=JSON.parse(readFileSync(resolve(root,dragonReceiptPath),'utf8'));
+const dragonIdentityPath='docs/evidence/raytracing-dragon-demo-closeout-2026-11/identity.json';
+const dragonIdentity=JSON.parse(readFileSync(resolve(root,dragonIdentityPath),'utf8'));
+if(dragonReceipt.source?.baseRevision!==dragonIdentity.base_revision||
+   dragonReceipt.source?.sourceState!==dragonIdentity.source_state||
+   dragonReceipt.source?.binarySha256!==dragonIdentity.binary_sha256||
+   dragonReceipt.source?.modelId!==dragonIdentity.model_id||
+   dragonReceipt.source?.preparedModelSha256!==dragonIdentity.model_sha256)
+  errors.push('Dragon media source identity differs from the closeout receipt');
+for(const [name,evidence] of Object.entries(dragonReceipt.evidence||{}))
+  if(name!=='webDerivatives'&&(!existsSync(resolve(root,evidence.path))||sha(readFileSync(resolve(root,evidence.path)))!==evidence.sha256))
+    errors.push(`Dragon evidence receipt changed: ${evidence.path}`);
+if(!dragonReceipt.source?.sourceState?.includes('uncommitted'))errors.push('Dragon media must distinguish its dirty capture source state from the base revision');
+const dragonGpu=JSON.parse(readFileSync(resolve(root,dragonReceipt.evidence.gpuSweep.path),'utf8'));
+for(const route of ['forward','rt4','rt2','sampled'])
+  if(dragonReceipt.performance?.routes?.[route]?.median_gpu_ms!==dragonGpu.routes?.[route]?.median_gpu_ms||
+     dragonReceipt.performance?.routes?.[route]?.p95_gpu_ms!==dragonGpu.routes?.[route]?.p95_gpu_ms)
+    errors.push(`Dragon site timing differs from the pinned GPU sweep: ${route}`);
+const dragonModes={
+  'stanford-dragon':['raytracing-dragon-rt','raytracing-dragon-rt-film'],
+  'stanford-dragon-forward':['raytracing-dragon-forward','raytracing-dragon-forward-film'],
+  'stanford-dragon-sampled':['raytracing-dragon-sampled','raytracing-dragon-sampled-film'],
+};
+for(const [selectionId,[posterId,filmId]] of Object.entries(dragonModes)){
+  const selection=media.selections[selectionId];
+  if(selection?.poster!==posterId||selection?.film!==filmId)errors.push(`Dragon mode selection changed: ${selectionId}`);
+  for(const id of [posterId,filmId]){
+    const asset=assets.get(id),capture=dragonReceipt.assets?.[id];
+    if(!asset||!capture||asset.sha256!==capture.webSha256||
+       asset.provenance.sourceSha256!==capture.nativeSha256||
+       asset.provenance.recipe!==dragonReceiptPath)
+      errors.push(`Dragon media provenance mismatch: ${id}`);
+  }
+}
+if(!existsSync(resolve(root,dragonReceipt.sourceModelNotice)))errors.push('Stanford Dragon source/use notice is missing');
 for(const id of ['mesh-materials','library-mesh-dawn','library-sdf-dusk','library-sdf-dawn']){
   for(const [suffix,kind] of [['','image'],['-film','video']]){
     const a=assets.get(id+suffix);

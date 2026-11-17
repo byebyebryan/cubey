@@ -1,0 +1,379 @@
+{
+  "format": "cubey.site.raytracing-dragon-demo",
+  "version": 1,
+  "scope": "Three matched normal-speed native recordings and whole-view stills: fixed-quality four-sample RT, forward hybrid, and sampled RT diagnostic. Same certified Stanford dragon, convex marble slab, material recipes, camera, clear atmosphere and lighting; source shadows disabled in all modes. No new AA, temporal reconstruction, denoiser or GI. Fine glass shimmer remains during motion.",
+  "source": {
+    "baseRevision": "05794fc29e6ebf4b388f3d64d32bf9ca1acf2663",
+    "sourceState": "base revision plus uncommitted launch, viewport, evidence, documentation and site presentation changes",
+    "binarySha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "modelId": "stanford-dragon-optical-v1",
+    "preparedModelSha256": "bfc08772bd797a356e9b61a400b5bda735270940b55cba3fbf4fd08ae8c01c47",
+    "sourceArchiveSha256": "74ac1d90989c9b1732edee82d57e9ce71452144cf4355f108d8c9c616d28d02f",
+    "sourcePlySha256": "fea87ff48f2aba22fb53e7b67c3ff3f7b8c2a3b3a0653af62c48bba67c6d5744",
+    "preparedGlbSha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+    "opticalCertificateSha256": "d3915cc9631ad842ebf7141626ad6eea24afdc52540951a72ab2c8e02e5dc486",
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "driver": "620.70.06",
+    "rendererChanges": "Editor visibility only; transport, shaders, presets, shared material recipes and accepted geometry unchanged"
+  },
+  "evidence": {
+    "identity": {
+      "path": "docs/evidence/raytracing-dragon-demo-closeout-2026-11/identity.json",
+      "sha256": "0285a9cf782f820c99fa0b6b54b6e7772b3f9f0eb9065a413940cf0fa2610462"
+    },
+    "captureCalls": {
+      "path": "docs/evidence/raytracing-dragon-demo-closeout-2026-11/capture-calls.json",
+      "sha256": "43f2f5c8e817ad2bc79a523a092c229b7e0397d06c50bf247622195e7951cd2c"
+    },
+    "captureConfigs": {
+      "path": "docs/evidence/raytracing-dragon-demo-closeout-2026-11/capture-configs.json",
+      "sha256": "23528041f33bca30af3624ca2d36f9d61681318a23b228f078d33a06b571701d"
+    },
+    "hdrValidation": {
+      "path": "docs/evidence/raytracing-dragon-demo-closeout-2026-11/hdr-validation.json",
+      "sha256": "a8a635cb3f704517bf34fe6552f60a74d3cc8d8ce4dcb20696d75341b9650dad"
+    },
+    "nativeMotion": {
+      "path": "docs/evidence/raytracing-dragon-demo-closeout-2026-11/native-motion.json",
+      "sha256": "ffa1ace776b8640d2aef489a24c54fc7956500540068994c549219cce7da2abb"
+    },
+    "gpuSweep": {
+      "path": "docs/evidence/raytracing-dragon-demo-closeout-2026-11/gpu-sweep.json",
+      "sha256": "f4447c6e19f87f1cc590d2678b1bc648c5ee57e873f10d694362b03822a2d20d"
+    },
+    "webDerivatives": {
+      "path": "outputs/raytracing/closeout-20261117/web/receipt.json",
+      "sha256": "2bc11250c036a78ed8d714da09968c7fbe7ae8dac305510fc2542ed81f745ea8"
+    }
+  },
+  "performance": {
+    "scope": "Unpaced headless project GPU timestamps; no desktop FPS claim",
+    "extent": [
+      1920,
+      1080
+    ],
+    "camera": {
+      "measured_frames": [
+        30,
+        180
+      ],
+      "yaw": [
+        0.45,
+        -1.55
+      ],
+      "pitch": 0.35,
+      "distance": 1.75,
+      "target_y": 0.32
+    },
+    "warmupFrames": 30,
+    "measuredMovingPoses": 151,
+    "validation": false,
+    "videoRecording": false,
+    "routes": {
+      "forward": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/forward-config.json",
+          "--headless",
+          "--headless-render-only",
+          "--no-validation",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/forward.json"
+        ],
+        "gpu_pass": "forward.total_frame",
+        "measured_frames": 151,
+        "device": null,
+        "samples_per_moving_frame": 1,
+        "sample_scope": "per-frame",
+        "median_gpu_ms": 1.044896,
+        "p95_gpu_ms": 1.0673119999999998,
+        "max_gpu_ms": 1.0728959999999998,
+        "renderer": "forward",
+        "as_bytes": 0
+      },
+      "rt4": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/rt4-config.json",
+          "--headless",
+          "--headless-render-only",
+          "--no-validation",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/rt4.json"
+        ],
+        "gpu_pass": "raytracing.total_frame",
+        "measured_frames": 151,
+        "device": "NVIDIA GeForce RTX 5070 Ti",
+        "samples_per_moving_frame": 4,
+        "sample_scope": "per-frame",
+        "median_gpu_ms": 27.603232,
+        "p95_gpu_ms": 28.85464,
+        "max_gpu_ms": 29.605311999999998,
+        "renderer": "rt",
+        "as_bytes": 53847808
+      },
+      "rt2": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/rt2-config.json",
+          "--headless",
+          "--headless-render-only",
+          "--no-validation",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/rt2.json"
+        ],
+        "gpu_pass": "raytracing.total_frame",
+        "measured_frames": 151,
+        "device": "NVIDIA GeForce RTX 5070 Ti",
+        "samples_per_moving_frame": 2,
+        "sample_scope": "per-frame",
+        "median_gpu_ms": 14.119743999999999,
+        "p95_gpu_ms": 14.770432,
+        "max_gpu_ms": 14.882368,
+        "renderer": "rt",
+        "as_bytes": 53847808
+      },
+      "sampled": {
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/sampled-config.json",
+          "--headless",
+          "--headless-render-only",
+          "--no-validation",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/gpu-sweep/sampled.json"
+        ],
+        "gpu_pass": "raytracing.total_frame",
+        "measured_frames": 151,
+        "device": "NVIDIA GeForce RTX 5070 Ti",
+        "samples_per_moving_frame": 1,
+        "sample_scope": "progressive; moving view resets history",
+        "median_gpu_ms": 7.004639999999999,
+        "p95_gpu_ms": 7.187552,
+        "max_gpu_ms": 7.2463679999999995,
+        "renderer": "rt",
+        "as_bytes": 53847808
+      }
+    }
+  },
+  "modes": {
+    "stanford-dragon": {
+      "renderer": "raytracing",
+      "transport": "fixed-quality",
+      "samplesPerFrame": 4
+    },
+    "stanford-dragon-forward": {
+      "renderer": "forward",
+      "transmission": "hybrid"
+    },
+    "stanford-dragon-sampled": {
+      "renderer": "raytracing",
+      "transport": "sampled",
+      "movingSamplesPerFrame": 1,
+      "stoppedTargetSamples": 256,
+      "opticalGroundTruth": false
+    }
+  },
+  "assets": {
+    "raytracing-dragon-rt": {
+      "nativeSource": "outputs/raytracing/closeout-20261117/stills/rt-whole.png",
+      "nativeSha256": "b0d03fddd5ebb735fdc2db5fbc2feffbff604fd37a34cc175086a9a3815075da",
+      "webFile": "/media/raytracing-dragon-rt.webp",
+      "webSha256": "3c1fc24ddf00a438d98e8f60e625fd4c62436cea87ec611f92f94b1ee3fa46e9",
+      "webBytes": 33208,
+      "command": [
+        "ffmpeg",
+        "-y",
+        "-i",
+        "outputs/raytracing/closeout-20261117/stills/rt-whole.png",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "83",
+        "outputs/raytracing/closeout-20261117/web/raytracing-dragon-rt.webp"
+      ]
+    },
+    "raytracing-dragon-rt-film": {
+      "nativeSource": "outputs/raytracing/closeout-20261117/motion/rt/orbit-settle.mp4",
+      "nativeSha256": "7a3ae8b93e7a5ccd034dc3ff78de063992a70e340c1569a2e7a027435b008202",
+      "webFile": "/media/raytracing-dragon-rt.mp4",
+      "webSha256": "aef31aa3544b4cd1730b0d62320b2a05ff1c0e668e134d9202383a4bbc944883",
+      "webBytes": 1755603,
+      "command": [
+        "ffmpeg",
+        "-y",
+        "-i",
+        "outputs/raytracing/closeout-20261117/motion/rt/orbit-settle.mp4",
+        "-an",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "medium",
+        "-crf",
+        "25",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "outputs/raytracing/closeout-20261117/web/raytracing-dragon-rt.mp4"
+      ],
+      "ffprobe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "nb_frames": "1126"
+          }
+        ],
+        "format": {
+          "duration": "37.533333"
+        }
+      }
+    },
+    "raytracing-dragon-forward": {
+      "nativeSource": "outputs/raytracing/closeout-20261117/stills/forward-whole.png",
+      "nativeSha256": "27f6277579e9c85a249aba61446e1f5990b4de025373ef2546757d4bc2448f1f",
+      "webFile": "/media/raytracing-dragon-forward.webp",
+      "webSha256": "397518d612b642c0c6fa60cbd36b295ec90c4e4d841b36fe1f56c617eae9b119",
+      "webBytes": 23880,
+      "command": [
+        "ffmpeg",
+        "-y",
+        "-i",
+        "outputs/raytracing/closeout-20261117/stills/forward-whole.png",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "83",
+        "outputs/raytracing/closeout-20261117/web/raytracing-dragon-forward.webp"
+      ]
+    },
+    "raytracing-dragon-forward-film": {
+      "nativeSource": "outputs/raytracing/closeout-20261117/motion/forward/orbit-settle.mp4",
+      "nativeSha256": "93bc19fa1e1fe4db368af60c651eb11b99ede251b7aaa964aa037c49aeca7d29",
+      "webFile": "/media/raytracing-dragon-forward.mp4",
+      "webSha256": "1093a543bc108cd0c8dede3f3ea898d0f79fb4188b80a77ade9d40be049bc578",
+      "webBytes": 1117146,
+      "command": [
+        "ffmpeg",
+        "-y",
+        "-i",
+        "outputs/raytracing/closeout-20261117/motion/forward/orbit-settle.mp4",
+        "-an",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "medium",
+        "-crf",
+        "25",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "outputs/raytracing/closeout-20261117/web/raytracing-dragon-forward.mp4"
+      ],
+      "ffprobe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "nb_frames": "1126"
+          }
+        ],
+        "format": {
+          "duration": "37.533333"
+        }
+      }
+    },
+    "raytracing-dragon-sampled": {
+      "nativeSource": "outputs/raytracing/closeout-20261117/stills/sampled-whole.png",
+      "nativeSha256": "2ab5a2564ac7f5ed3f6b5027faa621d01df4c289d93e04ac9eabfd58ce7b1f8e",
+      "webFile": "/media/raytracing-dragon-sampled.webp",
+      "webSha256": "0278567d6620c5d2bdf8c601f0c5de8793a1fbb6d3c62f0b6ba52951a533eaf1",
+      "webBytes": 31964,
+      "command": [
+        "ffmpeg",
+        "-y",
+        "-i",
+        "outputs/raytracing/closeout-20261117/stills/sampled-whole.png",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "83",
+        "outputs/raytracing/closeout-20261117/web/raytracing-dragon-sampled.webp"
+      ]
+    },
+    "raytracing-dragon-sampled-film": {
+      "nativeSource": "outputs/raytracing/closeout-20261117/motion/sampled/orbit-settle.mp4",
+      "nativeSha256": "bb6be635ed379b7a1d575f7096a5f7340577360ae6b7afa0e4d1fcd1b8c7a3f1",
+      "webFile": "/media/raytracing-dragon-sampled.mp4",
+      "webSha256": "5c3a231f08379fbb22cd0b1516d06ea474b79281aeeeb891e2b70332cae440b2",
+      "webBytes": 3314241,
+      "command": [
+        "ffmpeg",
+        "-y",
+        "-i",
+        "outputs/raytracing/closeout-20261117/motion/sampled/orbit-settle.mp4",
+        "-an",
+        "-vf",
+        "scale=1280:720:flags=lanczos",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "medium",
+        "-crf",
+        "25",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "outputs/raytracing/closeout-20261117/web/raytracing-dragon-sampled.mp4"
+      ],
+      "ffprobe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "pix_fmt": "yuv420p",
+            "r_frame_rate": "30/1",
+            "nb_frames": "1126"
+          }
+        ],
+        "format": {
+          "duration": "37.533333"
+        }
+      }
+    }
+  },
+  "sourceModelNotice": "site/media/licenses/StanfordDragon.md"
+}

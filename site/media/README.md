@@ -19,9 +19,10 @@ with the relevant captures on the site's Credits page.
 | Fox | [Attribution notices](licenses/Fox.md) | PixelMannen model, CC0; tomkranis rig/animation and AsoboStudio/scurest glTF conversion, CC BY 4.0. |
 | Texture Transform Multi Test | [Attribution notice](licenses/TextureTransformMultiTest.md) | Analytical Graphics, Inc. / Ed Mackey, CC BY 4.0. |
 | Animated Morph Cube | [Attribution notice](licenses/AnimatedMorphCube.md) | Microsoft, CC0. |
+| Stanford Dragon | [Source and use notice](licenses/StanfordDragon.md) | Stanford Computer Graphics Laboratory; separate research/noncommercial usage terms. |
 
 [Pinned source URLs and hashes](sources/gltf-sample-assets.json) identify the exact
-downloaded GLBs and upstream notices. Notice files retain the original legal
+downloaded GLBs and upstream notices. The glTF notice files retain the original legal
 sections, linked to their pinned upstream README, with upstream/retained hashes.
 The old Damaged Helmet composite is not included in the selected website media.
 
@@ -104,6 +105,16 @@ and fresh `--output` inputs are required. Add `--import-media` to install the
 derivatives locally, then regenerate only the `mesh-materials` hover preview.
 Existing identities are rejected. The static build needs neither capture
 outputs nor FFmpeg, and local media import does not publish the site.
+
+The Stanford Dragon comparison is a separate `/demos/raytracing/` demo; it does
+not extend or replace the twelve-material workshop. Its three modes reuse the
+certified dragon, convex marble slab and shared clear-atmosphere setup. The
+current-source media and performance receipt
+[`raytracing-dragon-demo.json`](receipts/raytracing-dragon-demo.json) binds the
+native stills and normal-speed camera recordings to the renderer binary,
+prepared model, capture inputs and web derivatives. The sampled mode is a
+progressive diagnostic, not optical ground truth. Stanford's model attribution
+and use terms remain separate from Cubey's original-capture license.
 
 The [site guide](../README.md) owns authoring/build instructions; the
 [implementation record](../../docs/notes/cubey-site-implementation-progress.md)

@@ -1,0 +1,212 @@
+{
+  "forward": {
+    "result": {
+      "passed": true,
+      "renderer": "forward",
+      "as_bytes": 0,
+      "samples": 1,
+      "frames": 905,
+      "validation": true,
+      "recording": true,
+      "controls_visible": false
+    },
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/forward-whole.json",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--samples",
+      "256",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/motion/forward/metrics.json",
+      "--profile-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/motion/forward/host",
+      "--profile-max-frames",
+      "20000",
+      "--require-validation",
+      "--no-controls"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "video_sha256": "93bc19fa1e1fe4db368af60c651eb11b99ede251b7aaa964aa037c49aeca7d29",
+    "events_sha256": "b8a930419c3282a829db5d70dc19a966039fc46edb715698955a57ce557fa269",
+    "metrics_sha256": "cddee2c099259566af49587835e8b457547456234655d324cc51838c3202ea81",
+    "phases": [
+      {
+        "name": "warmup",
+        "begin_ns": 323688683563846,
+        "end_ns": 323691683641959
+      },
+      {
+        "name": "recorded-preroll",
+        "begin_ns": 323691684172774,
+        "end_ns": 323693684494430
+      },
+      {
+        "name": "orbit-outward",
+        "begin_ns": 323693684664841,
+        "end_ns": 323699035107867
+      },
+      {
+        "name": "settle-outward",
+        "begin_ns": 323699035110397,
+        "end_ns": 323711035172984
+      },
+      {
+        "name": "orbit-return",
+        "begin_ns": 323711399409885,
+        "end_ns": 323716749863542
+      },
+      {
+        "name": "settle-return",
+        "begin_ns": 323716749866022,
+        "end_ns": 323728749927497
+      }
+    ],
+    "video_launch_ns": 323691683645459,
+    "video_clock_scope": "chapter times approximate from recorder launch, normal wall-clock playback",
+    "scope": "Owned Xvfb native Vulkan window; injection and app receipt timestamps; no physical-display latency claim"
+  },
+  "rt": {
+    "result": {
+      "passed": true,
+      "renderer": "rt",
+      "as_bytes": 53847808,
+      "samples": 4,
+      "frames": 634,
+      "validation": true,
+      "recording": true,
+      "controls_visible": false
+    },
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/rt-whole.json",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--samples",
+      "256",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/motion/rt/metrics.json",
+      "--profile-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/motion/rt/host",
+      "--profile-max-frames",
+      "20000",
+      "--require-validation",
+      "--no-controls"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "video_sha256": "7a3ae8b93e7a5ccd034dc3ff78de063992a70e340c1569a2e7a027435b008202",
+    "events_sha256": "db74a60d2f8c9c3e81dfc8da6521cbb831aeab5908dd198f5be48a052e191178",
+    "metrics_sha256": "922a5ed1715e3315931211d3cbe889c0afd9a357af23f8d72de593580fd34fdb",
+    "phases": [
+      {
+        "name": "warmup",
+        "begin_ns": 323733959921538,
+        "end_ns": 323736959992527
+      },
+      {
+        "name": "recorded-preroll",
+        "begin_ns": 323736960544301,
+        "end_ns": 323738960612446
+      },
+      {
+        "name": "orbit-outward",
+        "begin_ns": 323738960713186,
+        "end_ns": 323744311081111
+      },
+      {
+        "name": "settle-outward",
+        "begin_ns": 323744311084091,
+        "end_ns": 323756311158365
+      },
+      {
+        "name": "orbit-return",
+        "begin_ns": 323756575440620,
+        "end_ns": 323761925872655
+      },
+      {
+        "name": "settle-return",
+        "begin_ns": 323761925874255,
+        "end_ns": 323773925937248
+      }
+    ],
+    "video_launch_ns": 323736959995537,
+    "video_clock_scope": "chapter times approximate from recorder launch, normal wall-clock playback",
+    "scope": "Owned Xvfb native Vulkan window; injection and app receipt timestamps; no physical-display latency claim"
+  },
+  "sampled": {
+    "result": {
+      "passed": true,
+      "renderer": "rt",
+      "as_bytes": 53847808,
+      "samples": 256,
+      "frames": 888,
+      "validation": true,
+      "recording": true,
+      "controls_visible": false
+    },
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/sampled-whole.json",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--samples",
+      "256",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/motion/sampled/metrics.json",
+      "--profile-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/closeout-20261117/motion/sampled/host",
+      "--profile-max-frames",
+      "20000",
+      "--require-validation",
+      "--no-controls"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "video_sha256": "bb6be635ed379b7a1d575f7096a5f7340577360ae6b7afa0e4d1fcd1b8c7a3f1",
+    "events_sha256": "cc6c67b49d198bdca2b8ca28c7517fb0b25122fef2989f5bf67e731a9e6eadfb",
+    "metrics_sha256": "03e088a611de2f122748edbdd3a122c2c370f013c0f3293da27e13266488e453",
+    "phases": [
+      {
+        "name": "warmup",
+        "begin_ns": 323779138730285,
+        "end_ns": 323782138802894
+      },
+      {
+        "name": "recorded-preroll",
+        "begin_ns": 323782139419048,
+        "end_ns": 323784139487906
+      },
+      {
+        "name": "orbit-outward",
+        "begin_ns": 323784139586216,
+        "end_ns": 323789490008696
+      },
+      {
+        "name": "settle-outward",
+        "begin_ns": 323789490011206,
+        "end_ns": 323801490107050
+      },
+      {
+        "name": "orbit-return",
+        "begin_ns": 323801804334165,
+        "end_ns": 323807154736622
+      },
+      {
+        "name": "settle-return",
+        "begin_ns": 323807154738402,
+        "end_ns": 323819154810161
+      }
+    ],
+    "video_launch_ns": 323782138805954,
+    "video_clock_scope": "chapter times approximate from recorder launch, normal wall-clock playback",
+    "scope": "Owned Xvfb native Vulkan window; injection and app receipt timestamps; no physical-display latency claim"
+  }
+}

@@ -1,0 +1,233 @@
+[
+  {
+    "mode": "forward",
+    "view": "whole",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/forward-whole.json",
+      "--headless",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/closeout-20261117/stills/forward-whole.png",
+      "--metrics",
+      "outputs/raytracing/closeout-20261117/stills/forward-whole.json"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "rt",
+    "view": "whole",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/rt-whole.json",
+      "--headless",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/closeout-20261117/stills/rt-whole.png",
+      "--metrics",
+      "outputs/raytracing/closeout-20261117/stills/rt-whole.json",
+      "--hdr-output",
+      "outputs/raytracing/closeout-20261117/validation/rt-whole.bin"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "sampled",
+    "view": "whole",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/sampled-whole.json",
+      "--headless",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/closeout-20261117/stills/sampled-whole.png",
+      "--metrics",
+      "outputs/raytracing/closeout-20261117/stills/sampled-whole.json",
+      "--hdr-output",
+      "outputs/raytracing/closeout-20261117/validation/sampled-whole.bin"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "forward",
+    "view": "detail",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/forward-detail.json",
+      "--headless",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/closeout-20261117/stills/forward-detail.png",
+      "--metrics",
+      "outputs/raytracing/closeout-20261117/stills/forward-detail.json"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "rt",
+    "view": "detail",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/rt-detail.json",
+      "--headless",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/closeout-20261117/stills/rt-detail.png",
+      "--metrics",
+      "outputs/raytracing/closeout-20261117/stills/rt-detail.json",
+      "--hdr-output",
+      "outputs/raytracing/closeout-20261117/validation/rt-detail.bin"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "sampled",
+    "view": "detail",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/sampled-detail.json",
+      "--headless",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/closeout-20261117/stills/sampled-detail.png",
+      "--metrics",
+      "outputs/raytracing/closeout-20261117/stills/sampled-detail.json",
+      "--hdr-output",
+      "outputs/raytracing/closeout-20261117/validation/sampled-detail.bin"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "forward",
+    "view": "front",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/forward-front.json",
+      "--headless",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/closeout-20261117/stills/forward-front.png",
+      "--metrics",
+      "outputs/raytracing/closeout-20261117/stills/forward-front.json"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "rt",
+    "view": "front",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/rt-front.json",
+      "--headless",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/closeout-20261117/stills/rt-front.png",
+      "--metrics",
+      "outputs/raytracing/closeout-20261117/stills/rt-front.json",
+      "--hdr-output",
+      "outputs/raytracing/closeout-20261117/validation/rt-front.bin"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "sampled",
+    "view": "front",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/sampled-front.json",
+      "--headless",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/closeout-20261117/stills/sampled-front.png",
+      "--metrics",
+      "outputs/raytracing/closeout-20261117/stills/sampled-front.json",
+      "--hdr-output",
+      "outputs/raytracing/closeout-20261117/validation/sampled-front.bin"
+    ],
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "forward",
+    "view": "whole",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/forward-whole.json",
+      "--headless",
+      "--require-validation",
+      "--hdr-output",
+      "outputs/raytracing/closeout-20261117/validation/forward-whole.bin",
+      "--output",
+      "outputs/raytracing/closeout-20261117/validation/forward-whole.png"
+    ],
+    "diagnostic_rgba32f": true,
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "forward",
+    "view": "detail",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/forward-detail.json",
+      "--headless",
+      "--require-validation",
+      "--hdr-output",
+      "outputs/raytracing/closeout-20261117/validation/forward-detail.bin",
+      "--output",
+      "outputs/raytracing/closeout-20261117/validation/forward-detail.png"
+    ],
+    "diagnostic_rgba32f": true,
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  },
+  {
+    "mode": "forward",
+    "view": "front",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/closeout-20261117/configs/forward-front.json",
+      "--headless",
+      "--require-validation",
+      "--hdr-output",
+      "outputs/raytracing/closeout-20261117/validation/forward-front.bin",
+      "--output",
+      "outputs/raytracing/closeout-20261117/validation/forward-front.png"
+    ],
+    "diagnostic_rgba32f": true,
+    "binary_sha256": "79aea0e90a68cc107c4eee89fbfa38da80da059e989d7c5182c9f50bf4539011",
+    "validation_clean": true,
+    "unchanged_png_bytes_from_before_cli_alias_fix": true
+  }
+]

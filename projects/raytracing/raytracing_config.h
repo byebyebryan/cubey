@@ -21,6 +21,7 @@ struct Config {
     float red = .55F, green = .34F, blue = .15F, roughness = .4F;
     float sun_azimuth = -.8F, sun_elevation = .8F, intensity = 3, ambient = .12F, exposure = 0;
     bool shadows = true;
+    bool controls = true;
     bool hide_dragon = false;
     bool smooth_normals = true;
     std::string fault = "none";
@@ -122,7 +123,10 @@ inline config::Schema schema(Config& c) {
     renderer.enum_values = {"rt", "forward"};
     auto transport = opt("transport-mode", ValueType::Enum);
     transport.enum_values = {"sampled", "demo"};
+    auto controls = opt("controls", ValueType::Bool);
+    controls.negative_cli_name = "--no-controls";
     b.bind(renderer, c.renderer)
+        .bind(controls, c.controls)
         .bind(transport, c.transport_mode)
         .bind(opt("demo-samples", ValueType::UInt32), c.demo_samples)
         .bind(opt("forward-thickness", ValueType::Float), c.forward_thickness);

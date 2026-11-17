@@ -209,6 +209,12 @@ int main() {
         auto optics_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str()});
         require(optics_config.renderer == "rt" && optics_config.transport_mode == "sampled",
                 "sampled RT remains the ordinary default");
+        require(optics_config.controls, "native controls remain visible by default");
+        auto clean_config = parse({"--no-controls"});
+        Config clean_copy;
+        schema(clean_copy).apply_json(schema(clean_config).template_json());
+        require(!clean_config.controls && !clean_copy.controls,
+                "clean presentation is explicit and survives saved views");
         auto demo_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
                                   "--transport-mode", "demo", "--samples", "8192"});
         require(frame_sample_target(demo_config) == 4,

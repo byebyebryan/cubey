@@ -36,7 +36,7 @@ current-source 16:9 native captures. Native images and videos fit without croppi
 subjects or changing their proportions.
 
 Every selected film has a small hover preview in browsing cards; still-only
-selections remain still. The current 18 film-backed selections each have a
+selections remain still. The current 21 film-backed selections each have a
 validated preview. A 350 ms dwell on a fine hover pointer requests a separate,
 silent 640x360 / 18 fps excerpt of up to 3.5 seconds. Each clip is H.264/yuv420p,
 fast-start and at most 400 KB. The encoder raises CRF through 36 when needed and
@@ -128,7 +128,7 @@ media credits and capture identities remain unchanged.
   native owners, supported extension groups and editorial connections. Its
   variant lists remain editorial possibilities, not automatically generated UI.
 - `media/manifest.json`: selected media, byte hashes, parent identities,
-  attribution and capture references. All 23 active entries need native posters. Guardian media remains in the ledger as historical capture evidence.
+  attribution and capture references. All 24 active entries need native posters. Guardian media remains in the ledger as historical capture evidence.
 - `media/receipts/`, `media/sources/`, `media/licenses/`: pinned current/historical
   capture inputs, model downloads and exact imported-asset notices.
 - [Selected media and attribution](media/README.md): ledger semantics and the
