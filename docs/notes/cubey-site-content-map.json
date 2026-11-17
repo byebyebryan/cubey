@@ -6,11 +6,21 @@
   "user_scope": "Showcase first with personal workshop context and concrete demo connections. Techniques and journeys remain later layers. Native media required for implementation.",
   "families": [
     {
+      "id": "raytracing",
+      "title": "Ray tracing",
+      "subtitle": "Scene reflections and glass, compared with forward rendering.",
+      "question": "What does tracing through the scene reveal about reflection and refraction?",
+      "order": 1,
+      "page_model": "Dedicated hardware ray-tracing project with three matched rendering paths under shared atmosphere",
+      "display_title": "Three ways through glass.",
+      "prominence": "primary"
+    },
+    {
       "id": "simulation",
       "title": "Simulation",
       "subtitle": "Water, smoke, fire and explosions.",
       "question": "What does motion look like when fields and particles interact?",
-      "order": 1,
+      "order": 2,
       "page_model": "Collection of six visible scene links with dimension badges; no filter required for six demos",
       "display_title": "Water. Smoke. Fire.",
       "prominence": "primary"
@@ -20,7 +30,7 @@
       "title": "Terrain",
       "subtitle": "Land first. Then water finds its way.",
       "question": "How do shape, surface, light and flow build a landscape?",
-      "order": 2,
+      "order": 3,
       "page_model": "One ordered visual experience: dry rendering, then water; named chapter links avoid duplicate child pages",
       "display_title": "Land, then flow.",
       "prominence": "primary"
@@ -30,7 +40,7 @@
       "title": "Ocean",
       "subtitle": "Waves, whitecaps and a changing horizon.",
       "question": "How does an open-water surface respond to wind and light?",
-      "order": 3,
+      "order": 4,
       "page_model": "Single cinematic subject page; optional selected supporting views, no generated preset panel",
       "display_title": "An open horizon.",
       "prominence": "primary"
@@ -40,7 +50,7 @@
       "title": "Atmosphere & light",
       "subtitle": "Scattering and lighting, clouds, then night sky and the solar cycle.",
       "question": "How does the sky change the scene?",
-      "order": 4,
+      "order": 5,
       "page_model": "Three visible chapters: scattering/light, clouds, and night sky with a nested complete solar cycle",
       "display_title": "A changing sky.",
       "prominence": "primary"
@@ -50,7 +60,7 @@
       "title": "Materials",
       "subtitle": "Twelve shared recipes, in forward PBR and SDF ray marching.",
       "question": "What makes wood, metal, cloth and glass read differently?",
-      "order": 5,
+      "order": 6,
       "page_model": "Full twelve-material library with an explicit renderer choice, then two native lighting/cut stories",
       "display_title": "Surfaces with character.",
       "prominence": "primary"
@@ -60,7 +70,7 @@
       "title": "SDF forms",
       "subtitle": "Four small scenes built from continuous solids and cuts.",
       "question": "What can be built from continuous solids and cuts?",
-      "order": 6,
+      "order": 7,
       "page_model": "An observatory-led collection of four approved CSG scenes with saved construction and a matched architectural cutaway",
       "display_title": "Build from solids.",
       "prominence": "primary"
@@ -70,7 +80,7 @@
       "title": "glTF rendering",
       "subtitle": "Imported materials, optics, textures and motion.",
       "question": "How do authored assets keep their appearance and movement?",
-      "order": 7,
+      "order": 8,
       "page_model": "Four visible feature chapters; secondary supported-contract detail",
       "secondary_features": [
         "Metadata bounds/loading cage",
@@ -681,7 +691,7 @@
     },
     {
       "id": "stanford-dragon",
-      "family": "materials",
+      "family": "raytracing",
       "title": "A Stanford dragon, three glass paths",
       "owner": "projects/raytracing",
       "dimension": "3D",
@@ -1028,6 +1038,13 @@
     "The authored static implementation lives under site/. Public hosting, source push and README migration remain separately scoped."
   ],
   "browse_bands": [
+    {
+      "id": "raytracing",
+      "title": "Ray tracing",
+      "subjects": [
+        "raytracing"
+      ]
+    },
     {
       "id": "simulation",
       "title": "Simulation",

@@ -65,6 +65,7 @@ export const byId = Object.fromEntries(entries.map(e => [e.id,e]));
 export const familyEntries = (id: string) => entries.filter(e => e.family === id);
 export const sourceURL = (e: Entry) => `https://github.com/byebyebryan/cubey/blob/main/${e.source}`;
 export function rendererLabel(e: Entry): string | undefined {
+  if(e.family==='raytracing')return 'Hardware RT';
   if(e.family==='sdf'||e.id==='sdf-materials')return 'SDF ray marching';
   if(e.family==='gltf'||e.id==='mesh-materials')return 'Forward PBR';
 }

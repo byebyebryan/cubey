@@ -7,6 +7,10 @@ with concise context and useful connections. The first detailed visual chapter,
 development history. Further chapters remain editorial choices. The public site is hosted at
 [dev.byebyebryan.com/cubey/](https://dev.byebyebryan.com/cubey/).
 
+Ray tracing is a first-class subject: the dragon leads the home hero and the
+Demos overview, with its three rendering paths on `/demos/raytracing/`.
+The materials workshop remains a separate subject.
+
 ## Build and review
 
 Use Node 22.23.4 or a newer supported even-numbered release, plus npm:

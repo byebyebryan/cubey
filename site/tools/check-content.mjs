@@ -56,7 +56,7 @@ errors.push(...hoverPreviewErrors(media,assets,previewReceipt));
 const supported=new Set([...readFileSync(resolve(root,'docs/architecture/gltf-assets.md'),'utf8').matchAll(/^\| `(KHR_[^`]+)` \| supported/gm)].map(m=>m[1]));
 const mapped=new Set(content.entries.flatMap(e=>e.extensions));
 if(supported.size!==mapped.size||[...supported].some(id=>!mapped.has(id)))errors.push('Supported glTF extension map changed');
-if(content.families.length!==7||content.entries.length!==24||new Set(content.entries.map(e=>e.owner)).size!==14)errors.push('Reviewed subject/demo/native-owner roster changed');
+if(content.families.length!==8||content.entries.length!==24||new Set(content.entries.map(e=>e.owner)).size!==14)errors.push('Reviewed subject/demo/native-owner roster changed');
 const csgIds=['observatory','robot','canal-mill','courtyard'];
 if(ids.has('guardian')||content.entries.filter(e=>e.family==='sdf').map(e=>e.id).join(',')!==csgIds.join(','))errors.push('The active CSG showcase must contain the approved quartet; Guardian is a retained study');
 if(content.families.some(f=>f.id==='fractals')||content.entries.some(e=>e.family==='fractals'))errors.push('Deferred fractals returned to the public catalog');
