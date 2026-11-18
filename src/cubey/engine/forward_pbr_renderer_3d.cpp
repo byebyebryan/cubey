@@ -368,7 +368,7 @@ ForwardPbrRenderer3D::Impl::temporal_bypass_reason(const ForwardPbrRenderer3DRen
     if (!request.settings.temporal_appearance_static) {
         return ForwardPbrRenderer3DTaaBypassReason::DynamicAppearance;
     }
-    if (!swapchain_.temporal_aa &&
+    if (!swapchain_.temporal_aa && !swapchain_.upscale_motion &&
         !render::temporal_aa_unsupported_reason(*request.target.device).empty()) {
         return ForwardPbrRenderer3DTaaBypassReason::UnsupportedDevice;
     }
@@ -416,10 +416,13 @@ void ForwardPbrRenderer3D::Impl::frame_submitted(vulkan::GpuSubmissionTicket tic
     if (!pending_temporal_frame_.has_value()) {
         return;
     }
-    if (!swapchain_.temporal_aa.has_value()) {
+    if (swapchain_.upscaler) {
+        swapchain_.upscale_view.commit(pending_temporal_frame_->token, ticket);
+    } else if (swapchain_.temporal_aa) {
+        swapchain_.temporal_aa->commit_frame(pending_temporal_frame_->token, ticket);
+    } else {
         throw std::logic_error("forward PBR temporal frame has no TAA runtime");
     }
-    swapchain_.temporal_aa->commit_frame(pending_temporal_frame_->token, ticket);
     accepted_rigid_models_.swap(pending_rigid_models_);
     pending_rigid_models_.clear();
     force_temporal_reset_ = false;
@@ -433,8 +436,12 @@ void ForwardPbrRenderer3D::Impl::frame_discarded() {
         swapchain_.scene_depth_state = recorded_target_state_->scene_depth_state;
         recorded_target_state_.reset();
     }
-    if (pending_temporal_frame_.has_value() && swapchain_.temporal_aa.has_value()) {
-        swapchain_.temporal_aa->discard_frame();
+    if (pending_temporal_frame_) {
+        if (swapchain_.upscaler) {
+            swapchain_.upscale_view.discard();
+        } else if (swapchain_.temporal_aa) {
+            swapchain_.temporal_aa->discard_frame();
+        }
     }
     pending_temporal_frame_.reset();
     pending_rigid_models_.clear();
@@ -444,6 +451,9 @@ void ForwardPbrRenderer3D::Impl::reset_temporal() {
     force_temporal_reset_ = true;
     accepted_temporal_frame_ = false;
     accepted_rigid_models_.clear();
+    if (swapchain_.upscaler && !pending_temporal_frame_) {
+        swapchain_.upscale_view.invalidate(render::TemporalResetReason::Explicit);
+    }
     if (swapchain_.temporal_aa.has_value() && !swapchain_.temporal_aa->created()) {
         return;
     }

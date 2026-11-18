@@ -53,6 +53,14 @@ texture_usage_state(const RenderGraphCompiledPass& pass, const RenderGraphTextur
             .access_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
             .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask),
         };
+    case RenderGraphTextureUsage::StorageWriteWithTransferClear:
+        return {
+            .layout = VK_IMAGE_LAYOUT_GENERAL,
+            .access_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
+                           VK_ACCESS_TRANSFER_WRITE_BIT,
+            .stage_mask = shader_stage_for_access(pass.queue_domain, access.stage_mask) |
+                          VK_PIPELINE_STAGE_TRANSFER_BIT,
+        };
     case RenderGraphTextureUsage::ColorAttachment:
         return {
             .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,

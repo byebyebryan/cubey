@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/memory_barriers.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <cstdio>
 #include <stdexcept>
 #include <vector>
 
@@ -19,14 +20,32 @@ collected_profile_frame_index(std::uint64_t frame_index,
 
 } // namespace
 
+void GltfViewerApp::initialize_dlss(VkInstance instance, cubey::vulkan::GpuRuntime& gpu) {
+    dlss_cleanup_ = gpu.register_owner_cleanup(
+        "glTF Viewer DLSS shutdown", [this](cubey::vulkan::GpuOwnerContext&) { dlss_.reset(); });
+    gpu.submit("initialize DLSS", [this, instance](cubey::vulkan::GpuOwnerContext& owner) {
+           dlss_ = std::make_unique<GltfViewerDlss>(instance, owner.device());
+       }).get();
+}
+
 void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu, VkExtent2D extent,
                                            VkFormat color_format, std::uint32_t frame_slot_count) {
+    if (dlss_) {
+        dlss_render_extent_ =
+            gpu.submit("create DLSS target", [this, extent](cubey::vulkan::GpuOwnerContext& owner) {
+                   return dlss_->create_target(owner, extent);
+               }).get();
+        dlss_output_extent_ = extent;
+        dlss_status_reported_ = false;
+    }
     forward_pbr_renderer().create_swapchain_resources(
         device, cubey::ForwardPbrRenderer3DTargetResourcesInfo{
                     .extent = extent,
                     .color_format = color_format,
                     .materials = &active_generation().import_resources.materials,
+                    .render_extent = dlss_render_extent_,
+                    .upscaler = dlss_.get(),
                 });
     if (landscape_runtime_) {
         landscape_foreground_.emplace(
@@ -87,7 +106,7 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device,
     }
 }
 
-void GltfViewerApp::destroy_swapchain_resources() {
+void GltfViewerApp::destroy_swapchain_resources(cubey::vulkan::GpuRuntime& gpu) {
     if (landscape_runtime_)
         landscape_runtime_->destroy_target_resources();
     landscape_foreground_.reset();
@@ -98,6 +117,12 @@ void GltfViewerApp::destroy_swapchain_resources() {
         atmosphere_runtime_.clouds().destroy_surface_target_resources();
     }
     engine_.renderers().destroy_swapchain_resources();
+    if (dlss_) {
+        gpu.submit("retire DLSS target",
+                   [this](cubey::vulkan::GpuOwnerContext&) { dlss_->destroy_target(); }).get();
+        dlss_render_extent_ = {};
+        dlss_output_extent_ = {};
+    }
 }
 
 void GltfViewerApp::destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
@@ -120,6 +145,11 @@ void GltfViewerApp::destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
     terrain_runtime_.destroy();
     terrain_target_info_.reset();
     engine_.renderers().destroy_all_resources();
+    if (dlss_) {
+        gpu.submit("shut down DLSS",
+                   [this](cubey::vulkan::GpuOwnerContext&) { dlss_.reset(); }).get();
+        dlss_cleanup_.reset();
+    }
     forward_pbr_renderer_ = nullptr;
     gpu_profiler_.reset();
     whole_scene_profiler_.reset();
@@ -223,9 +253,13 @@ void GltfViewerApp::record_viewer_target(
     if (ocean_backdrop_enabled() && ocean_visible_) {
         ocean_surface = ocean_surface_frame(scene_view, color_target.extent);
     }
-    const bool request_taa = cubey::host::native_taa_requested(config_.common);
+    const bool request_taa = !dlss_ && cubey::host::native_taa_requested(config_.common);
     // Backdrop placement also changes sky altitude when the surface is hidden.
     bool appearance_static = !terrain_backdrop_enabled() && !ocean_backdrop_enabled();
+    if (dlss_ && generation.runtime_scene && !generation.runtime_scene->animations.empty() &&
+        !config_.gltf.animation_paused && generation.animation_playback.speed != 0.0F) {
+        appearance_static = false;
+    }
     if (request_taa && environment_policy().uses_atmosphere_resources()) {
         const auto probe = atmosphere_runtime_.reflection_probe().snapshot();
         const bool advancing_sky =
@@ -301,6 +335,7 @@ void GltfViewerApp::record_viewer_target(
                 .anti_aliasing = request_taa ? cubey::render::AntiAliasingMode::Taa
                                              : cubey::render::AntiAliasingMode::Off,
                 .temporal_appearance_static = appearance_static,
+                .frame_time_ms = static_cast<float>(ocean_delta_seconds_ * 1000.0),
             },
         .metrics = metrics,
     });
@@ -462,6 +497,25 @@ void GltfViewerApp::viewer_frame_submitted(cubey::profiling::ProfileRecorder* pr
                                            cubey::vulkan::GpuSubmissionTicket ticket) {
     forward_pbr_renderer().frame_submitted(ticket);
     const auto status = forward_pbr_renderer().temporal_status();
+    if (status.upscaled) {
+        if (!dlss_status_reported_) {
+            std::printf("upscaler: requested=dlss-quality effective=dlss-quality "
+                        "render=%ux%u display=%ux%u\n",
+                        dlss_render_extent_.width, dlss_render_extent_.height,
+                        dlss_output_extent_.width, dlss_output_extent_.height);
+            dlss_status_reported_ = true;
+        }
+        if (profile != nullptr && profile->should_record_frame(index)) {
+            profile->record_metric(index, "dlss", "history_age", status.history_age);
+            profile->record_metric(index, "dlss", "reset_reason",
+                                   static_cast<unsigned>(status.reset_reason));
+            profile->record_metric(index, "dlss", "render_width", dlss_render_extent_.width);
+            profile->record_metric(index, "dlss", "render_height", dlss_render_extent_.height);
+            profile->record_metric(index, "dlss", "output_width", dlss_output_extent_.width);
+            profile->record_metric(index, "dlss", "output_height", dlss_output_extent_.height);
+        }
+        return;
+    }
     const bool effective = status.effective == cubey::render::AntiAliasingMode::Taa;
     if (reported_aa_bypass_ != status.bypass_reason) {
         reported_aa_bypass_ = status.bypass_reason;

@@ -376,8 +376,12 @@ int GltfViewerApp::run() {
 }
 
 int GltfViewerApp::run_windowed() {
+    const bool use_dlss = config_.upscaler == "dlss-quality";
     cubey::host::WindowedAppCallbacks callbacks;
-    callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
+    callbacks.create_global_resources = [this, use_dlss](cubey::host::WindowedAppContext& context) {
+        if (use_dlss) {
+            initialize_dlss(context.instance().handle(), context.gpu());
+        }
         create_global_resources_if_needed(context.device(), context.gpu(),
                                           context.frame_slot_count());
     };
@@ -386,8 +390,7 @@ int GltfViewerApp::run_windowed() {
                                context.swapchain().format(), context.frame_slot_count());
     };
     callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
-        (void)context;
-        destroy_swapchain_resources();
+        destroy_swapchain_resources(context.gpu());
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         start_deferred_import_if_due(timing.frame_index);
@@ -426,7 +429,7 @@ int GltfViewerApp::run_windowed() {
             auto span = gltf_viewer_update_profile_span(profile_recorder, timing.frame_index,
                                                         "gltf.camera_update");
             const auto input = context.filtered_input();
-            if (!landscape_runtime_ && input.key_pressed(cubey::input::Key::D)) {
+            if (!dlss_ && !landscape_runtime_ && input.key_pressed(cubey::input::Key::D)) {
                 debug_view_ = render::next_pbr_debug_view(debug_view_);
             }
             if (input.key_pressed(cubey::input::Key::R)) {
@@ -476,20 +479,29 @@ int GltfViewerApp::run_windowed() {
             .staging_pool = cubey::vulkan::GpuStagingPoolConfig{},
             .profile_pacing = windowed_profile_pacing(config_.profile),
             .close_on_escape = true,
+            .vulkan_requirements =
+                use_dlss ? GltfViewerDlss::vulkan_requirements() : cubey::host::VulkanRequirements{},
         },
         std::move(callbacks));
 }
 
 int GltfViewerApp::run_headless() {
+    const bool use_dlss = config_.upscaler == "dlss-quality";
     cubey::host::HeadlessPngHostConfig host_config;
     host_config.run_config = config_.common;
     host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
     host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
     host_config.require_dynamic_rendering = true;
     host_config.staging_pool = cubey::vulkan::GpuStagingPoolConfig{};
+    if (use_dlss) {
+        host_config.vulkan_requirements = GltfViewerDlss::vulkan_requirements();
+    }
 
     cubey::host::HeadlessPngHostCallbacks callbacks;
-    callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
+    callbacks.create_resources = [this, use_dlss](cubey::host::HeadlessPngContext& context) {
+        if (use_dlss) {
+            initialize_dlss(context.instance().handle(), context.gpu());
+        }
         create_global_resources_if_needed(
             context.device(), context.gpu(),
             cubey::host::headless_capture_frame_slot_count(config_.common));

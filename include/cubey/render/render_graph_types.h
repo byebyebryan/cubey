@@ -59,6 +59,7 @@ enum class RenderGraphTextureUsage : std::uint8_t {
     DepthAttachment,
     TransferRead,
     TransferWrite,
+    StorageWriteWithTransferClear,
 };
 
 enum class RenderGraphBufferUsage : std::uint8_t {

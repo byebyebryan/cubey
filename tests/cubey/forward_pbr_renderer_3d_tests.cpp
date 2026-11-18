@@ -387,8 +387,8 @@ void test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering() {
                      "forward PBR swapchain creation should require global resources first");
     require_contains(resources, "require_no_swapchain_resources();",
                      "forward PBR swapchain creation should reject duplicate create calls");
-    require_contains(resources, "depth_attachment.emplace(device, info.extent, true)",
-                     "forward PBR scene depth should support atmosphere cloud sampling");
+    require_contains(resources, "depth_attachment.emplace(device, render_extent, true)",
+                     "forward PBR scene depth should be sampleable at the render extent");
     require_contains(graph, "require_swapchain_resources();",
                      "forward PBR record should require swapchain resources before recording");
 }

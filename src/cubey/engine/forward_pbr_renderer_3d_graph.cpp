@@ -3,6 +3,7 @@
 #include "forward_pbr_renderer_3d_internal.h"
 
 #include <cubey/render/pass.h>
+#include <cubey/render/temporal_upscaler.h>
 
 #include <algorithm>
 #include <chrono>
@@ -105,6 +106,14 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     const ForwardPbrRenderer3DViewInfo& view = request.view;
     const ForwardPbrRenderer3DSceneResources& resources = request.scene_resources;
     const ForwardPbrRenderer3DSettings& settings = request.settings;
+    const bool upscaling = swapchain_.upscaler != nullptr;
+    if (target.color_target.extent.width != swapchain_.target_extent.width ||
+        target.color_target.extent.height != swapchain_.target_extent.height) {
+        throw std::invalid_argument("forward PBR target extent changed without recreation");
+    }
+    if (upscaling && settings.anti_aliasing != render::AntiAliasingMode::Off) {
+        throw std::invalid_argument("forward PBR upscaling and native TAA require separate views");
+    }
     const ForwardPbrRenderer3DFramePlans frame_plans =
         forward_pbr_renderer_3d_frame_plans(*view.frame_plan);
     const scene::RenderFramePlan3D& shadow_plan = *frame_plans.shadow;
@@ -132,24 +141,29 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     std::optional<render::TemporalFrame> temporal_frame;
     std::optional<scene::RenderFramePlan3D> temporal_scene_plan;
     std::vector<ForwardPbrTemporalRigidMotionDraw> rigid_motion_draws;
-    if (settings.anti_aliasing == render::AntiAliasingMode::Taa) {
+    if (upscaling || settings.anti_aliasing == render::AntiAliasingMode::Taa) {
         const ForwardPbrRenderer3DTaaBypassReason bypass =
             temporal_bypass_reason(request, original_scene_plan, draw_plan);
         temporal_status_.bypass_reason = bypass;
         if (bypass == ForwardPbrRenderer3DTaaBypassReason::None) {
-            ensure_temporal_resources(*target.device, target.color_target.extent);
+            const VkExtent2D render_extent = swapchain_.render_extent;
+            ensure_temporal_resources(*target.device, render_extent);
             const Entity camera =
                 view.camera_entity ? view.camera_entity : original_scene_plan.camera_entity;
             const std::uint64_t view_id =
                 view.temporal_view_id != 0
                     ? view.temporal_view_id
                     : (static_cast<std::uint64_t>(camera.generation) << 32U) | camera.index;
-            temporal_frame = swapchain_.temporal_aa->begin_frame(
-                target.frame_slot, {.projection = original_scene_plan.projection_matrix,
-                                    .view = original_scene_plan.view_matrix,
-                                    .view_id = view_id,
-                                    .content_generation = view.temporal_content_generation,
-                                    .reset = view.temporal_reset || force_temporal_reset_});
+            const render::TemporalView temporal_view{
+                .projection = original_scene_plan.projection_matrix,
+                .view = original_scene_plan.view_matrix,
+                .view_id = view_id,
+                .content_generation = view.temporal_content_generation,
+                .reset = view.temporal_reset || force_temporal_reset_};
+            temporal_frame = upscaling
+                                 ? swapchain_.upscale_view.prepare(temporal_view, render_extent)
+                                 : swapchain_.temporal_aa->begin_frame(target.frame_slot,
+                                                                      temporal_view);
             pending_temporal_frame_ = temporal_frame;
             temporal_scene_plan = original_scene_plan;
             temporal_scene_plan->projection_matrix = temporal_frame->jittered_projection;
@@ -163,17 +177,25 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
                             temporal_frame->jittered_view_projection,
                         .current_view_projection = temporal_frame->view_projection,
                         .previous_view_projection = temporal_frame->previous_view_projection,
-                        .extent = {static_cast<float>(target.color_target.extent.width),
-                                   static_cast<float>(target.color_target.extent.height), 0.0F,
-                                   0.0F},
+                        .extent = {static_cast<float>(render_extent.width),
+                                   static_cast<float>(render_extent.height), 0.0F, 0.0F},
                     });
             }
-            temporal_status_.effective = render::AntiAliasingMode::Taa;
+            temporal_status_.upscaled = upscaling;
+            temporal_status_.effective =
+                upscaling ? render::AntiAliasingMode::Off : render::AntiAliasingMode::Taa;
             temporal_status_.reset_reason = temporal_frame->reset_reason;
             temporal_status_.history_age = temporal_frame->history_age;
             temporal_status_.sample_offset_pixels = temporal_frame->sample_offset_pixels;
-        } else if (accepted_temporal_frame_) {
-            reset_temporal();
+        } else {
+            if (upscaling) {
+                throw std::runtime_error(
+                    "forward PBR upscaler cannot admit this view: " +
+                    std::string(forward_pbr_renderer_3d_taa_bypass_reason_name(bypass)));
+            }
+            if (accepted_temporal_frame_) {
+                reset_temporal();
+            }
         }
     } else if (settings.anti_aliasing != render::AntiAliasingMode::Off) {
         throw std::runtime_error("unknown forward PBR anti-aliasing mode");
@@ -305,7 +327,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         settings.background_mode, settings.atmosphere_clouds, terrain, ocean, draw_plan,
         settings.opaque_linear_output,
         settings.transmission_source == ForwardPbrTransmissionSource::Hybrid,
-        request.scene_readback, temporal_frame, rigid_motion_draws);
+        request.scene_readback, temporal_frame, rigid_motion_draws, settings.frame_time_ms);
     const Clock::time_point render_graph_end =
         metrics != nullptr ? Clock::now() : Clock::time_point{};
     if (metrics != nullptr) {
@@ -332,8 +354,14 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
          linear =
              settings.opaque_linear_output](const render::RenderGraphResourceSet& graph_resources) {
             if (render_graph.temporal_frame.has_value()) {
-                swapchain_.temporal_aa->update_descriptors(
-                    *device, render_graph.graph, graph_resources, *render_graph.temporal_frame);
+                if (swapchain_.upscaler) {
+                    swapchain_.upscale_motion->update_descriptors(
+                        *device, frame_slot, render_graph.graph, graph_resources,
+                        render_graph.scene_depth, render_graph.temporal_motion);
+                } else {
+                    swapchain_.temporal_aa->update_descriptors(
+                        *device, render_graph.graph, graph_resources, *render_graph.temporal_frame);
+                }
             }
             if (!linear)
                 update_post_descriptor(*device, frame_slot, render_graph.graph, graph_resources,
@@ -381,7 +409,8 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output, bool hybrid_transmission,
     const std::optional<ForwardPbrRenderer3DSceneReadback>& readback,
     const std::optional<render::TemporalFrame>& temporal_frame,
-    std::span<const ForwardPbrTemporalRigidMotionDraw> rigid_motion_draws) {
+    std::span<const ForwardPbrTemporalRigidMotionDraw> rigid_motion_draws,
+    float frame_time_ms) {
     if (frame_plans.shadow == nullptr || frame_plans.scene == nullptr) {
         throw std::runtime_error("forward PBR render graph requires shadow and scene plans");
     }
@@ -396,7 +425,7 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
             ? backbuffer
             : graph.create_texture(render::RenderGraphTextureDesc{
                   .label = "scene color",
-                  .extent = {color_target.extent.width, color_target.extent.height, 1},
+                  .extent = {swapchain_.render_extent.width, swapchain_.render_extent.height, 1},
                   .format = config_.scene_color_format,
                   .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
               });
@@ -596,8 +625,11 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     }
     render::RenderGraphTextureHandle temporal_motion{};
     if (temporal_frame.has_value()) {
-        temporal_motion =
-            swapchain_.temporal_aa->declare_camera_motion(graph, scene_depth, *temporal_frame);
+        temporal_motion = swapchain_.upscaler
+                              ? swapchain_.upscale_motion->declare(graph, frame_slot, scene_depth,
+                                                                  *temporal_frame)
+                              : swapchain_.temporal_aa->declare_camera_motion(graph, scene_depth,
+                                                                             *temporal_frame);
         if (!rigid_motion_draws.empty()) {
             const render::FrameUniformMaterialInstance<ForwardPbrTemporalRigidMotionUniforms>&
                 material = *swapchain_.temporal_rigid_motion_material;
@@ -622,8 +654,18 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                                              frame_slot, mesh_resolver, rigid_motion_draws);
                 });
         }
-        post_scene_color = swapchain_.temporal_aa->declare_resolve(
-            graph, post_scene_color, temporal_motion, *temporal_frame);
+        if (swapchain_.upscaler) {
+            post_scene_color = swapchain_.upscaler->declare(
+                graph, {.color = post_scene_color,
+                        .depth = scene_depth,
+                        .motion = temporal_motion,
+                        .view = *temporal_frame,
+                        .output_extent = color_target.extent,
+                        .frame_time_ms = frame_time_ms});
+        } else {
+            post_scene_color = swapchain_.temporal_aa->declare_resolve(
+                graph, post_scene_color, temporal_motion, *temporal_frame);
+        }
     }
     if (readback) {
         const auto buffer = graph.import_buffer(

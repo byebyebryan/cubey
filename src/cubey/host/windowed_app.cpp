@@ -73,6 +73,7 @@ int run_windowed_app(WindowedAppConfig config, WindowedAppCallbacks callbacks) {
             .gpu_execution_mode = config.gpu_execution_mode,
             .staging_pool = config.staging_pool,
             .profile_pacing = config.profile_pacing,
+            .vulkan_requirements = std::move(config.vulkan_requirements),
         },
         {
             .create_swapchain_resources =

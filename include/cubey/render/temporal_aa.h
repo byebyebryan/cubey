@@ -123,6 +123,34 @@ struct TemporalAaConfig {
     float max_radiance = 10000.0F;
 };
 
+// Builds the shared camera-motion field from scene depth and a prepared temporal
+// frame. The caller owns temporal history and must update descriptors after graph
+// compilation, while using a retired frame slot.
+class TemporalCameraMotion {
+  public:
+    TemporalCameraMotion(const vulkan::Device& device, std::uint32_t frame_slot_count,
+                         const std::filesystem::path& motion_shader);
+    ~TemporalCameraMotion();
+    TemporalCameraMotion(const TemporalCameraMotion&) = delete;
+    TemporalCameraMotion& operator=(const TemporalCameraMotion&) = delete;
+
+    [[nodiscard]] RenderGraphTextureHandle declare(RenderGraphBuilder& graph, FrameSlot slot,
+                                                   RenderGraphTextureHandle depth,
+                                                   const TemporalFrame& frame);
+    void update_descriptors(const vulkan::Device& device, FrameSlot slot,
+                            const CompiledRenderGraph& graph,
+                            const RenderGraphResourceSet& resources, RenderGraphTextureHandle depth,
+                            RenderGraphTextureHandle motion);
+
+    // Used by TAA's existing native-uniform accounting.
+    [[nodiscard]] std::uint64_t uniform_requested_bytes() const noexcept;
+    [[nodiscard]] std::uint64_t uniform_allocation_bytes() const noexcept;
+
+  private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
 struct TemporalAaMetrics {
     std::uint64_t submitted_frames = 0;
     std::uint32_t history_age = 0;

@@ -39,6 +39,10 @@ class GpuTimestampProfiler;
 
 namespace cubey {
 
+namespace render {
+class TemporalUpscaler;
+}
+
 struct ForwardPbrRenderer3DConfig {
     std::filesystem::path pbr_vertex_shader{};
     std::filesystem::path pbr_fragment_shader{};
@@ -75,6 +79,8 @@ struct ForwardPbrRenderer3DTargetResourcesInfo {
     VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
     const render::PbrMaterialTable* materials = nullptr;
+    VkExtent2D render_extent{};
+    render::TemporalUpscaler* upscaler = nullptr;
 };
 
 enum class ForwardPbrTransmissionSource : std::uint32_t {
@@ -186,6 +192,7 @@ struct ForwardPbrRenderer3DSettings {
     // V1 admits only settled scene appearance. Callers with animated lighting
     // or other changing appearance should set this false.
     bool temporal_appearance_static = true;
+    float frame_time_ms = 0.0F;
 };
 
 enum class ForwardPbrRenderer3DTaaBypassReason : std::uint8_t {
@@ -216,6 +223,7 @@ struct ForwardPbrRenderer3DTemporalStatus {
     std::uint32_t history_age = 0;
     math::Vec2 sample_offset_pixels{0.0F};
     render::TemporalAaMetrics resources{};
+    bool upscaled = false;
 };
 
 // Caller-owned per-frame renderer evidence. The renderer fills this snapshot

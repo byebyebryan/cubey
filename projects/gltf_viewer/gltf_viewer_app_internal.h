@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gltf_viewer_app.h"
+#include "gltf_viewer_dlss.h"
 #include "gltf_viewer_landscape_depth.h"
 #include "gltf_viewer_loading_cage.h"
 #include "gltf_viewer_loading_metrics.h"
@@ -140,10 +141,11 @@ class GltfViewerApp {
     void create_global_resources_if_needed(const cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count);
+    void initialize_dlss(VkInstance instance, cubey::vulkan::GpuRuntime& gpu);
     void create_frame_resources(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
                                 VkExtent2D extent, VkFormat color_format,
                                 std::uint32_t frame_slot_count);
-    void destroy_swapchain_resources();
+    void destroy_swapchain_resources(cubey::vulkan::GpuRuntime& gpu);
     void destroy_all_resources(cubey::vulkan::GpuRuntime& gpu);
 
     void request_imported_asset_build(std::filesystem::path input,
@@ -260,6 +262,11 @@ class GltfViewerApp {
     const GltfViewerEnvironmentPolicy environment_policy_;
     cubey::Engine engine_;
     cubey::ForwardPbrRenderer3D* forward_pbr_renderer_ = nullptr;
+    std::unique_ptr<GltfViewerDlss> dlss_{};
+    cubey::vulkan::GpuRuntimeOwnerCleanup dlss_cleanup_{};
+    VkExtent2D dlss_render_extent_{};
+    VkExtent2D dlss_output_extent_{};
+    bool dlss_status_reported_ = false;
     cubey::jobs::JobSystem asset_jobs_{1U};
     cubey::StagedResource<GltfViewerPreparedGeneration, GltfViewerResidentGeneration> asset_builds_;
     std::shared_ptr<GltfViewerSceneGeneration> active_generation_{};

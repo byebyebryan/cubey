@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/vk_check.h>
 
+#include <algorithm>
 #include <stdexcept>
 #include <string_view>
 #include <vector>
@@ -50,6 +51,15 @@ bool device_supports_dynamic_rendering(VkPhysicalDevice device) {
     return dynamic_rendering.dynamicRendering == VK_TRUE;
 }
 
+bool device_supports_buffer_device_address(VkPhysicalDevice device) {
+    auto address = vk_struct<VkPhysicalDeviceBufferDeviceAddressFeatures>(
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES);
+    auto features = vk_struct<VkPhysicalDeviceFeatures2>(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2);
+    features.pNext = &address;
+    vkGetPhysicalDeviceFeatures2(device, &features);
+    return address.bufferDeviceAddress == VK_TRUE;
+}
+
 bool device_supports_ray_tracing(VkPhysicalDevice device) {
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(device, &properties);
@@ -77,8 +87,8 @@ bool device_supports_ray_tracing(VkPhysicalDevice device) {
 } // namespace
 
 Device::Device(const Instance& instance, const DeviceConfig& config) {
-    select_physical_device(instance, config);
-    create_device(config);
+    const auto extensions = select_physical_device(instance, config);
+    create_device(config, extensions);
 }
 
 Device::~Device() {
@@ -145,7 +155,8 @@ DeviceMemoryBudgetInfo Device::device_memory_budget() const {
     return info;
 }
 
-void Device::select_physical_device(const Instance& instance, const DeviceConfig& config) {
+std::vector<std::string> Device::select_physical_device(const Instance& instance,
+                                                        const DeviceConfig& config) {
     if (config.require_present && config.surface == VK_NULL_HANDLE) {
         throw std::runtime_error("present-capable device selection requires a Vulkan surface");
     }
@@ -162,6 +173,10 @@ void Device::select_physical_device(const Instance& instance, const DeviceConfig
           "vkEnumeratePhysicalDevices");
 
     for (VkPhysicalDevice candidate : devices) {
+        if (config.requirements.buffer_device_address &&
+            !device_supports_buffer_device_address(candidate)) {
+            continue;
+        }
         if (config.require_ray_tracing && !device_supports_ray_tracing(candidate))
             continue;
         if (config.require_present && !device_supports_swapchain(candidate)) {
@@ -175,6 +190,17 @@ void Device::select_physical_device(const Instance& instance, const DeviceConfig
         if (config.require_tessellation_shader &&
             candidate_features.tessellationShader != VK_TRUE) {
             continue;
+        }
+
+        std::vector<std::string> extensions;
+        if (config.requirements.query_extensions) {
+            auto queried = config.requirements.query_extensions(instance.handle(), candidate);
+            if (!queried || std::ranges::any_of(*queried, [candidate](const auto& extension) {
+                    return !device_extension_available(candidate, extension);
+                })) {
+                continue;
+            }
+            extensions.swap(*queried);
         }
 
         std::uint32_t family_count = 0;
@@ -198,11 +224,14 @@ void Device::select_physical_device(const Instance& instance, const DeviceConfig
                 queue_timestamp_valid_bits_ = families[i].timestampValidBits;
                 vkGetPhysicalDeviceProperties(physical_device_, &properties_);
                 supported_features_ = candidate_features;
-                return;
+                return extensions;
             }
         }
     }
 
+    if (config.requirements.query_extensions || config.requirements.buffer_device_address) {
+        throw std::runtime_error("no Vulkan device with the requested queues and feature extensions");
+    }
     if (config.require_ray_tracing)
         throw std::runtime_error(
             "no compatible Vulkan 1.3 hardware ray-tracing device: require accelerationStructure, "
@@ -225,7 +254,8 @@ void Device::select_physical_device(const Instance& instance, const DeviceConfig
     throw std::runtime_error("no Vulkan device with required queues found");
 }
 
-void Device::create_device(const DeviceConfig& config) {
+void Device::create_device(const DeviceConfig& config,
+                           std::span<const std::string> required_extensions) {
     float priority = 1.0f;
     auto queue_info =
         vk_struct<VkDeviceQueueCreateInfo>(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO);
@@ -246,6 +276,13 @@ void Device::create_device(const DeviceConfig& config) {
         device_extension_available(physical_device_, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
     if (memory_budget_supported_) {
         extensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+    }
+    for (const auto& extension : required_extensions) {
+        if (std::ranges::none_of(extensions, [&extension](const char* enabled) {
+                return extension == enabled;
+            })) {
+            extensions.push_back(extension.c_str());
+        }
     }
 
     auto info = vk_struct<VkDeviceCreateInfo>(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
@@ -280,11 +317,14 @@ void Device::create_device(const DeviceConfig& config) {
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR);
     auto tracing = cubey::vulkan::vk_struct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR);
-    if (config.require_ray_tracing) {
+    if (config.require_ray_tracing || config.requirements.buffer_device_address) {
         address.bufferDeviceAddress = VK_TRUE;
+        address.pNext = info.pNext != nullptr ? &dynamic_rendering : nullptr;
+        info.pNext = &address;
+    }
+    if (config.require_ray_tracing) {
         acceleration.accelerationStructure = VK_TRUE;
         tracing.rayTracingPipeline = VK_TRUE;
-        address.pNext = config.require_dynamic_rendering ? &dynamic_rendering : nullptr;
         acceleration.pNext = &address;
         tracing.pNext = &acceleration;
         info.pNext = &tracing;

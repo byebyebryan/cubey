@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cubey/host/vulkan_requirements.h>
+
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/profiling.h>
 #include <cubey/engine/capture_queue.h>
@@ -93,6 +95,7 @@ struct HeadlessPngHostConfig {
     cubey::vulkan::GpuRuntimeExecutionMode gpu_execution_mode =
         cubey::vulkan::GpuRuntimeExecutionMode::Threaded;
     std::optional<cubey::vulkan::GpuStagingPoolConfig> staging_pool{};
+    VulkanRequirements vulkan_requirements{};
 };
 
 struct HeadlessPngHostCallbacks {

@@ -260,7 +260,8 @@ struct ForwardPbrRenderer3D::Impl {
                          bool hybrid_transmission,
                          const std::optional<ForwardPbrRenderer3DSceneReadback>& readback,
                          const std::optional<render::TemporalFrame>& temporal_frame,
-                         std::span<const ForwardPbrTemporalRigidMotionDraw> rigid_motion_draws);
+                         std::span<const ForwardPbrTemporalRigidMotionDraw> rigid_motion_draws,
+                         float frame_time_ms);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
@@ -375,11 +376,15 @@ struct ForwardPbrRenderer3D::Impl {
         std::optional<render::FrameUniformMaterialInstance<render::PbrSceneUniforms>>
             transmission_scene_material{};
         std::optional<render::TemporalAntiAliasing> temporal_aa{};
+        std::optional<render::TemporalCameraMotion> upscale_motion{};
+        render::TemporalViewState upscale_view{};
+        render::TemporalUpscaler* upscaler = nullptr;
         std::optional<render::FrameUniformMaterialInstance<ForwardPbrTemporalRigidMotionUniforms>>
             temporal_rigid_motion_material{};
         std::optional<render::GraphicsPipelineResource> temporal_rigid_motion_pipeline_back{};
         std::optional<render::GraphicsPipelineResource> temporal_rigid_motion_pipeline_no_cull{};
         VkExtent2D target_extent{};
+        VkExtent2D render_extent{};
         render::RenderGraphTextureState scene_depth_state =
             render::render_graph_undefined_texture_state();
         bool shadow_depth_is_sampled = false;

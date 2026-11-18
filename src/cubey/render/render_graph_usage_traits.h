@@ -89,6 +89,14 @@ render_graph_texture_usage_traits(RenderGraphTextureUsage usage) {
         .allowed_aspects = VK_IMAGE_ASPECT_COLOR_BIT,
         .image_usage_flags = VK_IMAGE_USAGE_STORAGE_BIT,
     };
+    static constexpr RenderGraphTextureUsageTraits storage_with_clear{
+        .writes = true,
+        .shader_access = true,
+        .transfer_access = true,
+        .allowed_domains = RenderGraphQueueDomainMask::GraphicsCompute,
+        .allowed_aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .image_usage_flags = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+    };
     static constexpr RenderGraphTextureUsageTraits color_attachment{
         .writes = true,
         .attachment_access = true,
@@ -146,6 +154,8 @@ render_graph_texture_usage_traits(RenderGraphTextureUsage usage) {
         return transfer_read;
     case RenderGraphTextureUsage::TransferWrite:
         return transfer_write;
+    case RenderGraphTextureUsage::StorageWriteWithTransferClear:
+        return storage_with_clear;
     }
     throw std::runtime_error("render graph texture usage is invalid");
 }

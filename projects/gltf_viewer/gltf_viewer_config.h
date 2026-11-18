@@ -94,6 +94,7 @@ struct GltfViewerStartupOptions {
 
 struct GltfViewerProjectConfig : GltfViewerStartupOptions {
     host::CommonRunConfig common;
+    std::string upscaler = "native";
 };
 
 // The selected PBR source is a viewer-wide rendering policy, not a collection
@@ -203,6 +204,11 @@ using config::ValueType;
 
 inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig& config) {
     auto builder = config::Schema::builder().compose(host::common_run_config_schema(config.common));
+    auto upscaler = detail::option("gltf.upscaler", "--upscaler", "Upscaler", "PBR",
+                                   "Native rendering or opt-in NVIDIA DLSS Super Resolution Quality.",
+                                   config::ValueType::Enum);
+    upscaler.enum_values = {"native", "dlss-quality"};
+    builder.bind(upscaler, config.upscaler);
     builder.bind(detail::option("gltf.input", "--input", "Input", "glTF", "glTF or GLB asset path.",
                                 ValueType::Path),
                  config.gltf.input_path);
@@ -394,6 +400,19 @@ parse_gltf_viewer_project_config(int argc, char** argv, config::ParseResult* res
         argc, argv, gltf_viewer_project_config_schema, result);
     validate_atmosphere_environment_options(config.atmosphere);
     validate_cloud_environment_options(config.clouds);
+    if (config.upscaler == "dlss-quality") {
+        if (config.common.anti_aliasing != "auto") {
+            throw std::runtime_error("DLSS Quality requires --anti-aliasing auto");
+        }
+        if (resolve_gltf_viewer_environment_policy(config.pbr.environment_source)
+                .uses_atmosphere_resources() ||
+            config.terrain.landscape || config.terrain.heightfield_path ||
+            config.ocean.backdrop.value_or(false) ||
+            render::pbr_debug_view_from_name(config.debug_view) != render::PbrDebugView::Final) {
+            throw std::runtime_error(
+                "DLSS Quality requires --pbr-environment-source static, final PBR and opaque geometry");
+        }
+    }
     if (config.terrain.landscape) {
         if (config.terrain.landscape_near_m && config.terrain.landscape_depth != "fitted")
             throw std::runtime_error("landscape near override requires fitted depth");

@@ -78,6 +78,30 @@ record `aa.requested` (resolved producer request), `aa.effective` and
 `aa.bypass_reason` on submitted frames. Admitted frames also record
 `taa.history_age`, `taa.reset_reason` and pixel jitter in `taa.jitter_x/y`.
 
+## DLSS Quality on native Linux
+
+The optional Viewer path builds against the developer-supplied
+[NVIDIA DLSS v310.9.16 SDK](https://github.com/NVIDIA/DLSS/releases/tag/v310.9.16)
+on Linux x86-64. Set `CUBEY_DLSS_SDK_DIR` to the SDK root. The launcher reads
+the feature library from that exact root at runtime.
+
+```sh
+cmake --preset release -B build/dlss -DCUBEY_DLSS_SDK_DIR=/path/to/dlss-sdk
+cmake --build build/dlss --target cubey_project_gltf_viewer
+build/dlss/projects/gltf_viewer/gltf_viewer --input path/to/opaque.glb \
+  --pbr-environment-source static --upscaler dlss-quality
+```
+
+DLSS Quality requires a supported NVIDIA adapter, static IBL, opaque rigid
+geometry, final PBR, and `--anti-aliasing auto`. Explicit selection reports
+an error when those requirements fail. The display extent comes from the
+window or capture. NGX supplies the lower render extent. Headless video and
+render-only runs can select the same mode. Profiles record the two extents,
+history age and reset reason under `dlss`. Use `--upscaler native` for the
+ordinary Off and TAA policy. An empty SDK path produces the SDK-free build.
+
+See the [native DLSS qualification results](../../docs/notes/dlss-super-resolution-2026-11.md).
+
 ## Validation and boundary
 
 The normal development preset covers the viewer's project-local config,

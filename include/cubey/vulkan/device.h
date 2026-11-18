@@ -5,8 +5,20 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <functional>
+#include <optional>
+#include <span>
+#include <string>
+#include <vector>
 
 namespace cubey::vulkan {
+
+struct DeviceRequirements {
+    // An empty result excludes this adapter. The callback runs before device creation.
+    std::function<std::optional<std::vector<std::string>>(VkInstance, VkPhysicalDevice)>
+        query_extensions{};
+    bool buffer_device_address = false;
+};
 
 struct DeviceConfig {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -15,6 +27,7 @@ struct DeviceConfig {
     bool require_dynamic_rendering = false;
     bool require_tessellation_shader = false;
     bool require_ray_tracing = false;
+    DeviceRequirements requirements{};
 };
 
 struct DeviceMemoryBudgetInfo {
@@ -93,8 +106,9 @@ class Device {
     void wait_idle() const;
 
   private:
-    void select_physical_device(const Instance& instance, const DeviceConfig& config);
-    void create_device(const DeviceConfig& config);
+    std::vector<std::string> select_physical_device(const Instance& instance,
+                                                    const DeviceConfig& config);
+    void create_device(const DeviceConfig& config, std::span<const std::string> required_extensions);
 
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties properties_{};

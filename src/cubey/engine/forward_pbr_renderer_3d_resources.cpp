@@ -318,6 +318,15 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     if (info.extent.width == 0 || info.extent.height == 0) {
         throw std::runtime_error("forward PBR renderer requires a nonzero target extent");
     }
+    if (info.upscaler != nullptr) {
+        if (info.render_extent.width == 0 || info.render_extent.height == 0 ||
+            info.render_extent.width > info.extent.width ||
+            info.render_extent.height > info.extent.height) {
+            throw std::invalid_argument("forward PBR upscaling requires a valid render extent");
+        }
+    } else if (info.render_extent.width != 0 || info.render_extent.height != 0) {
+        throw std::invalid_argument("forward PBR render extent requires an upscaler");
+    }
     if (info.color_format == VK_FORMAT_UNDEFINED) {
         throw std::runtime_error("forward PBR renderer requires a color format");
     }
@@ -337,8 +346,11 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
 
     RollbackOnFailure rollback{[this] { reset_swapchain_resources(); }};
     swapchain_.target_extent = info.extent;
+    swapchain_.upscaler = info.upscaler;
+    const VkExtent2D render_extent = info.upscaler ? info.render_extent : info.extent;
+    swapchain_.render_extent = render_extent;
 
-    swapchain_.depth_attachment.emplace(device, info.extent, true);
+    swapchain_.depth_attachment.emplace(device, render_extent, true);
     swapchain_.post_sampler.emplace(device,
                                     vulkan::SamplerConfig{
                                         .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
@@ -352,7 +364,7 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     swapchain_.skybox_pipeline.emplace(device,
                                        render::graphics_pipeline_file_resource_config(
                                            {
-                                               .extent = info.extent,
+                                               .extent = render_extent,
                                                .color_format = config_.scene_color_format,
                                                .depth_format = depth_attachment().format(),
                                            },
@@ -368,7 +380,7 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
         };
         global_.atmosphere_background.create_pipeline(
             device, render::AtmosphereBackgroundFramePipelineConfig{
-                        .extent = info.extent,
+                        .extent = render_extent,
                         .color_format = config_.scene_color_format,
                         .depth_format = depth_attachment().format(),
                         .shader_stage_files = atmosphere_shaders,
@@ -392,7 +404,7 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
             device,
             render::graphics_pipeline_file_resource_config(
                 {
-                    .extent = info.extent,
+                    .extent = render_extent,
                     .color_format = config_.scene_color_format,
                     .depth_format = depth_attachment().format(),
                 },
@@ -525,6 +537,9 @@ void ForwardPbrRenderer3D::Impl::reset_swapchain_resources() {
     swapchain_.temporal_rigid_motion_pipeline_back.reset();
     swapchain_.temporal_rigid_motion_material.reset();
     swapchain_.temporal_aa.reset();
+    swapchain_.upscale_motion.reset();
+    swapchain_.upscale_view = {};
+    swapchain_.upscaler = nullptr;
     accepted_rigid_models_.clear();
     pending_rigid_models_.clear();
     accepted_temporal_frame_ = false;
@@ -542,6 +557,7 @@ void ForwardPbrRenderer3D::Impl::reset_swapchain_resources() {
     swapchain_.depth_attachment.reset();
     swapchain_.scene_depth_state = render::render_graph_undefined_texture_state();
     swapchain_.target_extent = {};
+    swapchain_.render_extent = {};
     swapchain_.shadow_depth_is_sampled = false;
 }
 
@@ -554,18 +570,21 @@ void ForwardPbrRenderer3D::Impl::ensure_temporal_resources(const vulkan::Device&
     if (slot_count == 0U) {
         throw std::runtime_error("forward PBR TAA requires initialized frame slots");
     }
-    if (swapchain_.temporal_aa.has_value() && swapchain_.temporal_aa->created() &&
+    const bool upscaling = swapchain_.upscaler != nullptr;
+    const bool motion_ready =
+        upscaling ? swapchain_.upscale_motion.has_value()
+                  : swapchain_.temporal_aa.has_value() && swapchain_.temporal_aa->created();
+    if (motion_ready &&
         swapchain_.temporal_rigid_motion_material.has_value() &&
         swapchain_.temporal_rigid_motion_pipeline_back.has_value() &&
-        swapchain_.temporal_rigid_motion_pipeline_no_cull.has_value() &&
-        swapchain_.target_extent.width == extent.width &&
-        swapchain_.target_extent.height == extent.height) {
+        swapchain_.temporal_rigid_motion_pipeline_no_cull.has_value()) {
         return;
     }
-    if (config_.temporal_motion_shader.empty() || config_.temporal_resolve_shader.empty() ||
+    if (config_.temporal_motion_shader.empty() ||
+        (!upscaling && config_.temporal_resolve_shader.empty()) ||
         config_.temporal_rigid_motion_vertex_shader.empty() ||
         config_.temporal_rigid_motion_fragment_shader.empty()) {
-        throw std::runtime_error("forward PBR TAA requires temporal shader paths");
+        throw std::runtime_error("forward PBR temporal reconstruction requires temporal shaders");
     }
 
     VkFormatProperties motion_properties{};
@@ -575,14 +594,20 @@ void ForwardPbrRenderer3D::Impl::ensure_temporal_resources(const vulkan::Device&
         throw std::runtime_error("forward PBR TAA requires RG16F color attachment support");
     }
 
-    if (!swapchain_.temporal_aa.has_value()) {
-        swapchain_.temporal_aa.emplace();
-    }
-    if (!swapchain_.temporal_aa->created()) {
-        swapchain_.temporal_aa->create(device, {.extent = extent,
-                                                .frame_slot_count = slot_count,
-                                                .motion_shader = config_.temporal_motion_shader,
-                                                .resolve_shader = config_.temporal_resolve_shader});
+    if (upscaling) {
+        if (!swapchain_.upscale_motion) {
+            swapchain_.upscale_motion.emplace(device, slot_count, config_.temporal_motion_shader);
+        }
+    } else {
+        if (!swapchain_.temporal_aa) {
+            swapchain_.temporal_aa.emplace();
+        }
+        if (!swapchain_.temporal_aa->created()) {
+            swapchain_.temporal_aa->create(device, {.extent = extent,
+                                                   .frame_slot_count = slot_count,
+                                                   .motion_shader = config_.temporal_motion_shader,
+                                                   .resolve_shader = config_.temporal_resolve_shader});
+        }
     }
     if (!swapchain_.temporal_rigid_motion_material.has_value()) {
         swapchain_.temporal_rigid_motion_material.emplace(

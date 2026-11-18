@@ -29,6 +29,7 @@ struct WindowedAppConfig {
     std::optional<cubey::vulkan::GpuStagingPoolConfig> staging_pool{};
     std::optional<WindowedProfilePacingConfig> profile_pacing{};
     bool close_on_escape = false;
+    VulkanRequirements vulkan_requirements{};
 };
 
 struct WindowedAppCallbacks {

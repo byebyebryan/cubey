@@ -169,6 +169,33 @@ void test_render_graph_honors_explicit_graphics_shader_stage_masks() {
             "explicit buffer stage mask should override the default graphics stage mask");
 }
 
+void test_render_graph_exposes_storage_and_transfer_writes_to_the_consumer() {
+    using namespace cubey::render;
+    RenderGraphBuilder graph;
+    const auto output = graph.create_texture(color_texture_desc("resolved color"));
+    graph.add_pass("clear and dispatch", RenderGraphQueueDomain::Compute)
+        .write_storage_texture_with_transfer_clear(output);
+    graph.add_pass("display", RenderGraphQueueDomain::Graphics).read_texture(output);
+
+    const auto compiled = graph.compile();
+    const auto& producer_barriers = compiled.passes()[0].before_texture_barriers;
+    const auto& consumer_barriers = compiled.passes()[1].before_texture_barriers;
+    require(producer_barriers.size() == 1 && consumer_barriers.size() == 1,
+            "storage output needs an initial transition and a barrier for display sampling");
+    const auto& state = producer_barriers[0].destination_state;
+    const auto& source = consumer_barriers[0].source_state;
+    require(state.layout == VK_IMAGE_LAYOUT_GENERAL && source.layout == state.layout,
+            "both operations must use the general layout");
+    require(state.stage_mask == (VK_PIPELINE_STAGE_TRANSFER_BIT |
+                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) &&
+                source.stage_mask == state.stage_mask,
+            "barriers must cover both the clear and the dispatch");
+    require(state.access_mask == (VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT |
+                                  VK_ACCESS_SHADER_READ_BIT) &&
+                source.access_mask == state.access_mask,
+            "display sampling must see the transfer and shader writes");
+}
+
 void test_render_graph_derives_compute_to_vertex_buffer_barrier() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle vertices =

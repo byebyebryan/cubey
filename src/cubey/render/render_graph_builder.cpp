@@ -160,6 +160,13 @@ RenderGraphPassBuilder::read_write_storage_texture(RenderGraphTextureHandle hand
     return *this;
 }
 
+RenderGraphPassBuilder& RenderGraphPassBuilder::write_storage_texture_with_transfer_clear(
+    RenderGraphTextureHandle handle, VkPipelineStageFlags stage_mask) {
+    graph_->add_texture_access(pass_index_, handle,
+                               RenderGraphTextureUsage::StorageWriteWithTransferClear, stage_mask);
+    return *this;
+}
+
 RenderGraphPassBuilder& RenderGraphPassBuilder::write_color(RenderGraphTextureHandle handle) {
     graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::ColorAttachment);
     return *this;

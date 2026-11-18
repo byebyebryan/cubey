@@ -83,6 +83,16 @@ constexpr std::array k_texture_usage_cases{
         .shader_access = true,
     },
     TextureUsageCase{
+        .usage = RenderGraphTextureUsage::StorageWriteWithTransferClear,
+        .domain = RenderGraphQueueDomain::Compute,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .invalid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .usage_flags = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+        .shader_access = true,
+    },
+    TextureUsageCase{
         .usage = RenderGraphTextureUsage::ColorAttachment,
         .domain = RenderGraphQueueDomain::Graphics,
         .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -206,6 +216,9 @@ void declare_texture_usage(RenderGraphPassBuilder& pass, RenderGraphTextureHandl
         return;
     case RenderGraphTextureUsage::StorageReadWrite:
         pass.read_write_storage_texture(handle, stage_mask);
+        return;
+    case RenderGraphTextureUsage::StorageWriteWithTransferClear:
+        pass.write_storage_texture_with_transfer_clear(handle, stage_mask);
         return;
     case RenderGraphTextureUsage::ColorAttachment:
         pass.write_color(handle);

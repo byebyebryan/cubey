@@ -15,7 +15,8 @@ applying jitter or allocating history. Headless Auto uses the direct render
 path. A headless beauty capture can explicitly select TAA and define its
 history warm-up. Reference captures and raw diagnostics use direct output.
 The lower-level forward renderer defaults to Off for callers that supply their
-own settings. DLSS, temporal upscaling and denoising are deferred.
+own settings. The glTF Viewer has a separate, explicit
+[DLSS Quality option](../notes/dlss-super-resolution-2026-11.md).
 
 The CLI uses one flag across projects. Saved SDF and ray tracing configs keep
 `anti-aliasing`, and the workshop and other projects use `anti_aliasing`.
@@ -25,8 +26,8 @@ effective mode alongside history age, reset reason, and jitter.
 
 ## View and motion contract
 
-Each runtime owns one independently rendered view. Its input/output extent is
-identical. The supported depth convention is Vulkan forward Z in `[0,1]`, with
+Each runtime owns one independently rendered view. Native TAA uses identical
+render and display extents. Depth uses Vulkan forward Z in `[0,1]`, with
 clear/miss equal to 1. Descriptor setup rejects mismatched color, depth, and
 motion extents. The resolve reads finite scene-linear HDR RGB and writes
 resolved beauty with alpha 1.
@@ -47,6 +48,12 @@ The projection therefore shifts geometry by `-j`, or `-2*j/extent` in clip
 space. The sequence is centered Halton(2,3), 16 phases. Ordinary camera motion,
 object motion and jitter do not invalidate history. Shadow rendering keeps the
 unjittered view.
+
+An upscaler can consume the same view and motion through `TemporalUpscaler`.
+The Forward PBR target owner supplies the render extent and keeps the upscaler
+alive until its submitted work retires. The upscaler declares a display-size
+HDR output before post. Forward PBR owns accepted view state, plus the shared
+camera and rigid motion passes at the render extent.
 
 ## Submission and resource lifetime
 

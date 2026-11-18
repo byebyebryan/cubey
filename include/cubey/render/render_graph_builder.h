@@ -22,6 +22,10 @@ class RenderGraphPassBuilder {
                                                  VkPipelineStageFlags stage_mask = 0);
     RenderGraphPassBuilder& write_storage_texture(RenderGraphTextureHandle handle,
                                                   VkPipelineStageFlags stage_mask = 0);
+    // The callback clears the image in GENERAL before its storage accesses.
+    // Synchronization between operations inside the callback belongs to the caller.
+    RenderGraphPassBuilder& write_storage_texture_with_transfer_clear(
+        RenderGraphTextureHandle handle, VkPipelineStageFlags stage_mask = 0);
     RenderGraphPassBuilder& read_write_storage_texture(RenderGraphTextureHandle handle,
                                                        VkPipelineStageFlags stage_mask = 0);
     RenderGraphPassBuilder& write_color(RenderGraphTextureHandle handle);

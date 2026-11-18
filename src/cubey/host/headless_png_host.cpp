@@ -356,6 +356,9 @@ int HeadlessPngHost::run() {
 void HeadlessPngHost::create_instance() {
     cubey::vulkan::InstanceConfig instance_config;
     instance_config.application_name = config_.run_config.title;
+    for (const auto& extension : config_.vulkan_requirements.instance_extensions) {
+        instance_config.required_extensions.push_back(extension.c_str());
+    }
     instance_config.validation = config_.run_config.validation;
     instance_config.require_validation = config_.run_config.require_validation;
     instance_.emplace(instance_config);
@@ -368,6 +371,7 @@ void HeadlessPngHost::create_device() {
     device_config.require_dynamic_rendering = config_.require_dynamic_rendering;
     device_config.require_tessellation_shader = config_.require_tessellation_shader;
     device_config.require_ray_tracing = config_.require_ray_tracing;
+    device_config.requirements = config_.vulkan_requirements.device;
     device_.emplace(instance(), device_config);
 }
 

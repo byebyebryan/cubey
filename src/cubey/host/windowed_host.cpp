@@ -275,11 +275,12 @@ void WindowedHost::create_window() {
 }
 
 void WindowedHost::create_instance() {
-    const std::vector<const char*> required_extensions = window().required_instance_extensions();
-
     cubey::vulkan::InstanceConfig instance_config;
     instance_config.application_name = config_.run_config.title;
-    instance_config.required_extensions = required_extensions;
+    instance_config.required_extensions = window().required_instance_extensions();
+    for (const auto& extension : config_.vulkan_requirements.instance_extensions) {
+        instance_config.required_extensions.push_back(extension.c_str());
+    }
     instance_config.validation = config_.run_config.validation;
     instance_config.require_validation = config_.run_config.require_validation;
     instance_.emplace(instance_config);
@@ -297,6 +298,7 @@ void WindowedHost::create_device() {
     device_config.require_dynamic_rendering = config_.require_dynamic_rendering;
     device_config.require_tessellation_shader = config_.require_tessellation_shader;
     device_config.require_ray_tracing = config_.require_ray_tracing;
+    device_config.requirements = config_.vulkan_requirements.device;
     device_.emplace(instance(), device_config);
 }
 

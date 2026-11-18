@@ -56,6 +56,7 @@ void test_defaults_named_flags_and_typed_runtime() {
         static_cast<int>(std::size(argv)), argv);
     require(config.common.width == 1280U && config.common.height == 720U,
             "glTF common defaults should remain stable");
+    require(config.upscaler == "native", "glTF should default to native rendering");
     require(config.debug_view == "metallic", "glTF debug view should bind");
     require(config.ocean.map_size == 128U && config.ocean.sea_state == "calm",
             "glTF ocean startup options should bind");
@@ -409,6 +410,29 @@ void test_environment_source_resolves_one_coherent_policy() {
         "environment policy should reject a source outside the config enum");
 }
 
+void test_dlss_quality_policy_is_explicit() {
+    const auto parse = [](std::vector<std::string> args) {
+        args.insert(args.begin(), "gltf_viewer");
+        std::vector<char*> argv;
+        for (auto& arg : args) {
+            argv.push_back(arg.data());
+        }
+        return cubey::projects::gltf_viewer::parse_gltf_viewer_project_config(
+            static_cast<int>(argv.size()), argv.data());
+    };
+    const auto config = parse({"--upscaler", "dlss-quality", "--pbr-environment-source", "static"});
+    require(config.upscaler == "dlss-quality" && config.common.anti_aliasing == "auto",
+            "the optional upscaler should select DLSS without changing the shared AA policy");
+    require_throws([&] { parse({"--upscaler", "dlss-quality"}); },
+                   "DLSS requires a static environment");
+    require_throws(
+        [&] {
+            parse({"--upscaler", "dlss-quality", "--pbr-environment-source", "static",
+                   "--anti-aliasing", "taa"});
+        },
+        "DLSS and native TAA cannot both be requested");
+}
+
 } // namespace
 
 int main() {
@@ -422,6 +446,7 @@ int main() {
         test_capture_orbit_controls();
         test_capture_fov_and_tonemap_resolve_to_runtime_values();
         test_environment_source_resolves_one_coherent_policy();
+        test_dlss_quality_policy_is_explicit();
     } catch (const std::exception& error) {
         std::cerr << "gltf_viewer_config_tests: " << error.what() << '\n';
         return EXIT_FAILURE;

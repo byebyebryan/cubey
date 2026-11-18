@@ -77,14 +77,139 @@ std::string_view temporal_aa_unsupported_reason(const vulkan::Device& device) {
     return {};
 }
 
+struct TemporalCameraMotion::Impl {
+    const std::uint32_t frame_slot_count;
+    vulkan::Sampler sampler;
+    FrameUniformMaterialInstance<Uniforms> material;
+    std::optional<ComputePipelineResource> pipeline;
+    std::vector<std::uint8_t> declared_slots;
+    std::vector<std::uint8_t> descriptors_ready_slots;
+    std::vector<VkExtent2D> declared_extents;
+    std::uint64_t uniform_allocation_bytes = 0;
+
+    Impl(const vulkan::Device& device, std::uint32_t slots,
+         const std::filesystem::path& motion_shader)
+        : frame_slot_count(slots),
+          sampler(device, {.min_filter = VK_FILTER_LINEAR,
+                           .mag_filter = VK_FILTER_LINEAR,
+                           .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE}),
+          material(device, FrameUniformMaterialInstanceConfig{.material_pass = pass_info(false),
+                                                              .frame_slot_count = slots}),
+          declared_slots(slots), descriptors_ready_slots(slots), declared_extents(slots) {
+        if (motion_shader.empty())
+            throw std::invalid_argument("Camera motion requires a compute shader");
+        emplace_single_set_compute_pipeline_resource(
+            pipeline, device, compute_shader_file(motion_shader), material.layout());
+        for (std::uint32_t i = 0; i < frame_slot_count; ++i) {
+            VkMemoryRequirements requirements{};
+            vkGetBufferMemoryRequirements(
+                device.handle(), material.uniforms().buffer({i, frame_slot_count}).handle(),
+                &requirements);
+            uniform_allocation_bytes += requirements.size;
+        }
+    }
+
+    void dispatch(FrameSlot slot, VkExtent2D extent,
+                  const RenderGraphExecutionContext& context) const {
+        if (!descriptors_ready_slots.at(slot.index))
+            throw std::logic_error("Camera motion descriptors were not prepared");
+        const auto& recorder = context.recorder();
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->pipeline());
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->layout(), 0,
+                                     material.set(slot));
+        recorder.dispatch((extent.width + 15U) / 16U, (extent.height + 15U) / 16U, 1);
+    }
+};
+
+TemporalCameraMotion::TemporalCameraMotion(const vulkan::Device& device,
+                                           std::uint32_t frame_slot_count,
+                                           const std::filesystem::path& motion_shader)
+    : impl_(std::make_unique<Impl>(device, frame_slot_count, motion_shader)) {}
+TemporalCameraMotion::~TemporalCameraMotion() = default;
+RenderGraphTextureHandle TemporalCameraMotion::declare(RenderGraphBuilder& graph, FrameSlot slot,
+                                                       RenderGraphTextureHandle depth,
+                                                       const TemporalFrame& frame) {
+    if (!impl_)
+        throw std::logic_error("Camera motion is not created");
+    auto& p = *impl_;
+    validate_frame_slot(slot);
+    if (slot.count != p.frame_slot_count)
+        throw std::invalid_argument("Camera motion slot mismatch");
+    if (!frame.extent.width || !frame.extent.height)
+        throw std::invalid_argument("Camera motion requires a non-empty extent");
+
+    const float width = static_cast<float>(frame.extent.width);
+    const float height = static_cast<float>(frame.extent.height);
+    const Uniforms uniforms{frame.inverse_jittered_view_projection,
+                            frame.view_projection,
+                            frame.previous_view_projection,
+                            math::Vec4(frame.camera_position, 0),
+                            {width, height, 1.0F / width, 1.0F / height},
+                            {0.0F, 0.0F, 0.0F, 0.0F}};
+    p.material.upload(slot, uniforms);
+
+    const auto motion =
+        graph.create_texture(desc("taa.motion", frame.extent, VK_FORMAT_R16G16_SFLOAT));
+    const auto buffer = graph.import_buffer({"taa.motion.uniforms", sizeof(Uniforms)},
+                                            p.material.uniforms().buffer(slot).handle());
+    p.descriptors_ready_slots[slot.index] = 0;
+    p.declared_slots[slot.index] = 1;
+    p.declared_extents[slot.index] = frame.extent;
+    graph.add_pass("taa.motion", RenderGraphQueueDomain::Compute)
+        .read_texture(depth, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+        .read_uniform_buffer(buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+        .write_storage_texture(motion, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+        .execute([&p, slot, extent = frame.extent](const RenderGraphExecutionContext& context) {
+            p.dispatch(slot, extent, context);
+        });
+    return motion;
+}
+void TemporalCameraMotion::update_descriptors(const vulkan::Device& device, FrameSlot slot,
+                                              const CompiledRenderGraph& graph,
+                                              const RenderGraphResourceSet& resources,
+                                              RenderGraphTextureHandle depth,
+                                              RenderGraphTextureHandle motion) {
+    if (!impl_)
+        throw std::logic_error("Camera motion is not created");
+    auto& p = *impl_;
+    validate_frame_slot(slot);
+    if (slot.count != p.frame_slot_count)
+        throw std::invalid_argument("Camera motion slot mismatch");
+    if (!p.declared_slots[slot.index])
+        throw std::logic_error("Camera motion graph was not declared for this slot");
+
+    const auto& depth_description = graph.texture(depth).desc;
+    const auto& motion_description = graph.texture(motion).desc;
+    const auto extent = p.declared_extents[slot.index];
+    if (!matches_extent(depth_description, extent))
+        throw std::invalid_argument("Camera motion requires a native-size depth image");
+    if (motion_description.format != VK_FORMAT_R16G16_SFLOAT ||
+        !matches_extent(motion_description, extent))
+        throw std::invalid_argument("Camera motion requires a native-size RG16F image");
+
+    const auto depth_view = resolved_sampled_texture_view(graph, resources, depth);
+    const auto motion_view = resources.texture(motion).value();
+    MaterialDescriptorWriter(p.material.set(slot))
+        .combined_image_sampler(1, p.sampler.handle(), depth_view.view, depth_view.layout)
+        .storage_image(2, motion_view.view)
+        .update(device);
+    p.descriptors_ready_slots[slot.index] = 1;
+}
+std::uint64_t TemporalCameraMotion::uniform_requested_bytes() const noexcept {
+    return impl_ ? sizeof(Uniforms) * impl_->frame_slot_count : 0;
+}
+std::uint64_t TemporalCameraMotion::uniform_allocation_bytes() const noexcept {
+    return impl_ ? impl_->uniform_allocation_bytes : 0;
+}
+
 struct TemporalAntiAliasing::Impl {
     TemporalAaConfig config;
     TemporalViewState state;
     std::array<std::optional<vulkan::Image>, 2> histories;
     vulkan::Sampler sampler;
-    std::optional<FrameUniformMaterialInstance<Uniforms>> motion_material;
+    std::unique_ptr<TemporalCameraMotion> camera_motion;
     FrameUniformMaterialInstance<Uniforms> resolve_material;
-    std::optional<ComputePipelineResource> motion_pipeline, resolve_pipeline;
+    std::optional<ComputePipelineResource> resolve_pipeline;
     FrameSlot slot{};
     TemporalFrame pending{};
     TemporalAaMetrics metrics{};
@@ -111,19 +236,15 @@ struct TemporalAntiAliasing::Impl {
             metrics.persistent_image_allocation_bytes += requirements.size;
         }
         if (!cfg.motion_shader.empty()) {
-            motion_material.emplace(device, FrameUniformMaterialInstanceConfig{
-                                                .material_pass = pass_info(false),
-                                                .frame_slot_count = cfg.frame_slot_count});
-            emplace_single_set_compute_pipeline_resource(motion_pipeline, device,
-                                                         compute_shader_file(cfg.motion_shader),
-                                                         motion_material->layout());
+            camera_motion = std::make_unique<TemporalCameraMotion>(device, cfg.frame_slot_count,
+                                                                   cfg.motion_shader);
         }
         emplace_single_set_compute_pipeline_resource(resolve_pipeline, device,
                                                      compute_shader_file(cfg.resolve_shader),
                                                      resolve_material.layout());
         const auto pixels = std::uint64_t(cfg.extent.width) * cfg.extent.height;
         metrics.persistent_requested_bytes = pixels * 16U;
-        metrics.per_slot_transient_requested_bytes = pixels * (motion_material ? 12U : 8U);
+        metrics.per_slot_transient_requested_bytes = pixels * (camera_motion ? 12U : 8U);
         const auto account_uniforms = [&](const auto& material) {
             metrics.uniform_requested_bytes += sizeof(Uniforms) * cfg.frame_slot_count;
             for (std::uint32_t i = 0; i < cfg.frame_slot_count; ++i) {
@@ -135,18 +256,20 @@ struct TemporalAntiAliasing::Impl {
             }
         };
         account_uniforms(resolve_material);
-        if (motion_material)
-            account_uniforms(*motion_material);
+        if (camera_motion) {
+            metrics.uniform_requested_bytes += camera_motion->uniform_requested_bytes();
+            metrics.uniform_allocation_bytes += camera_motion->uniform_allocation_bytes();
+        }
     }
     void check(const TemporalFrame& frame) const {
         if (!state.pending() || frame.token != pending.token)
             throw std::logic_error("TAA frame is not the pending candidate");
     }
-    void dispatch(const RenderGraphExecutionContext& ctx, bool resolve) const {
+    void dispatch(const RenderGraphExecutionContext& ctx) const {
         if (!descriptors_ready)
             throw std::logic_error("TAA descriptors were not prepared");
-        const auto& pipeline = resolve ? *resolve_pipeline : *motion_pipeline;
-        const auto set = resolve ? resolve_material.set(slot) : motion_material->set(slot);
+        const auto& pipeline = *resolve_pipeline;
+        const auto set = resolve_material.set(slot);
         const auto& recorder = ctx.recorder();
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0, set);
@@ -196,8 +319,6 @@ TemporalFrame TemporalAntiAliasing::begin_frame(FrameSlot slot, const TemporalVi
                             {width, height, 1.0F / width, 1.0F / height},
                             {frame.history_valid ? p.config.new_frame_weight : 1.0F,
                              p.config.clamping_factor, p.config.max_radiance, 0}};
-    if (p.motion_material)
-        p.motion_material->upload(slot, uniforms);
     p.resolve_material.upload(slot, uniforms);
     return frame;
 }
@@ -208,17 +329,10 @@ RenderGraphTextureHandle TemporalAntiAliasing::declare_camera_motion(RenderGraph
         throw std::logic_error("TAA is not created");
     auto& p = *impl_;
     p.check(frame);
-    if (!p.motion_material || p.motion_declared || p.resolve_declared)
+    if (!p.camera_motion || p.motion_declared || p.resolve_declared)
         throw std::logic_error("TAA camera motion is unavailable or already declared");
     p.depth = depth;
-    p.motion = graph.create_texture(desc("taa.motion", frame.extent, VK_FORMAT_R16G16_SFLOAT));
-    const auto buffer = graph.import_buffer({"taa.motion.uniforms", sizeof(Uniforms)},
-                                            p.motion_material->uniforms().buffer(p.slot).handle());
-    graph.add_pass("taa.motion", RenderGraphQueueDomain::Compute)
-        .read_texture(depth, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-        .read_uniform_buffer(buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-        .write_storage_texture(p.motion, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-        .execute([&p](const RenderGraphExecutionContext& ctx) { p.dispatch(ctx, false); });
+    p.motion = p.camera_motion->declare(graph, p.slot, depth, frame);
     p.motion_declared = true;
     return p.motion;
 }
@@ -242,7 +356,7 @@ RenderGraphTextureHandle TemporalAntiAliasing::declare_resolve_impl(RenderGraphB
         throw std::logic_error("TAA is not created");
     auto& p = *impl_;
     p.check(frame);
-    if (p.resolve_declared || (producer_motion ? p.motion_material.has_value()
+    if (p.resolve_declared || (producer_motion ? static_cast<bool>(p.camera_motion)
                                                : !p.motion_declared || motion != p.motion))
         throw std::logic_error("TAA resolve declaration order mismatch");
     p.motion = motion;
@@ -281,7 +395,7 @@ RenderGraphTextureHandle TemporalAntiAliasing::declare_resolve_impl(RenderGraphB
                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
         .write_storage_texture(p.resolved, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
         .read_uniform_buffer(buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-        .execute([&p](const RenderGraphExecutionContext& ctx) { p.dispatch(ctx, true); });
+        .execute([&p](const RenderGraphExecutionContext& ctx) { p.dispatch(ctx); });
     p.resolve_declared = true;
     return p.resolved;
 }
@@ -305,6 +419,8 @@ void TemporalAntiAliasing::update_descriptors(const vulkan::Device& device,
         throw std::invalid_argument("TAA requires a native-size RG16F motion image");
     if (p.motion_declared && !matches_extent(graph.texture(p.depth).desc, frame.extent))
         throw std::invalid_argument("TAA requires a native-size depth image");
+    if (p.motion_declared)
+        p.camera_motion->update_descriptors(device, p.slot, graph, resources, p.depth, p.motion);
     const auto color = resolved_sampled_texture_view(graph, resources, p.color);
     const auto motion = resolved_sampled_texture_view(graph, resources, p.motion);
     const auto resolved = resources.texture(p.resolved).value();
@@ -317,13 +433,6 @@ void TemporalAntiAliasing::update_descriptors(const vulkan::Device& device,
         account(resolved.image);
         if (p.motion_declared)
             account(motion.image);
-    }
-    if (p.motion_declared) {
-        const auto depth = resolved_sampled_texture_view(graph, resources, p.depth);
-        MaterialDescriptorWriter(p.motion_material->set(p.slot))
-            .combined_image_sampler(1, p.sampler.handle(), depth.view, depth.layout)
-            .storage_image(2, motion.view)
-            .update(device);
     }
     MaterialDescriptorWriter(p.resolve_material.set(p.slot))
         .combined_image_sampler(1, p.sampler.handle(), color.view, color.layout)
