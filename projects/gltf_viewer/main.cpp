@@ -4,7 +4,10 @@
 
 int main(int argc, char** argv) {
     return cubey::host::run_configured_app(
-        argc, argv, {.app_name = "gltf_viewer", .default_title = "cubey glTF viewer"},
+        argc, argv,
+        {.app_name = "gltf_viewer",
+         .default_title = "cubey glTF viewer",
+         .reports_temporal_aa = true},
         cubey::projects::gltf_viewer::parse_gltf_viewer_project_config,
         cubey::projects::gltf_viewer::run_gltf_viewer);
 }

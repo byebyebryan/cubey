@@ -53,6 +53,31 @@ lighting use that same environment, with no procedural direct light, legacy
 ambient fill, atmosphere time updates, clouds or atmosphere controls. Terrain
 and ocean backdrops remain atmosphere-only.
 
+## Native temporal anti-aliasing
+
+Windowed `--anti-aliasing auto` requests native TAA for opaque, rigid draws
+with static IBL or a settled clear atmosphere. This command selects static IBL.
+
+```sh
+./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/opaque.glb \
+  --pbr-environment-source static
+```
+
+The launcher reports the requested mode, effective mode and bypass reason on the
+first submitted frame and whenever admission changes. Masked, blended,
+transmissive, instanced and deformed draws bypass TAA, as do diagnostics,
+animated lighting, clouds, terrain, ocean and the saved landscape’s linear
+foreground export. Camera orbit and rigid transforms use the shared renderer’s
+motion field. Asset activation, camera home and animation loop boundaries
+restart history.
+
+Headless Auto preserves the existing capture pixels. Pass `--anti-aliasing taa`
+to request TAA explicitly. A PNG captures the first jittered sample. A
+multi-frame render or video accumulates history across submissions. Profiles
+record `aa.requested` (resolved producer request), `aa.effective` and
+`aa.bypass_reason` on submitted frames. Admitted frames also record
+`taa.history_age`, `taa.reset_reason` and pixel jitter in `taa.jitter_x/y`.
+
 ## Validation and boundary
 
 The normal development preset covers the viewer's project-local config,

@@ -130,6 +130,7 @@ class PbrMaterialsApp {
     std::optional<vulkan::GpuTimestampProfiler> whole_profiler_, pass_profiler_;
     std::vector<std::optional<std::uint64_t>> accepted_profile_frames_, pending_profile_frames_;
     cubey::profiling::ProfileRecorder* profile_ = nullptr;
+    bool aa_reported_ = false;
     AtmosphereEnvironmentRuntime atmosphere_;
     std::optional<render::AtmosphereBackgroundPlaceholderTextures> atmosphere_textures_;
     render::CloudLayerRuntimeShaderFiles cloud_shaders_{};

@@ -71,10 +71,18 @@ class Renderer {
     [[nodiscard]] std::uint64_t history_epoch() const {
         return history_epochs_;
     }
+    [[nodiscard]] bool temporal_aa_effective() const {
+        return fixed_opaque_taa_;
+    }
+    [[nodiscard]] std::string_view temporal_aa_bypass_reason() const {
+        return temporal_aa_bypass_reason_;
+    }
 
   private:
     std::unique_ptr<ForwardComparison> forward_;
     bool demo_mode_ = false, fixed_opaque_mode_ = false, fixed_opaque_taa_ = false;
+    bool fixed_opaque_taa_requested_at_creation_ = false;
+    std::string temporal_aa_bypass_reason_;
     bool force_temporal_reset_ = false;
     std::uint32_t fixed_opaque_sample_target_ = 4;
     void destroy() noexcept;

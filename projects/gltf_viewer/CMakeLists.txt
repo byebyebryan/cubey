@@ -93,6 +93,11 @@ if (BUILD_TESTING)
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
             -s "${CMAKE_SOURCE_DIR}/studies/gltf_viewer" -p test_showcase_media_v1.py)
     set_tests_properties(gltf_viewer_showcase_media PROPERTIES LABELS "gltf;viewer;structural;media")
+    add_test(NAME gltf_viewer_temporal_aa
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_temporal_aa.py"
+            $<TARGET_FILE:cubey_project_gltf_viewer> "${CMAKE_CURRENT_BINARY_DIR}/temporal-aa")
+    set_tests_properties(gltf_viewer_temporal_aa PROPERTIES
+        LABELS "gltf;viewer;headless;gpu;taa" RUN_SERIAL TRUE TIMEOUT 120)
     add_test(NAME gltf_viewer_headless_profiles_scene
         COMMAND "${CMAKE_COMMAND}" -E env --unset=DISPLAY --unset=WAYLAND_DISPLAY
             $<TARGET_FILE:cubey_project_gltf_viewer> --headless --headless-render-only

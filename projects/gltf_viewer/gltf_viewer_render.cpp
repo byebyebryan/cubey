@@ -223,6 +223,16 @@ void GltfViewerApp::record_viewer_target(
     if (ocean_backdrop_enabled() && ocean_visible_) {
         ocean_surface = ocean_surface_frame(scene_view, color_target.extent);
     }
+    const bool request_taa = cubey::host::native_taa_requested(config_.common);
+    // Backdrop placement also changes sky altitude when the surface is hidden.
+    bool appearance_static = !terrain_backdrop_enabled() && !ocean_backdrop_enabled();
+    if (request_taa && environment_policy().uses_atmosphere_resources()) {
+        const auto probe = atmosphere_runtime_.reflection_probe().snapshot();
+        const bool advancing_sky =
+            atmosphere_state_.time_playing && atmosphere_state_.time_speed_hours_per_second > 0.0F;
+        appearance_static =
+            appearance_static && !advancing_sky && probe.valid && probe.blend >= 1.0F;
+    }
     auto pbr_target = color_target;
     auto pbr_initial = color_initial_state;
     auto pbr_final = color_final_state;
@@ -264,6 +274,8 @@ void GltfViewerApp::record_viewer_target(
                 .camera_entity = generation.camera_entity,
                 .light_entity = generation.light_entity,
                 .fallback_light = fallback_light_packet(),
+                .temporal_view_id = 1U, // One viewer camera, including its loading cage.
+                .temporal_content_generation = generation.source.id,
             },
         .scene_resources =
             {
@@ -286,6 +298,9 @@ void GltfViewerApp::record_viewer_target(
                 .terrain_backdrop = terrain_backdrop,
                 .ocean_surface = ocean_surface,
                 .opaque_linear_output = landscape_runtime_ != nullptr,
+                .anti_aliasing = request_taa ? cubey::render::AntiAliasingMode::Taa
+                                             : cubey::render::AntiAliasingMode::Off,
+                .temporal_appearance_static = appearance_static,
             },
         .metrics = metrics,
     });
@@ -440,6 +455,34 @@ void GltfViewerApp::record_cloud_environment_if_needed(
         throw std::runtime_error("glTF viewer cloud environment runtime is not initialized");
     }
     static_cast<void>(clouds.record_pending_update(recorder, frame_slot, frame));
+}
+
+void GltfViewerApp::viewer_frame_submitted(cubey::profiling::ProfileRecorder* profile,
+                                           std::uint64_t index,
+                                           cubey::vulkan::GpuSubmissionTicket ticket) {
+    forward_pbr_renderer().frame_submitted(ticket);
+    const auto status = forward_pbr_renderer().temporal_status();
+    const bool effective = status.effective == cubey::render::AntiAliasingMode::Taa;
+    if (reported_aa_bypass_ != status.bypass_reason) {
+        reported_aa_bypass_ = status.bypass_reason;
+        cubey::host::report_anti_aliasing(
+            config_.common, effective,
+            cubey::forward_pbr_renderer_3d_taa_bypass_reason_name(status.bypass_reason));
+    }
+    if (profile == nullptr || !profile->should_record_frame(index)) {
+        return;
+    }
+    profile->record_metric(index, "aa", "requested", static_cast<unsigned>(status.requested));
+    profile->record_metric(index, "aa", "effective", static_cast<unsigned>(status.effective));
+    profile->record_metric(index, "aa", "bypass_reason",
+                           static_cast<unsigned>(status.bypass_reason));
+    if (effective) {
+        profile->record_metric(index, "taa", "history_age", status.history_age);
+        profile->record_metric(index, "taa", "reset_reason",
+                               static_cast<unsigned>(status.reset_reason));
+        profile->record_metric(index, "taa", "jitter_x", status.sample_offset_pixels.x);
+        profile->record_metric(index, "taa", "jitter_y", status.sample_offset_pixels.y);
+    }
 }
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,

@@ -207,28 +207,46 @@ int main() {
         const auto existing_file =
             (std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "glass.json").string();
         auto fixed_opaque_off = parse({"--scene", "dragon-materials", "--model",
-                                       existing_file.c_str(), "--transport-mode", "fixed-opaque"});
+                                       existing_file.c_str(), "--transport-mode", "fixed-opaque",
+                                       "--anti-aliasing", "off"});
         require(fixed_opaque_transport(fixed_opaque_off) &&
-                    fixed_opaque_off.anti_aliasing == "off" &&
+                    fixed_opaque_off.common.anti_aliasing == "off" &&
+                    !fixed_opaque_taa_requested(fixed_opaque_off) &&
                     frame_sample_target(fixed_opaque_off) == 4 &&
                     per_frame_fixed_transport(fixed_opaque_off),
                 "fixed-opaque admits the bronze dragon with four fixed primary lanes and AA off");
         Config fixed_opaque_copy;
         schema(fixed_opaque_copy).apply_json(schema(fixed_opaque_off).template_json());
         require(fixed_opaque_transport(fixed_opaque_copy) &&
-                    fixed_opaque_copy.anti_aliasing == "off" &&
+                    fixed_opaque_copy.common.anti_aliasing == "off" &&
                     frame_sample_target(fixed_opaque_copy) == 4,
                 "fixed-opaque Off selection survives saved config roundtrip");
+        const auto fixed_opaque_json = schema(fixed_opaque_off).template_json();
+        require(fixed_opaque_json.contains("anti-aliasing") &&
+                    !fixed_opaque_json.contains("anti_aliasing"),
+                "shared anti-aliasing schema preserves RT's existing JSON spelling");
+        auto fixed_opaque_auto = parse({"--scene", "dragon-materials", "--model",
+                                        existing_file.c_str(), "--transport-mode", "fixed-opaque"});
+        require(fixed_opaque_auto.common.anti_aliasing == "auto" &&
+                    fixed_opaque_taa_requested(fixed_opaque_auto),
+                "interactive fixed-opaque Auto requests native TAA");
+        auto fixed_opaque_headless_auto = parse({
+            "--scene", "dragon-materials", "--model", existing_file.c_str(), "--transport-mode",
+            "fixed-opaque", "--headless", "--frames", "1"});
+        require(fixed_opaque_headless_auto.common.anti_aliasing == "auto" &&
+                    !fixed_opaque_taa_requested(fixed_opaque_headless_auto),
+                "headless fixed-opaque Auto keeps the direct render path");
         auto fixed_opaque_taa = parse({"--scene", "dragon-materials", "--model",
                                        existing_file.c_str(), "--transport-mode", "fixed-opaque",
                                        "--anti-aliasing", "taa", "--fixed-opaque-samples", "2"});
         require(fixed_opaque_transport(fixed_opaque_taa) &&
-                    fixed_opaque_taa.anti_aliasing == "taa" &&
+                    fixed_opaque_taa.common.anti_aliasing == "taa" &&
+                    fixed_opaque_taa_requested(fixed_opaque_taa) &&
                     frame_sample_target(fixed_opaque_taa) == 2,
                 "fixed-opaque TAA keeps the same selected two primary lanes");
         Config fixed_opaque_taa_copy;
         schema(fixed_opaque_taa_copy).apply_json(schema(fixed_opaque_taa).template_json());
-        require(fixed_opaque_taa_copy.anti_aliasing == "taa" &&
+        require(fixed_opaque_taa_copy.common.anti_aliasing == "taa" &&
                     frame_sample_target(fixed_opaque_taa_copy) == 2,
                 "fixed-opaque TAA and sample count survive saved config roundtrip");
         auto fixed_sequence = parse({"--scene", "dragon-materials", "--model",
@@ -292,6 +310,9 @@ int main() {
         auto optics_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str()});
         require(optics_config.renderer == "rt" && optics_config.transport_mode == "sampled",
                 "sampled RT remains the ordinary default");
+        require(optics_config.common.anti_aliasing == "auto" &&
+                    !fixed_opaque_taa_requested(optics_config),
+                "sampled RT Auto does not enable TAA");
         require(optics_config.controls, "native controls remain visible by default");
         auto clean_config = parse({"--no-controls"});
         Config clean_copy;
@@ -300,7 +321,8 @@ int main() {
                 "clean presentation is explicit and survives saved views");
         auto demo_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
                                   "--transport-mode", "demo", "--samples", "8192"});
-        require(frame_sample_target(demo_config) == 4,
+        require(frame_sample_target(demo_config) == 4 &&
+                    !fixed_opaque_taa_requested(demo_config),
                 "demo frames never acquire an offline sample advantage");
         Config demo_copy;
         schema(demo_copy).apply_json(schema(demo_config).template_json());

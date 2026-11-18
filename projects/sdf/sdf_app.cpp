@@ -208,7 +208,7 @@ class App {
             host::HeadlessPngHostCallbacks callbacks;
             callbacks.frame_submitted =
                 [&](host::HeadlessPngContext&, const host::HeadlessCaptureFrame&,
-                    vulkan::GpuSubmissionTicket ticket) { renderer_->frame_submitted(ticket); };
+                    vulkan::GpuSubmissionTicket ticket) { frame_submitted(ticket); };
             callbacks.frame_discarded = [&](host::HeadlessPngContext&,
                                             const host::HeadlessCaptureFrame&) {
                 renderer_->frame_discarded();
@@ -280,7 +280,7 @@ class App {
         host::WindowedAppCallbacks callbacks;
         callbacks.frame_submitted = [&](host::WindowedAppContext&, const host::WindowedRenderFrame&,
                                         vulkan::GpuSubmissionTicket ticket) {
-            renderer_->frame_submitted(ticket);
+            frame_submitted(ticket);
         };
         callbacks.frame_discarded = [&](host::WindowedAppContext&,
                                         const host::WindowedRenderFrame&) {
@@ -1403,14 +1403,24 @@ class App {
                                    "distance samples. Magenta reports an exhausted ray.");
             }
             ImGui::Separator();
-            const char* aa_choices[]{"Off", "TAA"};
-            int aa_index = config_.anti_aliasing == "taa" ? 1 : 0;
-            if (ImGui::Combo("Anti-aliasing", &aa_index, aa_choices, 2))
-                config_.anti_aliasing = aa_index ? "taa" : "off";
-            if (config_.anti_aliasing == "taa")
+            const char* aa_choices[]{"Off", "Auto", "TAA"};
+            const char* aa_values[]{"off", "auto", "taa"};
+            auto& aa = config_.common.anti_aliasing;
+            int aa_index = aa == "off" ? 0 : aa == "auto" ? 1 : 2;
+            if (ImGui::Combo("Anti-aliasing", &aa_index, aa_choices, 3))
+                aa = aa_values[aa_index];
+            if (host::native_taa_requested(config_.common))
                 ImGui::TextWrapped("TAA: %s", renderer_->anti_aliasing_status().data());
         }
         ImGui::End();
+    }
+    void frame_submitted(vulkan::GpuSubmissionTicket ticket) {
+        renderer_->frame_submitted(ticket);
+        if (!aa_reported_) {
+            host::report_anti_aliasing(config_.common, renderer_->temporal_active(),
+                                       renderer_->anti_aliasing_status());
+            aa_reported_ = true;
+        }
     }
     void shutdown() {
         if (!study_actions_.is_null()) {
@@ -1437,6 +1447,7 @@ class App {
         runtime_.detach_gpu_if_attached();
     }
     SdfConfig config_;
+    bool aa_reported_ = false;
     Recipe recipe_;
     std::optional<AuthoredScene> authored_;
     std::optional<AuthoredScene> displayed_authored_;
@@ -1483,8 +1494,10 @@ int run_sdf(const SdfConfig& config) {
             "select exactly one tracing query or action study for its receipt");
     if (!config.comparison_input.empty() && config.named_render_mode)
         throw std::invalid_argument("tracing fixtures require explicit low-level tracing controls");
-    if (!config.comparison_input.empty())
+    if (!config.comparison_input.empty()) {
+        host::report_anti_aliasing(config.common, false, "tracing-query");
         return run_tracing_comparison(config);
+    }
     if (!config.workshop.empty() && (!config.authored_path.empty() || !config.recipe_path.empty()))
         throw std::invalid_argument("workshop selects its own specimen");
     return App(config).run();

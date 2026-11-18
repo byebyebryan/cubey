@@ -44,7 +44,9 @@ void PbrMaterialsApp::record_frame(const cubey::vulkan::Device& device, VkComman
     settings.transmission_source = config_.transmission_source == "environment"
                                        ? ForwardPbrTransmissionSource::Environment
                                        : ForwardPbrTransmissionSource::Screen;
-    settings.anti_aliasing = render::anti_aliasing_mode_from_name(config_.anti_aliasing);
+    settings.anti_aliasing = host::native_taa_requested(config_.common)
+                                 ? render::AntiAliasingMode::Taa
+                                 : render::AntiAliasingMode::Off;
     settings.temporal_appearance_static = config_.lighting_cycle == "frozen";
     if (config_.environment != "studio") {
         forward_pbr_renderer().update_environment_frame(
@@ -152,6 +154,12 @@ void PbrMaterialsApp::collect_profile_slot(std::uint32_t slot) {
 void PbrMaterialsApp::frame_submitted(render::FrameSlot slot, std::uint64_t index,
                                       vulkan::GpuSubmissionTicket ticket) {
     forward_pbr_renderer().frame_submitted(ticket);
+    if (!aa_reported_) {
+        const auto aa = forward_pbr_renderer().temporal_status();
+        host::report_anti_aliasing(config_.common, aa.effective == render::AntiAliasingMode::Taa,
+                                   forward_pbr_renderer_3d_taa_bypass_reason_name(aa.bypass_reason));
+        aa_reported_ = true;
+    }
     if (whole_profiler_ && pending_profile_frames_.at(slot.index)) {
         if (*pending_profile_frames_[slot.index] != index)
             throw std::logic_error("PBR profiler submission did not match its candidate");

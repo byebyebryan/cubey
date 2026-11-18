@@ -13,6 +13,8 @@ namespace cubey::host {
 struct ConfiguredAppInfo {
     const char* app_name = "cubey";
     const char* default_title = "cubey";
+    bool reports_temporal_aa = false;
+    const char* temporal_bypass_reason = "producer-unavailable";
 };
 
 // Shared startup control flow for project-owned typed facades. The parser
@@ -48,6 +50,9 @@ int run_configured_app(int argc, char** argv, ConfiguredAppInfo info, ParseFn&& 
         }
         if (config.common.title == "cubey") {
             config.common.title = info.default_title;
+        }
+        if (!info.reports_temporal_aa) {
+            report_anti_aliasing(config.common, false, info.temporal_bypass_reason);
         }
         return std::forward<RunFn>(run)(config);
     } catch (const std::exception& error) {

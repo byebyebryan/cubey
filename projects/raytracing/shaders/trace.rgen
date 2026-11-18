@@ -32,20 +32,7 @@ layout(std140,set=0,binding=21) uniform TemporalRayMotion {
  mat4 previousViewProjection;
  vec4 extentJitter;
 } temporalRayMotion;
-vec2 fixedOpaqueMotion(vec3 hitPoint,vec3 rayDirection,bool hit) {
-    vec2 invalid=temporalRayMotion.extentJitter.xy+16.0;
-    vec4 world=hit?vec4(hitPoint,1):vec4(rayDirection,0);
-    vec4 current=temporalRayMotion.currentViewProjection*world;
-    vec4 previous=temporalRayMotion.previousViewProjection*world;
-    bool finite= !any(isnan(current))&&!any(isinf(current))&&
-                 !any(isnan(previous))&&!any(isinf(previous));
-    bool currentDepth=!hit||(current.z>=0.0&&current.z<=current.w);
-    bool previousDepth=!hit||(previous.z>=0.0&&previous.z<=previous.w);
-    if(!finite||current.w<=1e-8||previous.w<=1e-8||!currentDepth||!previousDepth)
-        return invalid;
-    return (previous.xy/previous.w-current.xy/current.w)*
-           (0.5*temporalRayMotion.extentJitter.xy);
-}
+#include "fixed_opaque_motion.glsl"
 #endif
 struct Surface { vec3 p; vec3 outward; vec3 n; vec3 bary; float t; int id; uint material; uint primitive; float spawnOffset; vec3 spawnNormal; RT_JOURNAL_FIELD };
 struct Path { vec3 origin; vec3 direction; vec3 weight; int medium; int depth; bool environmentOnly; int tag; bool trunk; };

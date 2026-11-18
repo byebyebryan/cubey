@@ -43,6 +43,8 @@ forward_pbr_renderer_3d_taa_bypass_reason_name(ForwardPbrRenderer3DTaaBypassReas
         return "ocean surface";
     case ForwardPbrRenderer3DTaaBypassReason::DynamicAppearance:
         return "dynamic appearance";
+    case ForwardPbrRenderer3DTaaBypassReason::UnsupportedDevice:
+        return "unsupported device";
     }
     throw std::invalid_argument("invalid forward PBR TAA bypass reason");
 }
@@ -365,6 +367,10 @@ ForwardPbrRenderer3D::Impl::temporal_bypass_reason(const ForwardPbrRenderer3DRen
     }
     if (!request.settings.temporal_appearance_static) {
         return ForwardPbrRenderer3DTaaBypassReason::DynamicAppearance;
+    }
+    if (!swapchain_.temporal_aa &&
+        !render::temporal_aa_unsupported_reason(*request.target.device).empty()) {
+        return ForwardPbrRenderer3DTaaBypassReason::UnsupportedDevice;
     }
     return ForwardPbrRenderer3DTaaBypassReason::None;
 }

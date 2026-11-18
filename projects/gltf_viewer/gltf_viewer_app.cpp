@@ -229,7 +229,9 @@ void GltfViewerApp::refresh_atmosphere_controls() {
     if (!environment_policy().uses_atmosphere_resources()) {
         return;
     }
-    atmosphere_runtime_.set_environment(atmosphere_state_.environment);
+    if (atmosphere_runtime_.set_environment(atmosphere_state_.environment)) {
+        forward_pbr_renderer().reset_temporal();
+    }
     refresh_atmosphere_lighting_scene();
 }
 
@@ -427,6 +429,9 @@ int GltfViewerApp::run_windowed() {
             if (!landscape_runtime_ && input.key_pressed(cubey::input::Key::D)) {
                 debug_view_ = render::next_pbr_debug_view(debug_view_);
             }
+            if (input.key_pressed(cubey::input::Key::R)) {
+                forward_pbr_renderer().reset_temporal();
+            }
             orbit_controller_.update_from_input(input, timing.delta_seconds);
             update_camera_transform();
         }
@@ -435,6 +440,15 @@ int GltfViewerApp::run_windowed() {
     callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                     const cubey::host::WindowedRenderFrame& frame) {
         record_viewer_frame(context, frame);
+    };
+    callbacks.frame_submitted = [this](cubey::host::WindowedAppContext& context,
+                                       const cubey::host::WindowedRenderFrame& frame,
+                                       cubey::vulkan::GpuSubmissionTicket ticket) {
+        viewer_frame_submitted(context.profile_recorder(), frame.timing.frame_index, ticket);
+    };
+    callbacks.frame_discarded = [this](cubey::host::WindowedAppContext&,
+                                       const cubey::host::WindowedRenderFrame&) {
+        forward_pbr_renderer().frame_discarded();
     };
     callbacks.frame_stats_sample =
         [this](cubey::host::WindowedAppContext& context,
@@ -521,6 +535,15 @@ int GltfViewerApp::run_headless() {
                                     VkCommandBuffer command_buffer,
                                     const cubey::host::HeadlessRenderTarget& target) {
         record_viewer_capture(context, frame, command_buffer, target);
+    };
+    callbacks.frame_submitted = [this](cubey::host::HeadlessPngContext& context,
+                                       const cubey::host::HeadlessCaptureFrame& frame,
+                                       cubey::vulkan::GpuSubmissionTicket ticket) {
+        viewer_frame_submitted(context.profile_recorder(), frame.index, ticket);
+    };
+    callbacks.frame_discarded = [this](cubey::host::HeadlessPngContext&,
+                                       const cubey::host::HeadlessCaptureFrame&) {
+        forward_pbr_renderer().frame_discarded();
     };
     callbacks.shutdown = [this](cubey::host::HeadlessPngContext& context) {
         destroy_all_resources(context.gpu());

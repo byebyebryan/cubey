@@ -20,6 +20,37 @@ void require(bool ok, const char* message) {
         throw std::runtime_error(message);
 }
 
+void check_input_size_rejection(const vulkan::Device& device, render::TemporalAntiAliasing& taa) {
+    for (const bool small_color : {true, false}) {
+        const auto frame = taa.begin_frame({0, 1}, {.view_id = 41});
+        render::RenderGraphBuilder builder;
+        const auto color = builder.create_texture(
+            {"view.color", {small_color ? 7U : 8U, 8U, 1U}, VK_FORMAT_R32G32B32A32_SFLOAT,
+             VK_IMAGE_ASPECT_COLOR_BIT});
+        const auto depth = builder.create_texture(
+            {"view.depth", {8U, small_color ? 8U : 7U, 1U}, VK_FORMAT_R32_SFLOAT,
+             VK_IMAGE_ASPECT_COLOR_BIT});
+        builder.add_pass("view.inputs", render::RenderGraphQueueDomain::Transfer)
+            .transfer_write_texture(color)
+            .transfer_write_texture(depth)
+            .execute([](const render::RenderGraphExecutionContext&) {});
+        const auto motion = taa.declare_camera_motion(builder, depth, frame);
+        (void)taa.declare_resolve(builder, color, motion, frame);
+        const auto graph = builder.compile();
+        const render::RenderGraphResourceSet resources(graph);
+        const auto expected = small_color ? "TAA requires a native-size color image"
+                                          : "TAA requires a native-size depth image";
+        bool rejected = false;
+        try {
+            taa.update_descriptors(device, graph, resources, frame);
+        } catch (const std::invalid_argument& error) {
+            rejected = std::string_view(error.what()) == expected;
+        }
+        taa.discard_frame();
+        require(rejected, "TAA accepted a mismatched input extent before descriptor preparation");
+    }
+}
+
 math::Vec4 independent_view_frame(const vulkan::Device& device,
                                   vulkan::SubmissionCoordinator& submission,
                                   render::TemporalAntiAliasing& taa, std::uint64_t view_id,
@@ -307,6 +338,7 @@ int main(int argc, char** argv) {
                         red_view.metrics().uniform_requested_bytes &&
                     green_view.metrics().per_slot_transient_requested_bytes == 8U * 8U * 8U,
                 "producer-motion history charged for shared camera-motion resources");
+        check_input_size_rejection(device, red_view);
         std::cout
             << "PASS: 24 submitted frames, 2 discards, nonround slot order, sky/plane motion, "
                "reset/content change, finite HDR, failed replacement, resize, independent views; "

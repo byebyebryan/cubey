@@ -581,6 +581,7 @@ void GltfViewerApp::poll_atmosphere_background_atlases(
     if (!atmosphere_background_atlases_.poll(gpu, retire_after)) {
         return;
     }
+    forward_pbr_renderer().reset_temporal();
     for (std::uint32_t index = 0U; index < frame_resources.frame_slot_count(); ++index) {
         frame_resources.wait_for_frame(index);
         gpu.mark_submission_completed(frame_resources.submitted_ticket(index));

@@ -90,11 +90,24 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
         return;
     }
     fixed_opaque_mode_ = config && fixed_opaque_transport(*config);
-    fixed_opaque_taa_ = fixed_opaque_mode_ && config->anti_aliasing == "taa";
+    fixed_opaque_taa_requested_at_creation_ = config && fixed_opaque_taa_requested(*config);
+    fixed_opaque_taa_ = fixed_opaque_taa_requested_at_creation_;
     if (fixed_opaque_mode_)
         fixed_opaque_sample_target_ = config->fixed_opaque_samples;
     if (!device.ray_tracing_enabled() || !slots || slots > 8)
         throw std::invalid_argument("RT renderer requires an enabled device and 1..8 slots");
+    if (fixed_opaque_taa_) {
+        const auto unsupported = render::temporal_aa_unsupported_reason(device_);
+        if (!unsupported.empty()) {
+            if (config->common.anti_aliasing == "auto") {
+                fixed_opaque_taa_ = false;
+                temporal_aa_bypass_reason_ = unsupported;
+            } else {
+                throw std::runtime_error("fixed-opaque explicit TAA unsupported by device: " +
+                                         std::string(unsupported));
+            }
+        }
+    }
     try {
         rt_ = {
             load<PFN_vkCreateAccelerationStructureKHR>(device, "vkCreateAccelerationStructureKHR"),
@@ -703,7 +716,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         return;
     }
     if (fixed_opaque_mode_ != fixed_opaque_transport(c) ||
-        fixed_opaque_taa_ != (fixed_opaque_transport(c) && c.anti_aliasing == "taa"))
+        fixed_opaque_taa_requested_at_creation_ != fixed_opaque_taa_requested(c))
         throw std::invalid_argument("RT transport or anti-aliasing changed after pipeline creation");
     demo_mode_ = demo_transport(c);
     collect(slot.index);
@@ -1130,7 +1143,7 @@ void Renderer::frame_submitted(vulkan::GpuSubmissionTicket ticket) {
         temporal_.commit_frame(pending_frame_->temporal->token, ticket);
         force_temporal_reset_ = false;
     }
-    if (fixed_opaque_mode_) {
+    if (fixed_opaque_mode_ && collect_metrics_) {
         if (fixed_opaque_frames_.size() < 20000) {
             nlohmann::json accepted{
                 {"frame", pending_frame_->frame},

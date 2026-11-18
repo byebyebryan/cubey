@@ -1,0 +1,30 @@
+#version 460
+#extension GL_GOOGLE_include_directive : require
+#include "fixed_opaque_motion.glsl"
+
+layout(local_size_x = 1) in;
+
+struct MotionCase {
+    mat4 currentViewProjection;
+    mat4 previousViewProjection;
+    vec4 hitPoint;
+    vec4 rayDirection;
+    vec4 extentHit;
+};
+layout(std430, set = 0, binding = 0) readonly buffer MotionCases {
+    MotionCase cases[];
+};
+layout(std430, set = 0, binding = 1) writeonly buffer MotionResults {
+    vec4 results[];
+};
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    MotionCase motionCase = cases[index];
+    vec2 motion = fixedOpaqueMotion(motionCase.hitPoint.xyz, motionCase.rayDirection.xyz,
+                                    motionCase.extentHit.z > 0.5,
+                                    motionCase.currentViewProjection,
+                                    motionCase.previousViewProjection,
+                                    motionCase.extentHit.xy);
+    results[index] = vec4(motion, 0, 0);
+}

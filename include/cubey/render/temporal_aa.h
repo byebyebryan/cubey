@@ -23,6 +23,8 @@ enum class AntiAliasingMode : std::uint8_t {
 
 [[nodiscard]] std::string_view anti_aliasing_mode_name(AntiAliasingMode mode);
 [[nodiscard]] AntiAliasingMode anti_aliasing_mode_from_name(std::string_view name);
+// Empty when the device and its selected submission queue support the native resolve.
+[[nodiscard]] std::string_view temporal_aa_unsupported_reason(const vulkan::Device& device);
 
 enum class TemporalResetReason : std::uint8_t {
     None,

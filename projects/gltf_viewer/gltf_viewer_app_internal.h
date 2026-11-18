@@ -235,6 +235,8 @@ class GltfViewerApp {
     [[nodiscard]] const cubey::render::GeneratedPbrEnvironment& ibl_environment() const;
     [[nodiscard]] cubey::ForwardPbrRenderer3D& forward_pbr_renderer() const;
 
+    void viewer_frame_submitted(cubey::profiling::ProfileRecorder* profile, std::uint64_t index,
+                                cubey::vulkan::GpuSubmissionTicket ticket);
     void record_viewer_target(const cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
                               cubey::render::ColorTargetView color_target,
                               cubey::render::FrameSlot frame_slot,
@@ -274,6 +276,7 @@ class GltfViewerApp {
     std::string asset_activation_error_{};
     bool global_resources_created_ = false;
     std::uint32_t frame_slot_count_ = 0U;
+    std::optional<cubey::ForwardPbrRenderer3DTaaBypassReason> reported_aa_bypass_;
     cubey::OrbitController orbit_controller_;
     float capture_orbit_offset_radians_ = 0.0F;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;

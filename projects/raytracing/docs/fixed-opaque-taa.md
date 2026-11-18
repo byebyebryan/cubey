@@ -12,9 +12,15 @@ Both issue four primary lanes per accepted frame by default; set
 values for either are rejected.
 
 The mode rejects glass, non-final views, recipe/material edits, alternative
-support or lighting paths, raw diagnostics and forward rendering. The existing
-glass demo, sampled progressive transport, and default AA-Off behavior keep
-their current routes. TAA is admitted only with fixed-opaque transport.
+support or lighting paths, raw diagnostics and forward rendering. TAA is
+admitted only with fixed-opaque transport. Shared `--anti-aliasing` policy
+defaults to `auto`: an interactive fixed-opaque run requests TAA, while
+headless Auto keeps the direct path. Other RT transport modes and the forward
+renderer keep their existing path under Auto. The Off preset is the certified
+direct-render comparison. Use explicit `taa` with fixed-opaque transport for
+headless TAA captures. If the selected device lacks native TAA support, Auto
+selects the fixed Off pipeline and reports the device bypass reason on its
+first accepted frame. Explicit `taa` requires a TAA-capable device.
 
 TAA adds one accepted-sequence jitter to each existing spatial lane. It does
 not replace the first off-center lane with a center ray. The first actual
@@ -23,6 +29,15 @@ with `w=0`. Both project through the unjittered current/previous view matrices
 into a native-size RG16F previous-minus-current motion image. No motion rays or
 depth approximation are added. Sky radiance uses the same primary rays as the
 opaque path.
+
+The producer and the direct GPU regression share
+[`fixed_opaque_motion.glsl`](../shaders/fixed_opaque_motion.glsl). The focused
+`raytracing_fixed_opaque_motion_vectors` test dispatches that production GLSL
+function on a compute queue and compares its hit/sky vectors with independent
+expected pixels for stationary jittered hits, both geometry-motion signs, sky
+translation and sky rotation. The fixture uses synthetic inputs. The
+model-backed render exercises the raygen hit/miss lookup and the motion image
+write in `material_workshop.glsl`.
 
 ## Deterministic headless sequence
 

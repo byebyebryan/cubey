@@ -1,19 +1,35 @@
 # Native temporal anti-aliasing
 
-The opt-in TAA foundation resolves scene-linear HDR before display exposure and
+The TAA foundation resolves scene-linear HDR before display exposure and
 tone mapping. `cubey::render::TemporalAntiAliasing` owns the common motion and
 resolve passes, history images, uniforms and descriptor slots. Producers supply
 a coherent view and either depth or their own motion field. Forward can overlay
 rigid-object motion before the resolve. SDF uses the same runtime independently
 of the forward renderer.
-The default remains Off. DLSS, temporal upscaling and denoising are deferred.
+
+## Application policy
+
+Projects share `--anti-aliasing off|auto|taa`. On the dogfood branch, Auto
+requests TAA for interactive views. An adapter admits the current frame before
+applying jitter or allocating history. Headless Auto uses the direct render
+path. A headless beauty capture can explicitly select TAA and define its
+history warm-up. Reference captures and raw diagnostics use direct output.
+The lower-level forward renderer defaults to Off for callers that supply their
+own settings. DLSS, temporal upscaling and denoising are deferred.
+
+The CLI uses one flag across projects. Saved SDF and ray tracing configs keep
+`anti-aliasing`, and the workshop and other projects use `anti_aliasing`.
+Launch status reports the requested policy, effective mode, and bypass reason.
+Profiles that use the temporal adapter retain the resolved request and
+effective mode alongside history age, reset reason, and jitter.
 
 ## View and motion contract
 
 Each runtime owns one independently rendered view. Its input/output extent is
 identical. The supported depth convention is Vulkan forward Z in `[0,1]`, with
-clear/miss equal to 1. Color is finite scene-linear HDR. Alpha is not an opacity,
-transport-status or reactivity input; resolved beauty writes alpha 1.
+clear/miss equal to 1. Descriptor setup rejects mismatched color, depth, and
+motion extents. The resolve reads finite scene-linear HDR RGB and writes
+resolved beauty with alpha 1.
 
 Motion is **previous minus current unjittered pixel position**, with positive Y
 down. The current depth belongs to the jittered color view. Camera motion
@@ -96,7 +112,7 @@ cover SDF geometry cuts and the separate cloud history.
 
 SDF bypass reason IDs are 0 active, 1 diagnostics, 2 supersampling other than
 1x, 3 clouds, 4 transmission, 5 raw query/quality capture, 6 edit/cutter preview,
-and 7 dynamic lighting. Existing scene presets are unchanged; matched opt-in
+7 dynamic lighting, and 8 unsupported device. Matched opt-in
 presets live in `projects/sdf/presets/taa-foundation-2026-11/`.
 
 ## Resolve provenance and qualification
@@ -110,9 +126,9 @@ The executable DLSS sample is comparison evidence; its bundled source is not
 the MIT donor.
 
 Qualification fixes new-frame weight at 0.1, variance factor at 1 and the
-radiance input limit at 10000. Other `TemporalAaConfig` filter constants are
-unqualified; they require their own finite-HDR and quality checks. Applications
-expose only Off/TAA, rather than a filter-tuning panel.
+radiance input limit at 10000. Other `TemporalAaConfig` filter constants need
+their own finite-HDR and quality checks. Applications expose the AA policy
+with these fixed constants.
 
 `temporal_view` checks projection/motion math and accepted-history lifecycle.
 `temporal_gpu` checks actual shader output and resource lifecycle, including

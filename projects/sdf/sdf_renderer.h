@@ -54,6 +54,7 @@ class Renderer {
     [[nodiscard]] std::string_view anti_aliasing_status() const {
         return temporal_status_;
     }
+    [[nodiscard]] bool temporal_active() const { return temporal_used_; }
     void save_quality_snapshot(const std::filesystem::path& path);
     void update_field(vulkan::Device& device, const Field& field);
     [[nodiscard]] std::unique_ptr<vulkan::Buffer> prepare_program(const AuthoredScene* scene);

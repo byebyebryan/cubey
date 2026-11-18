@@ -139,7 +139,7 @@ int PbrMaterialsApp::run() {
             .app_name = "pbr_materials",
             .ready_status = "rendering PBR material workshop",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT |
-                                    (config_.anti_aliasing == "taa" ? VK_QUEUE_COMPUTE_BIT : 0U),
+                                    (config_.common.anti_aliasing == "taa" ? VK_QUEUE_COMPUTE_BIT : 0U),
             .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .require_dynamic_rendering = true,
             .close_on_escape = true,
@@ -212,7 +212,7 @@ int PbrMaterialsApp::run_headless() {
                {.run_config = config_.common,
                 .required_queue_flags =
                     VK_QUEUE_GRAPHICS_BIT |
-                    (config_.anti_aliasing == "taa" ? VK_QUEUE_COMPUTE_BIT : 0U),
+                    (host::native_taa_requested(config_.common) ? VK_QUEUE_COMPUTE_BIT : 0U),
                 .output_format = VK_FORMAT_R8G8B8A8_UNORM},
                std::move(callbacks))
         .run();

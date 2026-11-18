@@ -8,7 +8,6 @@ struct Config {
     host::CommonRunConfig common;
     std::string scene = "fixture", view = "final";
     std::string renderer = "rt", transport_mode = "sampled";
-    std::string anti_aliasing = "off";
     std::string forward_transmission_source = "screen";
     std::uint32_t demo_samples = 4;
     std::uint32_t fixed_opaque_samples = 4;
@@ -70,6 +69,18 @@ inline bool demo_transport(const Config& c) {
 inline bool fixed_opaque_transport(const Config& c) {
     return c.renderer == "rt" && c.transport_mode == "fixed-opaque";
 }
+inline bool fixed_opaque_taa_requested(const Config& c) {
+    return fixed_opaque_transport(c) && host::native_taa_requested(c.common);
+}
+inline std::string_view anti_aliasing_bypass_reason(const Config& c) {
+    if (c.renderer == "forward")
+        return "forward-renderer-unsupported";
+    if (demo_transport(c))
+        return "demo-transport-unsupported";
+    if (fixed_opaque_transport(c))
+        return "fixed-opaque-off";
+    return "sampled-transport-unsupported";
+}
 inline bool per_frame_fixed_transport(const Config& c) {
     return demo_transport(c) || fixed_opaque_transport(c);
 }
@@ -122,7 +133,7 @@ inline std::uint64_t dump_stride(const Config& c) {
 inline config::Schema schema(Config& c) {
     using config::ValueType;
     auto b = config::Schema::builder();
-    b.compose(host::common_run_config_schema(c.common));
+    b.compose(host::common_run_config_schema(c.common, "anti-aliasing"));
     auto opt = [](const char* name, ValueType type) {
         return config::OptionSpec{.path = name,
                                   .cli_name = "--" + std::string(name),
@@ -168,14 +179,11 @@ inline config::Schema schema(Config& c) {
     renderer.enum_values = {"rt", "forward"};
     auto transport = opt("transport-mode", ValueType::Enum);
     transport.enum_values = {"sampled", "demo", "fixed-opaque"};
-    auto anti_aliasing = opt("anti-aliasing", ValueType::Enum);
-    anti_aliasing.enum_values = {"off", "taa"};
     auto controls = opt("controls", ValueType::Bool);
     controls.negative_cli_name = "--no-controls";
     b.bind(renderer, c.renderer)
         .bind(controls, c.controls)
         .bind(transport, c.transport_mode)
-        .bind(anti_aliasing, c.anti_aliasing)
         .bind(opt("demo-samples", ValueType::UInt32), c.demo_samples)
         .bind(opt("fixed-opaque-samples", ValueType::UInt32), c.fixed_opaque_samples)
         .bind(opt("fixed-opaque-sequence", ValueType::Bool), c.fixed_opaque_sequence)
@@ -306,7 +314,7 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         throw std::invalid_argument("fixed-opaque transport requires the RT renderer");
     if (fixed_opaque_transport(c) && c.scene != "dragon-materials")
         throw std::invalid_argument("fixed-opaque transport requires dragon-materials");
-    if (c.anti_aliasing == "taa" && !fixed_opaque_transport(c))
+    if (c.common.anti_aliasing == "taa" && !fixed_opaque_transport(c))
         throw std::invalid_argument("TAA currently requires fixed-opaque transport");
     if (c.fixed_opaque_sequence && !fixed_opaque_transport(c))
         throw std::invalid_argument("fixed-opaque sequence requires fixed-opaque transport");

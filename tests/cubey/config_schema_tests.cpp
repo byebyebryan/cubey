@@ -284,6 +284,21 @@ void test_config_schema_named_values_can_spell_bootstrap_flags() {
 
 void test_common_host_config_normalizes_capture_compatibility() {
     {
+        cubey::host::CommonRunConfig config;
+        require(config.anti_aliasing == "auto" && cubey::host::native_taa_requested(config),
+                "interactive Auto should request native TAA");
+        config.headless = true;
+        require(!cubey::host::native_taa_requested(config), "headless Auto must keep direct output");
+        const auto schema = cubey::host::common_run_config_schema(config, "anti-aliasing");
+        schema.apply_json(nlohmann::json{{"anti-aliasing", "taa"}});
+        require(cubey::host::native_taa_requested(config),
+                "legacy JSON spelling must support an explicit headless TAA request");
+        Args args({"--anti-aliasing", "off"});
+        static_cast<void>(schema.parse_cli(static_cast<int>(args.pointers.size()), args.pointers.data()));
+        require(config.anti_aliasing == "off" && !cubey::host::native_taa_requested(config),
+                "explicit Off must override the request");
+    }
+    {
         Args args({"--headless", "--headless-render-only", "--run-seconds", "0.25", "--render-fps",
                    "60"});
         const auto config = cubey::host::parse_common_run_config(

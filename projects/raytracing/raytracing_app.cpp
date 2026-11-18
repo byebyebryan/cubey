@@ -248,7 +248,7 @@ class App {
             ImGui::Begin("RT fixed opaque");
             ImGui::TextUnformatted("Bronze dragon with opaque marble support");
             ImGui::Text("%u primary samples per frame", config_.fixed_opaque_samples);
-            ImGui::Text("Temporal AA: %s", config_.anti_aliasing.c_str());
+            ImGui::Text("Temporal AA: %s", config_.common.anti_aliasing.c_str());
             ImGui::TextUnformatted("Drag to orbit; R marks a camera cut");
             ImGui::End();
             return;
@@ -673,7 +673,44 @@ class App {
 #endif
         schema(c).write_template(config_.save_config);
     }
+    void report_anti_aliasing(bool effective, std::string_view reason) {
+        if (anti_aliasing_reported_)
+            return;
+        host::report_anti_aliasing(config_.common, effective, reason);
+        anti_aliasing_reported_ = true;
+    }
+    void report_accepted_frame_anti_aliasing() {
+        const bool effective = renderer_ && renderer_->temporal_aa_effective();
+        auto reason = renderer_ ? renderer_->temporal_aa_bypass_reason() : std::string_view{};
+        if (!effective && reason.empty())
+            reason = anti_aliasing_bypass_reason(config_);
+        report_anti_aliasing(effective, reason);
+    }
     int run() {
+        try {
+            const int result = run_backend();
+            if (!anti_aliasing_reported_)
+                report_anti_aliasing(false, "no-accepted-frame");
+            return result;
+        } catch (const std::exception& error) {
+            if (!anti_aliasing_reported_) {
+                const std::string_view message(error.what());
+                const bool no_adapter = message.find("no compatible Vulkan") !=
+                                            std::string_view::npos ||
+                                        message.find("no Vulkan physical devices") !=
+                                            std::string_view::npos;
+                const auto reason =
+                    no_adapter ? std::string_view{"no-compatible-adapter"}
+                    : message.find("fixed-opaque explicit TAA unsupported by device:") !=
+                              std::string_view::npos
+                        ? message
+                        : std::string_view{"no-accepted-frame"};
+                report_anti_aliasing(false, reason);
+            }
+            throw;
+        }
+    }
+    int run_backend() {
         if (config_.common.headless) {
             host::HeadlessPngHostConfig h;
             h.run_config = config_.common;
@@ -703,6 +740,7 @@ class App {
                                      const host::HeadlessCaptureFrame&,
                                      vulkan::GpuSubmissionTicket ticket) {
                 renderer_->frame_submitted(ticket);
+                report_accepted_frame_anti_aliasing();
             };
             cb.frame_discarded = [&](host::HeadlessPngContext&,
                                      const host::HeadlessCaptureFrame&) {
@@ -778,7 +816,7 @@ class App {
                          {"width", c.swapchain().extent().width},
                          {"height", c.swapchain().extent().height},
                          {"samples_after", renderer_->sample_count()},
-                         {"anti_aliasing", config_.anti_aliasing},
+                         {"anti_aliasing", config_.common.anti_aliasing},
                          {"epoch", renderer_->history_epoch()}});
                 else
                     ++dropped_native_frames_;
@@ -789,6 +827,7 @@ class App {
                                  const host::WindowedRenderFrame&,
                                  vulkan::GpuSubmissionTicket ticket) {
             renderer_->frame_submitted(ticket);
+            report_accepted_frame_anti_aliasing();
             cut_requested_ = false;
         };
         cb.frame_discarded = [&](host::WindowedAppContext&,
@@ -816,6 +855,7 @@ class App {
     nlohmann::json native_input_;
     double presentation_seconds_ = 0;
     bool target_fault_used_ = false;
+    bool anti_aliasing_reported_ = false;
     bool cut_requested_ = false;
     std::uint64_t fixed_opaque_sequence_frame_ = 0;
     std::array<char, 512> recipe_path_{};

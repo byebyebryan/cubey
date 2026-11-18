@@ -1,6 +1,7 @@
 #include <cubey/host/common_config.h>
 
 #include <cmath>
+#include <cstdio>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -104,13 +105,34 @@ void normalize_common_run_config(CommonRunConfig& config, bool output_path_expli
     }
 }
 
-config::Schema common_run_config_schema(CommonRunConfig& config) {
+void report_anti_aliasing(const CommonRunConfig& config, bool effective,
+                          std::string_view bypass_reason) {
+    std::string_view reason = bypass_reason;
+    if (effective) {
+        reason = "none";
+    } else if (config.anti_aliasing == "off") {
+        reason = "explicit-off";
+    } else if (config.anti_aliasing == "auto" && config.headless) {
+        reason = "headless-auto";
+    }
+    std::printf("anti_aliasing: requested=%s effective=%s reason=%.*s\n",
+                config.anti_aliasing.c_str(), effective ? "taa" : "off",
+                static_cast<int>(reason.size()), reason.data());
+}
+
+config::Schema common_run_config_schema(CommonRunConfig& config,
+                                        std::string_view anti_aliasing_path) {
     config::Schema::Builder builder = config::Schema::builder();
     builder
         .bind(option("title", "--title", "Title", "App",
                      "Window title. Project defaults are applied when this remains cubey.",
                      ValueType::String),
               config.title)
+        .bind(option(std::string(anti_aliasing_path), "--anti-aliasing", "Anti-aliasing", "Render",
+                     "Native TAA policy. Auto enables supported interactive views; "
+                     "headless Auto uses the direct render path.",
+                     ValueType::Enum, {}, {"off", "auto", "taa"}),
+              config.anti_aliasing)
         .bind(option("width", "--width", "Width", "Window", "Initial render width in pixels.",
                      ValueType::UInt32, {.has_min = true, .min = 1.0}),
               config.width)

@@ -259,7 +259,10 @@ void traceWorkshop() {
 #ifdef CUBEY_RT_FIXED_OPAQUE_TAA
     if(completed==0u)
         imageStore(temporalMotionImage,pixel,
-                   vec4(fixedOpaqueMotion(primary.p,direction,primary.id>=0),0,0));
+                   vec4(fixedOpaqueMotion(primary.p, direction, primary.id >= 0,
+                                          temporalRayMotion.currentViewProjection,
+                                          temporalRayMotion.previousViewProjection,
+                                          temporalRayMotion.extentJitter.xy), 0, 0));
 #endif
     uint trials=1u;
     if(primary.id>=0) {

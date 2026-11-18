@@ -858,7 +858,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     const auto view = glm::lookAt(eye, target_point, math::Vec3{0, 1, 0});
     auto vp = projection * view;
     const bool raw_diagnostic = (config.debug > 0 && config.debug < 10) || config.debug == 12;
-    const bool taa_requested = config.anti_aliasing == "taa";
+    const bool taa_requested = host::native_taa_requested(config.common);
     const int bypass = raw_diagnostic || config.debug != 0            ? 1
                        : config.supersample != 1                      ? 2
                        : clouds_enabled_                              ? 3
@@ -868,7 +868,10 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                (cutter && cutter_opacity > 0)
                            ? 6
                        : config.lighting_cycle != "frozen" ? 7
-                                                           : 0;
+                       : taa_requested && !temporal_.created() &&
+                             !render::temporal_aa_unsupported_reason(device).empty()
+                           ? 8
+                           : 0;
     const bool taa_effective = taa_requested && bypass == 0;
     constexpr std::array reasons{"Active",
                                  "Bypassed for diagnostics",
@@ -877,7 +880,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                  "Transmission unsupported",
                                  "Bypassed for raw query output",
                                  "Live edit/cutter preview unsupported",
-                                 "Dynamic lighting unsupported"};
+                                 "Dynamic lighting unsupported",
+                                 "Unsupported device"};
     temporal_status_ = taa_requested ? reasons.at(static_cast<std::size_t>(bypass)) : "Off";
     if (taa_effective) {
         if (!temporal_.created())

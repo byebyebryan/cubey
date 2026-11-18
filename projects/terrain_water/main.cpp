@@ -13,6 +13,7 @@ int main(int argc, char** argv) {
                   "Native attach: --fluid25d-backend external --fluid25d-external-session DIR\n"
                   "Native replay: --fluid25d-backend recording --fluid25d-recording FILE\n"
                   "Diagnostic alternative: --fluid25d-backend builtin\n"
+                  "Render policy: --anti-aliasing off|auto|taa\n"
                   "Established --fluid25d-* options remain compatible. No implicit producer, "
                   "downloads, solver launch or fallback. See projects/terrain_water/README.md.");
         return 0;

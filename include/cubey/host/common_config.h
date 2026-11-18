@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <string_view>
 
 namespace cubey::host {
 
@@ -13,6 +14,7 @@ namespace cubey::host {
 // project's config and are adapted at the application boundary as needed.
 struct CommonRunConfig {
     std::string title = "cubey";
+    std::string anti_aliasing = "auto";
     std::uint32_t width = 1280U;
     std::uint32_t height = 720U;
     std::uint32_t frames = 0U;
@@ -36,12 +38,21 @@ struct CommonRunConfig {
     CommonRunConfig() = default;
 };
 
+// A producer still has to admit the view before jittering or allocating history.
+[[nodiscard]] inline bool native_taa_requested(const CommonRunConfig& config) {
+    return config.anti_aliasing == "taa" || (config.anti_aliasing == "auto" && !config.headless);
+}
+
+void report_anti_aliasing(const CommonRunConfig& config, bool effective,
+                          std::string_view bypass_reason);
+
 // Applies host-level invariants after all configuration sources have been
 // layered. output_path_explicit distinguishes an explicit default path from
 // the implicit capture default.
 void normalize_common_run_config(CommonRunConfig& config, bool output_path_explicit = false);
 
-[[nodiscard]] config::Schema common_run_config_schema(CommonRunConfig& config);
+[[nodiscard]] config::Schema common_run_config_schema(
+    CommonRunConfig& config, std::string_view anti_aliasing_path = "anti_aliasing");
 [[nodiscard]] CommonRunConfig parse_common_run_config(int argc, char** argv,
                                                       config::ParseResult* result = nullptr);
 

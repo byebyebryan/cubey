@@ -443,12 +443,14 @@ void PbrMaterialsApp::draw_ui() {
             }
         }
         ImGui::Separator();
-        const char* aa_modes[]{"Off", "TAA"};
-        int aa_index = config_.anti_aliasing == "taa" ? 1 : 0;
-        if (ImGui::Combo("Anti-aliasing", &aa_index, aa_modes, 2))
-            config_.anti_aliasing = aa_index ? "taa" : "off";
+        const char* aa_modes[]{"Off", "Auto", "TAA"};
+        const char* aa_values[]{"off", "auto", "taa"};
+        auto& aa = config_.common.anti_aliasing;
+        int aa_index = aa == "off" ? 0 : aa == "auto" ? 1 : 2;
+        if (ImGui::Combo("Anti-aliasing", &aa_index, aa_modes, 3))
+            aa = aa_values[aa_index];
         const auto temporal = forward_pbr_renderer().temporal_status();
-        if (config_.anti_aliasing == "taa") {
+        if (host::native_taa_requested(config_.common)) {
             if (temporal.effective == render::AntiAliasingMode::Taa)
                 ImGui::Text("TAA active / history %u", temporal.history_age);
             else

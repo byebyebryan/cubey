@@ -52,6 +52,23 @@ if(BUILD_TESTING)
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_ray_spawn_geometry.py")
     add_test(NAME raytracing_material_comparison_inputs
         COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/author_material_comparison.py" --check)
+    add_custom_target(cubey_raytracing_fixed_opaque_motion_regression)
+    cubey_add_glsl_shaders(cubey_raytracing_fixed_opaque_motion_regression
+        OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/fixed_opaque_motion_test"
+        TARGET_ENV vulkan1.3
+        INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+        SOURCES shaders/fixed_opaque_motion_test.comp)
+    add_executable(cubey_project_raytracing_motion_gpu_tests raytracing_motion_gpu_tests.cpp)
+    target_compile_definitions(cubey_project_raytracing_motion_gpu_tests PRIVATE
+        CUBEY_RAYTRACING_MOTION_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders/fixed_opaque_motion_test")
+    target_link_libraries(cubey_project_raytracing_motion_gpu_tests PRIVATE cubey::vulkan cubey::render cubey_project_warnings)
+    add_dependencies(cubey_project_raytracing_motion_gpu_tests
+        cubey_raytracing_fixed_opaque_motion_regression_shaders)
+    add_test(NAME raytracing_fixed_opaque_motion_vectors
+        COMMAND cubey_project_raytracing_motion_gpu_tests)
+    set_tests_properties(raytracing_fixed_opaque_motion_vectors PROPERTIES
+        LABELS "gpu;headless;raytracing"
+        SKIP_REGULAR_EXPRESSION "no Vulkan (physical devices found|device with required queues found)")
     add_executable(cubey_project_raytracing_material_reference raytracing_material_reference.cpp)
     target_link_libraries(cubey_project_raytracing_material_reference PRIVATE cubey::cubey cubey_project_warnings)
     add_executable(cubey_project_raytracing_tests raytracing_tests.cpp raytracing_scene.cpp raytracing_optical_scene.cpp raytracing_dragon_support.cpp raytracing_materials.cpp raytracing_material_geometry.cpp raytracing_optical_asset.cpp)

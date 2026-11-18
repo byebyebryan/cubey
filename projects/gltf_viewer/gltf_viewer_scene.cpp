@@ -163,6 +163,12 @@ void GltfViewerApp::update_animation(float delta_seconds) {
 
     const cubey::asset::GltfRuntimeAnimation& animation =
         generation.runtime_scene->animations[generation.animation_playback.animation_index];
+    const auto& playback = generation.animation_playback;
+    const float next_time = playback.time_seconds + delta_seconds * playback.speed;
+    if (playback.loop && animation.duration_seconds > 0.0F &&
+        (next_time < 0.0F || next_time >= animation.duration_seconds)) {
+        forward_pbr_renderer().reset_temporal();
+    }
     cubey::animation::advance_gltf_animation_playback(generation.animation_playback, delta_seconds,
                                                       animation.duration_seconds);
     const cubey::animation::GltfAnimationSample sample = cubey::animation::sample_gltf_animation(

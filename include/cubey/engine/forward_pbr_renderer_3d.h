@@ -202,6 +202,7 @@ enum class ForwardPbrRenderer3DTaaBypassReason : std::uint8_t {
     Terrain,
     Ocean,
     DynamicAppearance,
+    UnsupportedDevice,
 };
 
 [[nodiscard]] std::string_view

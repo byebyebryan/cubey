@@ -22,7 +22,6 @@ struct PbrMaterialsConfig {
     std::string material = "gallery", specimen = "sphere", environment = "studio";
     std::string sphere_density = "standard";
     std::string transmission_source = "screen";
-    std::string anti_aliasing = "off";
     std::filesystem::path hdr_output, view_output;
     std::filesystem::path recipe_input, recipe_output;
     float yaw = 0, pitch = .15F, distance = 1.05F, roughness = -1, pattern_scale = -1;
@@ -81,11 +80,6 @@ inline cubey::config::Schema pbr_materials_config_schema(PbrMaterialsConfig& con
         cubey::config::ValueType::Enum);
     source.enum_values = {"screen", "environment"};
     builder.bind(source, config.transmission_source);
-    auto anti_aliasing = pbr_materials_option(
-        "anti_aliasing", "--anti-aliasing", "Anti-aliasing", "Workshop",
-        "Off or native-resolution temporal anti-aliasing.", cubey::config::ValueType::Enum);
-    anti_aliasing.enum_values = {"off", "taa"};
-    builder.bind(anti_aliasing, config.anti_aliasing);
     bind(config.taa_moving_fixture, "taa_moving_fixture", "--taa-moving-fixture",
          cubey::config::ValueType::Bool);
     bind(config.taa_fixture_time, "taa_fixture_time", "--taa-fixture-time",
@@ -145,7 +139,7 @@ inline PbrMaterialsConfig parse_pbr_materials_config(int argc, char** argv,
     }
     if (c.taa_moving_fixture) {
         if (!parsed.path_was_assigned("anti_aliasing"))
-            c.anti_aliasing = "taa";
+            c.common.anti_aliasing = "taa";
         if (!parsed.path_was_assigned("material"))
             c.material = "clay";
         if (!parsed.path_was_assigned("specimen"))

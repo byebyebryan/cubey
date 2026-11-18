@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace cubey::render {
 namespace {
@@ -44,7 +45,37 @@ RenderGraphTextureDesc desc(std::string label, VkExtent2D extent, VkFormat forma
             .format = format,
             .aspects = VK_IMAGE_ASPECT_COLOR_BIT};
 }
+bool matches_extent(const RenderGraphTextureDesc& texture, VkExtent2D extent) {
+    return texture.extent.width == extent.width && texture.extent.height == extent.height &&
+           texture.extent.depth == 1;
+}
 } // namespace
+
+std::string_view temporal_aa_unsupported_reason(const vulkan::Device& device) {
+    VkPhysicalDeviceFeatures features{};
+    vkGetPhysicalDeviceFeatures(device.physical_device(), &features);
+    if (!features.shaderStorageImageExtendedFormats)
+        return "TAA requires shaderStorageImageExtendedFormats";
+    std::uint32_t family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device.physical_device(), &family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> families(family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(device.physical_device(), &family_count, families.data());
+    if (device.queue_family() >= family_count ||
+        !(families[device.queue_family()].queueFlags & VK_QUEUE_COMPUTE_BIT))
+        return "TAA requires a compute-capable submission queue";
+    for (auto format : {VK_FORMAT_R16G16_SFLOAT, VK_FORMAT_R16G16B16A16_SFLOAT}) {
+        VkFormatProperties properties{};
+        vkGetPhysicalDeviceFormatProperties(device.physical_device(), format, &properties);
+        constexpr auto required =
+            VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+        if ((properties.optimalTilingFeatures & required) != required)
+            return "TAA requires sampled/storage half-float images";
+        if (format == VK_FORMAT_R16G16B16A16_SFLOAT &&
+            !(properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
+            return "TAA requires linearly filtered RGBA16F history";
+    }
+    return {};
+}
 
 struct TemporalAntiAliasing::Impl {
     TemporalAaConfig config;
@@ -67,30 +98,6 @@ struct TemporalAntiAliasing::Impl {
                                         .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE}),
           resolve_material(device, {.material_pass = pass_info(true),
                                     .frame_slot_count = cfg.frame_slot_count}) {
-        VkPhysicalDeviceFeatures features{};
-        vkGetPhysicalDeviceFeatures(device.physical_device(), &features);
-        if (!features.shaderStorageImageExtendedFormats)
-            throw std::runtime_error("TAA requires shaderStorageImageExtendedFormats");
-        std::uint32_t family_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device.physical_device(), &family_count, nullptr);
-        std::vector<VkQueueFamilyProperties> families(family_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(device.physical_device(), &family_count,
-                                                 families.data());
-        if (device.queue_family() >= families.size() ||
-            !(families[device.queue_family()].queueFlags & VK_QUEUE_COMPUTE_BIT))
-            throw std::runtime_error("TAA requires a compute-capable submission queue");
-        for (auto format : {VK_FORMAT_R16G16_SFLOAT, VK_FORMAT_R16G16B16A16_SFLOAT}) {
-            VkFormatProperties properties{};
-            vkGetPhysicalDeviceFormatProperties(device.physical_device(), format, &properties);
-            constexpr auto required =
-                VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-            if ((properties.optimalTilingFeatures & required) != required)
-                throw std::runtime_error("TAA requires sampled/storage half-float images");
-            if (format == VK_FORMAT_R16G16B16A16_SFLOAT &&
-                !(properties.optimalTilingFeatures &
-                  VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
-                throw std::runtime_error("TAA requires linearly filtered RGBA16F history");
-        }
         for (auto& image : histories) {
             image.emplace(device,
                           vulkan::ImageConfig{.extent = {cfg.extent.width, cfg.extent.height, 1},
@@ -158,6 +165,8 @@ void TemporalAntiAliasing::create(const vulkan::Device& device, const TemporalAa
         !std::isfinite(config.clamping_factor) || !std::isfinite(config.max_radiance) ||
         config.max_radiance <= 0)
         throw std::invalid_argument("Invalid TAA configuration");
+    if (const auto reason = temporal_aa_unsupported_reason(device); !reason.empty())
+        throw std::runtime_error(std::string(reason));
     auto replacement = std::make_unique<Impl>(device, config);
     impl_.swap(replacement);
 }
@@ -286,13 +295,17 @@ void TemporalAntiAliasing::update_descriptors(const vulkan::Device& device,
     p.check(frame);
     if (!p.resolve_declared)
         throw std::logic_error("TAA graph is incomplete");
-    const auto color = resolved_sampled_texture_view(graph, resources, p.color);
+    const auto& color_description = graph.texture(p.color).desc;
+    if (!matches_extent(color_description, frame.extent) ||
+        color_description.aspects != VK_IMAGE_ASPECT_COLOR_BIT)
+        throw std::invalid_argument("TAA requires a native-size color image");
     const auto& motion_description = graph.texture(p.motion).desc;
     if (motion_description.format != VK_FORMAT_R16G16_SFLOAT ||
-        motion_description.extent.width != frame.extent.width ||
-        motion_description.extent.height != frame.extent.height ||
-        motion_description.extent.depth != 1)
+        !matches_extent(motion_description, frame.extent))
         throw std::invalid_argument("TAA requires a native-size RG16F motion image");
+    if (p.motion_declared && !matches_extent(graph.texture(p.depth).desc, frame.extent))
+        throw std::invalid_argument("TAA requires a native-size depth image");
+    const auto color = resolved_sampled_texture_view(graph, resources, p.color);
     const auto motion = resolved_sampled_texture_view(graph, resources, p.motion);
     const auto resolved = resources.texture(p.resolved).value();
     if (p.metrics.per_slot_transient_image_allocation_bytes == 0) {

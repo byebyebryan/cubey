@@ -35,6 +35,8 @@ the architecture and project guides remain current authority.
   contract, showcase choice, consumer order and acceptance gates.
 - [Temporal rendering beyond forward](temporal-consumers-2026-11.md): native
   SDF motion and cut, cloud phase history and composition, and opaque fixed RT.
+- [Native TAA Auto dogfood](taa-auto-dogfood-2026-11.md): shared application
+  policy, admission by project, and native launch and motion results.
 - [RT material workshop plan](raytracing-material-workshop-plan.md): proposed
   shared twelve-recipe forward/SDF/RT workshop under matched clear atmosphere,
   with rough specular transport, per-material optics and bounded sampling.
