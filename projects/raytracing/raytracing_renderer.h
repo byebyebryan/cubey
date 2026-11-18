@@ -6,6 +6,7 @@
 #include "raytracing_trace_space.h"
 #include <cubey/core/profiling.h>
 #include <cubey/render/hdr_post_frame.h>
+#include <cubey/render/temporal_aa.h>
 #include <cubey/render/texture.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
@@ -36,7 +37,13 @@ struct GpuInstance {
     glm::uvec4 offsets;
     math::Vec4 color;
 };
+struct alignas(16) TemporalRayMotionUniform {
+    math::Mat4 current_view_projection{1.0F};
+    math::Mat4 previous_view_projection{1.0F};
+    math::Vec4 extent_jitter{0.0F};
+};
 static_assert(sizeof(Vertex) == 32 && sizeof(GpuInstance) == 160 && sizeof(CameraUniform) == 144);
+static_assert(sizeof(TemporalRayMotionUniform) == 144);
 CameraUniform camera_uniform(const Config& c, VkExtent2D extent);
 class Renderer {
   public:
@@ -49,7 +56,9 @@ class Renderer {
     void resize(VkExtent2D extent, VkFormat output_format, bool fault = false);
     void render(VkCommandBuffer command, render::ColorTargetView output, render::FrameSlot slot,
                 const Config& config, bool present, profiling::ProfileRecorder* profile,
-                std::uint64_t frame);
+                std::uint64_t frame, bool temporal_reset = false);
+    void frame_submitted(vulkan::GpuSubmissionTicket ticket);
+    void frame_discarded();
     void finish();
     void save_queries(const std::filesystem::path& path) const;
 #ifdef CUBEY_RT_RAY_JOURNAL
@@ -65,7 +74,9 @@ class Renderer {
 
   private:
     std::unique_ptr<ForwardComparison> forward_;
-    bool demo_mode_ = false;
+    bool demo_mode_ = false, fixed_opaque_mode_ = false, fixed_opaque_taa_ = false;
+    bool force_temporal_reset_ = false;
+    std::uint32_t fixed_opaque_sample_target_ = 4;
     void destroy() noexcept;
     void create_scene(vulkan::GpuRuntime& gpu, const Scene& scene);
     void create_pipeline();
@@ -78,8 +89,21 @@ class Renderer {
     };
     struct Target {
         std::unique_ptr<render::Texture2D> color;
+        std::unique_ptr<render::Texture2D> motion;
         std::unique_ptr<vulkan::Buffer> queries;
-        bool initialized = false;
+        bool initialized = false, motion_initialized = false;
+    };
+    struct PendingFrame {
+        std::uint32_t slot = 0;
+        std::uint64_t frame = 0;
+        std::uint32_t primary_samples = 0, sample_target = 0;
+        bool color_initialized_before = false, motion_initialized_before = false;
+        bool history_initialized_before = false;
+        std::uint32_t history_samples_before = 0;
+        std::uint64_t history_epochs_before = 0;
+        std::vector<std::byte> history_identity_before;
+        std::optional<render::TemporalFrame> temporal;
+        std::string sequence_phase;
     };
     vulkan::Device& device_;
     RtFunctions rt_;
@@ -99,6 +123,7 @@ class Renderer {
     std::string active_route_ = "legacy";
     std::unique_ptr<vulkan::Buffer> vertices_, indices_, instances_, sbt_, edge_neighbors_;
     std::vector<std::unique_ptr<vulkan::Buffer>> uniforms_;
+    std::vector<std::unique_ptr<vulkan::Buffer>> temporal_motion_uniforms_;
     std::vector<std::unique_ptr<vulkan::Buffer>> environment_uniforms_, material_buffers_;
     std::vector<OpticalMaterial> material_values_;
     std::shared_ptr<WorkshopState> workshop_;
@@ -114,6 +139,8 @@ class Renderer {
     std::unique_ptr<Environment> environment_;
     std::vector<math::Vec4> glass_planes_;
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
+    render::TemporalAntiAliasing temporal_;
+    std::optional<PendingFrame> pending_frame_;
     VkPipelineLayout layout_{};
     VkPipeline pipeline_{};
     VkStridedDeviceAddressRegionKHR raygen_{}, miss_{}, hit_{}, callable_{};
@@ -128,6 +155,7 @@ class Renderer {
     profiling::ProfileRecorder* profile_ = nullptr;
     nlohmann::json timing_ = nlohmann::json::array();
     nlohmann::json sampling_frames_ = nlohmann::json::array();
+    nlohmann::json fixed_opaque_frames_ = nlohmann::json::array();
     double scene_ms_ = 0, pipeline_ms_ = 0, as_build_ms_ = 0, as_gpu_ms_ = 0;
     std::uint64_t geometry_bytes_ = 0, as_bytes_ = 0, scratch_peak_ = 0, triangle_count_ = 0;
     std::uint64_t target_generations_ = 0;

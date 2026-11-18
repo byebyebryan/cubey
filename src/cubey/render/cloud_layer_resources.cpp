@@ -285,6 +285,7 @@ void CloudLayerRuntime::create_swapchain_resources(
     std::uint32_t frame_slot_count, const CloudLayerConfig& config) {
     destroy_swapchain_resources();
     composite_mode_ = composite_mode;
+    submitted_history_ = config.submitted_history;
     frame_uniforms_.emplace(device, frame_slot_count);
     temporal_uniforms_.emplace(device, frame_slot_count);
 
@@ -342,7 +343,7 @@ void CloudLayerRuntime::create_swapchain_resources(
                                            .descriptor_set_layouts = temporal_layouts,
                                        });
     create_history_textures(device, cloud_layer_product_extent(extent, config.quality),
-                            frame_slot_count);
+                            submitted_history_ ? 1U : frame_slot_count);
 
     const bool external_background = cloud_layer_composite_mode_has_background(composite_mode);
     const bool scene_depth = cloud_layer_composite_mode_has_scene_depth(composite_mode);

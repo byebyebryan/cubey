@@ -3,8 +3,9 @@
 The opt-in TAA foundation resolves scene-linear HDR before display exposure and
 tone mapping. `cubey::render::TemporalAntiAliasing` owns the common motion and
 resolve passes, history images, uniforms and descriptor slots. Producers supply
-depth and a coherent view; the engine may overlay rigid-object motion before
-the resolve. SDF uses the same runtime independently of the forward renderer.
+a coherent view and either depth or their own motion field. Forward can overlay
+rigid-object motion before the resolve. SDF uses the same runtime independently
+of the forward renderer.
 The default remains Off. DLSS, temporal upscaling and denoising are deferred.
 
 ## View and motion contract
@@ -37,6 +38,9 @@ The CPU state supports one pending candidate:
 
 1. `begin_frame(slot, view)` prepares matrices, jitter and history indices.
 2. Declare camera motion, optional rigid overlay, and resolve in the graph.
+   A renderer that writes motion directly leaves `TemporalAaConfig::motion_shader`
+   empty and calls `declare_resolve_with_motion` with its native-size RG16F
+   texture. It declares the producer's write state and owns that image.
 3. Prepare descriptors from the compiled graph's resolved resource set.
 4. Record and submit the frame through its host.
 5. Call `commit_frame(token, actual_submission_ticket)` after queue acceptance,
@@ -80,6 +84,15 @@ requirements for the dedicated images and uniform buffers. The transient image
 requirements are measured from the first resolved graph generation. Driver
 descriptor/pipeline storage and whole-process residency are excluded; these
 values are not a peak VRAM claim.
+With producer-supplied motion, the shared runtime omits its camera-motion pass
+and reports its own textures and uniforms. The producer accounts for its motion
+image separately.
+
+Fixed opaque RT uses the producer-motion entry point. It exports motion from
+the first existing primary lane and applies one jitter offset to all primary
+lanes. RT sampling restarts per view while TAA keeps independently committed
+history. The [consumer results](../notes/temporal-consumers-2026-11.md) also
+cover SDF geometry cuts and the separate cloud history.
 
 SDF bypass reason IDs are 0 active, 1 diagnostics, 2 supersampling other than
 1x, 3 clouds, 4 transmission, 5 raw query/quality capture, 6 edit/cutter preview,

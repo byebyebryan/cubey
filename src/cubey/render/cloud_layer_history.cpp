@@ -105,15 +105,22 @@ namespace {
 } // namespace
 
 void CloudLayerRuntime::complete_frame(FrameSlot frame_slot, const CloudLayerRuntimeFrame& frame) {
+    frame_slot = history_slot(frame_slot);
     if (frame.temporal_pass_enabled && frame_slot.index < history_texture_valid_.size() &&
         frame_slot.index < history_read_indices_.size()) {
         history_texture_valid_[frame_slot.index][frame.history_write_index] = true;
+        if (submitted_history_) {
+            // The graph leaves both imports sampled, even if the shader reseeds.
+            history_texture_valid_[frame_slot.index][1U - frame.history_write_index] = true;
+        }
         history_read_indices_[frame_slot.index] = frame.history_write_index;
         if (frame_slot.index < history_frame_states_.size()) {
             history_frame_states_[frame_slot.index] = frame.frame_uniforms;
         }
     } else if (!frame.temporal_pass_enabled && frame_slot.index < history_texture_valid_.size()) {
-        history_texture_valid_[frame_slot.index] = {false, false};
+        if (!submitted_history_) {
+            history_texture_valid_[frame_slot.index] = {false, false};
+        }
         if (frame_slot.index < history_frame_states_.size()) {
             history_frame_states_[frame_slot.index].reset();
         }
@@ -208,8 +215,10 @@ void CloudLayerRuntime::create_history_textures(const cubey::vulkan::Device& dev
 }
 
 void CloudLayerRuntime::invalidate_history() {
-    for (std::array<bool, 2>& valid : history_texture_valid_) {
-        valid = {false, false};
+    if (!submitted_history_) {
+        for (std::array<bool, 2>& valid : history_texture_valid_) {
+            valid = {false, false};
+        }
     }
     std::fill(history_read_indices_.begin(), history_read_indices_.end(), 0U);
     for (std::optional<CloudLayerFrameUniforms>& frame_state : history_frame_states_) {

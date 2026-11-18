@@ -107,6 +107,9 @@ class App {
     Config current() const {
         auto c = sample_workshop_presentation(config_, presentation_seconds_);
         c.yaw += orbit_.yaw() + config_.orbit_speed * float(presentation_seconds_);
+        if (config_.fixed_opaque_sequence)
+            c.yaw += fixed_opaque_sequence_yaw_offset(fixed_opaque_sequence_frame_,
+                                                      config_.common.frames);
         c.sun_azimuth += config_.sun_speed * float(presentation_seconds_);
         c.pitch += orbit_.pitch();
         c.distance = orbit_.distance();
@@ -240,6 +243,16 @@ class App {
         }
     }
     void workshop_ui() {
+        if (fixed_opaque_transport(config_)) {
+            ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
+            ImGui::Begin("RT fixed opaque");
+            ImGui::TextUnformatted("Bronze dragon with opaque marble support");
+            ImGui::Text("%u primary samples per frame", config_.fixed_opaque_samples);
+            ImGui::Text("Temporal AA: %s", config_.anti_aliasing.c_str());
+            ImGui::TextUnformatted("Drag to orbit; R marks a camera cut");
+            ImGui::End();
+            return;
+        }
         if (config_.renderer == "forward") {
             ImGui::Begin("Forward dragon comparison");
             ImGui::TextUnformatted("Environment reflections");
@@ -679,9 +692,21 @@ class App {
                     config_.presentation == "library"
                         ? 8.0 * host::headless_capture_progress(f)
                         : double(f.index) / double(std::max(config_.common.fps, 1U));
+                fixed_opaque_sequence_frame_ = f.index;
                 stress_edit(f.index);
                 renderer_->render(command, target, f.frame_slot, current(), false,
-                                  c.profile_recorder(), f.index);
+                                  c.profile_recorder(), f.index,
+                                  config_.fixed_opaque_sequence &&
+                                      f.index == fixed_opaque_sequence_cut_frame(f.count));
+            };
+            cb.frame_submitted = [&](host::HeadlessPngContext&,
+                                     const host::HeadlessCaptureFrame&,
+                                     vulkan::GpuSubmissionTicket ticket) {
+                renderer_->frame_submitted(ticket);
+            };
+            cb.frame_discarded = [&](host::HeadlessPngContext&,
+                                     const host::HeadlessCaptureFrame&) {
+                renderer_->frame_discarded();
             };
             cb.shutdown = [&](host::HeadlessPngContext&) {
                 if (!config_.save_config.empty())
@@ -707,6 +732,8 @@ class App {
         cb.update = [&](host::WindowedAppContext& c, const FrameTiming& t) {
             presentation_seconds_ += t.delta_seconds;
             const auto filtered = c.filtered_input();
+            if (filtered.key_pressed(input::Key::R))
+                cut_requested_ = true;
             if (!config_.metrics.empty()) {
                 native_update_ns_ = steady_ns();
                 const auto delta = filtered.mouse_button_delta(input::MouseButton::Left);
@@ -729,7 +756,7 @@ class App {
             const auto begin = config_.metrics.empty() ? 0 : steady_ns();
             const auto view = current();
             renderer_->render(f.command_buffer, f.color_target, f.frame_slot, view, true,
-                              c.profile_recorder(), frame_);
+                              c.profile_recorder(), frame_, cut_requested_);
             if (!config_.metrics.empty()) {
                 const auto end = steady_ns();
                 if (native_frames_.size() < 20000)
@@ -751,11 +778,22 @@ class App {
                          {"width", c.swapchain().extent().width},
                          {"height", c.swapchain().extent().height},
                          {"samples_after", renderer_->sample_count()},
+                         {"anti_aliasing", config_.anti_aliasing},
                          {"epoch", renderer_->history_epoch()}});
                 else
                     ++dropped_native_frames_;
             }
             ++frame_;
+        };
+        cb.frame_submitted = [&](host::WindowedAppContext&,
+                                 const host::WindowedRenderFrame&,
+                                 vulkan::GpuSubmissionTicket ticket) {
+            renderer_->frame_submitted(ticket);
+            cut_requested_ = false;
+        };
+        cb.frame_discarded = [&](host::WindowedAppContext&,
+                                 const host::WindowedRenderFrame&) {
+            renderer_->frame_discarded();
         };
         cb.shutdown = [&](host::WindowedAppContext&) { shutdown(); };
         return host::run_windowed_app(std::move(h), std::move(cb));
@@ -778,6 +816,8 @@ class App {
     nlohmann::json native_input_;
     double presentation_seconds_ = 0;
     bool target_fault_used_ = false;
+    bool cut_requested_ = false;
+    std::uint64_t fixed_opaque_sequence_frame_ = 0;
     std::array<char, 512> recipe_path_{};
     std::string workshop_family_ = "all";
     std::string workshop_message_;

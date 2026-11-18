@@ -147,6 +147,7 @@ struct CloudLayerRuntimeFrame {
     bool surface_march_enabled = false;
     std::uint32_t history_write_index = 0;
     CloudLayerFrameUniforms frame_uniforms{};
+    std::optional<std::uint32_t> history_read_temporal_frame{};
 };
 
 class CloudLayerRuntime {
@@ -217,6 +218,8 @@ class CloudLayerRuntime {
     [[nodiscard]] const cubey::vulkan::Sampler& product_sampler() const;
     [[nodiscard]] const cubey::vulkan::Sampler& shadow_sampler() const;
     void invalidate_history();
+    // In submitted-history mode, call only once the graph was accepted by the
+    // queue. A discarded recording leaves the previous history and phase intact.
     void complete_frame(FrameSlot frame_slot, const CloudLayerRuntimeFrame& frame);
 
   private:
@@ -232,6 +235,9 @@ class CloudLayerRuntime {
     [[nodiscard]] const ComputePipelineResource& temporal_pipeline() const;
     [[nodiscard]] const GraphicsPipelineResource& composite_pipeline() const;
     [[nodiscard]] const cubey::vulkan::Sampler& composite_sampler() const;
+    [[nodiscard]] FrameSlot history_slot(FrameSlot frame_slot) const noexcept {
+        return submitted_history_ ? FrameSlot{0, 1} : frame_slot;
+    }
     [[nodiscard]] const Texture2D& history_cloud_texture(FrameSlot frame_slot,
                                                          std::uint32_t ping_pong) const;
     [[nodiscard]] const Texture2D& history_metadata_texture(FrameSlot frame_slot,
@@ -276,6 +282,7 @@ class CloudLayerRuntime {
     std::vector<std::array<bool, 2>> history_texture_valid_{};
     std::vector<std::optional<CloudLayerFrameUniforms>> history_frame_states_{};
     CloudLayerCompositeMode composite_mode_ = CloudLayerCompositeMode::Standalone;
+    bool submitted_history_ = false;
     std::uint32_t temporal_frame_index_ = 0;
 };
 

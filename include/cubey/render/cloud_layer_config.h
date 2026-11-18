@@ -206,6 +206,9 @@ struct CloudLayerConfig {
     CloudLayerResolveMode resolve_mode = CloudLayerResolveMode::TerrainPost;
     CloudLayerDebugView debug_view = CloudLayerDebugView::Final;
     bool temporal_enabled = false;
+    // Select one history per rendered view. The caller must complete accepted
+    // submissions in order when it uses this mode.
+    bool submitted_history = false;
     bool powder_enabled = true;
     bool local_volume_enabled = true;
     bool horizon_layer_enabled = true;

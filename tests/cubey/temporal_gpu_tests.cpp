@@ -23,28 +23,34 @@ void require(bool ok, const char* message) {
 math::Vec4 independent_view_frame(const vulkan::Device& device,
                                   vulkan::SubmissionCoordinator& submission,
                                   render::TemporalAntiAliasing& taa, std::uint64_t view_id,
-                                  math::Vec4 color) {
+                                  math::Vec4 color, bool producer_motion = false) {
     constexpr VkExtent2D extent{8, 8};
     const auto frame = taa.begin_frame({0, 1}, {.view_id = view_id});
     render::RenderGraphBuilder builder;
     const auto input = builder.create_texture(
         {"view.color", {8, 8, 1}, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT});
-    const auto depth = builder.create_texture(
-        {"view.depth", {8, 8, 1}, VK_FORMAT_R32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT});
+    const auto guide =
+        builder.create_texture({producer_motion ? "view.motion" : "view.depth",
+                                {8, 8, 1},
+                                producer_motion ? VK_FORMAT_R16G16_SFLOAT : VK_FORMAT_R32_SFLOAT,
+                                VK_IMAGE_ASPECT_COLOR_BIT});
     builder.add_pass("view.input", render::RenderGraphQueueDomain::Transfer)
         .transfer_write_texture(input)
-        .transfer_write_texture(depth)
+        .transfer_write_texture(guide)
         .execute([=](const render::RenderGraphExecutionContext& context) {
             const VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
             const VkClearColorValue clear_color{{color.r, color.g, color.b, color.a}};
-            const VkClearColorValue clear_depth{{.5F, 0, 0, 0}};
+            const VkClearColorValue clear_guide{{producer_motion ? 0.0F : 0.5F, 0, 0, 0}};
             vkCmdClearColorImage(context.recorder().handle(), context.resolved_texture(input).image,
                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
-            vkCmdClearColorImage(context.recorder().handle(), context.resolved_texture(depth).image,
-                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_depth, 1, &range);
+            vkCmdClearColorImage(context.recorder().handle(), context.resolved_texture(guide).image,
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_guide, 1, &range);
         });
-    const auto motion = taa.declare_camera_motion(builder, depth, frame);
-    const auto output = taa.declare_resolve(builder, input, motion, frame);
+    const auto output =
+        producer_motion
+            ? taa.declare_resolve_with_motion(builder, input, guide, frame)
+            : taa.declare_resolve(builder, input, taa.declare_camera_motion(builder, guide, frame),
+                                  frame);
     vulkan::Buffer readback(device, vulkan::readback_buffer_config(8U * 8U * 8U));
     const auto host = builder.import_buffer(
         {"view.readback", readback.size()}, readback.handle(),
@@ -286,14 +292,21 @@ int main(int argc, char** argv) {
         independent.frame_slot_count = 1;
         independent.clamping_factor = -1; // retain the distinct first-view color
         red_view.create(device, independent);
+        independent.motion_shader.clear();
         green_view.create(device, independent);
         static_cast<void>(independent_view_frame(device, submission, red_view, 41, {2, 0, 0, 1}));
-        static_cast<void>(independent_view_frame(device, submission, green_view, 82, {0, 2, 0, 1}));
+        static_cast<void>(
+            independent_view_frame(device, submission, green_view, 82, {0, 2, 0, 1}, true));
         const auto red = independent_view_frame(device, submission, red_view, 41, {0, 0, 0, 1});
-        const auto green = independent_view_frame(device, submission, green_view, 82, {0, 0, 0, 1});
+        const auto green =
+            independent_view_frame(device, submission, green_view, 82, {0, 0, 0, 1}, true);
         require(red.r > .1F && red.g < .001F && green.g > .1F && green.r < .001F &&
                     red_view.metrics().history_age == 1 && green_view.metrics().history_age == 1,
                 "independent views mixed color history or submission sequence");
+        require(green_view.metrics().uniform_requested_bytes * 2 ==
+                        red_view.metrics().uniform_requested_bytes &&
+                    green_view.metrics().per_slot_transient_requested_bytes == 8U * 8U * 8U,
+                "producer-motion history charged for shared camera-motion resources");
         std::cout
             << "PASS: 24 submitted frames, 2 discards, nonround slot order, sky/plane motion, "
                "reset/content change, finite HDR, failed replacement, resize, independent views; "

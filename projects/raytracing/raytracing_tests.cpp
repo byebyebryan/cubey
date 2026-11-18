@@ -206,6 +206,89 @@ int main() {
         // Admission is explicit and asset-bound; config tests need no downloaded mesh.
         const auto existing_file =
             (std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "glass.json").string();
+        auto fixed_opaque_off = parse({"--scene", "dragon-materials", "--model",
+                                       existing_file.c_str(), "--transport-mode", "fixed-opaque"});
+        require(fixed_opaque_transport(fixed_opaque_off) &&
+                    fixed_opaque_off.anti_aliasing == "off" &&
+                    frame_sample_target(fixed_opaque_off) == 4 &&
+                    per_frame_fixed_transport(fixed_opaque_off),
+                "fixed-opaque admits the bronze dragon with four fixed primary lanes and AA off");
+        Config fixed_opaque_copy;
+        schema(fixed_opaque_copy).apply_json(schema(fixed_opaque_off).template_json());
+        require(fixed_opaque_transport(fixed_opaque_copy) &&
+                    fixed_opaque_copy.anti_aliasing == "off" &&
+                    frame_sample_target(fixed_opaque_copy) == 4,
+                "fixed-opaque Off selection survives saved config roundtrip");
+        auto fixed_opaque_taa = parse({"--scene", "dragon-materials", "--model",
+                                       existing_file.c_str(), "--transport-mode", "fixed-opaque",
+                                       "--anti-aliasing", "taa", "--fixed-opaque-samples", "2"});
+        require(fixed_opaque_transport(fixed_opaque_taa) &&
+                    fixed_opaque_taa.anti_aliasing == "taa" &&
+                    frame_sample_target(fixed_opaque_taa) == 2,
+                "fixed-opaque TAA keeps the same selected two primary lanes");
+        Config fixed_opaque_taa_copy;
+        schema(fixed_opaque_taa_copy).apply_json(schema(fixed_opaque_taa).template_json());
+        require(fixed_opaque_taa_copy.anti_aliasing == "taa" &&
+                    frame_sample_target(fixed_opaque_taa_copy) == 2,
+                "fixed-opaque TAA and sample count survive saved config roundtrip");
+        auto fixed_sequence = parse({"--scene", "dragon-materials", "--model",
+                                     existing_file.c_str(), "--transport-mode", "fixed-opaque",
+                                     "--headless", "--headless-render-only", "--frames", "14",
+                                     "--fixed-opaque-sequence"});
+        require(fixed_sequence.fixed_opaque_sequence &&
+                    fixed_opaque_sequence_phase(0, 14) == "hold" &&
+                    fixed_opaque_sequence_phase(4, 14) == "orbit" &&
+                    fixed_opaque_sequence_phase(9, 14) == "stop" &&
+                    fixed_opaque_sequence_phase(11, 14) == "cut" &&
+                    fixed_opaque_sequence_yaw_offset(12, 14) == -.16F,
+                "fixed-opaque deterministic sequence covers hold, orbit, stop and cut");
+        auto fixed_video_sequence = parse({"--scene", "dragon-materials", "--model",
+                                           existing_file.c_str(), "--transport-mode", "fixed-opaque",
+                                           "--headless", "--capture", "video", "--frames", "96",
+                                           "--fps", "30", "--fixed-opaque-sequence"});
+        require(fixed_opaque_sequence_phase(20, 96) == "orbit" &&
+                    fixed_opaque_sequence_phase(60, 96) == "stop" &&
+                    fixed_opaque_sequence_phase(72, 96) == "cut" &&
+                    fixed_opaque_sequence_phase(80, 96) == "post-cut-hold" &&
+                    fixed_video_sequence.fixed_opaque_sequence,
+                "fixed-opaque 96-frame video sequence uses stable pose and cut indices");
+        rejects([&] {
+            (void)parse({"--scene", "dragon-materials", "--model", existing_file.c_str(),
+                         "--anti-aliasing", "taa"});
+        });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                         "--transport-mode", "fixed-opaque"});
+        });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                         "--renderer", "forward", "--transport-mode", "fixed-opaque",
+                         "--no-shadows"});
+        });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-materials", "--model", existing_file.c_str(),
+                         "--transport-mode", "fixed-opaque", "--material", "glass"});
+        });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-materials", "--model", existing_file.c_str(),
+                         "--transport-mode", "fixed-opaque", "--no-bump"});
+        });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-materials", "--model", existing_file.c_str(),
+                         "--transport-mode", "fixed-opaque", "--fixed-opaque-samples", "3"});
+        });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-materials", "--model", existing_file.c_str(),
+                         "--transport-mode", "fixed-opaque", "--samples", "8"});
+        });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-materials", "--model", existing_file.c_str(),
+                         "--transport-mode", "fixed-opaque", "--demo-samples", "2"});
+        });
+        rejects([&] {
+            (void)parse({"--scene", "dragon-materials", "--model", existing_file.c_str(),
+                         "--transport-mode", "fixed-opaque", "--fixed-opaque-sequence"});
+        });
         auto optics_config = parse({"--scene", "dragon-optics", "--model", existing_file.c_str()});
         require(optics_config.renderer == "rt" && optics_config.transport_mode == "sampled",
                 "sampled RT remains the ordinary default");

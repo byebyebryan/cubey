@@ -252,6 +252,17 @@ class AtmosphereApp {
             refresh_cloud_weather_if_needed(context.device(), context.gpu());
             record_windowed_frame(context.device(), context.profile_recorder(), frame);
         };
+        if (config_.cloud_submitted_history) {
+            callbacks.frame_submitted = [this](cubey::host::WindowedAppContext&,
+                                               const cubey::host::WindowedRenderFrame& frame,
+                                               cubey::vulkan::GpuSubmissionTicket) {
+                submit_cloud_frame(frame.frame_slot);
+            };
+            callbacks.frame_discarded = [this](cubey::host::WindowedAppContext&,
+                                               const cubey::host::WindowedRenderFrame&) {
+                pending_cloud_frame_.reset();
+            };
+        }
         callbacks.frame_stats_sample =
             [this](cubey::host::WindowedAppContext& context,
                    const FrameTiming& timing) -> std::optional<FrameStatsSample> {
@@ -288,6 +299,7 @@ class AtmosphereApp {
             const std::uint32_t frame_slot_count =
                 cubey::host::headless_capture_frame_slot_count(context.config());
             create_windowed_global_resources(context.device(), context.gpu(), frame_slot_count);
+            headless_profile_frames_.resize(frame_slot_count);
             atlas_builds_.finish(context.gpu());
             install_ready_atlas_generation(context.gpu(), {});
             record_initialization_metrics(context.profile_recorder(), 0U);
@@ -299,9 +311,27 @@ class AtmosphereApp {
                                         const cubey::host::HeadlessRenderTarget& target) {
             update_headless_time(frame);
             refresh_cloud_weather_if_needed(context.device(), context.gpu());
-            record_atmosphere_target(context.device(), command_buffer, target, frame.frame_slot);
+            collect_headless_gpu_slot(context.profile_recorder(), frame.frame_slot.index);
+            record_atmosphere_graph(context.device(), command_buffer, target, frame.frame_slot,
+                                    cubey::render::render_graph_color_attachment_texture_state(),
+                                    cubey::render::render_graph_color_attachment_texture_state(),
+                                    cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+                                    context.profile_recorder(), frame.index);
+        };
+        callbacks.frame_submitted = [this](cubey::host::HeadlessPngContext& context,
+                                           const cubey::host::HeadlessCaptureFrame& frame,
+                                           cubey::vulkan::GpuSubmissionTicket) {
+            submit_cloud_frame(frame.frame_slot);
+            if (context.profile_recorder())
+                headless_profile_frames_.at(frame.frame_slot.index) = frame.index;
+        };
+        callbacks.frame_discarded = [this](cubey::host::HeadlessPngContext&,
+                                           const cubey::host::HeadlessCaptureFrame&) {
+            pending_cloud_frame_.reset();
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext& context) {
+            for (std::uint32_t slot = 0; slot < headless_profile_frames_.size(); ++slot)
+                collect_headless_gpu_slot(context.profile_recorder(), slot);
             destroy_swapchain_resources();
             destroy_global_resources(context.gpu());
         };
@@ -441,6 +471,15 @@ class AtmosphereApp {
         record_initialization_metrics(profile_recorder, collected_frame);
     }
 
+    void collect_headless_gpu_slot(cubey::profiling::ProfileRecorder* profile, std::uint32_t slot) {
+        auto& frame = headless_profile_frames_.at(slot);
+        if (!profile || !frame || !gpu_profiler_)
+            return;
+        gpu_profiler_->collect(slot);
+        record_gpu_timings(profile, *frame, gpu_profiler_->latest_timings());
+        frame.reset();
+    }
+
     void create_windowed_global_resources(cubey::vulkan::Device& device,
                                           cubey::vulkan::GpuRuntime& gpu,
                                           std::uint32_t frame_slot_count) {
@@ -464,6 +503,7 @@ class AtmosphereApp {
         cubey::CloudEnvironmentConfig config = atmosphere_config_.clouds;
         config.layer.planet_radius_m = atmosphere_config_.bottom_radius_km * 1000.0F;
         config.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+        config.layer.submitted_history = config_.cloud_submitted_history;
         return config;
     }
 
@@ -750,6 +790,7 @@ class AtmosphereApp {
     }
 
     void destroy_swapchain_resources() {
+        pending_cloud_frame_.reset();
         const std::uint32_t frame_slot_count = graph_executor_.frame_slot_count();
         graph_executor_.clear();
         if (frame_slot_count != 0U) {
@@ -1052,7 +1093,9 @@ class AtmosphereApp {
                                  cubey::render::FrameSlot frame_slot,
                                  cubey::render::RenderGraphTextureState target_initial_state,
                                  cubey::render::RenderGraphTextureState target_final_state,
-                                 cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
+                                 cubey::render::RenderGraphCommandBufferMode command_buffer_mode,
+                                 cubey::profiling::ProfileRecorder* profile,
+                                 std::uint64_t frame_index) {
         cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
         if (profiler != nullptr) {
             profiler->collect(frame_slot.index);
@@ -1095,9 +1138,7 @@ class AtmosphereApp {
                 },
                 render_graph.graph, prepare_graph_resources);
             recorder.end("vkEndCommandBuffer atmosphere");
-            if (render_graph.clouds_enabled) {
-                cloud_runtime_.complete_surface_frame(frame_slot, render_graph.cloud);
-            }
+            finish_cloud_recording(frame_slot, render_graph, profile, frame_index);
             return;
         }
 
@@ -1114,8 +1155,30 @@ class AtmosphereApp {
                 .profiler = profiler,
             },
             render_graph.graph, prepare_graph_resources);
-        if (render_graph.clouds_enabled) {
-            cloud_runtime_.complete_surface_frame(frame_slot, render_graph.cloud);
+        finish_cloud_recording(frame_slot, render_graph, profile, frame_index);
+    }
+
+    void finish_cloud_recording(cubey::render::FrameSlot slot, const CompiledAtmosphereGraph& graph,
+                                cubey::profiling::ProfileRecorder* profile,
+                                std::uint64_t frame_index) {
+        if (profile && graph.cloud.temporal_pass_enabled) {
+            const auto current = graph.cloud.frame_uniforms.temporal_options.x;
+            const auto previous = graph.cloud.history_read_temporal_frame;
+            profile->record_metric(frame_index, "cloud.temporal", "slot", slot.index);
+            profile->record_metric(frame_index, "cloud.temporal", "sample_frame", current);
+            profile->record_metric(frame_index, "cloud.temporal", "read_sample_frame",
+                                   previous ? static_cast<double>(*previous) : -1.0);
+        }
+        if (config_.cloud_submitted_history)
+            pending_cloud_frame_ = graph.cloud;
+        else if (graph.clouds_enabled)
+            cloud_runtime_.complete_surface_frame(slot, graph.cloud);
+    }
+
+    void submit_cloud_frame(cubey::render::FrameSlot slot) {
+        if (pending_cloud_frame_) {
+            cloud_runtime_.complete_surface_frame(slot, *pending_cloud_frame_);
+            pending_cloud_frame_.reset();
         }
     }
 
@@ -1126,16 +1189,8 @@ class AtmosphereApp {
         record_atmosphere_graph(device, frame.command_buffer, frame.color_target, frame.frame_slot,
                                 cubey::render::render_graph_undefined_texture_state(),
                                 cubey::render::render_graph_present_texture_state(),
-                                cubey::render::RenderGraphCommandBufferMode::BeginAndEnd);
-    }
-
-    void record_atmosphere_target(cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
-                                  const cubey::host::HeadlessRenderTarget& target,
-                                  cubey::render::FrameSlot frame_slot) {
-        record_atmosphere_graph(device, command_buffer, target, frame_slot,
-                                cubey::render::render_graph_color_attachment_texture_state(),
-                                cubey::render::render_graph_color_attachment_texture_state(),
-                                cubey::render::RenderGraphCommandBufferMode::AlreadyRecording);
+                                cubey::render::RenderGraphCommandBufferMode::BeginAndEnd,
+                                profile_recorder, frame.timing.frame_index);
     }
 
     [[nodiscard]] const cubey::render::Mesh& moon_mesh() const {
@@ -1178,6 +1233,8 @@ class AtmosphereApp {
     cubey::render::CelestialBodyFrame moon_body_frame_;
     cubey::render::HdrPostFrame hdr_post_frame_;
     cubey::CloudEnvironmentRuntime cloud_runtime_{};
+    std::optional<cubey::render::CloudLayerRuntimeFrame> pending_cloud_frame_{};
+    std::vector<std::optional<std::uint64_t>> headless_profile_frames_;
     bool cloud_global_resources_created_ = false;
     std::optional<cubey::render::Mesh> moon_mesh_;
     cubey::render::RenderGraphFrameExecutor graph_executor_{};

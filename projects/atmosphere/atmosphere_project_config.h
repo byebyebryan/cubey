@@ -40,6 +40,7 @@ struct AtmosphereProjectConfig {
     host::CommonRunConfig common;
     AtmosphereStartupOptions options;
     AtmosphereConfig atmosphere;
+    bool cloud_submitted_history = false;
 };
 
 inline config::Schema atmosphere_project_config_schema(AtmosphereProjectConfig& config) {
@@ -66,6 +67,11 @@ inline config::Schema atmosphere_project_config_schema(AtmosphereProjectConfig& 
     reference.negative_cli_name = "--no-reference-geometry";
     builder.bind(std::move(reference), config.options.atmosphere.reference_geometry);
     builder.compose(cubey::cloud_environment_schema(config.options.clouds));
+    builder.bind(detail::option("clouds.submitted_history", "--cloud-submitted-history",
+                                "Submitted Cloud History", "Clouds/Sampling",
+                                "Experimental cloud history across accepted frames.",
+                                ValueType::Bool),
+                 config.cloud_submitted_history);
     builder.compose(cubey::pbr_exposure_schema(config.options.pbr));
     builder.bind(detail::option("debug_view", "--debug-view", "Debug View", "Atmosphere",
                                 "Atmosphere render view.", ValueType::String),
@@ -80,6 +86,8 @@ inline AtmosphereProjectConfig parse_atmosphere_project_config(
     validate_atmosphere_environment_options(config.options.atmosphere);
     validate_cloud_environment_options(config.options.clouds);
     config.atmosphere = atmosphere_config_from_options(config.options);
+    if (config.cloud_submitted_history && !config.atmosphere.clouds.layer.temporal_enabled)
+        throw std::invalid_argument("--cloud-submitted-history requires --cloud-temporal");
     return config;
 }
 

@@ -64,6 +64,12 @@ environment for PBR consumers, while atmosphere itself does not visualize that
 cache. Projected shadows and consumer-specific planar reflections remain
 explicit opt-in products rather than implicit parts of the sky pass.
 
+Add `--cloud-submitted-history` to the two-phase temporal command to test one
+cloud history per view. It pairs each accepted frame with its predecessor,
+independent of CPU slots. For matched captures use `--pause-time` to hold solar
+lighting, then compare `--cloud-wind-speed-mps 0` with a moving-weather run.
+This remains an experimental cloud-layer resolve.
+
 Useful runs:
 
 ```sh

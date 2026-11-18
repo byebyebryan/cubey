@@ -132,19 +132,22 @@ void CloudLayerRuntime::upload_frame_uniforms(FrameSlot frame_slot,
     frame_uniforms().upload(frame_slot, uniforms);
 }
 
-CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
-    RenderGraphBuilder& graph, VkExtent2D target_extent, const CloudLayerConfig& config,
-    FrameSlot frame_slot, CloudLayerFrameUniforms uniforms) const {
+CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(RenderGraphBuilder& graph,
+                                                          VkExtent2D target_extent,
+                                                          const CloudLayerConfig& config,
+                                                          FrameSlot frame_slot,
+                                                          CloudLayerFrameUniforms uniforms) const {
     const VkExtent2D cloud_extent = cloud_layer_product_extent(target_extent, config.quality);
-    const bool temporal_pass_enabled =
-        config.temporal_enabled && config.debug_view == CloudLayerDebugView::Final &&
-        history_extent_matches(cloud_extent);
-    const std::uint32_t history_read_index =
-        frame_slot.index < history_read_indices_.size() ? history_read_indices_[frame_slot.index]
-                                                        : 0U;
+    const bool temporal_pass_enabled = config.temporal_enabled &&
+                                       config.debug_view == CloudLayerDebugView::Final &&
+                                       history_extent_matches(cloud_extent);
+    const FrameSlot temporal_slot = history_slot(frame_slot);
+    const std::uint32_t history_read_index = temporal_slot.index < history_read_indices_.size()
+                                                 ? history_read_indices_[temporal_slot.index]
+                                                 : 0U;
     const std::uint32_t history_write_index = 1U - history_read_index;
-    const bool history_read_valid = history_texture_valid(frame_slot, history_read_index);
-    const bool history_write_valid = history_texture_valid(frame_slot, history_write_index);
+    const bool history_read_valid = history_texture_valid(temporal_slot, history_read_index);
+    const bool history_write_valid = history_texture_valid(temporal_slot, history_write_index);
     const RenderGraphTextureState sampled_state = cloud_layer_sampled_texture_state();
 
     CloudLayerRuntimeFrame frame{
@@ -167,14 +170,15 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
     graph.add_pass("cloud march", RenderGraphQueueDomain::Compute)
         .write_storage_texture(frame.product.cloud, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
         .write_storage_texture(frame.product.metadata, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-        .execute([this, frame_slot, cloud_extent, surface_march_enabled = frame.surface_march_enabled](
-                     const RenderGraphExecutionContext& context) {
+        .execute([this, frame_slot, cloud_extent,
+                  surface_march_enabled =
+                      frame.surface_march_enabled](const RenderGraphExecutionContext& context) {
             record_march_dispatch(context.recorder(), march_material().set(frame_slot),
                                   cloud_extent, surface_march_enabled);
         });
 
     if (temporal_pass_enabled) {
-        const Texture2D& read_texture = history_cloud_texture(frame_slot, history_read_index);
+        const Texture2D& read_texture = history_cloud_texture(temporal_slot, history_read_index);
         frame.history_cloud_read = graph.import_texture(
             cloud_layer_color_texture_desc("cloud history read", cloud_extent),
             read_texture.handle(), read_texture.view(),
@@ -183,7 +187,7 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
                 : std::optional<RenderGraphTextureState>{render_graph_undefined_texture_state()},
             sampled_state);
         const Texture2D& metadata_read_texture =
-            history_metadata_texture(frame_slot, history_read_index);
+            history_metadata_texture(temporal_slot, history_read_index);
         frame.history_metadata_read = graph.import_texture(
             cloud_layer_color_texture_desc("cloud metadata history read", cloud_extent),
             metadata_read_texture.handle(), metadata_read_texture.view(),
@@ -191,7 +195,7 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
                 ? std::optional<RenderGraphTextureState>{sampled_state}
                 : std::optional<RenderGraphTextureState>{render_graph_undefined_texture_state()},
             sampled_state);
-        const Texture2D& write_texture = history_cloud_texture(frame_slot, history_write_index);
+        const Texture2D& write_texture = history_cloud_texture(temporal_slot, history_write_index);
         frame.history_cloud_write = graph.import_texture(
             cloud_layer_color_texture_desc("cloud history write", cloud_extent),
             write_texture.handle(), write_texture.view(),
@@ -200,7 +204,7 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
                 : std::optional<RenderGraphTextureState>{render_graph_undefined_texture_state()},
             sampled_state);
         const Texture2D& metadata_write_texture =
-            history_metadata_texture(frame_slot, history_write_index);
+            history_metadata_texture(temporal_slot, history_write_index);
         frame.history_metadata_write = graph.import_texture(
             cloud_layer_color_texture_desc("cloud metadata history write", cloud_extent),
             metadata_write_texture.handle(), metadata_write_texture.view(),
@@ -208,6 +212,11 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
                 ? std::optional<RenderGraphTextureState>{sampled_state}
                 : std::optional<RenderGraphTextureState>{render_graph_undefined_texture_state()},
             sampled_state);
+        const auto temporal = temporal_frame_uniforms(temporal_slot, uniforms, history_read_index);
+        if (temporal.options.y == 0.0F) {
+            frame.history_read_temporal_frame = static_cast<std::uint32_t>(
+                history_frame_states_[temporal_slot.index]->temporal_options.x);
+        }
         graph.add_pass("cloud temporal", RenderGraphQueueDomain::Compute)
             .read_texture(frame.product.cloud, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
             .read_texture(frame.product.metadata, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
@@ -216,11 +225,9 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
             .write_storage_texture(frame.history_cloud_write, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
             .write_storage_texture(frame.history_metadata_write,
                                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
-            .execute([this, frame_slot, cloud_extent, uniforms, history_read_index](
-                         const RenderGraphExecutionContext& context) {
-                temporal_uniforms().upload(frame_slot, temporal_frame_uniforms(
-                                                           frame_slot, uniforms,
-                                                           history_read_index));
+            .execute([this, frame_slot, cloud_extent,
+                      temporal](const RenderGraphExecutionContext& context) {
+                temporal_uniforms().upload(frame_slot, temporal);
                 record_temporal_dispatch(context.recorder(), temporal_material().set(frame_slot),
                                          cloud_extent);
             });

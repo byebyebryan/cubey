@@ -43,6 +43,9 @@ viewport, and Save view retains that choice. See the
 [demo closeout](../../docs/notes/raytracing-dragon-demo-closeout.md) for matched
 motion, current costs, reproduction and accepted limits.
 
+The separate [fixed opaque dragon study](docs/fixed-opaque-taa.md) has matched
+Off and TAA presets for the bronze dragon and opaque marble support.
+
 The RT route requires a Vulkan 1.3 GPU with acceleration structures,
 ray-tracing pipelines and buffer device addresses. It reports missing
 capabilities rather than switching to another renderer. Existing Cubey

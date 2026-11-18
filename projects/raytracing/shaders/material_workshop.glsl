@@ -223,8 +223,18 @@ void traceWorkshop() {
     observation[12]=vec4(-1,-1,0,0);
     randomKey=rtHash(linearPixel^rtHash(workshop.sampling.x));
     bool demo=environment.noise.y>.5;
+#ifdef CUBEY_RT_FIXED_OPAQUE
+    vec2 pixelOffset=workshop.sampling.y==2u?vec2(.25+.5*float(completed)):
+        (vec2(completed&1u,completed>>1u)+.5)*.5;
+#else
     vec2 pixelOffset=demo?(workshop.sampling.y==2u?vec2(.25+.5*float(completed)):
         (vec2(completed&1u,completed>>1u)+.5)*.5):rtStratified(completed,0u);
+#endif
+#ifdef CUBEY_RT_FIXED_OPAQUE_TAA
+    // Add one coherent temporal offset to every fixed spatial lane. Lane zero
+    // remains (.25,.25)+jitter rather than becoming a pixel-center ray.
+    pixelOffset+=temporalRayMotion.extentJitter.zw;
+#endif
     vec2 uv=(vec2(pixel)+pixelOffset)/vec2(gl_LaunchSizeEXT.xy),screen=uv*2-1;
     vec3 origin=camera.eye.xyz;
     vec3 direction=normalize(mat3(camera.inverseView)*vec3(screen.x*camera.eye.w*camera.light.z,-screen.y*camera.light.z,-1));
@@ -246,6 +256,11 @@ void traceWorkshop() {
     if(view==10)color=textureLod(visibleBackground,uv,0).rgb*environment.options.w;
     Surface primary=Surface(vec3(0),vec3(0),vec3(0),vec3(0),-1,-1,0u,0u,0,vec3(0) RT_JOURNAL_ARG(0xffffffffu));
     if(view!=10){primary=surfaceRayMedium(origin,direction,255u,medium);++radianceQueries;}
+#ifdef CUBEY_RT_FIXED_OPAQUE_TAA
+    if(completed==0u)
+        imageStore(temporalMotionImage,pixel,
+                   vec4(fixedOpaqueMotion(primary.p,direction,primary.id>=0),0,0));
+#endif
     uint trials=1u;
     if(primary.id>=0) {
         Recipe initial=workshopRecipe(primary.id);

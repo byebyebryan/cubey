@@ -113,6 +113,7 @@ class TemporalViewState {
 struct TemporalAaConfig {
     VkExtent2D extent{};
     std::uint32_t frame_slot_count = 1;
+    // Leave empty when the producer supplies motion directly.
     std::filesystem::path motion_shader;
     std::filesystem::path resolve_shader;
     float new_frame_weight = 0.1F;
@@ -163,6 +164,11 @@ class TemporalAntiAliasing {
                                                            RenderGraphTextureHandle color,
                                                            RenderGraphTextureHandle motion,
                                                            const TemporalFrame& frame);
+    // Motion must be native-size RG16F in the same pixel convention as camera
+    // motion. The producer owns the image and declares or imports its writes.
+    [[nodiscard]] RenderGraphTextureHandle
+    declare_resolve_with_motion(RenderGraphBuilder& graph, RenderGraphTextureHandle color,
+                                RenderGraphTextureHandle motion, const TemporalFrame& frame);
     void update_descriptors(const vulkan::Device& device, const CompiledRenderGraph& graph,
                             const RenderGraphResourceSet& resources, const TemporalFrame& frame);
     void commit_frame(std::uint64_t token, vulkan::GpuSubmissionTicket ticket);
@@ -172,6 +178,11 @@ class TemporalAntiAliasing {
     [[nodiscard]] vulkan::GpuSubmissionTicket last_submission() const noexcept;
 
   private:
+    [[nodiscard]] RenderGraphTextureHandle declare_resolve_impl(RenderGraphBuilder& graph,
+                                                                RenderGraphTextureHandle color,
+                                                                RenderGraphTextureHandle motion,
+                                                                const TemporalFrame& frame,
+                                                                bool producer_motion);
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };

@@ -11,6 +11,26 @@ cubey_add_app_target(cubey_project_raytracing
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
     SHADER_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
 )
+# The opt-in opaque fixed transport shares the production raygen source while
+# compiling private variants. The TAA variant adds only producer motion and
+# camera matrices; the default RT shader/layout stays unchanged.
+add_custom_target(cubey_raytracing_fixed_opaque_off)
+add_custom_target(cubey_raytracing_fixed_opaque_taa)
+cubey_add_glsl_shaders(cubey_raytracing_fixed_opaque_off
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/fixed_opaque_off"
+    TARGET_ENV vulkan1.3
+    DEFINES CUBEY_RT_FIXED_OPAQUE=1
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+    SOURCES shaders/trace.rgen)
+cubey_add_glsl_shaders(cubey_raytracing_fixed_opaque_taa
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/fixed_opaque_taa"
+    TARGET_ENV vulkan1.3
+    DEFINES CUBEY_RT_FIXED_OPAQUE=1 CUBEY_RT_FIXED_OPAQUE_TAA=1
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+    SOURCES shaders/trace.rgen)
+add_dependencies(cubey_project_raytracing
+    cubey_raytracing_fixed_opaque_off_shaders
+    cubey_raytracing_fixed_opaque_taa_shaders)
 # Compile shared raster shaders with their usual Vulkan target. Compiling the
 # discard-heavy forward fragment shader for Vulkan 1.3 emits optional demote
 # capabilities that this app does not request from the device.

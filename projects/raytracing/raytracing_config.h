@@ -1,14 +1,18 @@
 #pragma once
 #include <cmath>
 #include <cubey/host/configured_app.h>
+#include <string_view>
 
 namespace cubey::projects::raytracing {
 struct Config {
     host::CommonRunConfig common;
     std::string scene = "fixture", view = "final";
     std::string renderer = "rt", transport_mode = "sampled";
+    std::string anti_aliasing = "off";
     std::string forward_transmission_source = "screen";
     std::uint32_t demo_samples = 4;
+    std::uint32_t fixed_opaque_samples = 4;
+    bool fixed_opaque_sequence = false;
     float forward_thickness = .2F;
     std::filesystem::path model, metrics, save_config, query_output;
     std::filesystem::path optics_output, hdr_output, scene_output;
@@ -63,8 +67,49 @@ inline bool sampled_dragon_scene(const Config& c) {
 inline bool demo_transport(const Config& c) {
     return c.renderer == "rt" && c.transport_mode == "demo";
 }
+inline bool fixed_opaque_transport(const Config& c) {
+    return c.renderer == "rt" && c.transport_mode == "fixed-opaque";
+}
+inline bool per_frame_fixed_transport(const Config& c) {
+    return demo_transport(c) || fixed_opaque_transport(c);
+}
 inline std::uint32_t frame_sample_target(const Config& c) {
-    return demo_transport(c) ? c.demo_samples : c.samples;
+    return demo_transport(c) ? c.demo_samples
+           : fixed_opaque_transport(c) ? c.fixed_opaque_samples
+                                       : c.samples;
+}
+inline std::uint64_t fixed_opaque_sequence_cut_frame(std::uint64_t frame_count) {
+    return frame_count >= 96 ? 72 : 11;
+}
+inline std::string_view fixed_opaque_sequence_phase(std::uint64_t frame,
+                                                    std::uint64_t frame_count) {
+    const bool long_sequence = frame_count >= 96;
+    const std::uint64_t hold_end = long_sequence ? 11 : 2;
+    const std::uint64_t orbit_end = long_sequence ? 47 : 7;
+    const std::uint64_t stop_end = long_sequence ? 71 : 10;
+    if (frame <= hold_end)
+        return "hold";
+    if (frame <= orbit_end)
+        return "orbit";
+    if (frame <= stop_end)
+        return "stop";
+    if (frame == fixed_opaque_sequence_cut_frame(frame_count))
+        return "cut";
+    return "post-cut-hold";
+}
+inline float fixed_opaque_sequence_yaw_offset(std::uint64_t frame,
+                                              std::uint64_t frame_count) {
+    const bool long_sequence = frame_count >= 96;
+    const std::uint64_t hold_end = long_sequence ? 11 : 2;
+    const std::uint64_t orbit_end = long_sequence ? 47 : 7;
+    if (frame <= hold_end)
+        return 0.F;
+    if (frame <= orbit_end)
+        return .16F * static_cast<float>(frame - hold_end) /
+               static_cast<float>(orbit_end - hold_end);
+    if (frame < fixed_opaque_sequence_cut_frame(frame_count))
+        return .16F;
+    return -.16F;
 }
 inline int dump_mode(const Config& c) {
     return !c.query_output.empty()
@@ -122,13 +167,18 @@ inline config::Schema schema(Config& c) {
     auto renderer = opt("renderer", ValueType::Enum);
     renderer.enum_values = {"rt", "forward"};
     auto transport = opt("transport-mode", ValueType::Enum);
-    transport.enum_values = {"sampled", "demo"};
+    transport.enum_values = {"sampled", "demo", "fixed-opaque"};
+    auto anti_aliasing = opt("anti-aliasing", ValueType::Enum);
+    anti_aliasing.enum_values = {"off", "taa"};
     auto controls = opt("controls", ValueType::Bool);
     controls.negative_cli_name = "--no-controls";
     b.bind(renderer, c.renderer)
         .bind(controls, c.controls)
         .bind(transport, c.transport_mode)
+        .bind(anti_aliasing, c.anti_aliasing)
         .bind(opt("demo-samples", ValueType::UInt32), c.demo_samples)
+        .bind(opt("fixed-opaque-samples", ValueType::UInt32), c.fixed_opaque_samples)
+        .bind(opt("fixed-opaque-sequence", ValueType::Bool), c.fixed_opaque_sequence)
         .bind(opt("forward-thickness", ValueType::Float), c.forward_thickness);
     auto forward_source = opt("forward-transmission-source", ValueType::Enum);
     forward_source.enum_values = {"screen", "environment", "hybrid"};
@@ -252,8 +302,18 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         return c;
     if ((c.renderer == "forward" || c.transport_mode == "demo") && c.scene != "dragon-optics")
         throw std::invalid_argument("forward comparison and demo transport require dragon-optics");
+    if (c.transport_mode == "fixed-opaque" && c.renderer != "rt")
+        throw std::invalid_argument("fixed-opaque transport requires the RT renderer");
+    if (fixed_opaque_transport(c) && c.scene != "dragon-materials")
+        throw std::invalid_argument("fixed-opaque transport requires dragon-materials");
+    if (c.anti_aliasing == "taa" && !fixed_opaque_transport(c))
+        throw std::invalid_argument("TAA currently requires fixed-opaque transport");
+    if (c.fixed_opaque_sequence && !fixed_opaque_transport(c))
+        throw std::invalid_argument("fixed-opaque sequence requires fixed-opaque transport");
     if (c.demo_samples != 2 && c.demo_samples != 4)
         throw std::invalid_argument("demo samples must be 2 or 4 fixed samples per frame");
+    if (c.fixed_opaque_samples != 2 && c.fixed_opaque_samples != 4)
+        throw std::invalid_argument("fixed-opaque samples must be 2 or 4 primary samples per frame");
     if (!std::isfinite(c.forward_thickness) || c.forward_thickness <= 0 || c.forward_thickness > 2)
         throw std::invalid_argument("forward thickness must be in (0,2]");
     if (c.renderer == "forward" &&
@@ -292,6 +352,32 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
                 "sampled dragon requires its marble slab, shared atmosphere and original scale");
         if (c.throughput_cutoff != 0)
             throw std::invalid_argument("sampled dragon requires zero raw-throughput cutoff");
+    }
+    if (fixed_opaque_transport(c)) {
+        if (c.samples != 256 || c.demo_samples != 4 || c.material != "bronze" ||
+            c.support_material != "marble" ||
+            c.dragon_support != "rock" || c.environment != "atmosphere" ||
+            c.reflection_source != "scene" || c.transmission_source != "scene" ||
+            c.view != "final" || !c.pattern || !c.bump || !c.shadows ||
+            c.workshop_lighting != "combined" || c.material_roughness != -1 ||
+            !c.recipe_input.empty() || !c.recipe_output.empty() || c.stress_edits != 0 ||
+            c.firefly_clamp != 0 || c.optical_pair != "none" || c.object_scale != 1 ||
+            c.sun_speed != 0 ||
+            c.hide_dragon || c.fault != "none" || c.exercise_retry || c.optics_contract ||
+            c.bsdf_contract || c.material_contract || c.dielectric_contract || dump_mode(c) != 0)
+            throw std::invalid_argument(
+                "fixed-opaque requires the unmodified bronze dragon and opaque marble support "
+                "with final scene transport");
+        if (c.fixed_opaque_sequence &&
+            (!c.common.headless ||
+             !((c.common.headless_render_only && c.common.capture_mode == CaptureMode::Png &&
+                c.common.frames == 14) ||
+               (!c.common.headless_render_only && c.common.capture_mode == CaptureMode::Video &&
+                c.common.frames == 96 && c.common.fps == 30)) ||
+             c.orbit_speed != 0 || c.sun_speed != 0))
+            throw std::invalid_argument(
+                "fixed-opaque sequence requires headless 14-frame render-only or 96-frame 30 Hz "
+                "video capture and no animated camera or sun");
     }
     if (c.dragon_support != "plinth" && c.scene != "reflection-dragon-solo" && !sampled_dragon)
         throw std::invalid_argument("dragon support selection requires the solo dragon scene");

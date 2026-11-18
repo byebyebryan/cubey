@@ -33,6 +33,8 @@ the architecture and project guides remain current authority.
   reference parity and native lifecycle/cost limits.
 - [Native TAA foundation plan](taa-foundation-plan.md): retained implementation
   contract, showcase choice, consumer order and acceptance gates.
+- [Temporal rendering beyond forward](temporal-consumers-2026-11.md): native
+  SDF motion and cut, cloud phase history and composition, and opaque fixed RT.
 - [RT material workshop plan](raytracing-material-workshop-plan.md): proposed
   shared twelve-recipe forward/SDF/RT workshop under matched clear atmosphere,
   with rough specular transport, per-material optics and bounded sampling.

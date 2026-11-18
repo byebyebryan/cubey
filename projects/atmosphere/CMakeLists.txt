@@ -54,6 +54,17 @@ if (BUILD_TESTING)
     )
     add_test(NAME atmosphere_config_tests COMMAND cubey_project_atmosphere_tests)
 
+    find_package(Python3 COMPONENTS Interpreter QUIET)
+    if (Python3_Interpreter_FOUND)
+        add_test(NAME atmosphere_cloud_submitted_history_sync
+            COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tools/check_cloud_submitted_history.py"
+                "$<TARGET_FILE:cubey_project_atmosphere>")
+        set_tests_properties(atmosphere_cloud_submitted_history_sync PROPERTIES
+            LABELS "cloud;gpu;headless;sync_validation" RUN_SERIAL TRUE TIMEOUT 120
+            ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1")
+    endif()
+
     set(CUBEY_ATMOSPHERE_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-headless.png"
     )

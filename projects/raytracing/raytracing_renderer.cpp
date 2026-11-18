@@ -17,6 +17,7 @@
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
 #include <limits>
+#include <span>
 
 namespace cubey::projects::raytracing {
 namespace {
@@ -26,6 +27,10 @@ double elapsed(Clock::time_point start) {
 }
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_RAYTRACING_SHADER_DIR) / name;
+}
+std::filesystem::path fixed_opaque_shader(const char* name, bool taa) {
+    return std::filesystem::path(CUBEY_RAYTRACING_SHADER_DIR) /
+           (taa ? "fixed_opaque_taa" : "fixed_opaque_off") / name;
 }
 constexpr auto address_usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 constexpr auto geometry_usage =
@@ -84,6 +89,10 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
         forward_ = std::make_unique<ForwardComparison>(device, gpu, scene, slots, *config);
         return;
     }
+    fixed_opaque_mode_ = config && fixed_opaque_transport(*config);
+    fixed_opaque_taa_ = fixed_opaque_mode_ && config->anti_aliasing == "taa";
+    if (fixed_opaque_mode_)
+        fixed_opaque_sample_target_ = config->fixed_opaque_samples;
     if (!device.ray_tracing_enabled() || !slots || slots > 8)
         throw std::invalid_argument("RT renderer requires an enabled device and 1..8 slots");
     try {
@@ -407,12 +416,7 @@ void Renderer::create_pipeline() {
     const VkShaderStageFlags stages = VK_SHADER_STAGE_RAYGEN_BIT_KHR |
                                       VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
                                       VK_SHADER_STAGE_MISS_BIT_KHR;
-#ifdef CUBEY_RT_RAY_JOURNAL
-    constexpr std::size_t binding_count = 20;
-#else
-    constexpr std::size_t binding_count = 19;
-#endif
-    const std::array<vulkan::DescriptorSetBindingConfig, binding_count> bindings{{
+    std::vector<vulkan::DescriptorSetBindingConfig> bindings{
         {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, stages},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
         {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stages},
@@ -431,13 +435,17 @@ void Renderer::create_pipeline() {
         {15, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
         {16, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
         {17, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
-        {18, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+        {18, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR}};
 #ifdef CUBEY_RT_RAY_JOURNAL
-        {19, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+    bindings.push_back({19, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR});
 #endif
-    }};
+    if (fixed_opaque_taa_) {
+        bindings.push_back({20, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR});
+        bindings.push_back({21, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR});
+    }
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
-        device_, vulkan::DescriptorSetInfo(bindings, slots_));
+        device_, vulkan::DescriptorSetInfo(std::span<const vulkan::DescriptorSetBindingConfig>(bindings),
+                                           slots_));
     auto layout = cubey::vulkan::vk_struct<VkPipelineLayoutCreateInfo>(
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
     const auto descriptor_layout = descriptors_->layout();
@@ -453,8 +461,12 @@ void Renderer::create_pipeline() {
         VK_SHADER_STAGE_RAYGEN_BIT_KHR, VK_SHADER_STAGE_MISS_BIT_KHR, VK_SHADER_STAGE_MISS_BIT_KHR,
         VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR};
     for (std::size_t i = 0; i < 4; ++i) {
+        const auto shader_path =
+            i == 0 && fixed_opaque_mode_
+                ? fixed_opaque_shader("trace.rgen.spv", fixed_opaque_taa_)
+                : shader(names[i]);
         modules.push_back(std::make_unique<vulkan::ShaderModule>(
-            device_, vulkan::read_spirv_file(shader(names[i]))));
+            device_, vulkan::read_spirv_file(shader_path)));
         shader_stages[i] = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                             nullptr,
                             0,
@@ -513,6 +525,10 @@ void Renderer::create_pipeline() {
         uniforms_.push_back(std::make_unique<vulkan::Buffer>(
             device_, vulkan::BufferConfig{sizeof(CameraUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                           host_memory}));
+        if (fixed_opaque_taa_)
+            temporal_motion_uniforms_.push_back(std::make_unique<vulkan::Buffer>(
+                device_, vulkan::BufferConfig{sizeof(TemporalRayMotionUniform),
+                                              VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, host_memory}));
         environment_uniforms_.push_back(std::make_unique<vulkan::Buffer>(
             device_, vulkan::BufferConfig{sizeof(EnvironmentUniform),
                                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, host_memory}));
@@ -548,6 +564,12 @@ void Renderer::create_pipeline() {
             .storage_buffer(descriptors_->set(i), 4, indices_->handle(), indices_->size())
             .storage_buffer(descriptors_->set(i), 5, instances_->handle(), instances_->size())
             .update(device_);
+        if (fixed_opaque_taa_)
+            vulkan::DescriptorWriteBatch{}
+                .uniform_buffer(descriptors_->set(i), 21,
+                                temporal_motion_uniforms_.back()->handle(),
+                                sizeof(TemporalRayMotionUniform))
+                .update(device_);
         auto acceleration = cubey::vulkan::vk_struct<VkWriteDescriptorSetAccelerationStructureKHR>(
             VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR);
         acceleration.accelerationStructureCount = 1;
@@ -576,20 +598,33 @@ void Renderer::resize(VkExtent2D extent, VkFormat format, bool fault) {
     if (workshop_ && !device_.supports_image_format_features(VK_FORMAT_R32G32B32A32_SFLOAT,
                                                              VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT))
         throw std::runtime_error("RT workshop requires RGBA32F storage history");
+    if (fixed_opaque_taa_ &&
+        !device_.supports_image_format_features(
+            VK_FORMAT_R16G16_SFLOAT,
+            VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))
+        throw std::runtime_error("fixed-opaque TAA requires RG16F storage and sampled images");
     std::vector<Target> next;
     for (std::uint32_t i = 0; i < slots_; ++i) {
-        next.push_back(
-            {std::make_unique<render::Texture2D>(
-                 device_, render::Texture2DConfig{.extent = extent,
-                                                  .format = hdr_format,
-                                                  .usage = render::Texture2DUsage::StorageSampled,
-                                                  .create_sampler = false,
-                                                  .sampler = {}}),
-             std::make_unique<vulkan::Buffer>(
-                 device_,
-                 vulkan::BufferConfig{
-                     diagnostic_ ? std::uint64_t(extent.width) * extent.height * dump_stride_ : 64,
-                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory})});
+        Target target;
+        target.color = std::make_unique<render::Texture2D>(
+            device_, render::Texture2DConfig{.extent = extent,
+                                             .format = hdr_format,
+                                             .usage = render::Texture2DUsage::StorageSampled,
+                                             .create_sampler = false,
+                                             .sampler = {}});
+        if (fixed_opaque_taa_)
+            target.motion = std::make_unique<render::Texture2D>(
+                device_, render::Texture2DConfig{.extent = extent,
+                                                 .format = VK_FORMAT_R16G16_SFLOAT,
+                                                 .usage = render::Texture2DUsage::StorageSampled,
+                                                 .create_sampler = false,
+                                                 .sampler = {}});
+        target.queries = std::make_unique<vulkan::Buffer>(
+            device_, vulkan::BufferConfig{
+                        diagnostic_ ? std::uint64_t(extent.width) * extent.height * dump_stride_
+                                    : 64,
+                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory});
+        next.push_back(std::move(target));
         if (fault)
             throw std::runtime_error("owned RT creation fault: target");
     }
@@ -609,7 +644,14 @@ void Renderer::resize(VkExtent2D extent, VkFormat format, bool fault) {
     for (const auto& target : next)
         next_bytes += std::uint64_t(extent.width) * extent.height * 8 + target.queries->size();
     next_bytes += std::uint64_t(history_extent.width) * history_extent.height * 16;
+    if (fixed_opaque_taa_)
+        next_bytes += std::uint64_t(extent.width) * extent.height * 4 * slots_;
     requested_peak_ = std::max(requested_peak_, requested_bytes() + next_bytes);
+    if (fixed_opaque_taa_)
+        temporal_.create(device_, {.extent = extent,
+                                   .frame_slot_count = slots_,
+                                   .motion_shader = {},
+                                   .resolve_shader = shader("forward/resolve.comp.spv")});
     targets_ = std::move(next);
     history_ = std::move(next_history);
     history_initialized_ = false;
@@ -625,6 +667,10 @@ void Renderer::resize(VkExtent2D extent, VkFormat format, bool fault) {
             .storage_buffer(descriptors_->set(i), 6, targets_[i].queries->handle(),
                             targets_[i].queries->size())
             .update(device_);
+        if (fixed_opaque_taa_)
+            vulkan::DescriptorWriteBatch{}
+                .storage_image(descriptors_->set(i), 20, targets_[i].motion->view())
+                .update(device_);
         environment_->bind(device_, descriptors_->set(i), i);
     }
 }
@@ -650,11 +696,15 @@ void Renderer::collect(std::uint32_t slot) {
 }
 void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
                       render::FrameSlot slot, const Config& c, bool present,
-                      profiling::ProfileRecorder* profile, std::uint64_t frame) {
+                      profiling::ProfileRecorder* profile, std::uint64_t frame,
+                      bool temporal_reset) {
     if (forward_) {
         forward_->render(command, output, slot, c, present, profile, frame);
         return;
     }
+    if (fixed_opaque_mode_ != fixed_opaque_transport(c) ||
+        fixed_opaque_taa_ != (fixed_opaque_transport(c) && c.anti_aliasing == "taa"))
+        throw std::invalid_argument("RT transport or anti-aliasing changed after pipeline creation");
     demo_mode_ = demo_transport(c);
     collect(slot.index);
     profile_ = profile;
@@ -692,12 +742,64 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
          c.reflection_source != "scene" || c.transmission_source != "scene"))
         throw std::invalid_argument(
             "dragon optics requires sharp supported materials and full scene transport");
+    if (fixed_opaque_mode_) {
+        if (!workshop_ || !support_recipe_ || workshop_->selected >= workshop_->catalog.size() ||
+            workshop_->catalog.at(workshop_->selected).id != "bronze" ||
+            workshop_->recipes.at(workshop_->selected).id != "bronze" ||
+            asset::material_recipe_fingerprint(workshop_->recipes.at(workshop_->selected)) !=
+                asset::material_recipe_fingerprint(
+                    workshop_->catalog.at(workshop_->selected).recipe) ||
+            support_recipe_->id != "marble" || support_recipe_->optics.settings.y != 0 ||
+            c.scene != "dragon-materials" || c.material != "bronze" || c.view != "final" ||
+            !c.pattern || !c.bump || !c.shadows || c.workshop_lighting != "combined" ||
+            c.reflection_source != "scene" || c.transmission_source != "scene")
+            throw std::invalid_argument(
+                "fixed-opaque requires its unchanged bronze and opaque marble scene route");
+    }
     if (!glass_planes_.empty() &&
         std::all_of(glass_planes_.begin(), glass_planes_.end(), [&](auto p) {
             return glm::dot(p, math::Vec4(math::Vec3(camera.eye), 1)) <= 1e-6F;
         }))
         throw std::invalid_argument(
             "camera-inside-glass is unsupported; move outside the closed volume");
+    if (temporal_reset && fixed_opaque_taa_)
+        force_temporal_reset_ = true;
+    std::optional<render::TemporalFrame> temporal_frame;
+    if (fixed_opaque_taa_) {
+        if (!temporal_.created())
+            throw std::logic_error("fixed-opaque TAA resources are not initialized");
+        const auto projection = math::perspective(
+            glm::radians(c.fov), camera.eye.w, .1F, 100.F);
+        temporal_frame = temporal_.begin_frame(
+            slot, {.projection = projection,
+                   .view = glm::inverse(camera.inverse_view),
+                   .view_id = 1,
+                   .content_generation = 1,
+                   .reset = force_temporal_reset_});
+        TemporalRayMotionUniform motion_uniform{
+            temporal_frame->view_projection,
+            temporal_frame->previous_view_projection,
+            {float(extent_.width), float(extent_.height), temporal_frame->sample_offset_pixels.x,
+             temporal_frame->sample_offset_pixels.y}};
+        temporal_motion_uniforms_.at(slot.index)->upload(&motion_uniform, sizeof(motion_uniform));
+    }
+    if (fixed_opaque_mode_) {
+        if (pending_frame_)
+            throw std::logic_error("RT renderer received a second unsubmitted frame");
+        PendingFrame pending;
+        pending.slot = slot.index;
+        pending.frame = frame;
+        pending.color_initialized_before = targets_.at(slot.index).initialized;
+        pending.motion_initialized_before = targets_.at(slot.index).motion_initialized;
+        pending.history_initialized_before = history_initialized_;
+        pending.history_samples_before = history_samples_;
+        pending.history_epochs_before = history_epochs_;
+        pending.history_identity_before = history_identity_;
+        pending.temporal = temporal_frame;
+        if (c.fixed_opaque_sequence)
+            pending.sequence_phase = fixed_opaque_sequence_phase(frame, c.common.frames);
+        pending_frame_ = std::move(pending);
+    }
     vulkan::CommandRecorder recorder(command);
     if (present)
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -811,10 +913,31 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     barrier.image = target.color->handle();
     barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkCmdPipelineBarrier(command,
-                         target.initialized ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                         target.initialized ? (fixed_opaque_taa_
+                                                   ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+                                                   : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
                                             : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                          VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 0, nullptr, 0, nullptr, 1,
                          &barrier);
+    if (fixed_opaque_taa_) {
+        auto motion_barrier =
+            vulkan::vk_struct<VkImageMemoryBarrier>(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER);
+        motion_barrier.oldLayout = target.motion_initialized
+                                       ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                       : VK_IMAGE_LAYOUT_UNDEFINED;
+        motion_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        motion_barrier.srcAccessMask = target.motion_initialized ? VK_ACCESS_SHADER_READ_BIT : 0;
+        motion_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        motion_barrier.srcQueueFamilyIndex = motion_barrier.dstQueueFamilyIndex =
+            VK_QUEUE_FAMILY_IGNORED;
+        motion_barrier.image = target.motion->handle();
+        motion_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        vkCmdPipelineBarrier(command,
+                             target.motion_initialized ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+                                                       : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 0, nullptr, 0,
+                             nullptr, 1, &motion_barrier);
+    }
     trace_timer_->begin_pass(command, slot.index, "raytracing.trace");
     std::vector<std::byte> identity;
     auto append_identity = [&](const auto& value) {
@@ -833,8 +956,8 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
             append_identity(ch);
     if (workshop_)
         append_identity(workshop_->revision);
-    const bool reset_history =
-        demo_transport(c) || !history_initialized_ || (workshop_ && identity != history_identity_);
+    const bool reset_history = per_frame_fixed_transport(c) || !history_initialized_ ||
+                               (workshop_ && identity != history_identity_);
     if (reset_history) {
         history_samples_ = 0;
         history_identity_ = std::move(identity);
@@ -881,10 +1004,14 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
 #ifdef CUBEY_RT_RAY_JOURNAL
         c.journal_isolate ? 1U :
 #endif
-        demo_transport(c) ? frame_sample_target(c)
+        per_frame_fixed_transport(c) ? frame_sample_target(c)
         : workshop_ && !contract_probe && c.common.headless && !c.common.headless_render_only
             ? std::max(1U, c.samples > history_samples_ ? c.samples - history_samples_ : 0U)
             : 1U;
+    if (pending_frame_) {
+        pending_frame_->primary_samples = iterations;
+        pending_frame_->sample_target = frame_sample_target(c);
+    }
     for (std::uint32_t sample = 0; sample < iterations; ++sample) {
         if (sample > 0) {
             auto dependency = vulkan::vk_struct<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
@@ -921,7 +1048,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
              {"exposure", c.exposure},
              {"sample_target", frame_sample_target(c)},
              {"transport_mode", c.transport_mode},
-             {"sample_scope", demo_transport(c) ? "per-frame" : "progressive"}});
+             {"sample_scope", per_frame_fixed_transport(c) ? "per-frame" : "progressive"}});
     if (diagnostic_
 #ifdef CUBEY_RT_RAY_JOURNAL
         || ray_journal_
@@ -940,6 +1067,19 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         target.color->handle(), target.color->view(),
         render::RenderGraphTextureState{VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT,
                                         VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR});
+    auto post_scene = scene;
+    if (fixed_opaque_taa_) {
+        const auto motion = builder.import_texture(
+            render::RenderGraphTextureDesc{.label = "raytracing.motion",
+                                           .extent = {extent_.width, extent_.height, 1},
+                                           .format = VK_FORMAT_R16G16_SFLOAT,
+                                           .aspects = VK_IMAGE_ASPECT_COLOR_BIT},
+            target.motion->handle(), target.motion->view(),
+            render::RenderGraphTextureState{VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_WRITE_BIT,
+                                            VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR});
+        post_scene = temporal_.declare_resolve_with_motion(builder, scene, motion,
+                                                           *pending_frame_->temporal);
+    }
     const auto out = builder.import_color_target(
         "raytracing.output", output,
         present ? render::RenderGraphTextureState{VK_IMAGE_LAYOUT_UNDEFINED, 0,
@@ -948,7 +1088,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
         present ? render::render_graph_present_texture_state()
                 : render::render_graph_color_attachment_texture_state());
     builder.add_pass("raytracing.post", render::RenderGraphQueueDomain::Graphics)
-        .read_texture(scene)
+        .read_texture(post_scene)
         .write_color(out)
         .execute([&](const render::RenderGraphExecutionContext& context) {
             post_.record_pass(context.recorder(), render::resolved_color_target_view(context, out),
@@ -961,15 +1101,85 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
          .frame_slot = slot,
          .command_buffer_mode = render::RenderGraphCommandBufferMode::AlreadyRecording},
         graph, [&](const render::RenderGraphResourceSet& resources) {
-            post_.update_scene_color_descriptor(device_, slot, graph, resources, scene);
+            if (fixed_opaque_taa_)
+                temporal_.update_descriptors(device_, graph, resources,
+                                             *pending_frame_->temporal);
+            post_.update_scene_color_descriptor(device_, slot, graph, resources, post_scene);
         });
     whole_timer_->end_pass(command, slot.index);
     total_timer_->end_pass(command, slot.index);
     recorded_[slot.index] = frame;
-    target.initialized = true;
-    last_slot_ = slot.index;
+    if (!fixed_opaque_mode_) {
+        target.initialized = true;
+        last_slot_ = slot.index;
+    }
     if (present)
         recorder.end("vkEndCommandBuffer raytracing");
+}
+void Renderer::frame_submitted(vulkan::GpuSubmissionTicket ticket) {
+    if (forward_ || !fixed_opaque_mode_)
+        return;
+    if (!pending_frame_)
+        throw std::logic_error("RT submission callback has no recorded frame");
+    auto& target = targets_.at(pending_frame_->slot);
+    target.initialized = true;
+    if (fixed_opaque_taa_)
+        target.motion_initialized = true;
+    last_slot_ = pending_frame_->slot;
+    if (pending_frame_->temporal) {
+        temporal_.commit_frame(pending_frame_->temporal->token, ticket);
+        force_temporal_reset_ = false;
+    }
+    if (fixed_opaque_mode_) {
+        if (fixed_opaque_frames_.size() < 20000) {
+            nlohmann::json accepted{
+                {"frame", pending_frame_->frame},
+                {"submission_ticket", ticket.value},
+                {"primary_samples", pending_frame_->primary_samples},
+                {"primary_sample_lanes", pending_frame_->primary_samples},
+                {"primary_ray_dispatches", pending_frame_->primary_samples},
+                {"primary_rays", std::uint64_t(pending_frame_->primary_samples) * extent_.width *
+                                      extent_.height},
+                {"sample_target", pending_frame_->sample_target},
+                {"anti_aliasing", fixed_opaque_taa_ ? "taa" : "off"},
+                {"sequence_phase", pending_frame_->sequence_phase.empty()
+                                        ? nlohmann::json(nullptr)
+                                        : nlohmann::json(pending_frame_->sequence_phase)}};
+            if (pending_frame_->temporal) {
+                const auto& temporal = *pending_frame_->temporal;
+                accepted["history_age"] = temporal.history_age;
+                accepted["reset_reason"] =
+                    render::temporal_reset_reason_name(temporal.reset_reason);
+                accepted["jitter_pixels"] = {temporal.sample_offset_pixels.x,
+                                              temporal.sample_offset_pixels.y};
+            } else {
+                accepted["history_age"] = nullptr;
+                accepted["reset_reason"] = nullptr;
+                accepted["jitter_pixels"] = nullptr;
+            }
+            fixed_opaque_frames_.push_back(std::move(accepted));
+        } else {
+            ++dropped_samples_;
+        }
+    }
+    pending_frame_.reset();
+}
+void Renderer::frame_discarded() {
+    if (forward_ || !fixed_opaque_mode_)
+        return;
+    if (!pending_frame_)
+        return;
+    if (pending_frame_->temporal)
+        temporal_.discard_frame();
+    auto& target = targets_.at(pending_frame_->slot);
+    target.initialized = pending_frame_->color_initialized_before;
+    target.motion_initialized = pending_frame_->motion_initialized_before;
+    history_initialized_ = pending_frame_->history_initialized_before;
+    history_samples_ = pending_frame_->history_samples_before;
+    history_epochs_ = pending_frame_->history_epochs_before;
+    history_identity_ = std::move(pending_frame_->history_identity_before);
+    recorded_.at(pending_frame_->slot).reset();
+    pending_frame_.reset();
 }
 void Renderer::finish() {
     if (forward_) {
@@ -1042,8 +1252,13 @@ std::uint64_t Renderer::requested_bytes() const {
         bytes += acceleration.storage->size();
     for (const auto& uniform : uniforms_)
         bytes += uniform->size();
-    for (const auto& target : targets_)
+    for (const auto& uniform : temporal_motion_uniforms_)
+        bytes += uniform->size();
+    for (const auto& target : targets_) {
         bytes += std::uint64_t(extent_.width) * extent_.height * 8 + target.queries->size();
+        if (target.motion)
+            bytes += std::uint64_t(extent_.width) * extent_.height * 4;
+    }
     for (const auto& buffer : material_buffers_)
         bytes += buffer->size();
     for (const auto& buffer : environment_uniforms_)
@@ -1065,11 +1280,33 @@ nlohmann::json Renderer::metrics() const {
             if (workshop_->supports(i))
                 supported.push_back(workshop_->catalog[i].id);
     const auto memory = device_.device_memory_budget();
+    const auto taa_metrics = temporal_.metrics();
+    const auto taa_json = fixed_opaque_taa_
+                              ? nlohmann::json{
+                                    {"submitted_frames", taa_metrics.submitted_frames},
+                                    {"history_age", taa_metrics.history_age},
+                                    {"reset_reason", render::temporal_reset_reason_name(
+                                                          taa_metrics.reset_reason)},
+                                    {"jitter_pixels", {taa_metrics.sample_offset_pixels.x,
+                                                        taa_metrics.sample_offset_pixels.y}},
+                                    {"persistent_requested_bytes",
+                                     taa_metrics.persistent_requested_bytes},
+                                    {"per_slot_transient_requested_bytes",
+                                     taa_metrics.per_slot_transient_requested_bytes},
+                                    {"producer_motion_requested_bytes",
+                                     std::uint64_t(extent_.width) * extent_.height * 4 * slots_}}
+                              : nlohmann::json(nullptr);
     return {
         {"format", "cubey.raytracing.metrics"},
         {"renderer", "rt"},
-        {"transport_mode", demo_mode_ ? "demo" : "sampled"},
-        {"sample_scope", demo_mode_ ? "per-frame" : "progressive"},
+        {"transport_mode", fixed_opaque_mode_ ? "fixed-opaque"
+                           : demo_mode_        ? "demo"
+                                               : "sampled"},
+        {"sample_scope", fixed_opaque_mode_ || demo_mode_ ? "per-frame" : "progressive"},
+        {"anti_aliasing", fixed_opaque_taa_ ? "taa" : "off"},
+        {"fixed_opaque_primary_samples_per_frame",
+         fixed_opaque_mode_ ? fixed_opaque_sample_target_ : 0},
+        {"temporal_aa", taa_json},
         {"demo_branch_cutoff", demo_mode_ ? .01 : 0},
         {"workshop_enabled", bool(workshop_)},
         {"firefly_clamp_policy", "mean RGB cap per throughput-weighted HDR deposit; "
@@ -1104,6 +1341,7 @@ nlohmann::json Renderer::metrics() const {
         {"history_epochs", history_epochs_},
         {"extent", {extent_.width, extent_.height}},
         {"sampling_frames", sampling_frames_},
+        {"fixed_opaque_accepted_frames", fixed_opaque_frames_},
         {"workshop_materials", workshop_ ? workshop_->identity() : nlohmann::json::array()},
         {"geometry_admission", geometry_admission_},
         {"scene_routes", route_identity_},
@@ -1158,7 +1396,10 @@ nlohmann::json Renderer::metrics() const {
                                  "and resize overlap; excludes host targets, upload staging, "
                                  "driver allocation padding, shared environment textures/uniform "
                                  "internals and pipeline/descriptor internals"},
-        {"target_bytes", std::uint64_t(extent_.width) * extent_.height * 8 * slots_},
+        {"target_bytes", std::uint64_t(extent_.width) * extent_.height *
+                              (8 + (fixed_opaque_taa_ ? 4 : 0)) * slots_},
+        {"producer_motion_bytes",
+         fixed_opaque_taa_ ? std::uint64_t(extent_.width) * extent_.height * 4 * slots_ : 0},
         {"workshop_history_bytes",
          workshop_ && history_ ? std::uint64_t(extent_.width) * extent_.height * 16 : 0},
         {"workshop_recipe_bytes",
@@ -1183,6 +1424,7 @@ void Renderer::destroy() noexcept {
 #ifdef CUBEY_RT_RAY_JOURNAL
     ray_journal_.reset();
 #endif
+    temporal_.destroy();
     executor_.clear();
     targets_.clear();
     history_.reset();
@@ -1205,6 +1447,7 @@ void Renderer::destroy() noexcept {
     descriptors_.reset();
     sbt_.reset();
     uniforms_.clear();
+    temporal_motion_uniforms_.clear();
     for (auto& a : accelerations_)
         if (a.handle && rt_.destroy_as)
             rt_.destroy_as(device_.handle(), a.handle, nullptr);

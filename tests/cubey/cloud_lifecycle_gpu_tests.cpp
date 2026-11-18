@@ -36,9 +36,10 @@ void synchronization_probe(const vulkan::Device& device) {
 }
 
 void lifecycle(vulkan::Device& device, vulkan::SubmissionCoordinator& submission,
-               vulkan::GpuRuntime& gpu, std::uint32_t slots) {
+               vulkan::GpuRuntime& gpu, std::uint32_t slots, bool submitted_history = false) {
     render::CloudLayerConfig config;
     config.temporal_enabled = true;
+    config.submitted_history = submitted_history;
     config.view_steps_override = 4;
     const auto shaders = render::cloud_layer_runtime_shader_files(
         CUBEY_CLOUD_TEST_SHADER_DIR, render::CloudLayerCompositeMode::ExternalBackground);
@@ -64,12 +65,11 @@ void lifecycle(vulkan::Device& device, vulkan::SubmissionCoordinator& submission
                 device, vulkan::color_render_target_image_config(extent, VK_FORMAT_R8G8B8A8_UNORM));
         }
         for (std::uint32_t batch = 0; batch < 6; ++batch) {
-            if (batch == 2) {
-                cloud.invalidate_history();
-            }
             config.temporal_enabled = batch != 3;
-            const bool history_valid = batch == 1 || batch == 5;
             for (std::uint32_t index = 0; index < slots; ++index) {
+                if (batch == 2 && index == (submitted_history ? 1U : 0U)) {
+                    cloud.invalidate_history();
+                }
                 const render::FrameSlot slot{index, slots};
                 vulkan::check(vkResetCommandBuffer(commands[index], 0),
                               "reset cloud lifecycle command");
@@ -105,9 +105,18 @@ void lifecycle(vulkan::Device& device, vulkan::SubmissionCoordinator& submission
                 if (frame.temporal_pass_enabled) {
                     const auto state = graph.texture(frame.history_cloud_read).initial_state;
                     require(state.has_value(), "history import lacks initial state");
+                    const bool expects_layout = submitted_history ? batch != 0 || index != 0
+                                                                  : batch == 1 || batch == 5;
                     require(
-                        (state->layout != VK_IMAGE_LAYOUT_UNDEFINED) == history_valid,
-                        "history validity leaked across slots, invalidation, toggle or recreation");
+                        (state->layout != VK_IMAGE_LAYOUT_UNDEFINED) == expects_layout,
+                        "history image layout changed across slots, invalidation or recreation");
+                    if (submitted_history) {
+                        const bool reseed = (batch == 0 && index == 0) ||
+                                            (batch == 2 && index == 1) ||
+                                            (batch == 4 && index == 0);
+                        require(frame.history_read_temporal_frame.has_value() == !reseed,
+                                "submitted cloud history did not reseed at the expected frame");
+                    }
                 }
                 executor.record(
                     {.device = &device, .command_buffer = commands[index], .frame_slot = slot},
@@ -121,13 +130,21 @@ void lifecycle(vulkan::Device& device, vulkan::SubmissionCoordinator& submission
                                                      background_handle);
                         }
                     });
+                if (submitted_history) {
+                    static_cast<void>(submission.submit(
+                        {.waits = {}, .command_buffers = {commands[index]}, .signals = {}},
+                        "submit cloud lifecycle frame"));
+                }
                 cloud.complete_frame(slot, frame);
             }
-            // Keep all slot recordings alive while subsequent slots update
-            // descriptors, then execute the batch and finish before slot reuse.
-            static_cast<void>(submission.submit_and_wait(
-                {.waits = {}, .command_buffers = commands, .signals = {}},
-                "submit cloud lifecycle slots", "wait cloud lifecycle slots"));
+            if (submitted_history) {
+                submission.wait_idle("wait submitted cloud frames before slot reuse");
+            } else {
+                // Keep all slot recordings alive while subsequent slots update descriptors.
+                static_cast<void>(submission.submit_and_wait(
+                    {.waits = {}, .command_buffers = commands, .signals = {}},
+                    "submit cloud lifecycle slots", "wait cloud lifecycle slots"));
+            }
         }
         executor.clear();
         executor.resize(slots);
@@ -173,7 +190,8 @@ void lifecycle(vulkan::Device& device, vulkan::SubmissionCoordinator& submission
     cloud.destroy_swapchain_resources();
     cloud.destroy_generated_resources();
     std::cout << "cloud lifecycle PASS: " << slots
-              << " slots, reuse/recreate/history/toggle/failure/shutdown/re-enable\n";
+              << (submitted_history ? " submitted slots" : " legacy slots")
+              << ", reuse/recreate/history/toggle/failure/shutdown/re-enable\n";
 }
 } // namespace
 
@@ -196,6 +214,7 @@ int main(int argc, char** argv) {
                                 .execution_mode = vulkan::GpuRuntimeExecutionMode::Inline});
         lifecycle(device, submission, gpu, 1);
         lifecycle(device, submission, gpu, 2);
+        lifecycle(device, submission, gpu, 2, true);
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
