@@ -52,6 +52,7 @@ struct SdfConfig {
     std::uint32_t seed = 42, count = 512, debug = 0, shadows = 1;
     std::uint32_t atlas_axis = 64;
     std::uint32_t supersample = 1;
+    std::string anti_aliasing = "off";
     std::uint32_t glass_crossings = 4;
     std::uint32_t environment_extent = 128;
     bool clouds = false;
@@ -87,6 +88,8 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         return spec;
     };
     auto scene = option("scene", "Deterministic box recipe", config::ValueType::Enum);
+    auto aa = option("anti-aliasing", "Native-resolution anti-aliasing", config::ValueType::Enum);
+    aa.enum_values = {"off", "taa"};
     auto surface_trace =
         option("surface-trace", "Authored surface tracer (study)", config::ValueType::Enum);
     surface_trace.enum_values = {"sampled", "hybrid", "analytic"};
@@ -212,6 +215,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     workshop_blend.negative_cli_name = "--no-workshop-blend-materials";
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
+        .bind(aa, c.anti_aliasing)
         .bind(render_mode, c.render_mode)
         .bind(surface_trace, c.route_overrides.surface_trace)
         .bind(csg, c.route_overrides.csg_evaluation)

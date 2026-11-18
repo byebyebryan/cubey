@@ -1,0 +1,646 @@
+Test project /home/bryan/code/cubey-aa/build/dev
+        Start   1: render_apps_use_dynamic_rendering
+  1/301 Test   #1: render_apps_use_dynamic_rendering ......................................   Passed    0.02 sec
+        Start   2: foundation_public_headers
+  2/301 Test   #2: foundation_public_headers ..............................................   Passed   64.01 sec
+        Start   3: capture_review_scripts_use_headless
+  3/301 Test   #3: capture_review_scripts_use_headless ....................................   Passed    0.02 sec
+        Start   4: foundation_layers
+  4/301 Test   #4: foundation_layers ......................................................   Passed    0.15 sec
+        Start   5: foundation_layer_rules
+  5/301 Test   #5: foundation_layer_rules .................................................   Passed    1.52 sec
+        Start   6: project_layout_hygiene
+  6/301 Test   #6: project_layout_hygiene .................................................   Passed    0.22 sec
+        Start   7: project_layout_rules
+  7/301 Test   #7: project_layout_rules ...................................................   Passed    0.22 sec
+        Start   8: documentation_hygiene
+  8/301 Test   #8: documentation_hygiene ..................................................   Passed    0.64 sec
+        Start   9: documentation_media
+  9/301 Test   #9: documentation_media ....................................................   Passed    0.04 sec
+        Start  10: documentation_rules
+ 10/301 Test  #10: documentation_rules ....................................................   Passed    0.12 sec
+        Start  11: documentation_cli_recipes
+ 11/301 Test  #11: documentation_cli_recipes ..............................................   Passed    2.60 sec
+        Start  12: cmake_app_policy_rules
+ 12/301 Test  #12: cmake_app_policy_rules .................................................   Passed    0.49 sec
+        Start  13: shader_build_rules
+ 13/301 Test  #13: shader_build_rules .....................................................   Passed    0.88 sec
+        Start  14: report_server_tests
+ 14/301 Test  #14: report_server_tests ....................................................   Passed    4.08 sec
+        Start  15: temporal_view
+ 15/301 Test  #15: temporal_view ..........................................................   Passed    0.00 sec
+        Start  16: temporal_gpu
+ 16/301 Test  #16: temporal_gpu ...........................................................   Passed    0.20 sec
+        Start  17: temporal_gpu_slots_1
+ 17/301 Test  #17: temporal_gpu_slots_1 ...................................................   Passed    0.13 sec
+        Start  18: temporal_gpu_slots_3
+ 18/301 Test  #18: temporal_gpu_slots_3 ...................................................   Passed    0.14 sec
+        Start  20: host_frame_submission
+ 19/301 Test  #20: host_frame_submission ..................................................   Passed    0.64 sec
+        Start  22: forward_temporal_gpu
+ 20/301 Test  #22: forward_temporal_gpu ...................................................   Passed    0.20 sec
+        Start  24: terrain_surface_environment_cpu
+ 21/301 Test  #24: terrain_surface_environment_cpu ........................................   Passed    0.02 sec
+        Start  25: cubey_core_tests
+ 22/301 Test  #25: cubey_core_tests .......................................................   Passed    1.31 sec
+        Start  26: capture_failure_gpu
+ 23/301 Test  #26: capture_failure_gpu ....................................................   Passed    1.04 sec
+        Start  28: capture_media_direct
+ 24/301 Test  #28: capture_media_direct ...................................................   Passed    0.87 sec
+        Start  29: capture_media_inline
+ 25/301 Test  #29: capture_media_inline ...................................................   Passed    2.66 sec
+        Start  30: capture_media_threaded
+ 26/301 Test  #30: capture_media_threaded .................................................   Passed    2.64 sec
+        Start  31: terrain_water_capture_tests
+ 27/301 Test  #31: terrain_water_capture_tests ............................................   Passed    0.01 sec
+        Start  32: host_lifecycle_headless
+ 28/301 Test  #32: host_lifecycle_headless ................................................   Passed    1.55 sec
+        Start  35: headless_failure_gpu_tests
+ 29/301 Test  #35: headless_failure_gpu_tests .............................................   Passed    0.33 sec
+        Start  36: cubey_config_v2_tests
+ 30/301 Test  #36: cubey_config_v2_tests ..................................................   Passed    0.03 sec
+        Start  37: backdrop_surface_placement_tests
+ 31/301 Test  #37: backdrop_surface_placement_tests .......................................   Passed    0.00 sec
+        Start  38: terrain_backdrop_product_tests
+ 32/301 Test  #38: terrain_backdrop_product_tests .........................................   Passed    7.50 sec
+        Start  39: terrain_backdrop_product_cache_tests
+ 33/301 Test  #39: terrain_backdrop_product_cache_tests ...................................   Passed    0.00 sec
+        Start  40: terrain_backdrop_placement_tests
+ 34/301 Test  #40: terrain_backdrop_placement_tests .......................................   Passed    0.04 sec
+        Start  41: terrain_backdrop_preparation_tests
+ 35/301 Test  #41: terrain_backdrop_preparation_tests .....................................   Passed    2.32 sec
+        Start  42: terrain_backdrop_surface_tests
+ 36/301 Test  #42: terrain_backdrop_surface_tests .........................................   Passed    0.00 sec
+        Start  43: terrain_directional_placement_tests
+ 37/301 Test  #43: terrain_directional_placement_tests ....................................   Passed    0.04 sec
+        Start  44: terrain_surface_field_tests
+ 38/301 Test  #44: terrain_surface_field_tests ............................................   Passed    0.01 sec
+        Start  45: procedural_gpu_parity_tests
+ 39/301 Test  #45: procedural_gpu_parity_tests ............................................   Passed    0.95 sec
+        Start  46: terrain_landscape_catalog_cpu
+ 40/301 Test  #46: terrain_landscape_catalog_cpu ..........................................   Passed    0.02 sec
+        Start  47: terrain_site_cpu
+ 41/301 Test  #47: terrain_site_cpu .......................................................   Passed    0.00 sec
+        Start  48: terrain_surface_patch_lod_cpu
+ 42/301 Test  #48: terrain_surface_patch_lod_cpu ..........................................   Passed    1.17 sec
+        Start  49: terrain_world_water_lod_cpu
+ 43/301 Test  #49: terrain_world_water_lod_cpu ............................................   Passed    4.95 sec
+        Start  50: terrain_site_water_cpu
+ 44/301 Test  #50: terrain_site_water_cpu .................................................   Passed    0.00 sec
+        Start  51: terrain_surface_context_cpu
+ 45/301 Test  #51: terrain_surface_context_cpu ............................................   Passed    0.81 sec
+        Start  52: terrain_surface_context_edge_gpu
+ 46/301 Test  #52: terrain_surface_context_edge_gpu .......................................   Passed    0.22 sec
+        Start  53: terrain_surface_patch_lod_gap_gpu
+ 47/301 Test  #53: terrain_surface_patch_lod_gap_gpu ......................................   Passed    0.15 sec
+        Start  54: terrain_surface_patch_gap_gpu
+ 48/301 Test  #54: terrain_surface_patch_gap_gpu ..........................................   Passed    0.16 sec
+        Start  55: terrain_water_capture_lifecycle_gpu
+ 49/301 Test  #55: terrain_water_capture_lifecycle_gpu ....................................   Passed   23.69 sec
+        Start  56: terrain_surface_lifecycle_gpu
+ 50/301 Test  #56: terrain_surface_lifecycle_gpu ..........................................   Passed   26.30 sec
+        Start  58: cloud_lifecycle_gpu
+ 51/301 Test  #58: cloud_lifecycle_gpu ....................................................   Passed    8.46 sec
+        Start  66: headless_cube_render_only
+ 52/301 Test  #66: headless_cube_render_only ..............................................   Passed    0.58 sec
+        Start  67: headless_cube_writes_png
+ 53/301 Test  #67: headless_cube_writes_png ...............................................   Passed    0.19 sec
+        Start  68: headless_cube_writes_video
+ 54/301 Test  #68: headless_cube_writes_video .............................................   Passed    0.19 sec
+        Start  71: atmosphere_config_tests
+ 55/301 Test  #71: atmosphere_config_tests ................................................   Passed   19.20 sec
+        Start  72: atmosphere_headless_writes_png
+ 56/301 Test  #72: atmosphere_headless_writes_png .........................................   Passed   26.38 sec
+        Start  73: atmosphere_headless_writes_png_stats
+ 57/301 Test  #73: atmosphere_headless_writes_png_stats ...................................   Passed    0.00 sec
+        Start  74: atmosphere_solar_noon_writes_png
+ 58/301 Test  #74: atmosphere_solar_noon_writes_png .......................................   Passed    0.38 sec
+        Start  75: atmosphere_solar_noon_writes_png_stats
+ 59/301 Test  #75: atmosphere_solar_noon_writes_png_stats .................................   Passed    0.00 sec
+        Start  76: atmosphere_twilight_writes_png
+ 60/301 Test  #76: atmosphere_twilight_writes_png .........................................   Passed    0.39 sec
+        Start  77: atmosphere_twilight_writes_png_stats
+ 61/301 Test  #77: atmosphere_twilight_writes_png_stats ...................................   Passed    0.00 sec
+        Start  78: atmosphere_night_writes_png
+ 62/301 Test  #78: atmosphere_night_writes_png ............................................   Passed    0.38 sec
+        Start  79: atmosphere_night_writes_png_stats
+ 63/301 Test  #79: atmosphere_night_writes_png_stats ......................................   Passed    0.00 sec
+        Start  80: atmosphere_stars_writes_png
+ 64/301 Test  #80: atmosphere_stars_writes_png ............................................   Passed    0.38 sec
+        Start  81: atmosphere_stars_writes_png_stats
+ 65/301 Test  #81: atmosphere_stars_writes_png_stats ......................................   Passed    0.00 sec
+        Start  82: atmosphere_moonlit_writes_png
+ 66/301 Test  #82: atmosphere_moonlit_writes_png ..........................................   Passed    0.38 sec
+        Start  83: atmosphere_moonlit_writes_png_stats
+ 67/301 Test  #83: atmosphere_moonlit_writes_png_stats ....................................   Passed    0.00 sec
+        Start  84: atmosphere_moon_surface_writes_png
+ 68/301 Test  #84: atmosphere_moon_surface_writes_png .....................................   Passed    0.38 sec
+        Start  85: atmosphere_moon_surface_writes_png_stats
+ 69/301 Test  #85: atmosphere_moon_surface_writes_png_stats ...............................   Passed    0.00 sec
+        Start  86: atmosphere_milky_way_writes_png
+ 70/301 Test  #86: atmosphere_milky_way_writes_png ........................................   Passed    0.38 sec
+        Start  87: atmosphere_milky_way_writes_png_stats
+ 71/301 Test  #87: atmosphere_milky_way_writes_png_stats ..................................   Passed    0.00 sec
+        Start  88: atmosphere_milky_way_dust_writes_png
+ 72/301 Test  #88: atmosphere_milky_way_dust_writes_png ...................................   Passed   10.66 sec
+        Start  89: atmosphere_milky_way_dust_writes_png_stats
+ 73/301 Test  #89: atmosphere_milky_way_dust_writes_png_stats .............................   Passed    0.00 sec
+        Start  90: atmosphere_milky_way_hii_writes_png
+ 74/301 Test  #90: atmosphere_milky_way_hii_writes_png ....................................   Passed   10.59 sec
+        Start  91: atmosphere_milky_way_hii_writes_png_stats
+ 75/301 Test  #91: atmosphere_milky_way_hii_writes_png_stats ..............................   Passed    0.00 sec
+        Start  92: atmosphere_transmittance_writes_png
+ 76/301 Test  #92: atmosphere_transmittance_writes_png ....................................   Passed    0.38 sec
+        Start  93: atmosphere_transmittance_writes_png_stats
+ 77/301 Test  #93: atmosphere_transmittance_writes_png_stats ..............................   Passed    0.00 sec
+        Start  95: atmosphere_headless_writes_video
+ 78/301 Test  #95: atmosphere_headless_writes_video .......................................   Passed    0.43 sec
+        Start  96: fluid_common_tests
+ 79/301 Test  #96: fluid_common_tests .....................................................   Passed    0.00 sec
+        Start  97: pyro_3d_config_tests
+ 80/301 Test  #97: pyro_3d_config_tests ...................................................   Passed    0.09 sec
+        Start  99: fluid_25d_terrain_alignment
+ 81/301 Test  #99: fluid_25d_terrain_alignment ............................................   Passed    0.01 sec
+        Start 100: fluid_25d_terrain_demo_contract
+ 82/301 Test #100: fluid_25d_terrain_demo_contract ........................................   Passed    0.02 sec
+        Start 101: fluid_25d_daylight_gpu
+ 83/301 Test #101: fluid_25d_daylight_gpu .................................................   Passed    0.19 sec
+        Start 102: fluid_25d_terrain_surface
+ 84/301 Test #102: fluid_25d_terrain_surface ..............................................   Passed    0.06 sec
+        Start 103: fluid_25d_surface_gradient_gpu
+ 85/301 Test #103: fluid_25d_surface_gradient_gpu .........................................   Passed    2.08 sec
+        Start 104: fluid_25d_external_session
+ 86/301 Test #104: fluid_25d_external_session .............................................   Passed    0.04 sec
+        Start 105: fluid_25d_recording_contract
+ 87/301 Test #105: fluid_25d_recording_contract ...........................................   Passed    0.04 sec
+        Start 106: fluid_25d_backend_contract
+ 88/301 Test #106: fluid_25d_backend_contract .............................................   Passed    0.00 sec
+        Start 107: fluid_25d_backend_adapters
+ 89/301 Test #107: fluid_25d_backend_adapters .............................................   Passed    1.04 sec
+        Start 108: fluid_25d_presentation_helpers
+ 90/301 Test #108: fluid_25d_presentation_helpers .........................................   Passed    0.06 sec
+        Start 109: fluid_25d_presentation_v2_helpers
+ 91/301 Test #109: fluid_25d_presentation_v2_helpers ......................................   Passed    0.08 sec
+        Start 110: fluid_25d_presentation_docs
+ 92/301 Test #110: fluid_25d_presentation_docs ............................................   Passed    0.10 sec
+        Start 111: fluid_25d_dependency_setup_contract
+ 93/301 Test #111: fluid_25d_dependency_setup_contract ....................................   Passed    0.06 sec
+        Start 112: fluid_25d_presentation_media
+ 94/301 Test #112: fluid_25d_presentation_media ...........................................   Passed    0.04 sec
+        Start 113: fluid_25d_rain_response_helpers
+ 95/301 Test #113: fluid_25d_rain_response_helpers ........................................   Passed    0.04 sec
+        Start 114: fluid_25d_rain_response_review_helpers
+ 96/301 Test #114: fluid_25d_rain_response_review_helpers .................................   Passed    0.05 sec
+        Start 115: fluid_25d_captured_water_alignment_report
+ 97/301 Test #115: fluid_25d_captured_water_alignment_report ..............................   Passed    0.03 sec
+        Start 116: fluid_25d_terrain_presentation_review_helpers
+ 98/301 Test #116: fluid_25d_terrain_presentation_review_helpers ..........................   Passed    0.07 sec
+        Start 117: fluid_25d_offscreen_performance_helpers
+ 99/301 Test #117: fluid_25d_offscreen_performance_helpers ................................   Passed    0.07 sec
+        Start 118: fluid_25d_terrain_demo_launcher
+100/301 Test #118: fluid_25d_terrain_demo_launcher ........................................   Passed    0.05 sec
+        Start 119: fluid_25d_patch_only_review_helpers
+101/301 Test #119: fluid_25d_patch_only_review_helpers ....................................   Passed    0.05 sec
+        Start 120: fluid_25d_environment_review_helpers
+102/301 Test #120: fluid_25d_environment_review_helpers ...................................   Passed    0.06 sec
+        Start 121: fluid_25d_terrain_site_catalogue
+103/301 Test #121: fluid_25d_terrain_site_catalogue .......................................   Passed    0.05 sec
+        Start 122: fluid_25d_world_water_study_helpers
+104/301 Test #122: fluid_25d_world_water_study_helpers ....................................   Passed    1.28 sec
+        Start 123: fluid_25d_live_performance_review
+105/301 Test #123: fluid_25d_live_performance_review ......................................   Passed    0.04 sec
+        Start 124: fluid_25d_live_performance_analysis
+106/301 Test #124: fluid_25d_live_performance_analysis ....................................   Passed    0.03 sec
+        Start 125: fluid_25d_live_performance_orchestration
+107/301 Test #125: fluid_25d_live_performance_orchestration ...............................   Passed    0.05 sec
+        Start 126: fluid_25d_water_rendering_reuse_helpers
+108/301 Test #126: fluid_25d_water_rendering_reuse_helpers ................................   Passed    0.05 sec
+        Start 127: fluid_25d_external_worker_host
+109/301 Test #127: fluid_25d_external_worker_host .........................................   Passed    0.12 sec
+        Start 128: fluid_25d_external_worker_build_helpers
+110/301 Test #128: fluid_25d_external_worker_build_helpers ................................   Passed    0.04 sec
+        Start 129: fluid_25d_source_build_pin
+111/301 Test #129: fluid_25d_source_build_pin .............................................   Passed    0.07 sec
+        Start 130: fluid_25d_recording_converter
+112/301 Test #130: fluid_25d_recording_converter ..........................................   Passed    0.06 sec
+        Start 131: fluid_25d_live_session_publisher
+113/301 Test #131: fluid_25d_live_session_publisher .......................................   Passed    0.10 sec
+        Start 132: fluid_25d_live_view_acceptance_helpers
+114/301 Test #132: fluid_25d_live_view_acceptance_helpers .................................   Passed    0.04 sec
+        Start 133: fluid_25d_native_presentation_helpers
+115/301 Test #133: fluid_25d_native_presentation_helpers ..................................   Passed    0.03 sec
+        Start 134: fluid_25d_mountain_demo_launcher
+116/301 Test #134: fluid_25d_mountain_demo_launcher .......................................   Passed    0.77 sec
+        Start 135: fluid_25d_terrain_demo_supervisor
+117/301 Test #135: fluid_25d_terrain_demo_supervisor ......................................   Passed    0.08 sec
+        Start 136: fluid_25d_terrain_demo_evidence_helpers
+118/301 Test #136: fluid_25d_terrain_demo_evidence_helpers ................................   Passed    0.04 sec
+        Start 137: fluid_25d_mountain_demo_review_helpers
+119/301 Test #137: fluid_25d_mountain_demo_review_helpers .................................   Passed    0.03 sec
+        Start 138: fluid_25d_scenic_review_helpers
+120/301 Test #138: fluid_25d_scenic_review_helpers ........................................   Passed    0.05 sec
+        Start 139: fluid_25d_scenic_material_review_helpers
+121/301 Test #139: fluid_25d_scenic_material_review_helpers ...............................   Passed    0.06 sec
+        Start 140: fluid_25d_terrain_review_helpers
+122/301 Test #140: fluid_25d_terrain_review_helpers .......................................   Passed    0.05 sec
+        Start 141: fluid_25d_macro_review_helpers
+123/301 Test #141: fluid_25d_macro_review_helpers .........................................   Passed    0.05 sec
+        Start 142: fluid_25d_scenic_water_helpers
+124/301 Test #142: fluid_25d_scenic_water_helpers .........................................   Passed    0.05 sec
+        Start 143: fluid_25d_steep_flow_review_helpers
+125/301 Test #143: fluid_25d_steep_flow_review_helpers ....................................   Passed    0.05 sec
+        Start 144: fluid_25d_whitewater_review_helpers
+126/301 Test #144: fluid_25d_whitewater_review_helpers ....................................   Passed    0.05 sec
+        Start 145: fluid_25d_stream_foam_review_helpers
+127/301 Test #145: fluid_25d_stream_foam_review_helpers ...................................   Passed    0.05 sec
+        Start 146: fluid_25d_bank_edge_review_helpers
+128/301 Test #146: fluid_25d_bank_edge_review_helpers .....................................   Passed    0.05 sec
+        Start 147: fluid_25d_bank_edge_gpu
+129/301 Test #147: fluid_25d_bank_edge_gpu ................................................   Passed  253.99 sec
+        Start 148: fluid_25d_whitewater_gpu
+130/301 Test #148: fluid_25d_whitewater_gpu ...............................................   Passed  397.06 sec
+        Start 149: fluid_25d_steep_flow_gpu
+131/301 Test #149: fluid_25d_steep_flow_gpu ...............................................   Passed  115.06 sec
+        Start 150: fluid_25d_cascade_cues_gpu
+132/301 Test #150: fluid_25d_cascade_cues_gpu .............................................   Passed  146.89 sec
+        Start 151: fluid_25d_rain_visuals_gpu
+133/301 Test #151: fluid_25d_rain_visuals_gpu .............................................   Passed  152.99 sec
+        Start 152: fluid_25d_scenic_water_gpu
+134/301 Test #152: fluid_25d_scenic_water_gpu .............................................   Passed  360.11 sec
+        Start 153: fluid_25d_shallow_coverage_gpu
+135/301 Test #153: fluid_25d_shallow_coverage_gpu .........................................   Passed  128.26 sec
+        Start 154: fluid_25d_water_agitation_gpu
+136/301 Test #154: fluid_25d_water_agitation_gpu ..........................................   Passed  204.70 sec
+        Start 155: fluid_25d_native_bank_helpers
+137/301 Test #155: fluid_25d_native_bank_helpers ..........................................   Passed    0.03 sec
+        Start 156: fluid_25d_native_bank_reconstruction_helpers
+138/301 Test #156: fluid_25d_native_bank_reconstruction_helpers ...........................   Passed    0.03 sec
+        Start 157: fluid_25d_native_shoreline_raster_helpers
+139/301 Test #157: fluid_25d_native_shoreline_raster_helpers ..............................   Passed    0.04 sec
+        Start 158: fluid_25d_native_bank_presentation_helpers
+140/301 Test #158: fluid_25d_native_bank_presentation_helpers .............................   Passed    0.04 sec
+        Start 159: fluid_25d_native_bank_refinement_helpers
+141/301 Test #159: fluid_25d_native_bank_refinement_helpers ...............................   Passed    0.03 sec
+        Start 160: fluid_25d_native_shoreline_raster_gpu
+142/301 Test #160: fluid_25d_native_shoreline_raster_gpu ..................................   Passed   20.60 sec
+        Start 161: fluid_25d_display_coverage_gpu
+143/301 Test #161: fluid_25d_display_coverage_gpu .........................................   Passed    3.56 sec
+        Start 162: fluid_25d_bank_comparison_gpu
+144/301 Test #162: fluid_25d_bank_comparison_gpu ..........................................   Passed   10.42 sec
+        Start 163: fluid_25d_recording_gpu_immutability
+145/301 Test #163: fluid_25d_recording_gpu_immutability ...................................   Passed   22.29 sec
+        Start 164: fluid_25d_scenic_gpu
+146/301 Test #164: fluid_25d_scenic_gpu ...................................................   Passed  311.69 sec
+        Start 165: fluid_25d_backend_startup_gpu
+147/301 Test #165: fluid_25d_backend_startup_gpu ..........................................   Passed    2.80 sec
+        Start 166: fluid_25d_tests
+148/301 Test #166: fluid_25d_tests ........................................................   Passed   35.19 sec
+        Start 173: fluid_25d_transport_benchmark_self_test
+149/301 Test #173: fluid_25d_transport_benchmark_self_test ................................   Passed    0.03 sec
+        Start 174: fluid_25d_transport_study_benchmark_self_test
+150/301 Test #174: fluid_25d_transport_study_benchmark_self_test ..........................   Passed    0.35 sec
+        Start 175: fluid_25d_geometry_study_benchmark_self_test
+151/301 Test #175: fluid_25d_geometry_study_benchmark_self_test ...........................   Passed   23.69 sec
+        Start 176: fluid_25d_hillside_supply_gpu_controls
+152/301 Test #176: fluid_25d_hillside_supply_gpu_controls .................................   Passed    0.56 sec
+        Start 177: fluid_25d_hillside_rain_gpu_controls
+153/301 Test #177: fluid_25d_hillside_rain_gpu_controls ...................................   Passed    0.22 sec
+        Start 178: fluid_25d_motion_marker_gpu_controls
+154/301 Test #178: fluid_25d_motion_marker_gpu_controls ...................................   Passed    0.33 sec
+        Start 179: fluid_25d_headless_writes_png
+155/301 Test #179: fluid_25d_headless_writes_png ..........................................   Passed    0.32 sec
+        Start 180: fluid_25d_headless_writes_png_stats
+156/301 Test #180: fluid_25d_headless_writes_png_stats ....................................   Passed    0.01 sec
+        Start 181: fluid_25d_diagnostics_writes_png
+157/301 Test #181: fluid_25d_diagnostics_writes_png .......................................   Passed    0.25 sec
+        Start 182: fluid_25d_diagnostics_writes_png_stats
+158/301 Test #182: fluid_25d_diagnostics_writes_png_stats .................................   Passed    0.00 sec
+        Start 183: fluid_25d_profile_diagnostics_writes_metrics
+159/301 Test #183: fluid_25d_profile_diagnostics_writes_metrics ...........................   Passed    0.27 sec
+        Start 184: fluid_25d_finite_volume_profile_diagnostics_writes_status
+160/301 Test #184: fluid_25d_finite_volume_profile_diagnostics_writes_status ..............   Passed    0.35 sec
+        Start 185: fluid_25d_finite_volume_cfl_rejection_fails_closed
+161/301 Test #185: fluid_25d_finite_volume_cfl_rejection_fails_closed .....................   Passed    0.21 sec
+        Start 186: fluid_25d_gpu_oracle_lake_at_rest
+162/301 Test #186: fluid_25d_gpu_oracle_lake_at_rest ......................................   Passed    0.21 sec
+        Start 187: fluid_25d_gpu_oracle_river
+163/301 Test #187: fluid_25d_gpu_oracle_river .............................................   Passed    0.21 sec
+        Start 188: fluid_25d_gpu_oracle_boundary_drain
+164/301 Test #188: fluid_25d_gpu_oracle_boundary_drain ....................................   Passed    0.21 sec
+        Start 189: fluid_25d_gpu_oracle_finite_volume_lake_at_rest
+165/301 Test #189: fluid_25d_gpu_oracle_finite_volume_lake_at_rest ........................   Passed    0.22 sec
+        Start 190: fluid_25d_gpu_oracle_finite_volume_source_sink
+166/301 Test #190: fluid_25d_gpu_oracle_finite_volume_source_sink .........................   Passed    0.22 sec
+        Start 191: fluid_25d_gpu_oracle_finite_volume_dye_transport
+167/301 Test #191: fluid_25d_gpu_oracle_finite_volume_dye_transport .......................   Passed    0.40 sec
+        Start 192: fluid_25d_gpu_zero_sink_tracer
+168/301 Test #192: fluid_25d_gpu_zero_sink_tracer .........................................   Passed    2.31 sec
+        Start 193: fluid_25d_gpu_zero_sink_tracer_ledger
+169/301 Test #193: fluid_25d_gpu_zero_sink_tracer_ledger ..................................   Passed    0.02 sec
+        Start 194: fluid_25d_transport_inspection_writes_png
+170/301 Test #194: fluid_25d_transport_inspection_writes_png ..............................   Passed    0.31 sec
+        Start 195: fluid_25d_transport_inspection_writes_png_stats
+171/301 Test #195: fluid_25d_transport_inspection_writes_png_stats ........................   Passed    0.01 sec
+        Start 196: fluid_25d_gpu_oracle_finite_volume_boundary_drain
+172/301 Test #196: fluid_25d_gpu_oracle_finite_volume_boundary_drain ......................   Passed    0.22 sec
+        Start 198: smoke_2d_config_tests
+173/301 Test #198: smoke_2d_config_tests ..................................................   Passed    0.02 sec
+        Start 199: smoke_2d_headless_writes_png
+174/301 Test #199: smoke_2d_headless_writes_png ...........................................   Passed    0.40 sec
+        Start 200: smoke_2d_headless_writes_video
+175/301 Test #200: smoke_2d_headless_writes_video .........................................   Passed    0.27 sec
+        Start 202: water_2d_config_tests
+176/301 Test #202: water_2d_config_tests ..................................................   Passed    0.02 sec
+        Start 203: water_2d_headless_writes_png
+177/301 Test #203: water_2d_headless_writes_png ...........................................   Passed    0.56 sec
+        Start 204: water_2d_headless_writes_video
+178/301 Test #204: water_2d_headless_writes_video .........................................   Passed    0.24 sec
+        Start 206: water_3d_config_tests
+179/301 Test #206: water_3d_config_tests ..................................................   Passed    0.15 sec
+        Start 207: water_3d_headless_writes_png
+180/301 Test #207: water_3d_headless_writes_png ...........................................   Passed    6.45 sec
+        Start 208: water_3d_cloud_headless_writes_png
+181/301 Test #208: water_3d_cloud_headless_writes_png .....................................   Passed   12.77 sec
+        Start 209: water_3d_terrain_headless_writes_png
+182/301 Test #209: water_3d_terrain_headless_writes_png ...................................   Passed    7.09 sec
+        Start 210: water_3d_terrain_headless_writes_png_stats
+183/301 Test #210: water_3d_terrain_headless_writes_png_stats .............................   Passed    0.00 sec
+        Start 211: water_3d_headless_writes_video
+184/301 Test #211: water_3d_headless_writes_video .........................................   Passed    4.50 sec
+        Start 213: fire_3d_headless_writes_png
+185/301 Test #213: fire_3d_headless_writes_png ............................................   Passed    1.05 sec
+        Start 214: fire_3d_terrain_headless_writes_png
+186/301 Test #214: fire_3d_terrain_headless_writes_png ....................................   Passed    2.77 sec
+        Start 215: fire_3d_terrain_headless_writes_png_stats
+187/301 Test #215: fire_3d_terrain_headless_writes_png_stats ..............................   Passed    0.00 sec
+        Start 216: fire_3d_headless_writes_video
+188/301 Test #216: fire_3d_headless_writes_video ..........................................   Passed    0.26 sec
+        Start 218: explosion_3d_headless_writes_png
+189/301 Test #218: explosion_3d_headless_writes_png .......................................   Passed    1.03 sec
+        Start 219: explosion_3d_headless_writes_video
+190/301 Test #219: explosion_3d_headless_writes_video .....................................   Passed    0.25 sec
+        Start 220: fluid_resource_lifecycle_gpu
+191/301 Test #220: fluid_resource_lifecycle_gpu ...........................................   Passed   13.67 sec
+        Start 223: fractal_2d_view_tests
+192/301 Test #223: fractal_2d_view_tests ..................................................   Passed    0.02 sec
+        Start 224: fractal_2d_headless_writes_png
+193/301 Test #224: fractal_2d_headless_writes_png .........................................   Passed    0.23 sec
+        Start 226: gltf_viewer_water_landscape_review_helpers
+194/301 Test #226: gltf_viewer_water_landscape_review_helpers .............................   Passed    0.05 sec
+        Start 227: gltf_viewer_showcase_media
+195/301 Test #227: gltf_viewer_showcase_media .............................................   Passed    0.04 sec
+        Start 228: gltf_viewer_headless_profiles_scene
+196/301 Test #228: gltf_viewer_headless_profiles_scene ....................................   Passed    5.00 sec
+        Start 229: gltf_viewer_config_tests
+197/301 Test #229: gltf_viewer_config_tests ...............................................   Passed    0.21 sec
+        Start 230: gltf_viewer_loading_cage_tests
+198/301 Test #230: gltf_viewer_loading_cage_tests .........................................   Passed    0.01 sec
+        Start 231: gltf_viewer_loading_metrics_tests
+199/301 Test #231: gltf_viewer_loading_metrics_tests ......................................   Passed    0.01 sec
+        Start 232: gltf_viewer_loading_profile_script_tests
+200/301 Test #232: gltf_viewer_loading_profile_script_tests ...............................   Passed    0.39 sec
+        Start 233: gltf_viewer_uses_forward_pbr_renderer_3d
+201/301 Test #233: gltf_viewer_uses_forward_pbr_renderer_3d ...............................   Passed    0.01 sec
+        Start 234: gltf_viewer_autoplays_first_gltf_animation
+202/301 Test #234: gltf_viewer_autoplays_first_gltf_animation .............................   Passed    0.00 sec
+        Start 235: gltf_viewer_stages_import_after_fallback
+203/301 Test #235: gltf_viewer_stages_import_after_fallback ...............................   Passed    0.01 sec
+        Start 236: gltf_viewer_uses_metadata_loading_cage
+204/301 Test #236: gltf_viewer_uses_metadata_loading_cage .................................   Passed    0.00 sec
+        Start 237: gltf_viewer_terrain_backdrop_is_explicit_and_shared
+205/301 Test #237: gltf_viewer_terrain_backdrop_is_explicit_and_shared ....................   Passed    0.00 sec
+        Start 238: gltf_viewer_ocean_backdrop_is_explicit_and_shared
+206/301 Test #238: gltf_viewer_ocean_backdrop_is_explicit_and_shared ......................   Passed    0.00 sec
+        Start 239: gltf_viewer_headless_writes_png
+207/301 Test #239: gltf_viewer_headless_writes_png ........................................   Passed   13.15 sec
+        Start 240: gltf_viewer_static_environment_headless_writes_png
+208/301 Test #240: gltf_viewer_static_environment_headless_writes_png .....................   Passed    4.52 sec
+        Start 241: gltf_viewer_terrain_backdrop_headless_writes_png
+209/301 Test #241: gltf_viewer_terrain_backdrop_headless_writes_png .......................   Passed    4.54 sec
+        Start 242: gltf_viewer_terrain_backdrop_headless_writes_png_stats
+210/301 Test #242: gltf_viewer_terrain_backdrop_headless_writes_png_stats .................   Passed    0.00 sec
+        Start 243: gltf_viewer_ocean_backdrop_headless_writes_png
+211/301 Test #243: gltf_viewer_ocean_backdrop_headless_writes_png .........................   Passed    5.32 sec
+        Start 244: gltf_viewer_ocean_backdrop_headless_writes_png_stats
+212/301 Test #244: gltf_viewer_ocean_backdrop_headless_writes_png_stats ...................   Passed    0.00 sec
+        Start 245: gltf_viewer_headless_writes_video
+213/301 Test #245: gltf_viewer_headless_writes_video ......................................   Passed    4.54 sec
+        Start 247: ocean_config_tests
+214/301 Test #247: ocean_config_tests .....................................................   Passed    0.11 sec
+        Start 248: ocean_headless_writes_png
+215/301 Test #248: ocean_headless_writes_png ..............................................   Passed    9.90 sec
+        Start 249: ocean_cached_cloud_environment_writes_png
+216/301 Test #249: ocean_cached_cloud_environment_writes_png ..............................   Passed    0.34 sec
+        Start 250: ocean_planar_cloud_reflection_writes_png
+217/301 Test #250: ocean_planar_cloud_reflection_writes_png ...............................   Passed    0.31 sec
+        Start 251: ocean_headless_writes_video
+218/301 Test #251: ocean_headless_writes_video ............................................   Passed    0.37 sec
+        Start 253: pbr_furnace_scene_tests
+219/301 Test #253: pbr_furnace_scene_tests ................................................   Passed    0.02 sec
+        Start 254: pbr_furnace_config_tests
+220/301 Test #254: pbr_furnace_config_tests ...............................................   Passed    0.02 sec
+        Start 255: pbr_furnace_headless_writes_png
+221/301 Test #255: pbr_furnace_headless_writes_png ........................................   Passed    3.12 sec
+        Start 256: pbr_furnace_ior_conformance_writes_png
+222/301 Test #256: pbr_furnace_ior_conformance_writes_png .................................   Passed    3.16 sec
+        Start 257: pbr_furnace_ior_conformance_writes_png_material_conformance
+223/301 Test #257: pbr_furnace_ior_conformance_writes_png_material_conformance ............   Passed    0.01 sec
+        Start 258: pbr_furnace_specular_conformance_writes_png
+224/301 Test #258: pbr_furnace_specular_conformance_writes_png ............................   Passed    3.16 sec
+        Start 259: pbr_furnace_specular_conformance_writes_png_material_conformance
+225/301 Test #259: pbr_furnace_specular_conformance_writes_png_material_conformance .......   Passed    0.01 sec
+        Start 260: pbr_furnace_clearcoat_conformance_writes_png
+226/301 Test #260: pbr_furnace_clearcoat_conformance_writes_png ...........................   Passed    3.13 sec
+        Start 261: pbr_furnace_clearcoat_conformance_writes_png_material_conformance
+227/301 Test #261: pbr_furnace_clearcoat_conformance_writes_png_material_conformance ......   Passed    0.01 sec
+        Start 262: pbr_furnace_anisotropy_conformance_writes_png
+228/301 Test #262: pbr_furnace_anisotropy_conformance_writes_png ..........................   Passed    3.13 sec
+        Start 263: pbr_furnace_anisotropy_conformance_writes_png_material_conformance
+229/301 Test #263: pbr_furnace_anisotropy_conformance_writes_png_material_conformance .....   Passed    0.01 sec
+        Start 264: pbr_furnace_iridescence_conformance_writes_png
+230/301 Test #264: pbr_furnace_iridescence_conformance_writes_png .........................   Passed    3.13 sec
+        Start 265: pbr_furnace_iridescence_conformance_writes_png_material_conformance
+231/301 Test #265: pbr_furnace_iridescence_conformance_writes_png_material_conformance ....   Passed    0.01 sec
+        Start 266: pbr_furnace_sheen_conformance_writes_png
+232/301 Test #266: pbr_furnace_sheen_conformance_writes_png ...............................   Passed    3.16 sec
+        Start 267: pbr_furnace_sheen_conformance_writes_png_material_conformance
+233/301 Test #267: pbr_furnace_sheen_conformance_writes_png_material_conformance ..........   Passed    0.01 sec
+        Start 268: pbr_furnace_transmission_conformance_writes_png
+234/301 Test #268: pbr_furnace_transmission_conformance_writes_png ........................   Passed    3.11 sec
+        Start 269: pbr_furnace_transmission_conformance_writes_png_material_conformance
+235/301 Test #269: pbr_furnace_transmission_conformance_writes_png_material_conformance ...   Passed    0.00 sec
+        Start 270: pbr_furnace_headless_writes_video
+236/301 Test #270: pbr_furnace_headless_writes_video ......................................   Passed    3.07 sec
+        Start 272: sdf_render_mode_tests
+237/301 Test #272: sdf_render_mode_tests ..................................................   Passed    0.08 sec
+        Start 273: sdf_shader_selection_tests
+238/301 Test #273: sdf_shader_selection_tests .............................................   Passed    0.01 sec
+        Start 274: sdf_region_tests
+239/301 Test #274: sdf_region_tests .......................................................   Passed   14.44 sec
+        Start 275: sdf_recipe_tests
+240/301 Test #275: sdf_recipe_tests .......................................................   Passed    0.30 sec
+        Start 276: sdf_authored_tests
+241/301 Test #276: sdf_authored_tests .....................................................   Passed    3.34 sec
+        Start 277: sdf_stroke_preparation_tests
+242/301 Test #277: sdf_stroke_preparation_tests ...........................................   Passed    0.03 sec
+        Start 278: sdf_material_tests
+243/301 Test #278: sdf_material_tests .....................................................   Passed    0.04 sec
+        Start 279: sdf_normal_projection_tests
+244/301 Test #279: sdf_normal_projection_tests ............................................   Passed    0.03 sec
+        Start 280: sdf_mirror_author_tests
+245/301 Test #280: sdf_mirror_author_tests ................................................   Passed    0.04 sec
+        Start 281: sdf_stroke_sampling_tests
+246/301 Test #281: sdf_stroke_sampling_tests ..............................................   Passed    0.04 sec
+        Start 282: sdf_workshop_tests
+247/301 Test #282: sdf_workshop_tests .....................................................   Passed    0.27 sec
+        Start 283: terrain_landscape_prepare_helpers
+248/301 Test #283: terrain_landscape_prepare_helpers ......................................   Passed    0.03 sec
+        Start 284: terrain_prepared_landscape_review_helpers
+249/301 Test #284: terrain_prepared_landscape_review_helpers ..............................   Passed    0.06 sec
+        Start 285: terrain_landscape_hardening_review_helpers
+250/301 Test #285: terrain_landscape_hardening_review_helpers .............................   Passed    0.05 sec
+        Start 286: terrain_landscape_first_use_review_helpers
+251/301 Test #286: terrain_landscape_first_use_review_helpers .............................   Passed    0.06 sec
+        Start 287: terrain_config_tests
+252/301 Test #287: terrain_config_tests ...................................................   Passed    0.64 sec
+        Start 288: terrain_capture_preparation_cpu
+253/301 Test #288: terrain_capture_preparation_cpu ........................................   Passed    0.78 sec
+        Start 289: terrain_landscape_presentation_cpu
+254/301 Test #289: terrain_landscape_presentation_cpu .....................................   Passed    0.01 sec
+        Start 290: terrain_raster_climate_source_tests
+255/301 Test #290: terrain_raster_climate_source_tests ....................................   Passed    0.02 sec
+        Start 291: terrain_source_catalog_tests
+256/301 Test #291: terrain_source_catalog_tests ...........................................   Passed    0.02 sec
+        Start 292: terrain_product_adapter_tests
+257/301 Test #292: terrain_product_adapter_tests ..........................................   Passed    3.12 sec
+        Start 293: terrain_source_cache_tests
+258/301 Test #293: terrain_source_cache_tests .............................................   Passed    0.06 sec
+        Start 294: terrain_bundle_publication_helpers
+259/301 Test #294: terrain_bundle_publication_helpers .....................................   Passed    0.10 sec
+        Start 295: terrain_world_coverage_tests
+260/301 Test #295: terrain_world_coverage_tests ...........................................   Passed    0.03 sec
+        Start 296: terrain_site_package_helpers
+261/301 Test #296: terrain_site_package_helpers ...........................................   Passed    0.03 sec
+        Start 297: terrain_world_study_helpers
+262/301 Test #297: terrain_world_study_helpers ............................................   Passed    0.03 sec
+        Start 298: terrain_world_review_helpers
+263/301 Test #298: terrain_world_review_helpers ...........................................   Passed    0.04 sec
+        Start 299: terrain_readability_review_helpers
+264/301 Test #299: terrain_readability_review_helpers .....................................   Passed    0.05 sec
+        Start 300: terrain_wide_view_study_helpers
+265/301 Test #300: terrain_wide_view_study_helpers ........................................   Passed    0.06 sec
+        Start 301: terrain_world_wide_water_study_helpers
+266/301 Test #301: terrain_world_wide_water_study_helpers .................................   Passed    0.05 sec
+        Start 302: terrain_world_wide_water_review_helpers
+267/301 Test #302: terrain_world_wide_water_review_helpers ................................   Passed    0.05 sec
+        Start 303: terrain_shadow_tests
+268/301 Test #303: terrain_shadow_tests ...................................................   Passed    0.02 sec
+        Start 304: terrain_surface_model_tests
+269/301 Test #304: terrain_surface_model_tests ............................................   Passed    0.01 sec
+        Start 305: terrain_backdrop_headless_writes_png
+270/301 Test #305: terrain_backdrop_headless_writes_png ...................................   Passed   11.49 sec
+        Start 306: terrain_backdrop_headless_writes_png_stats
+271/301 Test #306: terrain_backdrop_headless_writes_png_stats .............................   Passed    0.00 sec
+        Start 307: terrain_water_config
+272/301 Test #307: terrain_water_config ...................................................   Passed    0.05 sec
+        Start 309: pbr_materials_view_replay
+273/301 Test #309: pbr_materials_view_replay ..............................................   Passed   34.88 sec
+        Start 310: pbr_materials_environment_transmission_depth_reuse
+274/301 Test #310: pbr_materials_environment_transmission_depth_reuse .....................   Passed    4.37 sec
+        Start 311: pbr_materials_transmission_hdr_readback
+275/301 Test #311: pbr_materials_transmission_hdr_readback ................................   Passed    4.34 sec
+        Start 312: pbr_materials_depth_reuse_plain
+276/301 Test #312: pbr_materials_depth_reuse_plain ........................................   Passed    4.35 sec
+        Start 313: pbr_materials_depth_reuse_gallery
+277/301 Test #313: pbr_materials_depth_reuse_gallery ......................................   Passed    4.39 sec
+        Start 314: material_recipe_tests
+278/301 Test #314: material_recipe_tests ..................................................   Passed    0.03 sec
+        Start 315: material_library_report_tests
+279/301 Test #315: material_library_report_tests ..........................................   Passed    0.03 sec
+        Start 316: workshop_config_tests
+280/301 Test #316: workshop_config_tests ..................................................   Passed    0.04 sec
+        Start 317: raytracing_dragon_demo_launcher
+281/301 Test #317: raytracing_dragon_demo_launcher ........................................   Passed    0.05 sec
+        Start 318: raytracing_dragon_glass_acceptance
+282/301 Test #318: raytracing_dragon_glass_acceptance .....................................   Passed    0.02 sec
+        Start 319: raytracing_spawn_geometry
+283/301 Test #319: raytracing_spawn_geometry ..............................................   Passed    0.03 sec
+        Start 320: raytracing_material_comparison_inputs
+284/301 Test #320: raytracing_material_comparison_inputs ..................................   Passed    0.02 sec
+        Start 321: raytracing_config_and_layout
+285/301 Test #321: raytracing_config_and_layout ...........................................   Passed    1.07 sec
+        Start 322: raytracing_device_contract
+286/301 Test #322: raytracing_device_contract .............................................   Passed    0.24 sec
+        Start 323: raytracing_headless_writes_png
+287/301 Test #323: raytracing_headless_writes_png .........................................   Passed    0.45 sec
+        Start 324: raytracing_retry_scene
+288/301 Test #324: raytracing_retry_scene .................................................   Passed    0.28 sec
+        Start 325: raytracing_retry_pipeline
+289/301 Test #325: raytracing_retry_pipeline ..............................................   Passed    0.30 sec
+        Start 326: raytracing_retry_target
+290/301 Test #326: raytracing_retry_target ................................................   Passed    0.28 sec
+        Start 327: raytracing_atmosphere_reflection
+291/301 Test #327: raytracing_atmosphere_reflection .......................................   Passed    3.05 sec
+        Start 328: raytracing_atmosphere_refraction
+292/301 Test #328: raytracing_atmosphere_refraction .......................................   Passed    3.05 sec
+        Start 329: raytracing_atmosphere_retry
+293/301 Test #329: raytracing_atmosphere_retry ............................................   Passed    6.07 sec
+        Start 330: raytracing_materials_environment
+294/301 Test #330: raytracing_materials_environment .......................................   Passed    3.31 sec
+        Start 331: raytracing_materials_scene
+295/301 Test #331: raytracing_materials_scene .............................................   Passed    3.30 sec
+        Start 332: raytracing_materials_retry_pipeline
+296/301 Test #332: raytracing_materials_retry_pipeline ....................................   Passed    6.30 sec
+        Start 333: raytracing_materials_retry_target
+297/301 Test #333: raytracing_materials_retry_target ......................................   Passed    3.34 sec
+        Start 334: raytracing_materials_glass
+298/301 Test #334: raytracing_materials_glass .............................................   Passed    3.34 sec
+        Start 335: raytracing_materials_frosted-glass
+299/301 Test #335: raytracing_materials_frosted-glass .....................................   Passed    3.40 sec
+        Start 336: raytracing_materials_gallery
+300/301 Test #336: raytracing_materials_gallery ...........................................   Passed    3.31 sec
+        Start 337: raytracing_sky_refresh
+301/301 Test #337: raytracing_sky_refresh .................................................   Passed    3.13 sec
+
+100% tests passed out of 301
+
+Label Time Summary:
+artifact              =  41.15 sec*proc (30 tests)
+asset                 =   0.13 sec*proc (4 tests)
+backend               =   4.26 sec*proc (10 tests)
+build                 =  66.56 sec*proc (4 tests)
+capture               =   7.21 sec*proc (4 tests)
+cloud                 =   8.46 sec*proc (1 test)
+config                =   2.60 sec*proc (1 test)
+conformance           =  22.01 sec*proc (14 tests)
+core                  =   3.19 sec*proc (3 tests)
+dependency            =   0.07 sec*proc (1 test)
+diagnostics           =   0.65 sec*proc (3 tests)
+docs                  =   4.33 sec*proc (7 tests)
+environment           =   0.02 sec*proc (1 test)
+finite-volume         =   0.59 sec*proc (3 tests)
+fluid                 = 2124.40 sec*proc (62 tests)
+gltf                  =   7.04 sec*proc (10 tests)
+gpu                   = 2493.26 sec*proc (119 tests)
+headless              = 1425.76 sec*proc (136 tests)
+material              =  26.30 sec*proc (7 tests)
+media                 =   0.04 sec*proc (1 test)
+policy                =  68.33 sec*proc (12 tests)
+presentation          = 2107.69 sec*proc (45 tests)
+rain                  = 152.99 sec*proc (1 test)
+recording             =  22.33 sec*proc (2 tests)
+render                =   0.67 sec*proc (5 tests)
+sanitizer_external    =   0.95 sec*proc (1 test)
+sky                   = 111.94 sec*proc (35 tests)
+stream                =   0.14 sec*proc (2 tests)
+structural            =   0.73 sec*proc (8 tests)
+taa                   =   1.31 sec*proc (6 tests)
+terrain               =  83.66 sec*proc (46 tests)
+tools                 =   4.08 sec*proc (1 test)
+tracer                =   0.02 sec*proc (1 test)
+transaction           =   0.21 sec*proc (1 test)
+unit                  =  22.64 sec*proc (77 tests)
+viewer                =   5.74 sec*proc (9 tests)
+water                 =  56.70 sec*proc (18 tests)
+
+Total Test time (real) = 2700.46 sec

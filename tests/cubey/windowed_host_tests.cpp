@@ -50,4 +50,12 @@ void test_windowed_app_config_preserves_windowed_host_defaults() {
     require(!config.close_on_escape, "windowed app config should not force escape handling");
     require(!callbacks.draw_ui, "windowed app callbacks should default to no UI callback");
     require(!host_callbacks.draw_ui, "windowed host callbacks should default to no UI callback");
+    require(!callbacks.frame_submitted && !callbacks.frame_discarded,
+            "windowed app submission notifications should default to empty");
+    require(!host_callbacks.frame_submitted && !host_callbacks.frame_discarded,
+            "windowed host submission notifications should default to empty");
+    static_assert(std::is_same_v<decltype(callbacks.frame_submitted),
+                                 std::function<void(cubey::host::WindowedAppContext&,
+                                                    const cubey::host::WindowedRenderFrame&,
+                                                    cubey::vulkan::GpuSubmissionTicket)>>);
 }

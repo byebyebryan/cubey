@@ -1,0 +1,11 @@
+{
+  "qualified_filter": {
+    "new_frame_weight": 0.1,
+    "variance_factor": 1,
+    "radiance_limit": 10000
+  },
+  "review": "For PQ current samples in [0,1], mean plus population standard deviation is at most (1+sqrt(2))/2. Clipped history blended with current therefore has the following upper bound, below half-float overflow. Non-default filter settings are unqualified.",
+  "pq_upper_bound": 1.186396103067893,
+  "decoded_hdr_upper_bound": 64556.01691430528,
+  "half_float_finite_limit": 65504
+}

@@ -1,0 +1,110 @@
+// Copyright (c) 2014-2021, NVIDIA CORPORATION. All rights reserved.
+// Adapted from public Donut 52efbe37d7f550ea1c5c7ee02b75404ec7c72c09.
+// MIT terms: third_party/temporal_aa/LICENSE. Provenance: adjacent README.
+#version 450
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(std140, set = 0, binding = 0) uniform TemporalUniforms {
+    mat4 inverse_jittered_vp;
+    mat4 current_vp;
+    mat4 previous_vp;
+    vec4 eye;
+    vec4 size;
+    vec4 controls; // new-frame weight, variance clamp, radiance limit, reserved
+} u;
+layout(set = 0, binding = 1) uniform sampler2D color_image;
+layout(set = 0, binding = 2) uniform sampler2D motion_image;
+layout(set = 0, binding = 3) uniform sampler2D history_image;
+layout(rgba16f, set = 0, binding = 4) writeonly uniform image2D resolved_image;
+layout(rgba16f, set = 0, binding = 5) writeonly uniform image2D next_history;
+shared vec4 colors_lengths[18][18];
+shared vec2 motions[18][18];
+vec3 pq_encode(vec3 image) {
+    vec3 lm = pow(max(image / 10000.0, vec3(0)), vec3(.1593017578125));
+    return clamp(pow((.8359375 + 18.8515625 * lm) / (1.0 + 18.6875 * lm),
+                     vec3(78.84375)), 0.0, 1.0);
+}
+vec3 pq_decode(vec3 image) {
+    vec3 np = pow(max(image, vec3(0)), vec3(1.0 / 78.84375));
+    return pow(max((np - .8359375) / (18.8515625 - 18.6875 * np), vec3(0)),
+               vec3(1.0 / .1593017578125)) * 10000.0;
+}
+vec3 catmull_rom(vec2 position) {
+    vec2 tc = floor(position - .5) + .5;
+    vec2 f = clamp(position - tc, 0.0, 1.0), f2 = f * f, f3 = f2 * f;
+    vec2 w0 = f2 - .5 * (f3 + f);
+    vec2 w1 = 1.5 * f3 - 2.5 * f2 + 1.0;
+    vec2 w3 = .5 * (f3 - f2);
+    vec2 w2 = 1.0 - w0 - w1 - w3;
+    vec2 w12 = w1 + w2;
+    vec2 tc0 = (tc - 1.0) * u.size.zw;
+    vec2 tc12 = (tc + w2 / w12) * u.size.zw;
+    vec2 tc3 = (tc + 2.0) * u.size.zw;
+    vec3 result =
+        textureLod(history_image, vec2(tc0.x, tc0.y), 0).rgb * (w0.x * w0.y) +
+        textureLod(history_image, vec2(tc0.x, tc12.y), 0).rgb * (w0.x * w12.y) +
+        textureLod(history_image, vec2(tc0.x, tc3.y), 0).rgb * (w0.x * w3.y) +
+        textureLod(history_image, vec2(tc12.x, tc0.y), 0).rgb * (w12.x * w0.y) +
+        textureLod(history_image, vec2(tc12.x, tc12.y), 0).rgb * (w12.x * w12.y) +
+        textureLod(history_image, vec2(tc12.x, tc3.y), 0).rgb * (w12.x * w3.y) +
+        textureLod(history_image, vec2(tc3.x, tc0.y), 0).rgb * (w3.x * w0.y) +
+        textureLod(history_image, vec2(tc3.x, tc12.y), 0).rgb * (w3.x * w12.y) +
+        textureLod(history_image, vec2(tc3.x, tc3.y), 0).rgb * (w3.x * w3.y);
+    return max(result, vec3(0));
+}
+void preload(ivec2 shared_id, ivec2 global_id) {
+    vec3 color = vec3(0);
+    vec2 motion = vec2(0);
+    // HLSL out-of-bounds Texture2D loads return zero. Spell this out in GLSL.
+    if (all(greaterThanEqual(global_id, ivec2(0))) &&
+        all(lessThan(global_id, ivec2(u.size.xy)))) {
+        color = texelFetch(color_image, global_id, 0).rgb;
+        // Safety boundary around the donor core; ordinary finite radiance is
+        // unchanged. Alpha is deliberately not interpreted as reactivity.
+        if (any(isnan(color)) || any(isinf(color))) color = vec3(0);
+        color = clamp(color, 0.0, u.controls.z);
+        motion = texelFetch(motion_image, global_id, 0).rg;
+        if (any(isnan(motion)) || any(isinf(motion))) motion = u.size.xy + 16.0;
+    }
+    colors_lengths[shared_id.y][shared_id.x] = vec4(pq_encode(color), dot(motion, motion));
+    motions[shared_id.y][shared_id.x] = motion;
+}
+void main() {
+    ivec2 local_id = ivec2(gl_LocalInvocationID.xy);
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    int linear_id = local_id.y * 16 + local_id.x;
+    ivec2 shared_id = ivec2(linear_id % 18, linear_id / 18);
+    ivec2 base = p - local_id - 1;
+    if (shared_id.y < 14) preload(shared_id, base + shared_id);
+    shared_id.y += 14;
+    if (shared_id.y < 18) preload(shared_id, base + shared_id);
+    barrier();
+    if (any(greaterThanEqual(p, ivec2(u.size.xy)))) return;
+    vec3 moment1 = vec3(0), moment2 = vec3(0), current = vec3(0);
+    float longest_length = -1.0;
+    ivec2 longest_pos = ivec2(0);
+    for (int dy = 0; dy <= 2; ++dy) for (int dx = 0; dx <= 2; ++dx) {
+        ivec2 pos = local_id + ivec2(dx, dy);
+        vec4 sample_value = colors_lengths[pos.y][pos.x];
+        if (dx == 1 && dy == 1) current = sample_value.rgb;
+        moment1 += sample_value.rgb;
+        moment2 += sample_value.rgb * sample_value.rgb;
+        if (sample_value.a > longest_length) {
+            longest_length = sample_value.a;
+            longest_pos = pos;
+        }
+    }
+    moment1 /= 9.0;
+    moment2 /= 9.0;
+    vec3 sigma = sqrt(max(vec3(0), moment2 - moment1 * moment1)) * u.controls.y;
+    vec2 source_pos = vec2(p) + motions[longest_pos.y][longest_pos.x] + .5;
+    vec3 result_pq = current;
+    // Matches the donor's previous viewport inset by one pixel on each side.
+    if (u.controls.x < 1.0 && all(greaterThan(source_pos, vec2(1))) &&
+        all(lessThan(source_pos, u.size.xy - 1.0))) {
+        vec3 history = catmull_rom(source_pos);
+        if (u.controls.y >= 0.0) history = clamp(history, moment1 - sigma, moment1 + sigma);
+        result_pq = mix(history, current, u.controls.x);
+    }
+    imageStore(resolved_image, p, vec4(pq_decode(result_pq), 1));
+    imageStore(next_history, p, vec4(result_pq, 0));
+}

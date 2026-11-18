@@ -16,16 +16,14 @@ void PbrMaterialsApp::record_frame(const cubey::vulkan::Device& device, VkComman
                                    cubey::render::FrameSlot slot, bool present,
                                    cubey::profiling::ProfileRecorder* profile,
                                    std::uint64_t index) {
+    profile_ = profile;
     publish_materials(slot);
+    if (temporal_material_revision_ != revision_) {
+        ++temporal_content_generation_;
+        temporal_material_revision_ = revision_;
+    }
     if (whole_profiler_) {
-        whole_profiler_->collect(slot.index);
-        pass_profiler_->collect(slot.index);
-        if (profile && index >= slot.count) {
-            for (const auto& timing : whole_profiler_->latest_timings())
-                profile->record_gpu_span(index - slot.count, timing.label, timing.milliseconds);
-            for (const auto& timing : pass_profiler_->latest_timings())
-                profile->record_gpu_span(index - slot.count, timing.label, timing.milliseconds);
-        }
+        collect_profile_slot(slot.index);
     }
     if (present)
         vulkan::CommandRecorder(command).begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -34,6 +32,7 @@ void PbrMaterialsApp::record_frame(const cubey::vulkan::Device& device, VkComman
     if (whole_profiler_) {
         whole_profiler_->begin_frame(command, slot.index);
         pass_profiler_->begin_frame(command, slot.index);
+        pending_profile_frames_.at(slot.index) = index;
     }
     std::optional<vulkan::GpuTimestampScope> whole;
     if (whole_profiler_)
@@ -45,6 +44,8 @@ void PbrMaterialsApp::record_frame(const cubey::vulkan::Device& device, VkComman
     settings.transmission_source = config_.transmission_source == "environment"
                                        ? ForwardPbrTransmissionSource::Environment
                                        : ForwardPbrTransmissionSource::Screen;
+    settings.anti_aliasing = render::anti_aliasing_mode_from_name(config_.anti_aliasing);
+    settings.temporal_appearance_static = config_.lighting_cycle == "frozen";
     if (config_.environment != "studio") {
         forward_pbr_renderer().update_environment_frame(
             device, slot,
@@ -85,6 +86,7 @@ void PbrMaterialsApp::record_frame(const cubey::vulkan::Device& device, VkComman
                 .camera_entity = camera_entity_,
                 .light_entity = light_entity_,
                 .fallback_light = fallback_light_packet(),
+                .temporal_content_generation = temporal_content_generation_,
             },
         .scene_resources =
             {
@@ -97,9 +99,71 @@ void PbrMaterialsApp::record_frame(const cubey::vulkan::Device& device, VkComman
                                               .byte_size = hdr_readback_->size()}}
                                         : std::nullopt,
     });
+    if (profile) {
+        if (config_.taa_moving_fixture) {
+            profile->record_metric(index, "taa.fixture", "seconds", fixture_seconds_);
+            profile->record_metric(index, "taa.fixture", "world_x", fixture_position_.x);
+            profile->record_metric(index, "taa.fixture", "world_z", fixture_position_.z);
+        }
+        const auto status = forward_pbr_renderer().temporal_status();
+        profile->record_metric(index, "aa", "requested", static_cast<unsigned>(status.requested));
+        profile->record_metric(index, "aa", "effective", static_cast<unsigned>(status.effective));
+        profile->record_metric(index, "aa", "bypass_reason",
+                               static_cast<unsigned>(status.bypass_reason));
+        if (status.effective == render::AntiAliasingMode::Taa) {
+            profile->record_metric(index, "taa", "history_age", status.history_age);
+            profile->record_metric(index, "taa", "reset_reason",
+                                   static_cast<unsigned>(status.reset_reason));
+            profile->record_metric(index, "taa", "jitter_x", status.sample_offset_pixels.x);
+            profile->record_metric(index, "taa", "jitter_y", status.sample_offset_pixels.y);
+            profile->record_metric(
+                index, "taa", "persistent_requested_bytes",
+                static_cast<double>(status.resources.persistent_requested_bytes));
+            profile->record_metric(
+                index, "taa", "per_slot_transient_requested_bytes",
+                static_cast<double>(status.resources.per_slot_transient_requested_bytes));
+            profile->record_metric(
+                index, "taa", "persistent_image_allocation_bytes",
+                static_cast<double>(status.resources.persistent_image_allocation_bytes));
+            profile->record_metric(
+                index, "taa", "per_slot_transient_image_allocation_bytes",
+                static_cast<double>(status.resources.per_slot_transient_image_allocation_bytes));
+            profile->record_metric(index, "taa", "uniform_allocation_bytes",
+                                   static_cast<double>(status.resources.uniform_allocation_bytes));
+        }
+    }
     whole.reset();
     if (present)
         vulkan::CommandRecorder(command).end("pbr_materials frame");
+}
+
+void PbrMaterialsApp::collect_profile_slot(std::uint32_t slot) {
+    if (!whole_profiler_ || !accepted_profile_frames_.at(slot))
+        return;
+    for (auto* profiler : {&*whole_profiler_, &*pass_profiler_}) {
+        profiler->collect(slot);
+        if (profile_)
+            for (const auto& timing : profiler->latest_timings())
+                profile_->record_gpu_span(*accepted_profile_frames_[slot], timing.label,
+                                          timing.milliseconds);
+    }
+    accepted_profile_frames_[slot].reset();
+}
+void PbrMaterialsApp::frame_submitted(render::FrameSlot slot, std::uint64_t index,
+                                      vulkan::GpuSubmissionTicket ticket) {
+    forward_pbr_renderer().frame_submitted(ticket);
+    if (whole_profiler_ && pending_profile_frames_.at(slot.index)) {
+        if (*pending_profile_frames_[slot.index] != index)
+            throw std::logic_error("PBR profiler submission did not match its candidate");
+        accepted_profile_frames_[slot.index] = pending_profile_frames_[slot.index];
+        pending_profile_frames_[slot.index].reset();
+    }
+}
+void PbrMaterialsApp::frame_discarded(render::FrameSlot slot) {
+    if (forward_pbr_renderer_)
+        forward_pbr_renderer().frame_discarded();
+    if (slot.index < pending_profile_frames_.size())
+        pending_profile_frames_[slot.index].reset();
 }
 
 } // namespace cubey::projects::pbr_materials::detail

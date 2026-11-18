@@ -31,6 +31,12 @@ PbrMaterialsApp::PbrMaterialsApp(PbrMaterialsConfig config)
         config_.presentation_time > 8)
         throw std::invalid_argument("presentation-time must be -1 or 0..8 seconds");
     presentation_seconds_ = std::max(0.0, config_.presentation_time);
+    if (!std::isfinite(config_.taa_fixture_time) || config_.taa_fixture_time < -1 ||
+        config_.taa_fixture_time > 8)
+        throw std::invalid_argument("taa-fixture-time must be -1 or 0..8 seconds");
+    if (config_.taa_moving_fixture &&
+        (!config_.presentation.empty() || config_.lighting_cycle != "frozen"))
+        throw std::invalid_argument("TAA moving fixture requires frozen workshop lighting");
     if (config_.lighting_cycle != "frozen" &&
         (config_.presentation.empty() || config_.environment == "studio"))
         throw std::invalid_argument(
@@ -65,6 +71,10 @@ int PbrMaterialsApp::run() {
             debug_view_ = render::next_pbr_debug_view(debug_view_);
         }
         orbit_controller_.update_from_input(input, timing.delta_seconds);
+        if (input.key_pressed(cubey::input::Key::R)) {
+            forward_pbr_renderer().reset_temporal();
+            fixture_clock_origin_ = timing.elapsed_seconds;
+        }
         if (!config_.presentation.empty() && input.key_pressed(cubey::input::Key::R)) {
             presentation_seconds_ = 0;
             orbit_controller_.set_pitch(config_.pitch);
@@ -76,6 +86,15 @@ int PbrMaterialsApp::run() {
     callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                     const cubey::host::WindowedRenderFrame& frame) {
         record_workshop_frame(context, frame);
+    };
+    callbacks.frame_submitted = [this](cubey::host::WindowedAppContext&,
+                                       const cubey::host::WindowedRenderFrame& frame,
+                                       vulkan::GpuSubmissionTicket ticket) {
+        frame_submitted(frame.frame_slot, frame.timing.frame_index, ticket);
+    };
+    callbacks.frame_discarded = [this](cubey::host::WindowedAppContext&,
+                                       const cubey::host::WindowedRenderFrame& frame) {
+        frame_discarded(frame.frame_slot);
     };
     callbacks.frame_stats_sample =
         [this](cubey::host::WindowedAppContext& context,
@@ -119,7 +138,8 @@ int PbrMaterialsApp::run() {
             .run_config = config_.common,
             .app_name = "pbr_materials",
             .ready_status = "rendering PBR material workshop",
-            .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
+            .required_queue_flags = VK_QUEUE_GRAPHICS_BIT |
+                                    (config_.anti_aliasing == "taa" ? VK_QUEUE_COMPUTE_BIT : 0U),
             .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .require_dynamic_rendering = true,
             .close_on_escape = true,
@@ -129,6 +149,15 @@ int PbrMaterialsApp::run() {
 
 int PbrMaterialsApp::run_headless() {
     cubey::host::HeadlessPngHostCallbacks callbacks;
+    callbacks.frame_submitted = [this](cubey::host::HeadlessPngContext&,
+                                       const cubey::host::HeadlessCaptureFrame& frame,
+                                       vulkan::GpuSubmissionTicket ticket) {
+        frame_submitted(frame.frame_slot, frame.index, ticket);
+    };
+    callbacks.frame_discarded = [this](cubey::host::HeadlessPngContext&,
+                                       const cubey::host::HeadlessCaptureFrame& frame) {
+        frame_discarded(frame.frame_slot);
+    };
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& ctx) {
         create_global_resources_if_needed(
             ctx.device(), ctx.gpu(),
@@ -180,7 +209,11 @@ int PbrMaterialsApp::run_headless() {
         destroy_all_resources();
     };
     return cubey::host::HeadlessPngHost(
-               {.run_config = config_.common, .output_format = VK_FORMAT_R8G8B8A8_UNORM},
+               {.run_config = config_.common,
+                .required_queue_flags =
+                    VK_QUEUE_GRAPHICS_BIT |
+                    (config_.anti_aliasing == "taa" ? VK_QUEUE_COMPUTE_BIT : 0U),
+                .output_format = VK_FORMAT_R8G8B8A8_UNORM},
                std::move(callbacks))
         .run();
 }

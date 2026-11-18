@@ -206,6 +206,13 @@ class App {
     int run() {
         if (config_.common.headless) {
             host::HeadlessPngHostCallbacks callbacks;
+            callbacks.frame_submitted =
+                [&](host::HeadlessPngContext&, const host::HeadlessCaptureFrame&,
+                    vulkan::GpuSubmissionTicket ticket) { renderer_->frame_submitted(ticket); };
+            callbacks.frame_discarded = [&](host::HeadlessPngContext&,
+                                            const host::HeadlessCaptureFrame&) {
+                renderer_->frame_discarded();
+            };
             callbacks.create_resources = [&](host::HeadlessPngContext& ctx) {
                 initialize(ctx.device(), ctx.gpu(), ctx.render_target(),
                            host::headless_capture_frame_slot_count(config_.common));
@@ -271,6 +278,14 @@ class App {
                 .run();
         }
         host::WindowedAppCallbacks callbacks;
+        callbacks.frame_submitted = [&](host::WindowedAppContext&, const host::WindowedRenderFrame&,
+                                        vulkan::GpuSubmissionTicket ticket) {
+            renderer_->frame_submitted(ticket);
+        };
+        callbacks.frame_discarded = [&](host::WindowedAppContext&,
+                                        const host::WindowedRenderFrame&) {
+            renderer_->frame_discarded();
+        };
         callbacks.create_swapchain_resources = [&](host::WindowedAppContext& ctx) {
             initialize(ctx.device(), ctx.gpu(),
                        render::ColorTargetView{.extent = ctx.swapchain().extent(),
@@ -295,6 +310,7 @@ class App {
                 requested_supersample_.reset();
             }
             if (ctx.filtered_input().key_pressed(input::Key::R)) {
+                renderer_->reset_temporal();
                 playback_seconds_ = 0;
                 orbit_.set_pitch(config_.pitch);
                 orbit_.set_distance(config_.distance);
@@ -806,6 +822,8 @@ class App {
                 config_.yaw = render.value("yaw", config_.yaw);
                 config_.pitch = render.value("pitch", config_.pitch);
                 config_.distance = render.value("distance", config_.distance);
+                if (render.value("reset_temporal", false))
+                    renderer_->reset_temporal();
                 if (!std::isfinite(config_.yaw) || !std::isfinite(config_.pitch) ||
                     !std::isfinite(config_.distance) || config_.distance < .6F ||
                     config_.distance > 5.F || std::abs(config_.pitch) > 1.5F)
@@ -1040,8 +1058,10 @@ class App {
             if (ImGui::Button(orbit_.paused() ? "Play" : "Pause"))
                 orbit_.toggle_pause();
             ImGui::SameLine();
-            if (ImGui::Button("Restart"))
+            if (ImGui::Button("Restart")) {
+                renderer_->reset_temporal();
                 playback_seconds_ = 0;
+            }
             std::vector<const char*> motions{"Static", "Orbit"};
             std::vector<std::string> motion_names{"static", "orbit"};
             if (!authored_ || !authored_->history.empty()) {
@@ -1068,14 +1088,17 @@ class App {
                     if (next.motion == "carve")
                         validate_carve_recipe(recipe_);
                     config_.timeline = next;
+                    renderer_->reset_temporal();
                     playback_seconds_ = 0;
                 } catch (const std::invalid_argument& error) {
                     error_ = error.what();
                 }
             }
             float progress = static_cast<float>(playback_seconds_ / config_.timeline.duration);
-            if (ImGui::SliderFloat("Timeline", &progress, 0, 1, "%.2f"))
+            if (ImGui::SliderFloat("Timeline", &progress, 0, 1, "%.2f")) {
+                renderer_->reset_temporal();
                 playback_seconds_ = static_cast<double>(progress) * config_.timeline.duration;
+            }
             if (authored_build()) {
                 const auto total = authored_->history.size();
                 const auto shown = std::min(active_prefix_, total);
@@ -1086,6 +1109,7 @@ class App {
                                              ? authored_->history[label_index].label.c_str()
                                              : "Empty workspace");
                 const auto seek = [&](std::size_t count) {
+                    renderer_->reset_temporal();
                     playback_seconds_ = authored_history_seek(config_.timeline, *authored_, count);
                     if (!orbit_.paused())
                         orbit_.toggle_pause();
@@ -1378,6 +1402,13 @@ class App {
                 ImGui::TextWrapped("Four hierarchy stages skip empty cells. Each leaf caches 8x8x8 "
                                    "distance samples. Magenta reports an exhausted ray.");
             }
+            ImGui::Separator();
+            const char* aa_choices[]{"Off", "TAA"};
+            int aa_index = config_.anti_aliasing == "taa" ? 1 : 0;
+            if (ImGui::Combo("Anti-aliasing", &aa_index, aa_choices, 2))
+                config_.anti_aliasing = aa_index ? "taa" : "off";
+            if (config_.anti_aliasing == "taa")
+                ImGui::TextWrapped("TAA: %s", renderer_->anti_aliasing_status().data());
         }
         ImGui::End();
     }

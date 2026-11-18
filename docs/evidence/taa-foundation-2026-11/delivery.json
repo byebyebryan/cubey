@@ -1,0 +1,46 @@
+{
+  "scope": "Local browser review only; no external publication",
+  "url": "http://127.0.0.1:8769/",
+  "local_artifact": "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/review/index.html",
+  "browser_state": {
+    "clock": "2.11 s",
+    "gate": "301/301 dev tests and 9/9 synchronization tests passed. The final direct rigid-motion probe passed, along with 8 foundation and 9 documentation groups. Current complete Debug build, final shader policy and Markdown navigation checks passed. Exact commands and receipts.",
+    "overflow": false,
+    "ready": [
+      {
+        "error": null,
+        "height": 1080,
+        "readyState": 4,
+        "width": 1920
+      },
+      {
+        "error": null,
+        "height": 1080,
+        "readyState": 4,
+        "width": 1920
+      },
+      {
+        "error": null,
+        "height": 1080,
+        "readyState": 4,
+        "width": 1920
+      },
+      {
+        "error": null,
+        "height": 1080,
+        "readyState": 4,
+        "width": 1920
+      }
+    ],
+    "times": [
+      2.1538,
+      2.1513
+    ]
+  },
+  "console_errors_or_warnings": [],
+  "paired_motion_drift_seconds": 0.0024999999999999467,
+  "screenshots": [
+    "review/browser-final.png",
+    "review/browser-final-motion.png"
+  ]
+}

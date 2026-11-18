@@ -1,0 +1,105 @@
+{
+  "full-dev-tests": {
+    "command": [
+      "ctest",
+      "--preset",
+      "dev",
+      "--output-on-failure",
+      "-j1"
+    ],
+    "exit_code": null,
+    "launcher_exit_code": 143,
+    "completed_summary_pass": true,
+    "passed_tests": 301,
+    "unique_passed_test_records": 301,
+    "elapsed_seconds_from_ctest": 2700.46,
+    "scope": "Outer command wrapper was terminated before writing its receipt; orphaned CTest completed with all 301 unique tests marked Passed and the final 100% summary. Actual CTest process exit code was not collected; no fabricated zero exit is recorded."
+  },
+  "final-forward-tests": {
+    "command": [
+      "ctest",
+      "--test-dir",
+      "build/dev",
+      "-R",
+      "^forward_temporal_gpu$",
+      "--output-on-failure",
+      "-V"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.3171358108520508,
+    "scope": "Serial after complete dev lane; includes final test-only rigid-motion probe",
+    "passed_tests": 1
+  },
+  "full-sync-tests": {
+    "command": [
+      "ctest",
+      "--preset",
+      "dev-sync-validation",
+      "--output-on-failure",
+      "-j1"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 41.073474407196045,
+    "scope": "Serial after complete dev lane; includes final test-only rigid-motion probe",
+    "passed_tests": 9
+  },
+  "final-foundation-tests": {
+    "command": [
+      "ctest",
+      "--preset",
+      "dev-foundation",
+      "--output-on-failure",
+      "-j1"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 4.850142002105713,
+    "scope": "After staging new public header and implementation files so tracked-inventory policy checks cover them",
+    "passed_tests": 8
+  },
+  "final-doc-tests": {
+    "command": [
+      "ctest",
+      "--preset",
+      "dev-docs",
+      "--output-on-failure",
+      "-j1"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 4.037754774093628,
+    "scope": "After staging new architecture, closeout and evidence Markdown",
+    "passed_tests": 9
+  },
+  "final-dev-build": {
+    "command": [
+      "cmake",
+      "--build",
+      "--preset",
+      "dev",
+      "-j4"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.06443929672241211
+  },
+  "final-shader-policy": {
+    "command": [
+      "ctest",
+      "--test-dir",
+      "build/dev",
+      "-R",
+      "^shader_build_rules$",
+      "--output-on-failure"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.9245448112487793
+  },
+  "final-navigation": {
+    "command": [
+      "python3",
+      "tools/check_documentation.py",
+      "--check",
+      "navigation"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.562208890914917
+  }
+}

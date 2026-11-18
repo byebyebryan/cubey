@@ -42,10 +42,17 @@ void PbrMaterialsApp::create_global_resources_if_needed(const cubey::vulkan::Dev
     materials_.resize(frame_slot_count);
     published_revision_.resize(frame_slot_count, revision_);
     stress_done_.resize(frame_slot_count, false);
+    accepted_profile_frames_.resize(frame_slot_count);
+    pending_profile_frames_.resize(frame_slot_count);
     for (auto& table : materials_)
         table.initialize(device, {.block_capacity = static_cast<std::uint32_t>(catalog_.size()),
                                   .editable_after_retire = true});
     create_materials();
+    if (config_.taa_moving_fixture &&
+        (selected_ < 0 ||
+         recipes_.at(static_cast<std::size_t>(selected_)).optics.settings.y > 0.0F)) {
+        throw std::invalid_argument("the TAA moving fixture requires one focused opaque material");
+    }
     create_mesh(gpu);
     create_ibl_resources(device, gpu);
     create_environment(device, gpu, frame_slot_count);
@@ -86,6 +93,11 @@ void PbrMaterialsApp::destroy_swapchain_resources() {
 }
 
 void PbrMaterialsApp::destroy_all_resources() {
+    for (std::uint32_t slot = 0; slot < accepted_profile_frames_.size(); ++slot)
+        collect_profile_slot(slot);
+    accepted_profile_frames_.clear();
+    pending_profile_frames_.clear();
+    profile_ = nullptr;
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
     if (config_.lighting_cycle != "frozen")

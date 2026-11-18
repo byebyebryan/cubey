@@ -1,0 +1,10 @@
+{
+  "taa_moving_fixture": true,
+  "anti_aliasing": "taa",
+  "material": "clay",
+  "environment": "studio",
+  "lighting_cycle": "frozen",
+  "distance": 2.2,
+  "yaw": 0,
+  "pitch": 0
+}

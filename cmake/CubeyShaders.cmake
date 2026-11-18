@@ -129,6 +129,10 @@ endfunction()
 function(cubey_forward_pbr_shader_sources out_var)
     set(
         forward_pbr_shaders
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/temporal_aa/motion.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/temporal_aa/resolve.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/temporal_aa/rigid_motion.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/temporal_aa/rigid_motion.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_skybox.vert"

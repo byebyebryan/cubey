@@ -495,12 +495,41 @@ void ForwardPbrRenderer3D::destroy_swapchain_resources() {
     impl_->destroy_swapchain_resources();
 }
 
+void ForwardPbrRenderer3D::frame_submitted(vulkan::GpuSubmissionTicket ticket) {
+    impl_->frame_submitted(ticket);
+}
+
+void ForwardPbrRenderer3D::frame_discarded() {
+    impl_->frame_discarded();
+}
+
+void ForwardPbrRenderer3D::reset_temporal() {
+    impl_->reset_temporal();
+}
+
+ForwardPbrRenderer3DTemporalStatus ForwardPbrRenderer3D::temporal_status() const {
+    return impl_->temporal_status_;
+}
+
 void ForwardPbrRenderer3D::Impl::reset_swapchain_resources() {
     swapchain_.post_pipeline.reset();
     // This descriptor set owns pyramid image references. Release it before
     // destroying the per-slot pyramid images it can sample.
     swapchain_.transmission_scene_material.reset();
     swapchain_.refraction_pyramid.reset();
+    if (pending_temporal_frame_.has_value()) {
+        frame_discarded();
+    }
+    recorded_target_state_.reset();
+    swapchain_.temporal_rigid_motion_pipeline_no_cull.reset();
+    swapchain_.temporal_rigid_motion_pipeline_back.reset();
+    swapchain_.temporal_rigid_motion_material.reset();
+    swapchain_.temporal_aa.reset();
+    accepted_rigid_models_.clear();
+    pending_rigid_models_.clear();
+    accepted_temporal_frame_ = false;
+    force_temporal_reset_ = false;
+    temporal_status_ = {};
     swapchain_.post_sampler.reset();
     target_pipeline_slot(ForwardPbrTargetPipelineVariant::MaskShadowDoubleSided).reset();
     target_pipeline_slot(ForwardPbrTargetPipelineVariant::MaskShadow).reset();
@@ -514,6 +543,95 @@ void ForwardPbrRenderer3D::Impl::reset_swapchain_resources() {
     swapchain_.scene_depth_state = render::render_graph_undefined_texture_state();
     swapchain_.target_extent = {};
     swapchain_.shadow_depth_is_sampled = false;
+}
+
+void ForwardPbrRenderer3D::Impl::ensure_temporal_resources(const vulkan::Device& device,
+                                                           VkExtent2D extent) {
+    if (extent.width == 0U || extent.height == 0U) {
+        throw std::runtime_error("forward PBR TAA requires a positive target extent");
+    }
+    const std::uint32_t slot_count = global_.graph_executor.frame_slot_count();
+    if (slot_count == 0U) {
+        throw std::runtime_error("forward PBR TAA requires initialized frame slots");
+    }
+    if (swapchain_.temporal_aa.has_value() && swapchain_.temporal_aa->created() &&
+        swapchain_.temporal_rigid_motion_material.has_value() &&
+        swapchain_.temporal_rigid_motion_pipeline_back.has_value() &&
+        swapchain_.temporal_rigid_motion_pipeline_no_cull.has_value() &&
+        swapchain_.target_extent.width == extent.width &&
+        swapchain_.target_extent.height == extent.height) {
+        return;
+    }
+    if (config_.temporal_motion_shader.empty() || config_.temporal_resolve_shader.empty() ||
+        config_.temporal_rigid_motion_vertex_shader.empty() ||
+        config_.temporal_rigid_motion_fragment_shader.empty()) {
+        throw std::runtime_error("forward PBR TAA requires temporal shader paths");
+    }
+
+    VkFormatProperties motion_properties{};
+    vkGetPhysicalDeviceFormatProperties(device.physical_device(), VK_FORMAT_R16G16_SFLOAT,
+                                        &motion_properties);
+    if ((motion_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0) {
+        throw std::runtime_error("forward PBR TAA requires RG16F color attachment support");
+    }
+
+    if (!swapchain_.temporal_aa.has_value()) {
+        swapchain_.temporal_aa.emplace();
+    }
+    if (!swapchain_.temporal_aa->created()) {
+        swapchain_.temporal_aa->create(device, {.extent = extent,
+                                                .frame_slot_count = slot_count,
+                                                .motion_shader = config_.temporal_motion_shader,
+                                                .resolve_shader = config_.temporal_resolve_shader});
+    }
+    if (!swapchain_.temporal_rigid_motion_material.has_value()) {
+        swapchain_.temporal_rigid_motion_material.emplace(
+            device, render::FrameUniformMaterialInstanceConfig{
+                        .material_pass = forward_pbr_temporal_rigid_motion_pass_info(
+                            "forward_pbr.taa.rigid_motion", VK_CULL_MODE_BACK_BIT),
+                        .frame_slot_count = slot_count,
+                        .uniform_binding = 0,
+                    });
+    }
+
+    const std::array<render::ShaderStageFile, 2> shaders{
+        render::vertex_shader_file(config_.temporal_rigid_motion_vertex_shader),
+        render::fragment_shader_file(config_.temporal_rigid_motion_fragment_shader),
+    };
+    const std::array<VkDescriptorSetLayout, 1> layouts{
+        swapchain_.temporal_rigid_motion_material->layout()};
+    const render::VertexInputLayout vertex_input{
+        .vertex_bindings = {render::vertex_input_binding(0, sizeof(render::PbrVertex),
+                                                         VK_VERTEX_INPUT_RATE_VERTEX)},
+        .attributes = {render::vertex_input_attribute(0, 0, VK_FORMAT_R32G32B32_SFLOAT,
+                                                      offsetof(render::PbrVertex, position))},
+    };
+    if (!swapchain_.temporal_rigid_motion_pipeline_back.has_value()) {
+        swapchain_.temporal_rigid_motion_pipeline_back.emplace(
+            device, render::graphics_pipeline_file_resource_config(
+                        {.extent = extent,
+                         .color_format = VK_FORMAT_R16G16_SFLOAT,
+                         .depth_format = depth_attachment().format()},
+                        {.shader_stage_files = shaders,
+                         .vertex_bindings = vertex_input.bindings(),
+                         .vertex_attributes = vertex_input.attribute_descriptions(),
+                         .descriptor_set_layouts = layouts,
+                         .material_pass = forward_pbr_temporal_rigid_motion_pass_info(
+                             "forward_pbr.taa.rigid_motion.back", VK_CULL_MODE_BACK_BIT)}));
+    }
+    if (!swapchain_.temporal_rigid_motion_pipeline_no_cull.has_value()) {
+        swapchain_.temporal_rigid_motion_pipeline_no_cull.emplace(
+            device, render::graphics_pipeline_file_resource_config(
+                        {.extent = extent,
+                         .color_format = VK_FORMAT_R16G16_SFLOAT,
+                         .depth_format = depth_attachment().format()},
+                        {.shader_stage_files = shaders,
+                         .vertex_bindings = vertex_input.bindings(),
+                         .vertex_attributes = vertex_input.attribute_descriptions(),
+                         .descriptor_set_layouts = layouts,
+                         .material_pass = forward_pbr_temporal_rigid_motion_pass_info(
+                             "forward_pbr.taa.rigid_motion.no_cull", VK_CULL_MODE_NONE)}));
+    }
 }
 
 void ForwardPbrRenderer3D::Impl::destroy_swapchain_resources() {

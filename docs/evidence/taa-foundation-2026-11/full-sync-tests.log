@@ -1,0 +1,36 @@
+Test project /home/bryan/code/cubey-aa/build/dev
+    Start  19: temporal_gpu_sync
+1/9 Test  #19: temporal_gpu_sync ..................   Passed    0.15 sec
+    Start  21: host_frame_submission_sync
+2/9 Test  #21: host_frame_submission_sync .........   Passed    0.66 sec
+    Start  23: forward_temporal_gpu_sync
+3/9 Test  #23: forward_temporal_gpu_sync ..........   Passed    0.21 sec
+    Start  27: capture_failure_sync
+4/9 Test  #27: capture_failure_sync ...............   Passed    1.03 sec
+    Start  33: host_lifecycle_sync
+5/9 Test  #33: host_lifecycle_sync ................   Passed    1.52 sec
+    Start  57: terrain_surface_lifecycle_sync
+6/9 Test  #57: terrain_surface_lifecycle_sync .....   Passed   25.46 sec
+    Start  59: synchronization_validation_probe
+7/9 Test  #59: synchronization_validation_probe ...   Passed    0.28 sec
+    Start  60: cloud_lifecycle_sync
+8/9 Test  #60: cloud_lifecycle_sync ...............   Passed    0.27 sec
+    Start 221: fluid_resource_lifecycle_sync
+9/9 Test #221: fluid_resource_lifecycle_sync ......   Passed   11.49 sec
+
+100% tests passed out of 9
+
+Label Time Summary:
+capture            =   1.03 sec*proc (1 test)
+cloud              =   0.55 sec*proc (2 tests)
+core               =   1.52 sec*proc (1 test)
+fluid              =  11.49 sec*proc (1 test)
+gpu                =  41.06 sec*proc (9 tests)
+headless           =  40.70 sec*proc (7 tests)
+render             =   0.36 sec*proc (2 tests)
+sync_validation    =  41.06 sec*proc (9 tests)
+taa                =   1.02 sec*proc (3 tests)
+terrain            =  25.46 sec*proc (1 test)
+water              =  25.46 sec*proc (1 test)
+
+Total Test time (real) =  41.07 sec

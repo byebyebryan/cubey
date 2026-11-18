@@ -173,6 +173,7 @@ void PbrMaterialsApp::switch_environment(const vulkan::Device& device, vulkan::G
     atmosphere_.destroy();
     atmosphere_textures_.reset();
     config_.environment = std::move(requested_environment_);
+    ++temporal_content_generation_;
     requested_environment_.clear();
     const auto slots = static_cast<std::uint32_t>(materials_.size());
     create_environment(device, gpu, slots);

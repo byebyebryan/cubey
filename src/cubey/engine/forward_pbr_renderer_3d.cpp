@@ -14,6 +14,39 @@
 
 namespace cubey {
 
+std::string_view
+forward_pbr_renderer_3d_taa_bypass_reason_name(ForwardPbrRenderer3DTaaBypassReason reason) {
+    switch (reason) {
+    case ForwardPbrRenderer3DTaaBypassReason::None:
+        return "none";
+    case ForwardPbrRenderer3DTaaBypassReason::DiagnosticView:
+        return "diagnostic view";
+    case ForwardPbrRenderer3DTaaBypassReason::SceneReadback:
+        return "scene readback";
+    case ForwardPbrRenderer3DTaaBypassReason::LinearOutput:
+        return "linear output";
+    case ForwardPbrRenderer3DTaaBypassReason::NonOpaqueMaterial:
+        return "alpha mask/blend";
+    case ForwardPbrRenderer3DTaaBypassReason::Transmission:
+        return "transmission";
+    case ForwardPbrRenderer3DTaaBypassReason::Deformation:
+        return "deformation";
+    case ForwardPbrRenderer3DTaaBypassReason::InstancedDraw:
+        return "instanced draw";
+    case ForwardPbrRenderer3DTaaBypassReason::MissingIdentity:
+        return "missing entity identity";
+    case ForwardPbrRenderer3DTaaBypassReason::Clouds:
+        return "clouds";
+    case ForwardPbrRenderer3DTaaBypassReason::Terrain:
+        return "terrain backdrop";
+    case ForwardPbrRenderer3DTaaBypassReason::Ocean:
+        return "ocean surface";
+    case ForwardPbrRenderer3DTaaBypassReason::DynamicAppearance:
+        return "dynamic appearance";
+    }
+    throw std::invalid_argument("invalid forward PBR TAA bypass reason");
+}
+
 void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& config) {
     if (config.pbr_vertex_shader.empty()) {
         throw std::runtime_error("forward PBR renderer requires a PBR vertex shader");
@@ -68,6 +101,10 @@ forward_pbr_renderer_3d_config_from_shader_directory(const std::filesystem::path
     base.refraction_pyramid_fragment_shader = shader_directory / "hdr_color_pyramid.frag.spv";
     base.shadow_depth_vertex_shader = shader_directory / "forward_pbr_shadow_depth.vert.spv";
     base.shadow_depth_fragment_shader = shader_directory / "forward_pbr_shadow_depth.frag.spv";
+    base.temporal_motion_shader = shader_directory / "motion.comp.spv";
+    base.temporal_resolve_shader = shader_directory / "resolve.comp.spv";
+    base.temporal_rigid_motion_vertex_shader = shader_directory / "rigid_motion.vert.spv";
+    base.temporal_rigid_motion_fragment_shader = shader_directory / "rigid_motion.frag.spv";
     return base;
 }
 
@@ -272,6 +309,141 @@ ForwardPbrRenderer3D::~ForwardPbrRenderer3D() = default;
 
 ForwardPbrRenderer3D::Impl::Impl(ForwardPbrRenderer3DConfig config) : config_(std::move(config)) {
     validate_forward_pbr_renderer_3d_config(config_);
+}
+
+ForwardPbrRenderer3DTaaBypassReason
+ForwardPbrRenderer3D::Impl::temporal_bypass_reason(const ForwardPbrRenderer3DRenderRequest& request,
+                                                   const scene::RenderFramePlan3D& scene_plan,
+                                                   const ForwardPbrDrawPlan& draw_plan) const {
+    if (request.settings.debug_view != render::PbrDebugView::Final) {
+        return ForwardPbrRenderer3DTaaBypassReason::DiagnosticView;
+    }
+    if (request.scene_readback.has_value()) {
+        return ForwardPbrRenderer3DTaaBypassReason::SceneReadback;
+    }
+    if (request.settings.opaque_linear_output) {
+        return ForwardPbrRenderer3DTaaBypassReason::LinearOutput;
+    }
+    if (request.view.temporal_view_id == 0 && !request.view.camera_entity &&
+        !scene_plan.camera_entity) {
+        return ForwardPbrRenderer3DTaaBypassReason::MissingIdentity;
+    }
+    if (draw_plan.has_transmission()) {
+        return ForwardPbrRenderer3DTaaBypassReason::Transmission;
+    }
+    if (!request.scene_resources.deformation_commands.empty()) {
+        return ForwardPbrRenderer3DTaaBypassReason::Deformation;
+    }
+    for (const scene::RenderDrawPacket3D& packet : scene_plan.draw_packets) {
+        if (!packet.entity) {
+            return ForwardPbrRenderer3DTaaBypassReason::MissingIdentity;
+        }
+        if (packet.material_info.optical_mode == render::MaterialOpticalMode::Transmission) {
+            return ForwardPbrRenderer3DTaaBypassReason::Transmission;
+        }
+        if (packet.material_info.alpha_mode != render::MaterialAlphaMode::Opaque ||
+            packet.material_info.blend != render::MaterialBlendMode::Opaque) {
+            return ForwardPbrRenderer3DTaaBypassReason::NonOpaqueMaterial;
+        }
+        if (packet.instance_count != 1U) {
+            return ForwardPbrRenderer3DTaaBypassReason::InstancedDraw;
+        }
+        if (request.scene_resources.frame_meshes != nullptr &&
+            request.scene_resources.frame_meshes->find(request.target.frame_slot, packet.mesh) !=
+                nullptr) {
+            return ForwardPbrRenderer3DTaaBypassReason::Deformation;
+        }
+    }
+    if (request.settings.atmosphere_clouds.has_value()) {
+        return ForwardPbrRenderer3DTaaBypassReason::Clouds;
+    }
+    if (request.settings.terrain_backdrop.has_value()) {
+        return ForwardPbrRenderer3DTaaBypassReason::Terrain;
+    }
+    if (request.settings.ocean_surface.has_value()) {
+        return ForwardPbrRenderer3DTaaBypassReason::Ocean;
+    }
+    if (!request.settings.temporal_appearance_static) {
+        return ForwardPbrRenderer3DTaaBypassReason::DynamicAppearance;
+    }
+    return ForwardPbrRenderer3DTaaBypassReason::None;
+}
+
+std::vector<ForwardPbrTemporalRigidMotionDraw>
+ForwardPbrRenderer3D::Impl::prepare_rigid_motion_draws(const scene::RenderFramePlan3D& scene_plan,
+                                                       const ForwardPbrDrawPlan& draw_plan) {
+    std::vector<ForwardPbrTemporalRigidMotionDraw> draws;
+    const std::size_t count = draw_plan.indices(ForwardPbrDrawRoute::SceneOpaqueBack).size() +
+                              draw_plan.indices(ForwardPbrDrawRoute::SceneOpaqueNoCull).size();
+    draws.reserve(count);
+    pending_rigid_models_.clear();
+    pending_rigid_models_.reserve(count);
+
+    const auto add_route = [&](ForwardPbrDrawRoute route) {
+        for (const std::uint32_t packet_index : draw_plan.indices(route)) {
+            const scene::RenderDrawPacket3D& packet = scene_plan.draw_packets.at(packet_index);
+            const ForwardPbrTemporalRigidDrawKey key{
+                .entity = packet.entity,
+                .mesh = packet.mesh,
+                .first_index = packet.first_index,
+                .vertex_offset = packet.vertex_offset,
+                .instance_count = packet.instance_count,
+                .first_instance = packet.first_instance,
+            };
+            const auto previous = accepted_rigid_models_.find(key);
+            const math::Mat4 previous_model =
+                previous == accepted_rigid_models_.end() ? math::Mat4{0.0F} : previous->second;
+            pending_rigid_models_.insert_or_assign(key, packet.world_affine_matrix);
+            draws.push_back({.key = key,
+                             .current_model = packet.world_affine_matrix,
+                             .previous_model = previous_model,
+                             .cull_mode = packet.material_info.cull_mode});
+        }
+    };
+    add_route(ForwardPbrDrawRoute::SceneOpaqueBack);
+    add_route(ForwardPbrDrawRoute::SceneOpaqueNoCull);
+    return draws;
+}
+
+void ForwardPbrRenderer3D::Impl::frame_submitted(vulkan::GpuSubmissionTicket ticket) {
+    recorded_target_state_.reset();
+    if (!pending_temporal_frame_.has_value()) {
+        return;
+    }
+    if (!swapchain_.temporal_aa.has_value()) {
+        throw std::logic_error("forward PBR temporal frame has no TAA runtime");
+    }
+    swapchain_.temporal_aa->commit_frame(pending_temporal_frame_->token, ticket);
+    accepted_rigid_models_.swap(pending_rigid_models_);
+    pending_rigid_models_.clear();
+    force_temporal_reset_ = false;
+    accepted_temporal_frame_ = true;
+    pending_temporal_frame_.reset();
+}
+
+void ForwardPbrRenderer3D::Impl::frame_discarded() {
+    if (recorded_target_state_.has_value()) {
+        swapchain_.shadow_depth_is_sampled = recorded_target_state_->shadow_depth_is_sampled;
+        swapchain_.scene_depth_state = recorded_target_state_->scene_depth_state;
+        recorded_target_state_.reset();
+    }
+    if (pending_temporal_frame_.has_value() && swapchain_.temporal_aa.has_value()) {
+        swapchain_.temporal_aa->discard_frame();
+    }
+    pending_temporal_frame_.reset();
+    pending_rigid_models_.clear();
+}
+
+void ForwardPbrRenderer3D::Impl::reset_temporal() {
+    force_temporal_reset_ = true;
+    accepted_temporal_frame_ = false;
+    accepted_rigid_models_.clear();
+    if (swapchain_.temporal_aa.has_value() && !swapchain_.temporal_aa->created()) {
+        return;
+    }
+    if (swapchain_.temporal_aa.has_value() && !pending_temporal_frame_.has_value()) {
+        swapchain_.temporal_aa->invalidate(render::TemporalResetReason::Explicit);
+    }
 }
 
 bool ForwardPbrRenderer3D::Impl::has_global_resources() const {

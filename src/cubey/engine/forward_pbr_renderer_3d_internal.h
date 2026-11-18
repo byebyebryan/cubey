@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <unordered_map>
 #include <vector>
 
 namespace cubey {
@@ -40,6 +41,75 @@ struct ForwardPbrRenderer3DShadowPushConstants {
 };
 
 static_assert(sizeof(ForwardPbrRenderer3DShadowPushConstants) == sizeof(math::Mat4));
+
+struct ForwardPbrTemporalRigidMotionUniforms {
+    math::Mat4 current_jittered_view_projection{1.0F};
+    math::Mat4 current_view_projection{1.0F};
+    math::Mat4 previous_view_projection{1.0F};
+    math::Vec4 extent{0.0F};
+};
+
+struct ForwardPbrTemporalRigidMotionPushConstants {
+    math::Mat4 current_model{1.0F};
+    math::Mat4 previous_model{0.0F};
+};
+
+static_assert(sizeof(ForwardPbrTemporalRigidMotionUniforms) == 208U);
+static_assert(sizeof(ForwardPbrTemporalRigidMotionPushConstants) == 128U);
+
+struct ForwardPbrTemporalRigidDrawKey {
+    Entity entity{};
+    render::MeshHandle mesh{};
+    std::uint32_t first_index = 0;
+    std::int32_t vertex_offset = 0;
+    std::uint32_t instance_count = 1;
+    std::uint32_t first_instance = 0;
+
+    friend bool operator==(const ForwardPbrTemporalRigidDrawKey&,
+                           const ForwardPbrTemporalRigidDrawKey&) = default;
+};
+
+struct ForwardPbrTemporalRigidDrawKeyHash {
+    [[nodiscard]] std::size_t operator()(const ForwardPbrTemporalRigidDrawKey& key) const noexcept {
+        std::size_t value = EntityHash{}(key.entity);
+        const auto mix = [&value](std::size_t part) {
+            value ^= part + 0x9e3779b97f4a7c15ULL + (value << 6U) + (value >> 2U);
+        };
+        mix(render::MeshHandleHash{}(key.mesh));
+        mix(key.first_index);
+        mix(static_cast<std::size_t>(static_cast<std::uint32_t>(key.vertex_offset)));
+        mix(key.instance_count);
+        mix(key.first_instance);
+        return value;
+    }
+};
+
+struct ForwardPbrTemporalRigidMotionDraw {
+    ForwardPbrTemporalRigidDrawKey key{};
+    math::Mat4 current_model{1.0F};
+    math::Mat4 previous_model{0.0F};
+    VkCullModeFlags cull_mode = VK_CULL_MODE_BACK_BIT;
+};
+
+[[nodiscard]] inline render::MaterialPassInfo
+forward_pbr_temporal_rigid_motion_pass_info(const char* label, VkCullModeFlags cull_mode) {
+    render::MaterialPassInfo info{.label = label};
+    info.descriptor_sets.push_back({
+        .set = 0,
+        .bindings = {{.binding = 0,
+                      .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                      .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT}},
+    });
+    info.push_constants.push_back(
+        {.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+         .offset = 0,
+         .size = sizeof(ForwardPbrTemporalRigidMotionPushConstants)});
+    info.cull_mode = cull_mode;
+    info.depth_test = true;
+    info.depth_write = false;
+    info.depth_compare_op = VK_COMPARE_OP_EQUAL;
+    return info;
+}
 
 [[nodiscard]] inline math::Vec3
 forward_pbr_renderer_3d_camera_world_position(const SceneReadView& view, Entity camera) {
@@ -155,6 +225,13 @@ struct ForwardPbrRenderer3D::Impl {
         render::CloudLayerRuntimeFrame cloud;
         bool clouds_enabled = false;
         bool has_transmission = false;
+        std::optional<render::TemporalFrame> temporal_frame{};
+        render::RenderGraphTextureHandle temporal_motion{};
+    };
+    struct RecordedTargetState {
+        bool shadow_depth_is_sampled = false;
+        render::RenderGraphTextureState scene_depth_state =
+            render::render_graph_undefined_texture_state();
     };
     enum class ForwardPbrTargetPipelineVariant : std::uint8_t {
         Opaque,
@@ -181,7 +258,9 @@ struct ForwardPbrRenderer3D::Impl {
                          const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean,
                          const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output,
                          bool hybrid_transmission,
-                         const std::optional<ForwardPbrRenderer3DSceneReadback>& readback);
+                         const std::optional<ForwardPbrRenderer3DSceneReadback>& readback,
+                         const std::optional<render::TemporalFrame>& temporal_frame,
+                         std::span<const ForwardPbrTemporalRigidMotionDraw> rigid_motion_draws);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
@@ -219,6 +298,23 @@ struct ForwardPbrRenderer3D::Impl {
                                  const ForwardPbrDrawPlan& draw_plan) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
                           render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
+    void record_rigid_motion_pass(const vulkan::CommandRecorder& recorder,
+                                  render::ColorTargetView motion_target,
+                                  render::DepthTargetView depth_target,
+                                  render::FrameSlot frame_slot,
+                                  const render::MeshResolver& mesh_resolver,
+                                  std::span<const ForwardPbrTemporalRigidMotionDraw> draws) const;
+    void ensure_temporal_resources(const vulkan::Device& device, VkExtent2D extent);
+    [[nodiscard]] ForwardPbrRenderer3DTaaBypassReason
+    temporal_bypass_reason(const ForwardPbrRenderer3DRenderRequest& request,
+                           const scene::RenderFramePlan3D& scene_plan,
+                           const ForwardPbrDrawPlan& draw_plan) const;
+    [[nodiscard]] std::vector<ForwardPbrTemporalRigidMotionDraw>
+    prepare_rigid_motion_draws(const scene::RenderFramePlan3D& scene_plan,
+                               const ForwardPbrDrawPlan& draw_plan);
+    void frame_submitted(vulkan::GpuSubmissionTicket ticket);
+    void frame_discarded();
+    void reset_temporal();
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,
                                 const render::CompiledRenderGraph& graph,
                                 const render::RenderGraphResourceSet& resources,
@@ -278,6 +374,11 @@ struct ForwardPbrRenderer3D::Impl {
         std::optional<render::HdrColorPyramid> refraction_pyramid{};
         std::optional<render::FrameUniformMaterialInstance<render::PbrSceneUniforms>>
             transmission_scene_material{};
+        std::optional<render::TemporalAntiAliasing> temporal_aa{};
+        std::optional<render::FrameUniformMaterialInstance<ForwardPbrTemporalRigidMotionUniforms>>
+            temporal_rigid_motion_material{};
+        std::optional<render::GraphicsPipelineResource> temporal_rigid_motion_pipeline_back{};
+        std::optional<render::GraphicsPipelineResource> temporal_rigid_motion_pipeline_no_cull{};
         VkExtent2D target_extent{};
         render::RenderGraphTextureState scene_depth_state =
             render::render_graph_undefined_texture_state();
@@ -287,6 +388,17 @@ struct ForwardPbrRenderer3D::Impl {
     ForwardPbrRenderer3DConfig config_;
     GlobalResources global_{};
     SwapchainResources swapchain_{};
+    ForwardPbrRenderer3DTemporalStatus temporal_status_{};
+    std::optional<render::TemporalFrame> pending_temporal_frame_{};
+    std::optional<RecordedTargetState> recorded_target_state_{};
+    std::unordered_map<ForwardPbrTemporalRigidDrawKey, math::Mat4,
+                       ForwardPbrTemporalRigidDrawKeyHash>
+        accepted_rigid_models_{};
+    std::unordered_map<ForwardPbrTemporalRigidDrawKey, math::Mat4,
+                       ForwardPbrTemporalRigidDrawKeyHash>
+        pending_rigid_models_{};
+    bool force_temporal_reset_ = false;
+    bool accepted_temporal_frame_ = false;
 };
 
 } // namespace cubey

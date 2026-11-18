@@ -73,6 +73,19 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     require_global_resources();
     require_swapchain_resources();
     validate_forward_pbr_renderer_3d_render_request(request);
+    if (recorded_target_state_.has_value()) {
+        if (pending_temporal_frame_.has_value()) {
+            throw std::logic_error(
+                "forward PBR TAA candidate is missing its submission or discard notification");
+        }
+        // Existing non-temporal clients may not install submission callbacks.
+        // Starting their next record is the compatibility acceptance point.
+        recorded_target_state_.reset();
+    }
+    recorded_target_state_ = RecordedTargetState{
+        .shadow_depth_is_sampled = swapchain_.shadow_depth_is_sampled,
+        .scene_depth_state = swapchain_.scene_depth_state,
+    };
     if (request.scene_readback) {
         const bool full = config_.scene_color_format == VK_FORMAT_R32G32B32A32_SFLOAT;
         if ((!full && config_.scene_color_format != VK_FORMAT_R16G16B16A16_SFLOAT) ||
@@ -95,7 +108,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     const ForwardPbrRenderer3DFramePlans frame_plans =
         forward_pbr_renderer_3d_frame_plans(*view.frame_plan);
     const scene::RenderFramePlan3D& shadow_plan = *frame_plans.shadow;
-    const scene::RenderFramePlan3D& scene_plan = *frame_plans.scene;
+    const scene::RenderFramePlan3D& original_scene_plan = *frame_plans.scene;
     using Clock = std::chrono::steady_clock;
     const Clock::time_point draw_plan_start =
         metrics != nullptr ? Clock::now() : Clock::time_point{};
@@ -113,6 +126,65 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             std::chrono::duration<double, std::milli>(draw_plan_end - draw_plan_start).count();
         metrics->material_table = resources.materials->metrics();
     }
+
+    temporal_status_ = {};
+    temporal_status_.requested = settings.anti_aliasing;
+    std::optional<render::TemporalFrame> temporal_frame;
+    std::optional<scene::RenderFramePlan3D> temporal_scene_plan;
+    std::vector<ForwardPbrTemporalRigidMotionDraw> rigid_motion_draws;
+    if (settings.anti_aliasing == render::AntiAliasingMode::Taa) {
+        const ForwardPbrRenderer3DTaaBypassReason bypass =
+            temporal_bypass_reason(request, original_scene_plan, draw_plan);
+        temporal_status_.bypass_reason = bypass;
+        if (bypass == ForwardPbrRenderer3DTaaBypassReason::None) {
+            ensure_temporal_resources(*target.device, target.color_target.extent);
+            const Entity camera =
+                view.camera_entity ? view.camera_entity : original_scene_plan.camera_entity;
+            const std::uint64_t view_id =
+                view.temporal_view_id != 0
+                    ? view.temporal_view_id
+                    : (static_cast<std::uint64_t>(camera.generation) << 32U) | camera.index;
+            temporal_frame = swapchain_.temporal_aa->begin_frame(
+                target.frame_slot, {.projection = original_scene_plan.projection_matrix,
+                                    .view = original_scene_plan.view_matrix,
+                                    .view_id = view_id,
+                                    .content_generation = view.temporal_content_generation,
+                                    .reset = view.temporal_reset || force_temporal_reset_});
+            pending_temporal_frame_ = temporal_frame;
+            temporal_scene_plan = original_scene_plan;
+            temporal_scene_plan->projection_matrix = temporal_frame->jittered_projection;
+            temporal_scene_plan->view_projection_matrix = temporal_frame->jittered_view_projection;
+            rigid_motion_draws = prepare_rigid_motion_draws(original_scene_plan, draw_plan);
+            if (!rigid_motion_draws.empty()) {
+                swapchain_.temporal_rigid_motion_material->upload(
+                    target.frame_slot,
+                    ForwardPbrTemporalRigidMotionUniforms{
+                        .current_jittered_view_projection =
+                            temporal_frame->jittered_view_projection,
+                        .current_view_projection = temporal_frame->view_projection,
+                        .previous_view_projection = temporal_frame->previous_view_projection,
+                        .extent = {static_cast<float>(target.color_target.extent.width),
+                                   static_cast<float>(target.color_target.extent.height), 0.0F,
+                                   0.0F},
+                    });
+            }
+            temporal_status_.effective = render::AntiAliasingMode::Taa;
+            temporal_status_.reset_reason = temporal_frame->reset_reason;
+            temporal_status_.history_age = temporal_frame->history_age;
+            temporal_status_.sample_offset_pixels = temporal_frame->sample_offset_pixels;
+        } else if (accepted_temporal_frame_) {
+            reset_temporal();
+        }
+    } else if (settings.anti_aliasing != render::AntiAliasingMode::Off) {
+        throw std::runtime_error("unknown forward PBR anti-aliasing mode");
+    } else if (accepted_temporal_frame_) {
+        reset_temporal();
+    }
+    const scene::RenderFramePlan3D& scene_plan =
+        temporal_scene_plan.has_value() ? *temporal_scene_plan : original_scene_plan;
+    ForwardPbrRenderer3DFramePlans recording_frame_plans = frame_plans;
+    recording_frame_plans.scene = &scene_plan;
+
     if (draw_plan.has_transmission()) {
         ensure_refraction_pyramid(*target.device);
     }
@@ -126,8 +198,25 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         scene_plan.light_packets, view.light_entity, view.fallback_light);
 
     const bool uses_final_display_transform = settings.debug_view == render::PbrDebugView::Final;
+    std::optional<render::AtmosphereEnvironmentFrameUniforms> temporal_atmosphere_background =
+        settings.atmosphere_background;
+    if (temporal_frame.has_value() &&
+        settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere &&
+        temporal_atmosphere_background.has_value()) {
+        auto& uniforms = *temporal_atmosphere_background;
+        const float pixel_scale = 2.0F * uniforms.camera_up_tan_half_fovy.w /
+                                  static_cast<float>(temporal_frame->extent.height);
+        math::Vec3 forward{uniforms.camera_forward_debug_view};
+        forward += math::Vec3{uniforms.camera_right_aspect} *
+                   (temporal_frame->sample_offset_pixels.x * pixel_scale);
+        forward -= math::Vec3{uniforms.camera_up_tan_half_fovy} *
+                   (temporal_frame->sample_offset_pixels.y * pixel_scale);
+        uniforms.camera_forward_debug_view.x = forward.x;
+        uniforms.camera_forward_debug_view.y = forward.y;
+        uniforms.camera_forward_debug_view.z = forward.z;
+    }
     const render::AtmosphereEnvironmentFrameUniforms* atmosphere_background =
-        settings.atmosphere_background.has_value() ? &*settings.atmosphere_background : nullptr;
+        temporal_atmosphere_background.has_value() ? &*temporal_atmosphere_background : nullptr;
     std::optional<ForwardPbrRenderer3DTerrainBackdrop> terrain;
     if (uses_final_display_transform && settings.terrain_backdrop.has_value()) {
         if (atmosphere_background == nullptr) {
@@ -211,11 +300,12 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         metrics != nullptr ? Clock::now() : Clock::time_point{};
     const CompiledGraph render_graph = current_render_graph(
         target.color_target, target.frame_slot, target.color_initial_state,
-        target.color_final_state, frame_plans, *resources.meshes, resources.frame_meshes,
+        target.color_final_state, recording_frame_plans, *resources.meshes, resources.frame_meshes,
         resources.deformation_commands, *resources.materials, settings.debug_view,
         settings.background_mode, settings.atmosphere_clouds, terrain, ocean, draw_plan,
         settings.opaque_linear_output,
-        settings.transmission_source == ForwardPbrTransmissionSource::Hybrid, request.scene_readback);
+        settings.transmission_source == ForwardPbrTransmissionSource::Hybrid,
+        request.scene_readback, temporal_frame, rigid_motion_draws);
     const Clock::time_point render_graph_end =
         metrics != nullptr ? Clock::now() : Clock::time_point{};
     if (metrics != nullptr) {
@@ -241,6 +331,10 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
          hybrid = settings.transmission_source == ForwardPbrTransmissionSource::Hybrid,
          linear =
              settings.opaque_linear_output](const render::RenderGraphResourceSet& graph_resources) {
+            if (render_graph.temporal_frame.has_value()) {
+                swapchain_.temporal_aa->update_descriptors(
+                    *device, render_graph.graph, graph_resources, *render_graph.temporal_frame);
+            }
             if (!linear)
                 update_post_descriptor(*device, frame_slot, render_graph.graph, graph_resources,
                                        render_graph.post_scene_color);
@@ -266,6 +360,9 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     }
     swapchain_.shadow_depth_is_sampled = true;
     swapchain_.scene_depth_state = scene_depth_final_state(settings.opaque_linear_output);
+    if (swapchain_.temporal_aa.has_value() && swapchain_.temporal_aa->created()) {
+        temporal_status_.resources = swapchain_.temporal_aa->metrics();
+    }
 }
 
 ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_render_graph(
@@ -282,7 +379,9 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
     const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean,
     const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output, bool hybrid_transmission,
-    const std::optional<ForwardPbrRenderer3DSceneReadback>& readback) {
+    const std::optional<ForwardPbrRenderer3DSceneReadback>& readback,
+    const std::optional<render::TemporalFrame>& temporal_frame,
+    std::span<const ForwardPbrTemporalRigidMotionDraw> rigid_motion_draws) {
     if (frame_plans.shadow == nullptr || frame_plans.scene == nullptr) {
         throw std::runtime_error("forward PBR render graph requires shadow and scene plans");
     }
@@ -400,7 +499,7 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
              debug_view, background_mode,
              terrain_runtime = terrain.has_value() ? terrain->runtime : nullptr,
              ocean_runtime = ocean.has_value() ? ocean->runtime : nullptr,
-             preserve_depth = clouds_enabled || opaque_linear_output](
+             preserve_depth = clouds_enabled || opaque_linear_output || temporal_frame.has_value()](
                 const render::RenderGraphExecutionContext& context) {
                 const render::ColorTargetView target =
                     render::resolved_color_target_view(context, scene_color);
@@ -457,8 +556,8 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                     {.blend = render::MaterialBlendMode::AlphaBlend}));
         declare_deformation_vertex_reads(refraction_source_pass, deformation_vertex_buffers);
         refraction_source_pass.execute(
-            [this, frame_slot, &scene_plan, &draw_plan, mesh_resolver,
-             &materials, hybrid_transmission](const render::RenderGraphExecutionContext& context) {
+            [this, frame_slot, &scene_plan, &draw_plan, mesh_resolver, &materials,
+             hybrid_transmission](const render::RenderGraphExecutionContext& context) {
                 // Mip zero is an isolated radiance source. Ordinary alpha is
                 // composited here for transmission lookup and later once into
                 // the final scene after transmissive geometry.
@@ -494,6 +593,37 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                 record_scene_alpha_pass(context.recorder(), target, scene_plan, frame_slot,
                                         mesh_resolver, materials, draw_plan);
             });
+    }
+    render::RenderGraphTextureHandle temporal_motion{};
+    if (temporal_frame.has_value()) {
+        temporal_motion =
+            swapchain_.temporal_aa->declare_camera_motion(graph, scene_depth, *temporal_frame);
+        if (!rigid_motion_draws.empty()) {
+            const render::FrameUniformMaterialInstance<ForwardPbrTemporalRigidMotionUniforms>&
+                material = *swapchain_.temporal_rigid_motion_material;
+            const vulkan::Buffer& uniforms = material.uniforms().buffer(frame_slot);
+            const render::RenderGraphBufferHandle uniform_buffer = graph.import_buffer(
+                {.label = "forward PBR rigid-motion uniforms", .byte_size = uniforms.size()},
+                uniforms.handle());
+            graph.add_pass("rigid object motion", render::RenderGraphQueueDomain::Graphics)
+                .read_uniform_buffer(uniform_buffer, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+                .read_write_color(temporal_motion)
+                .write_depth(scene_depth)
+                .material_pass(forward_pbr_temporal_rigid_motion_pass_info(
+                    "forward_pbr.taa.rigid_motion", VK_CULL_MODE_BACK_BIT))
+                .execute([this, temporal_motion, scene_depth, frame_slot, mesh_resolver,
+                          rigid_motion_draws](const render::RenderGraphExecutionContext& context) {
+                    const render::ColorTargetView motion_target =
+                        render::resolved_color_target_view(context, temporal_motion);
+                    const render::DepthTargetView depth_target =
+                        render::resolved_depth_target_view(context, scene_depth);
+                    record_rigid_motion_pass(context.recorder(), motion_target, depth_target,
+                                             frame_slot, mesh_resolver, rigid_motion_draws);
+                });
+        }
+        post_scene_color = swapchain_.temporal_aa->declare_resolve(
+            graph, post_scene_color, temporal_motion, *temporal_frame);
     }
     if (readback) {
         const auto buffer = graph.import_buffer(
@@ -539,6 +669,8 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
         .cloud = cloud_frame,
         .clouds_enabled = clouds_enabled,
         .has_transmission = has_transmission,
+        .temporal_frame = temporal_frame,
+        .temporal_motion = temporal_motion,
     };
 }
 

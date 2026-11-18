@@ -16,6 +16,7 @@
 #include <cubey/render/render_graph.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
+#include <cubey/render/temporal_aa.h>
 #include <cubey/scene/entity.h>
 #include <cubey/scene/light_manager.h>
 #include <cubey/scene/scene.h>
@@ -30,6 +31,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <string_view>
 
 namespace cubey::vulkan {
 class GpuTimestampProfiler;
@@ -49,6 +51,11 @@ struct ForwardPbrRenderer3DConfig {
     std::filesystem::path refraction_pyramid_fragment_shader{};
     std::filesystem::path shadow_depth_vertex_shader{};
     std::filesystem::path shadow_depth_fragment_shader{};
+    // Loaded only when a supported render request selects TAA.
+    std::filesystem::path temporal_motion_shader{};
+    std::filesystem::path temporal_resolve_shader{};
+    std::filesystem::path temporal_rigid_motion_vertex_shader{};
+    std::filesystem::path temporal_rigid_motion_fragment_shader{};
     std::uint32_t shadow_extent = 2048;
     VkFormat shadow_depth_format = VK_FORMAT_UNDEFINED;
     VkFormat scene_color_format = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -125,6 +132,9 @@ struct ForwardPbrRenderer3DViewInfo {
     Entity camera_entity{};
     Entity light_entity{};
     LightPacket3D fallback_light{};
+    std::uint64_t temporal_view_id = 0;
+    std::uint64_t temporal_content_generation = 0;
+    bool temporal_reset = false;
 };
 
 struct ForwardPbrRenderer3DSceneResources {
@@ -172,6 +182,39 @@ struct ForwardPbrRenderer3DSettings {
     // Screen retains the legacy projected-exit lookup and edge fallback.
     // Environment resolves the estimated exit direction against the shared probe.
     ForwardPbrTransmissionSource transmission_source = ForwardPbrTransmissionSource::Screen;
+    render::AntiAliasingMode anti_aliasing = render::AntiAliasingMode::Off;
+    // V1 admits only settled scene appearance. Callers with animated lighting
+    // or other changing appearance should set this false.
+    bool temporal_appearance_static = true;
+};
+
+enum class ForwardPbrRenderer3DTaaBypassReason : std::uint8_t {
+    None,
+    DiagnosticView,
+    SceneReadback,
+    LinearOutput,
+    NonOpaqueMaterial,
+    Transmission,
+    Deformation,
+    InstancedDraw,
+    MissingIdentity,
+    Clouds,
+    Terrain,
+    Ocean,
+    DynamicAppearance,
+};
+
+[[nodiscard]] std::string_view
+forward_pbr_renderer_3d_taa_bypass_reason_name(ForwardPbrRenderer3DTaaBypassReason reason);
+
+struct ForwardPbrRenderer3DTemporalStatus {
+    render::AntiAliasingMode requested = render::AntiAliasingMode::Off;
+    render::AntiAliasingMode effective = render::AntiAliasingMode::Off;
+    ForwardPbrRenderer3DTaaBypassReason bypass_reason = ForwardPbrRenderer3DTaaBypassReason::None;
+    render::TemporalResetReason reset_reason = render::TemporalResetReason::FirstFrame;
+    std::uint32_t history_age = 0;
+    math::Vec2 sample_offset_pixels{0.0F};
+    render::TemporalAaMetrics resources{};
 };
 
 // Caller-owned per-frame renderer evidence. The renderer fills this snapshot
@@ -266,6 +309,10 @@ class ForwardPbrRenderer3D {
         const vulkan::Device& device, const render::AtmosphereBackgroundTextureBindings& textures);
     void destroy_swapchain_resources();
     void destroy_all_resources();
+    void frame_submitted(vulkan::GpuSubmissionTicket ticket);
+    void frame_discarded();
+    void reset_temporal();
+    [[nodiscard]] ForwardPbrRenderer3DTemporalStatus temporal_status() const;
     [[nodiscard]] ForwardPbrRenderer3DSceneTargetInfo scene_target_info() const;
     [[nodiscard]] render::DepthTargetView scene_depth_target() const;
     void record(const ForwardPbrRenderer3DRenderRequest& request);

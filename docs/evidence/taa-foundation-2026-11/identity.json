@@ -1,0 +1,4382 @@
+{
+  "source_files": [
+    {
+      "path": "include/cubey/animation/gltf_animation.h",
+      "sha256": "cb8a605f944ca1a2e063794cfebbdee2186c4304e322ed8e468c1a166d16a03e"
+    },
+    {
+      "path": "include/cubey/asset/file_digest.h",
+      "sha256": "9eb1e2f5554f097a33d4093ca86105f62abc4faa63658bcb778e7a6852126167"
+    },
+    {
+      "path": "include/cubey/asset/gltf_asset.h",
+      "sha256": "9e42742502a896aad03b522d5a6dcdbb684dfb46b0e362d503c05c8d25f9bb9e"
+    },
+    {
+      "path": "include/cubey/asset/gltf_runtime_scene.h",
+      "sha256": "d499235fbd54dca127594cf774a62572d069b4b142448c756d300f2d6f26481c"
+    },
+    {
+      "path": "include/cubey/asset/hdr_image.h",
+      "sha256": "15d62ee9ce45ab756e774791269aa9ded75cd44d69985f86aeed63b45bb9a6e6"
+    },
+    {
+      "path": "include/cubey/asset/material_recipe.h",
+      "sha256": "e9daf9127ef5eee439ec3ae1737b66ab5d8a41ed729934dbc555d5b17547d12f"
+    },
+    {
+      "path": "include/cubey/asset/terrain_height_source.h",
+      "sha256": "c5b062fd18c3b14ee66e33271d086c191a552f2820c1414a1e214369661f4438"
+    },
+    {
+      "path": "include/cubey/asset/terrain_landscape_catalog.h",
+      "sha256": "c53cd0ca445fd70efd6153425a4530078b46a40c54af3595a4fd0dfa3308b779"
+    },
+    {
+      "path": "include/cubey/asset/terrain_raster_climate_source.h",
+      "sha256": "bb36dca46dc0a3879e0500685ea52d7441f4a725953074c6c73161f5aaefead4"
+    },
+    {
+      "path": "include/cubey/asset/terrain_raster_height_source.h",
+      "sha256": "a04cacd84cffeda11bb717ffaa84a4ff050a548f0cf2177d287f0138bf452bbb"
+    },
+    {
+      "path": "include/cubey/asset/terrain_site.h",
+      "sha256": "18ac7cf08e78ab52f58800b7e7c3dadd77e3e3713760969d47467479acfafe41"
+    },
+    {
+      "path": "include/cubey/asset/terrain_site_water.h",
+      "sha256": "14405e485918e54e9e6757a9ef6174c7a0c3cda2c2ea04eb2a87bf2d8c3c0842"
+    },
+    {
+      "path": "include/cubey/asset/terrain_water_capture.h",
+      "sha256": "92e0b12a0bb8ca07083c53a9ac7bdd06ee202a160772c45938c8a203cb8302f5"
+    },
+    {
+      "path": "include/cubey/core/capture_mode.h",
+      "sha256": "c49aa1623de1d67147a216c751293c317bfe83d0db13969ad82327f94f331aa3"
+    },
+    {
+      "path": "include/cubey/core/config_schema.h",
+      "sha256": "ae7ddc6c9bc1cb0474d17366fd30225819e672f81fe196614ce71e504bafd695"
+    },
+    {
+      "path": "include/cubey/core/file_io.h",
+      "sha256": "aee29a02f746fd7dae6c91dca8796d1b2794226d95ae5c1c92827bc0fc700aca"
+    },
+    {
+      "path": "include/cubey/core/frame_clock.h",
+      "sha256": "138a5a6b06fc1e40ef1fbfb53f45441c7a47d4b23ff494cdc90666fc37fd498b"
+    },
+    {
+      "path": "include/cubey/core/image_io.h",
+      "sha256": "861402d6e1936fe1f6cd83f20a99e3c88f372d02762fd231ff8309038f85099c"
+    },
+    {
+      "path": "include/cubey/core/jobs.h",
+      "sha256": "0e72bd01443ea4543600354300451a9cb07fa8777d61102e132edbc893eb2b2a"
+    },
+    {
+      "path": "include/cubey/core/math.h",
+      "sha256": "4ab7283eaf39395f169bd875722a019f795982d3389f464036dc5767ea99bf14"
+    },
+    {
+      "path": "include/cubey/core/profiling.h",
+      "sha256": "4b2f8ff00e466f624c5010aec0fa31e1cd9bd52550fc6ac11954f9309f1daf80"
+    },
+    {
+      "path": "include/cubey/engine/atmosphere_background_atlas_runtime.h",
+      "sha256": "e7cdc209f6da162cd6713e78d26f69ddf179a44890770b3d7dfabe403f29c1da"
+    },
+    {
+      "path": "include/cubey/engine/atmosphere_environment_config.h",
+      "sha256": "6eedac20b697a9e0e91994a6ecad235d7fb8d210b377b25fce62d41dca3d1b0d"
+    },
+    {
+      "path": "include/cubey/engine/atmosphere_environment_runtime.h",
+      "sha256": "c7938d293ae888f8a1924e299e71d3a90c208adf209b3e9b19d348315ae52ba0"
+    },
+    {
+      "path": "include/cubey/engine/atmosphere_environment_schema.h",
+      "sha256": "df725aed723cdcc79455e8c444e8718499911cd16d9aab96b84e6e4facbaae83"
+    },
+    {
+      "path": "include/cubey/engine/backdrop_reflection.h",
+      "sha256": "0b4f057de6623ad4e8cff391da905f518a4ba45d04c3b95dad4ee766e7aa3d55"
+    },
+    {
+      "path": "include/cubey/engine/capture_queue.h",
+      "sha256": "1ce30ddedd0a59a7ec2486c7292ac3194d42b976c86723d1a1cdafe3a614d4e5"
+    },
+    {
+      "path": "include/cubey/engine/cloud_environment_config.h",
+      "sha256": "f595f38507e069899e08ac57667947363419f40c535e2b80517ebc4b56335912"
+    },
+    {
+      "path": "include/cubey/engine/cloud_environment_runtime.h",
+      "sha256": "1ed43109c11c3a82b6f4a56f5c3046f9852332cca5c6d6902b2a3e7312b74aa7"
+    },
+    {
+      "path": "include/cubey/engine/cloud_environment_schema.h",
+      "sha256": "1325d6136750381d8e74b522c281bee785681f624a631b583f35d7ae0fdbcb4c"
+    },
+    {
+      "path": "include/cubey/engine/engine.h",
+      "sha256": "37a42fdc6e88d0232315475e1f52d8c29ca03dac78a51355db42990b1ecca6dd"
+    },
+    {
+      "path": "include/cubey/engine/environment_transition.h",
+      "sha256": "0194b967f6d589ea181e321e1823341d3f15b18d592d91fe22f66d83ba499b1f"
+    },
+    {
+      "path": "include/cubey/engine/forward_pbr_renderer_3d.h",
+      "sha256": "bae3ba06b5157520038d2e682d3cb344f48f714cdbacb6e0c841806aec2e1320"
+    },
+    {
+      "path": "include/cubey/engine/gltf_scene_importer.h",
+      "sha256": "421d86505f7df82eb75fc1435df5ce49ce58f5dba119ef455926a6ea66cff1bb"
+    },
+    {
+      "path": "include/cubey/engine/material_recipe.h",
+      "sha256": "ae4a04f06cb3ebb9e7e094366c78a63bb54ccabf5f7a8b5498a79dc18a196540"
+    },
+    {
+      "path": "include/cubey/engine/ocean_surface_runtime.h",
+      "sha256": "de5a8b7a5f80e1a695bf465865212f8f284d23b454679f00629ed435ca016538"
+    },
+    {
+      "path": "include/cubey/engine/ocean_surface_schema.h",
+      "sha256": "c8e6d8c1a75bc1508071c7ba8538ae8118696d69f70d83e622d01c4162ccb0cc"
+    },
+    {
+      "path": "include/cubey/engine/pbr_environment_schema.h",
+      "sha256": "a9e86435b5b576a7d89331be9f8278963d77c4c1f280aaeb0b651dc817491d76"
+    },
+    {
+      "path": "include/cubey/engine/project_gpu_services.h",
+      "sha256": "dbe887577cad55f6c7ade3d550167ca06fb5f83d0103dbdf2c73e17bd7fc38e8"
+    },
+    {
+      "path": "include/cubey/engine/project_runtime.h",
+      "sha256": "86ceb8e085aaaafeafd4d9397d8863a0906221d46967fb33e97f4706fd423f68"
+    },
+    {
+      "path": "include/cubey/engine/renderer_service.h",
+      "sha256": "9c6995b1bba1a3a66d98141844563b282771f361bac97138af9fb9ce1ddaa3b7"
+    },
+    {
+      "path": "include/cubey/engine/staged_resource.h",
+      "sha256": "903ef995332e0fd08eb302e07468558c2b010b93200205b8c9a1a874820c9020"
+    },
+    {
+      "path": "include/cubey/engine/terrain_backdrop_runtime.h",
+      "sha256": "a60ab3a2c4028821689f598eb5ae766d22a269ba23d46a2220a65606db787028"
+    },
+    {
+      "path": "include/cubey/engine/terrain_surface_context_resources.h",
+      "sha256": "1c7f3ee64bd93cbf734d806769f01c6618b69645e4a6eb50276f8426deea9ef1"
+    },
+    {
+      "path": "include/cubey/engine/terrain_surface_environment.h",
+      "sha256": "f1f0eb4258d5ea5154c9bbc160ce0410611b7a8a0572616d8a3b03cd75fa621f"
+    },
+    {
+      "path": "include/cubey/engine/terrain_surface_patch_scene.h",
+      "sha256": "7bc9d03ae5c619a6f308e58e458897f9c044421ddc4d562c3dafa38794869b46"
+    },
+    {
+      "path": "include/cubey/engine/terrain_water_capture_runtime.h",
+      "sha256": "0c5b5fd5617266ff9bf9becdb8fc45e3f671a0d57ae26817f63faf8bbba51e86"
+    },
+    {
+      "path": "include/cubey/engine/upload_queue.h",
+      "sha256": "3a333522be93f321a814ec6ab80c22f40aa12baef75befa0b2b328add40b31ff"
+    },
+    {
+      "path": "include/cubey/engine/video_encoder.h",
+      "sha256": "0e58debf8b233c07a1d4e9197e359d6aab543646604900f794f6964010b128de"
+    },
+    {
+      "path": "include/cubey/host/atmosphere_environment_ui.h",
+      "sha256": "f34b0b75fbea10f6f39fa4369daf03175a58278f3ad3d946b2bdb4f1682207a7"
+    },
+    {
+      "path": "include/cubey/host/cloud_environment_ui.h",
+      "sha256": "d43d2993cdecf5074acb028ee3d5d790ca3dbd3dc5d105b9877913accb711de6"
+    },
+    {
+      "path": "include/cubey/host/common_config.h",
+      "sha256": "7afd967ccdf4c15a0b1d6d93534c6d629497db0f689fbd1cd0fad3311d4dbc14"
+    },
+    {
+      "path": "include/cubey/host/configured_app.h",
+      "sha256": "21793878800db619ea1109328ab79228a7fa462a93b9b76aee28ae29bf556c98"
+    },
+    {
+      "path": "include/cubey/host/frame_stats.h",
+      "sha256": "cfc9f08f71e50a289919e0c26b4a3e598c984dfdb07944dfaa2e51c879cc33f7"
+    },
+    {
+      "path": "include/cubey/host/glfw_window.h",
+      "sha256": "8e6a9d590c7f500f06a27aac6683cbe57029a35146a0c31962a65886b34e9e90"
+    },
+    {
+      "path": "include/cubey/host/headless_png_host.h",
+      "sha256": "112bac147d47db24bfde8ee8ec3d4150a280b88e49972566c94a9683dbc0704a"
+    },
+    {
+      "path": "include/cubey/host/imgui_helpers.h",
+      "sha256": "c3571749d4dfd5773387a3930a4cc133eeab80cf9b6525f8ef4110fd7236cacc"
+    },
+    {
+      "path": "include/cubey/host/performance_ui.h",
+      "sha256": "dc2749353f410196ae4ab4ae6bdf13f72ce0e70e47df940c97b37b8d07c837c1"
+    },
+    {
+      "path": "include/cubey/host/terrain_surface_environment_ui.h",
+      "sha256": "bc73de869bd068d52565a417f006034a50cd331fc83ac9dda02b800bcdd90b8c"
+    },
+    {
+      "path": "include/cubey/host/ui.h",
+      "sha256": "59f0823fbcd3a19710f2f2054732c48c7af1c98a247a6fadbd5fa4df9ac1bf6c"
+    },
+    {
+      "path": "include/cubey/host/windowed_app.h",
+      "sha256": "e21c6fc5ec0b7647fdd56daa12997730828d9839b047cacac5c39c2fbd0343f9"
+    },
+    {
+      "path": "include/cubey/host/windowed_host.h",
+      "sha256": "6757e643cbb415d6f86d169b48f1d0dd7ce9deb72e217a216b6c8240ea424727"
+    },
+    {
+      "path": "include/cubey/input/input.h",
+      "sha256": "f56e6aa99afc2ef6bb70bc6a2a684a78cec7810ec23bea25dcd380e601e2439d"
+    },
+    {
+      "path": "include/cubey/input/orbit_controller.h",
+      "sha256": "d4ded00e5d9ffe579b1adc20bceffc8b5d6ac3a96ff6a0354bbea99cdcb5f225"
+    },
+    {
+      "path": "include/cubey/input/pan_zoom_2d_controller.h",
+      "sha256": "b988458a23d85caaca1d27daf2dcc232c3c0ce4d25aafbe64ffb057cc1914ac9"
+    },
+    {
+      "path": "include/cubey/input/pointer_drag.h",
+      "sha256": "e441c1a0d9b8bf63579c6d3d6283405ef930af6b77cc0af684940898761fd091"
+    },
+    {
+      "path": "include/cubey/procedural/artifact_cache.h",
+      "sha256": "00b35df7ef0e4e0c34ed8bf19bb85ba9b5abd35e8579920bd2a0186cd0a3e63d"
+    },
+    {
+      "path": "include/cubey/procedural/artifact_metadata.h",
+      "sha256": "431976658378c133ee1ca5360cc39a924f95e96bb7e8628d4fe6bf790f53f770"
+    },
+    {
+      "path": "include/cubey/procedural/field_2d.h",
+      "sha256": "589333e0954ec49096f8a8804cf0d3bc9c2cbf1d80dab96004ae94b281d2d8ac"
+    },
+    {
+      "path": "include/cubey/procedural/field_metadata.h",
+      "sha256": "a82280397514496a181bed62c19bddf654cd28b5f391e7a6326bcdfecd34a67e"
+    },
+    {
+      "path": "include/cubey/procedural/field_set_2d.h",
+      "sha256": "12ffd655e821e09b655cb62c9cc8d5b6e81daa9ffbcd65e184f26567c1226fd7"
+    },
+    {
+      "path": "include/cubey/procedural/hash.h",
+      "sha256": "8f2aefe1e5e5d8143d2cb92f8d28c4805fe83762875dfe39bd59e9594eeb20e5"
+    },
+    {
+      "path": "include/cubey/procedural/noise.h",
+      "sha256": "d392db2c0e71acaa82c84cfebfc00fa357a86bdef0cd4ad7fbc6fc675f550655"
+    },
+    {
+      "path": "include/cubey/procedural/operators.h",
+      "sha256": "13d5816f42753d12b96f22a261e43eb3e65ee87eeeac46ba5e194c70bd6883cb"
+    },
+    {
+      "path": "include/cubey/procedural/patch_domain.h",
+      "sha256": "dd37a691d09099ee27f28db3eb56253733e8c50c1c8857199a5da288c63c5000"
+    },
+    {
+      "path": "include/cubey/procedural/sample_domain.h",
+      "sha256": "d10a34d81b4080484046af40e41da676e7aab7e34d4f7eb49968c8e3bcfc28ec"
+    },
+    {
+      "path": "include/cubey/procedural/seed.h",
+      "sha256": "6e24c5faff31d7bbbb7ce607f0ba8036129a588ca9758310d98e5c45f2e9ca93"
+    },
+    {
+      "path": "include/cubey/procedural/source_fields.h",
+      "sha256": "4a8dcad222e66d35eb70bed5898d6b92759ecaf57ccb105f84fcfaea8e22dbea"
+    },
+    {
+      "path": "include/cubey/procedural/surface_material.h",
+      "sha256": "734511220b785c7f2f8d921dbbf90c887588802db66da1c3cb59f8e1b14d4830"
+    },
+    {
+      "path": "include/cubey/render/adaptive_patch_lod.h",
+      "sha256": "9381fad8c948a8734f5739bc7174a81f5707a2ccee62d105c3dd546579a19f5e"
+    },
+    {
+      "path": "include/cubey/render/atmosphere_atlas_cache.h",
+      "sha256": "fdad454f269f2e9833fa69e2708df390d40b313ce695de2a190d437eb1900b0a"
+    },
+    {
+      "path": "include/cubey/render/atmosphere_background_frame.h",
+      "sha256": "63ee019282cd8f2475676f43ff7358b16c240f9054854e2d8714394abdc5a2c4"
+    },
+    {
+      "path": "include/cubey/render/atmosphere_environment.h",
+      "sha256": "7affe7874896a0b3eac7b3fad9c7e5a8c25e6c46aacda5575385d91c0c67e9c7"
+    },
+    {
+      "path": "include/cubey/render/atmosphere_night_sky_atlas.h",
+      "sha256": "c08cd59934e76c056ef556a328a755f07a8d4a47064bbbb3da9889422b268704"
+    },
+    {
+      "path": "include/cubey/render/atmosphere_reflection_probe.h",
+      "sha256": "7282754db271ee7c14a103cdd2030b5307e6034e48e51ef83e2c37b2b3ee6dec"
+    },
+    {
+      "path": "include/cubey/render/backdrop_surface_placement.h",
+      "sha256": "4cc06293cb2efa80f10266660e6240a0dc2a29fe670dc74d2e8b2ba54ec48874"
+    },
+    {
+      "path": "include/cubey/render/celestial_body_frame.h",
+      "sha256": "c1028bd281668524ddacb3fdabd2f4062c0ea8d01ce41b19dd4c5ecfb47005f7"
+    },
+    {
+      "path": "include/cubey/render/celestial_system.h",
+      "sha256": "4bd52c479725bf28793e5f241ae8d1b68eb084f955570e47eb3082af6b364ecb"
+    },
+    {
+      "path": "include/cubey/render/clipmap_grid_2d.h",
+      "sha256": "8d9c1fed527b645753a0e9a0b622c1d5e3eb384076a0f282592e4da26144ef76"
+    },
+    {
+      "path": "include/cubey/render/cloud_environment_probe.h",
+      "sha256": "246bf575edf17fad0fd5cdc049d15c5fb380fe1fdfd9dd44534920b341099911"
+    },
+    {
+      "path": "include/cubey/render/cloud_layer.h",
+      "sha256": "af498a54976c5d63b8e7774eb470322c8c28288cfe9b1fa32a15ef4042ef0965"
+    },
+    {
+      "path": "include/cubey/render/cloud_layer_config.h",
+      "sha256": "98069f97f64f37f642a3b3961302abca5800f8bf019323384fa8e5872efe458f"
+    },
+    {
+      "path": "include/cubey/render/cloud_planar_reflection.h",
+      "sha256": "bad739f64ee939dc0bde58ca9f083a5f5dfa75f4132130f8d652f72ce7e901f0"
+    },
+    {
+      "path": "include/cubey/render/color_space.h",
+      "sha256": "b99f17d2510647ef1994643e9a8dc35e97d3559e443cc792999735212dade16e"
+    },
+    {
+      "path": "include/cubey/render/deformation.h",
+      "sha256": "bd7ecae7c5b39c6ddd3cd1ff975b137dc9951d7a7f92de46c73dfe52736e8bd0"
+    },
+    {
+      "path": "include/cubey/render/environment_lighting.h",
+      "sha256": "8b5ef9f33b8996cb3e4d57f2c183d7f8f00e0c244042d90e700794cf56eb3cac"
+    },
+    {
+      "path": "include/cubey/render/forward_pass.h",
+      "sha256": "aaf927823ac21498bcfd9c29d7441bf50a827687cb285973b356df96fa576ee3"
+    },
+    {
+      "path": "include/cubey/render/frame_data.h",
+      "sha256": "27ee41d11f3e90db8ae66419233182f8ae8da15a03f7fd55c30b13591f26f2b9"
+    },
+    {
+      "path": "include/cubey/render/generated_ibl.h",
+      "sha256": "fe4408464e22ea42cb7dc16141731f5c4485f222e109625f765f420670ca5321"
+    },
+    {
+      "path": "include/cubey/render/generated_texture.h",
+      "sha256": "210893b8b4f61574c3fea5a44beb771dd25b578c9325ed18fa6f36e041291583"
+    },
+    {
+      "path": "include/cubey/render/hdr_color_pyramid.h",
+      "sha256": "17c3ad3cb5c6706420c8c05f585a436b5c3d1d13939a03f7dc4476346e0e3c26"
+    },
+    {
+      "path": "include/cubey/render/hdr_post_frame.h",
+      "sha256": "1cf91cc89ae47b96549a091d68b322372d796c1cb7fca8af4ac36e2410a6b0c5"
+    },
+    {
+      "path": "include/cubey/render/instance_buffer.h",
+      "sha256": "7f164484ea785f794c410f51088e69ee765071dc7b320bc546157a101675665a"
+    },
+    {
+      "path": "include/cubey/render/local_tangent_frame.h",
+      "sha256": "af0770a306940cf2355c95b3d61c25d49f36c4712c9f609180c25024065498d1"
+    },
+    {
+      "path": "include/cubey/render/lunar_surface_map.h",
+      "sha256": "855ab93828624b57b4db361c8e2f0417ad6a2ac263aeace8e9d3585635028565"
+    },
+    {
+      "path": "include/cubey/render/material.h",
+      "sha256": "fc67f9ac5c2873c96a8c5e271ecb5eee7468a1716133788cbfb77c822e6f57ef"
+    },
+    {
+      "path": "include/cubey/render/material_instance.h",
+      "sha256": "e3c7b47e952358627cd0b6168a2e1933d9ac3ce1cb5e9c264af6dd3c4909c597"
+    },
+    {
+      "path": "include/cubey/render/material_specimen_mesh.h",
+      "sha256": "4498541b50aa69b60e78e0d5f78a16b8540d29fb61921e531c2f489e4ac87d2f"
+    },
+    {
+      "path": "include/cubey/render/mesh.h",
+      "sha256": "6d8d47711af50d813dd24d85037a20dcc57b143d6b77b3a940d80653ea72f85d"
+    },
+    {
+      "path": "include/cubey/render/ocean_horizon.h",
+      "sha256": "ae434c6304ffc74233686697beef8b8ceec564bbcafc7e6901c93845008d25c7"
+    },
+    {
+      "path": "include/cubey/render/ocean_mesh.h",
+      "sha256": "c43a1b4c8beb89738244b50c8ca3a5c46fa56e4a0df08017a6ef2aba85cb439c"
+    },
+    {
+      "path": "include/cubey/render/ocean_sea_state.h",
+      "sha256": "964e931b823612b10a4a9da051ce2a5627a36c4079f8d01aaa033fb2fbf6fcf0"
+    },
+    {
+      "path": "include/cubey/render/ocean_surface_config.h",
+      "sha256": "98a7befec93b8ab3448d977ddb4f5fa28faa8680cf557fb9479227aa66a418e8"
+    },
+    {
+      "path": "include/cubey/render/ocean_surface_frame.h",
+      "sha256": "24245fd3a55d19298cc357924bdf4f8d403c4143bc5d3716df4ae0659e68bcec"
+    },
+    {
+      "path": "include/cubey/render/ocean_surface_quality.h",
+      "sha256": "7c113c535dc55299a79ab8de97ace95599da2d14f2e298a5132f975699a047ba"
+    },
+    {
+      "path": "include/cubey/render/pass.h",
+      "sha256": "645e90613e854c6f86bfbef5ad4b816d25e65ffa3b5fae2519d5fa0264fee37d"
+    },
+    {
+      "path": "include/cubey/render/pbr.h",
+      "sha256": "09fc6d6da9716982fa7004edaa2e2d24d37ec2c68b54757eb62334de1361e3d6"
+    },
+    {
+      "path": "include/cubey/render/pbr_material_resources.h",
+      "sha256": "6dedd9b3c35cef6faf7a7b8ac8b57709ad4fa4dfcd06502686ac9db678f9a09d"
+    },
+    {
+      "path": "include/cubey/render/pipeline_resource.h",
+      "sha256": "b5193f9ac1e0f4e1fd3c4e2ccb98a18385dba2f5397732ff2a657cfdce757687"
+    },
+    {
+      "path": "include/cubey/render/primitive_mesh.h",
+      "sha256": "81e75762a23543aab4dcb89454b9e239b22e355c42a2c13e8e1d0c7545778c8f"
+    },
+    {
+      "path": "include/cubey/render/primitive_resource.h",
+      "sha256": "8a7156b726ef2487d2bdf8e7849fb138789ac251bb08934999ab34b3351c7f06"
+    },
+    {
+      "path": "include/cubey/render/render_graph.h",
+      "sha256": "1cb7e19fe96b51ee04db16c92c8c563b2704e848e03e433bad956c43d0e63373"
+    },
+    {
+      "path": "include/cubey/render/render_graph_barriers.h",
+      "sha256": "09b6b314bc2e0d28dc48c68d0ae2c12021676f35a18e50e5726b76db7a59159a"
+    },
+    {
+      "path": "include/cubey/render/render_graph_builder.h",
+      "sha256": "3ae011179f86d0dc7cb91c408b52c72f358ec79be35af7654c6000949fb42f3d"
+    },
+    {
+      "path": "include/cubey/render/render_graph_compiled.h",
+      "sha256": "6541eb2264312ddd405875601d5cde5b2fb12f9a464b02542db6691346483c61"
+    },
+    {
+      "path": "include/cubey/render/render_graph_frame.h",
+      "sha256": "974474a6c6f9bd921f80d35412ad22fa84db6eb25fd73477eb48d70d373f9506"
+    },
+    {
+      "path": "include/cubey/render/render_graph_resolve.h",
+      "sha256": "a9de6aa50b1b921d932c71ab2cdd2920be6ebd18b4f3ac602c0c4663b1bd8aa6"
+    },
+    {
+      "path": "include/cubey/render/render_graph_resources.h",
+      "sha256": "bd84de4a5fe8cae09738932a07c9dc55d0db3f97090253335e1cb7f004e77a01"
+    },
+    {
+      "path": "include/cubey/render/render_graph_types.h",
+      "sha256": "5a85ffe41ae737c0aaa5d080db4b713274a1de68268ef4ea00e914a8d47effcf"
+    },
+    {
+      "path": "include/cubey/render/render_item.h",
+      "sha256": "ee9cf66eea369f4395e3b224cfababce892b038461e8a8a395a1a57abf30b25d"
+    },
+    {
+      "path": "include/cubey/render/resource_handle.h",
+      "sha256": "f12b971a3f542762899b8498c44e54b53979692918ce8e718f807a6af0edb468"
+    },
+    {
+      "path": "include/cubey/render/resource_registry.h",
+      "sha256": "746626e766c82c72afbe58b7e137573e95a5768e6f0032f9f93511aa02475514"
+    },
+    {
+      "path": "include/cubey/render/resource_table.h",
+      "sha256": "de07b1ad812d80740809d4b86784a2b60b6439fb63b38690c480cd552702c3cf"
+    },
+    {
+      "path": "include/cubey/render/shadow_map.h",
+      "sha256": "3a52ff74dcf2fb3a442de2006eefe8c19f1172fbd2837b1d7074111cf2d6694e"
+    },
+    {
+      "path": "include/cubey/render/target.h",
+      "sha256": "7f546274e30192cd719c75f70b7181b5a3adb5c93524cc6e272c3ba3e49dc281"
+    },
+    {
+      "path": "include/cubey/render/temporal_aa.h",
+      "sha256": "342df5e0e9020dc00dcd81ec39ff036bb00510cff631b186b4557b43c2f8a866"
+    },
+    {
+      "path": "include/cubey/render/terrain_backdrop_presentation.h",
+      "sha256": "44c503c88fd1997aabcfc3ee6488b92d56c2558bbe34d65a7ce425ded8114c37"
+    },
+    {
+      "path": "include/cubey/render/terrain_ocean_fields.h",
+      "sha256": "a57a2d044d812681c32bdc3825e4adb4af49876aeadc7a63c373494288b1d5bf"
+    },
+    {
+      "path": "include/cubey/render/terrain_shadow.h",
+      "sha256": "a1670c84b967deff956ca1b5b1d655c2be01e0243ec9633382ff3819c0433e3b"
+    },
+    {
+      "path": "include/cubey/render/terrain_surface_patch.h",
+      "sha256": "8fd599eb1f527134e569f7060e7ee4ab078614216b11786d0cb78cdee0e498cb"
+    },
+    {
+      "path": "include/cubey/render/terrain_surface_patch_material.h",
+      "sha256": "6e485e34c4ed88313ab35ccda86cc1d9091852a0a31d6562c9432021c393a59e"
+    },
+    {
+      "path": "include/cubey/render/terrain_surface_patch_scene.h",
+      "sha256": "10ee6940570a59b0e52a0551124bf83c16b5676a549144dd671f2a1acb90f119"
+    },
+    {
+      "path": "include/cubey/render/terrain_surface_patch_whitewater.h",
+      "sha256": "32008fefb84cc802fbaaf59f8b9c33982feef7bc95b2dda2358f277c08cf9dab"
+    },
+    {
+      "path": "include/cubey/render/texture.h",
+      "sha256": "b8b777977e06f440c798f1d1b0ccb43faff12b9dbee2a68b8611aa51e7c1d0e5"
+    },
+    {
+      "path": "include/cubey/render/uniform_buffer.h",
+      "sha256": "7eb1d082fd1215c7fb8a100f4eb744cf1a90d899489e291c21fe5a0cc4f9f918"
+    },
+    {
+      "path": "include/cubey/render/view_ray_basis_3d.h",
+      "sha256": "aef50646cd711e88e8a41465754771df3c691548e6307df4df6e5bcd4d6bd85d"
+    },
+    {
+      "path": "include/cubey/scene/camera_2d.h",
+      "sha256": "2997268c8c7e0cbb01b379c7e1c207bb2ee0ee107af88166180e30ac76d7c847"
+    },
+    {
+      "path": "include/cubey/scene/camera_3d.h",
+      "sha256": "8ab70abdc4cdfd21304eaf01f4f50d3171bd9a1ac8f235d05fe7356ba21bad26"
+    },
+    {
+      "path": "include/cubey/scene/camera_manager.h",
+      "sha256": "df93c734266eafa8037d4abaa292a335654a9cd66a5f00387b257dfd46e97022"
+    },
+    {
+      "path": "include/cubey/scene/entity.h",
+      "sha256": "7098fa6e15f0b6098732961e748a494da481d03d0376463d8d3a18034c96e908"
+    },
+    {
+      "path": "include/cubey/scene/light_manager.h",
+      "sha256": "a04667a5ffd807d35625400ffc0b32d36547978ff0a1838cf80fc7c4148b5f64"
+    },
+    {
+      "path": "include/cubey/scene/render_plan.h",
+      "sha256": "6426f615a602e7271c3c940dd12195c8a6dd49def23ef6240fd88d4704424b9e"
+    },
+    {
+      "path": "include/cubey/scene/render_recording.h",
+      "sha256": "d78050122dfbdf9f8ee9eef9e2756ad4de75eb8df5c320ede4a70e994f67be77"
+    },
+    {
+      "path": "include/cubey/scene/renderable_manager.h",
+      "sha256": "de63ff59d8fd87784ad7e2c11d142b9f82d61a51b8da16aaf363d2ae0e4818f8"
+    },
+    {
+      "path": "include/cubey/scene/scene.h",
+      "sha256": "61606a559c58c391c04feda7b58f33712c7729b8fa01b1d5ff2619bfdbb6fc28"
+    },
+    {
+      "path": "include/cubey/scene/scene_builder.h",
+      "sha256": "f94e2e218c1bc884b47199e34e19e3767e9360ef02903ee1138378932def9894"
+    },
+    {
+      "path": "include/cubey/scene/single_instance_component_store.h",
+      "sha256": "438bd828125cff1c3ce517ceb47a58e29c240915011ceef6cb875a5f2727f6e7"
+    },
+    {
+      "path": "include/cubey/scene/stable_slot_store.h",
+      "sha256": "0704e50ad5ec06a77ee9be57264dc2cc6b1a9b89e5aede325860da0fa7f1c6b9"
+    },
+    {
+      "path": "include/cubey/scene/transform_2d.h",
+      "sha256": "0757a9addb16822083b97c1974824746c40d94c0ff844fec1ac7436ceb4f6767"
+    },
+    {
+      "path": "include/cubey/scene/transform_3d.h",
+      "sha256": "3d66b750bb3ff578e932958aca39a0744e8f41bd570de62c7db78f9707f7a97e"
+    },
+    {
+      "path": "include/cubey/scene/transform_manager.h",
+      "sha256": "21d302f38139fc9a6d469f0701d1c3f933ad86f60357d0e4a3e72fac625e11db"
+    },
+    {
+      "path": "include/cubey/scene/view_3d.h",
+      "sha256": "f3abcd6bd63e4e6b99fe1344ee7bc56bf4ea0142b53f87ec8de2a1310ad508bd"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_backdrop_density.h",
+      "sha256": "a4ad50cbf62b9f13fa870249e94fa26fd46a95d1b6dd6e0e30e6a9fa7079aaae"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_backdrop_placement.h",
+      "sha256": "6630c79015299b8d69d4e7af8300551f6c1ba1cbf08e8d87b51e2b7fa79c10bb"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_backdrop_preparation.h",
+      "sha256": "9a22a45baebc470baa33aaa410753e25cb29ab400eeb30ff5a8be8f2e22f06ab"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_backdrop_product.h",
+      "sha256": "efd870bef02ee500a90d8a9c6277b3a7232b7d6b856146d8d3d63227de449c9c"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_backdrop_product_cache.h",
+      "sha256": "1e2f9c185810c9961c8b23534fa3824f132f67a9503c22d52cda055b9be88fe2"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_backdrop_profile.h",
+      "sha256": "79d7bf3f3418a7f0e6dd62be6fe2283615c46d925c15645ff45f2c0b39722118"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_backdrop_stage.h",
+      "sha256": "d5cf4d0a14b0241f85ba739eed1583277dc1dc4fbec946c05c2c8335b9fb8d29"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_backdrop_surface.h",
+      "sha256": "1953232b91cabb7aea28fe7c0340282e64ddb8965c0d4df4a97355b1dda3f88f"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_directional_placement.h",
+      "sha256": "bda74efea7461aaae01a5d4ca53fb986f93549944420a91f0d45bc996f7b7f82"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_placement_mode.h",
+      "sha256": "fdca7a5bf43f7cbae76a6bf5113dc3695acd5d191fa7921f5a6f2e6e482f07e8"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_surface_context.h",
+      "sha256": "26e0e9bc2d368af73b61e3a4ac0f7428ed042d05f27ef493f7d776c6ef3769e7"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_surface_field.h",
+      "sha256": "d6604988827d5f00ce083fdae25391de022c607c9c186b41bb3986a4e885a7dd"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_surface_model.h",
+      "sha256": "d8bf6bd54168ad4a792ee5461b0d462c27a26552ad62c06f0287fa7603c882b6"
+    },
+    {
+      "path": "include/cubey/terrain/terrain_surface_patch_lod.h",
+      "sha256": "3e25c1285f49472d02258c4beb0cfccbe2ede7064093b3e07b9cc96368f1afa0"
+    },
+    {
+      "path": "include/cubey/vulkan/buffer.h",
+      "sha256": "eef262d36934e359f58d0542486c990ca46fa2dc1f62e56687165c14a8010d02"
+    },
+    {
+      "path": "include/cubey/vulkan/command_pool.h",
+      "sha256": "c3878f0953e8aa7a220a71941f83709f4a6df99b78e68ad5326b579df716e7d3"
+    },
+    {
+      "path": "include/cubey/vulkan/command_recorder.h",
+      "sha256": "0fcebeb3756151bd46f182d795aebadb24a98e67295300ea44aeaf85abb591c0"
+    },
+    {
+      "path": "include/cubey/vulkan/descriptors.h",
+      "sha256": "9842e1049c0e5b4e1d203ccafedd7c532758136a8063bd659ab4e09135743867"
+    },
+    {
+      "path": "include/cubey/vulkan/detail/buffer_upload_plan.h",
+      "sha256": "12a2dce54519641fb9c168b7441b0022f1725fdb298d59fec974d4bf89806da5"
+    },
+    {
+      "path": "include/cubey/vulkan/detail/staging_pool_plan.h",
+      "sha256": "b3674d9033da98d88bca33079161eeb8205b6d674c8a89d2b1f1e98d7bee87a1"
+    },
+    {
+      "path": "include/cubey/vulkan/detail/upload_step_resources.h",
+      "sha256": "f18aa2a2fcdf3798af3fd1cf862eb0475896d4d09c3d74a8b3f5255b1ddef8f8"
+    },
+    {
+      "path": "include/cubey/vulkan/device.h",
+      "sha256": "bc53387bff7d872e974d532b7c18d8ad81c26232fbe17d3f04087ed0758ee695"
+    },
+    {
+      "path": "include/cubey/vulkan/dynamic_rendering.h",
+      "sha256": "e4c6f9186fe40e394f4616a6c477ce3ec739815384c74c33490ea5d0b392451c"
+    },
+    {
+      "path": "include/cubey/vulkan/frame_resources.h",
+      "sha256": "3bc082901b79c830b84acdcd92cf7d900d88641a5c7ae6eb4368e56d6811970e"
+    },
+    {
+      "path": "include/cubey/vulkan/gpu_runtime.h",
+      "sha256": "07a121b86ac4ace1f5527586d72c61954eb8183f266090bacedb95bd10f01d0f"
+    },
+    {
+      "path": "include/cubey/vulkan/gpu_timestamps.h",
+      "sha256": "ac1233b38a682faf4f2db502667993c396a3c87a30c1330214ca352757c0fe3e"
+    },
+    {
+      "path": "include/cubey/vulkan/image.h",
+      "sha256": "7a49f42b20d403259c27ec4c429d4b43678a88d08a7cfdfa398455c24cbcb0da"
+    },
+    {
+      "path": "include/cubey/vulkan/image_transitions.h",
+      "sha256": "937bcabe4223f4b159ef66ec9e9fc86b2ec6ced4601fb3e01faf4fca761deb01"
+    },
+    {
+      "path": "include/cubey/vulkan/immediate_commands.h",
+      "sha256": "8f5882c5da7146d98f85a8726e399a07f35e389d04927d00f908c4f6a57ce453"
+    },
+    {
+      "path": "include/cubey/vulkan/instance.h",
+      "sha256": "7f7dd39ff9c91449039515a0ea2d12ae8e565890b8c28fc53090e0a97b325270"
+    },
+    {
+      "path": "include/cubey/vulkan/memory_barriers.h",
+      "sha256": "b0f31652c86b61f79c0ea6caf7053440c6b7cb626caa9cae4db33eae5bd8d9e7"
+    },
+    {
+      "path": "include/cubey/vulkan/pipeline.h",
+      "sha256": "735db01def1568678e9224b0f18f115423221a86ee75b3ec39694c822cc7c9f8"
+    },
+    {
+      "path": "include/cubey/vulkan/queue_submit.h",
+      "sha256": "da7e41480589635687d6bd2e451ab6a3daca873a9c9b0c7bbdfbfed6569f0e93"
+    },
+    {
+      "path": "include/cubey/vulkan/render_context.h",
+      "sha256": "473047526264ce98b913e4e98b0c770668eae0641a857041b93bd1f55afafdc9"
+    },
+    {
+      "path": "include/cubey/vulkan/sampler.h",
+      "sha256": "63a3221619621079e6607d086d881266dc64a27268ba8c87b476f9233f0d58cb"
+    },
+    {
+      "path": "include/cubey/vulkan/shader_bytecode.h",
+      "sha256": "df696ab478acef9d116933f02d425e89d3d0837f7ea388f93988216bb8c4746a"
+    },
+    {
+      "path": "include/cubey/vulkan/shader_module.h",
+      "sha256": "6f5bd4343d7030a0b179b9dbd9ee03750c1be4366668989845bc7131b992a412"
+    },
+    {
+      "path": "include/cubey/vulkan/staging_pool.h",
+      "sha256": "1f23df5992d0c319558e5a072a7c84d205accf7657ca1602af0253136c4fe43b"
+    },
+    {
+      "path": "include/cubey/vulkan/staging_pool_config.h",
+      "sha256": "a6081f9f6b4d7603fb63bb23377a7d30cfb80083e9f9624f4a8dbebd4240bb81"
+    },
+    {
+      "path": "include/cubey/vulkan/submission_coordinator.h",
+      "sha256": "ce381287a3239b3a8918f05edbe8b45baa0d71bc406afb2c62ad865344f008d7"
+    },
+    {
+      "path": "include/cubey/vulkan/submission_tickets.h",
+      "sha256": "d9ec7a78d2f81435a40f435ec207b0944bb2a4c27487f505d7e9d0acb7c0b4a1"
+    },
+    {
+      "path": "include/cubey/vulkan/swapchain.h",
+      "sha256": "c84d99d200f651a3a77073dd29c1298f61c23c4d89be2afb2e599c74675e4536"
+    },
+    {
+      "path": "include/cubey/vulkan/upload_batch.h",
+      "sha256": "f1b1d3c610475a2f46e27394c4350d8613d81607efbbbfa7e66f7219cf86d89a"
+    },
+    {
+      "path": "include/cubey/vulkan/upload_step.h",
+      "sha256": "25a4252e92540b037166ce03cff053779aa4690e2bcc4a842820f1e2c7bd24e1"
+    },
+    {
+      "path": "include/cubey/vulkan/vk_check.h",
+      "sha256": "43ada538bd01781713d34be4f77306d757f1f2572eecc584ccfd8c987c47f881"
+    },
+    {
+      "path": "projects/pbr_materials/main.cpp",
+      "sha256": "f37c229895f510a3b48a055564954ae379db0c34338b7f6dc7d0410ebbbd9d66"
+    },
+    {
+      "path": "projects/pbr_materials/material_recipe_tests.cpp",
+      "sha256": "56dd786e341a6c82cf0c91f99d8c8ecba8fb295e347d36b231957752f0419033"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_app.cpp",
+      "sha256": "be123a6f07188da2c180b51b4811133587a4c19742785fe45ef9a5ca34de85e2"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_app.h",
+      "sha256": "6254aeddc017874c8a81f58cf350036b9c816e359a5bdac7c27dc7bbe0812849"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_app_internal.h",
+      "sha256": "8eb824fe6af47441ffac01d099516bcf1a4468609f3388797a117578b455ae28"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_config.h",
+      "sha256": "6646e53dfed4e7be9a52152cdb67749f7544ffe318b8e9ef79a3f0b622d29c59"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_environment.cpp",
+      "sha256": "2e2f6f76f0d9580aa63be4edac2c140f55a9e00c8362491fe9cf167693003f18"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_presentation.h",
+      "sha256": "c7afe054d3c469671e3cee64a1adf323e86d0a4b7d19369467ea7bf51a2eb5eb"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_render.cpp",
+      "sha256": "5c0dd7ae4ba59a05be5b02ec569a24f6630c66fe401c6078afb0282cbff4ea97"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_resources.cpp",
+      "sha256": "7d02a216cf6dae67a23fda70c26e793cee17ef34988f36d1391ee80efb95e6b6"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_scene.cpp",
+      "sha256": "12ffff2d0465f192233d40254b0214cb3caf23619bba26488e956427d33fd14d"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_workshop.cpp",
+      "sha256": "6e9b2e1e204c0a4fab193ad65e2d146f310bacc660082539dc78f32c26f3bbc2"
+    },
+    {
+      "path": "projects/pbr_materials/workshop_config_tests.cpp",
+      "sha256": "4acb3806e93e43d3cc3bb2bc59b249669e12ddec99fdc270e624074e0ded049d"
+    },
+    {
+      "path": "projects/sdf/main.cpp",
+      "sha256": "388d9cc28c0f06ed9d1df6d01a8e7d4944cf24e8d7149a2769e2bffcb59e9a29"
+    },
+    {
+      "path": "projects/sdf/sdf_app.cpp",
+      "sha256": "4839fa81ff90ae6d6dca59cc88a7fdac521944f60e51376be2b8b9f4d2d1c1b5"
+    },
+    {
+      "path": "projects/sdf/sdf_authored.cpp",
+      "sha256": "f2d4eee2e2e227be313cd6cb807ab26d47c47a3a507f6d03a6951bfa4467d9ca"
+    },
+    {
+      "path": "projects/sdf/sdf_authored.h",
+      "sha256": "801470f38f3508d532ba7d3644e4c54eb6cd5e18f7a1164d6cbf06396104b074"
+    },
+    {
+      "path": "projects/sdf/sdf_authored_tests.cpp",
+      "sha256": "19b0fa5cf76c63fbdd8bc30db0feaa85f7672a7cbea1aba2328bddfc2565dbfc"
+    },
+    {
+      "path": "projects/sdf/sdf_bounds.cpp",
+      "sha256": "70e66bfe6375e7ffca9b23662e08e62d68e19ab4736a8dfaa4662fa1f4bfe8ea"
+    },
+    {
+      "path": "projects/sdf/sdf_cached_commit.cpp",
+      "sha256": "c479ffc3626b196f5a2d2fc5ff7617bf3974ce81cf388f42204a192e91686f0e"
+    },
+    {
+      "path": "projects/sdf/sdf_cached_commit.h",
+      "sha256": "532098cc2547a4946c137a8e4bee713151ec6e782b23d922376cd7e08b65473b"
+    },
+    {
+      "path": "projects/sdf/sdf_cached_edit.cpp",
+      "sha256": "c45905634f5a22942f0435712d7b88c77f68a5ad4c9bf892aa249049f46639d9"
+    },
+    {
+      "path": "projects/sdf/sdf_cached_edit.h",
+      "sha256": "a1059fda4d01fd88267fe80d0493da45f3a280967ac8e189059afbe0681006d3"
+    },
+    {
+      "path": "projects/sdf/sdf_cached_local.cpp",
+      "sha256": "335d2654754c241f28ffb2c639a507d5ab1c95e307bc46693f42e7af0a884888"
+    },
+    {
+      "path": "projects/sdf/sdf_cached_stroke.cpp",
+      "sha256": "f474f68951074d18de140d65e8ebd01fc0bd8a7bdd4d019d0e5d4e183e23d821"
+    },
+    {
+      "path": "projects/sdf/sdf_cached_stroke.h",
+      "sha256": "88e4678a0f8bfd022365f5374e385515ce9868793079a4e33c231763920006eb"
+    },
+    {
+      "path": "projects/sdf/sdf_comparison.cpp",
+      "sha256": "cc8a3523c3c59a3523175e8d1d7c3d216b097adec8a7bb03a3e23ce12c779fc8"
+    },
+    {
+      "path": "projects/sdf/sdf_comparison.h",
+      "sha256": "c069be80ab5baf0c4b717b3a18e6a0059407a43dc3d18b1cbf450e7d103c90ce"
+    },
+    {
+      "path": "projects/sdf/sdf_config.h",
+      "sha256": "c5dcca2b9a360a9a0e48b91f537d1abcd9af113e046241fa6dc31c1fa9b2e7b9"
+    },
+    {
+      "path": "projects/sdf/sdf_environment.cpp",
+      "sha256": "3a73b86a798c721953520a12ca92c6e2a86d165671a21f104a6b926dee693a10"
+    },
+    {
+      "path": "projects/sdf/sdf_field.cpp",
+      "sha256": "ccf0e987a0c52ea2cca7c84348b5ee3ed37d99d7dcfe0bcb68435a22fe2df2c2"
+    },
+    {
+      "path": "projects/sdf/sdf_field.h",
+      "sha256": "196f6e7aabf25d6117ab7f75ec1a998342caebae80c36266c70815aea84ea40d"
+    },
+    {
+      "path": "projects/sdf/sdf_history.cpp",
+      "sha256": "2d5a0f84c0676514d689ff9aeaf7f8a8b6da1521f4080f4f9d91584c7217a5b8"
+    },
+    {
+      "path": "projects/sdf/sdf_history.h",
+      "sha256": "9ee06139dca9c84ef56b6e0933002df685191e68661dcff235b3e404b8740db9"
+    },
+    {
+      "path": "projects/sdf/sdf_live_edit.cpp",
+      "sha256": "da4df8898866c75299ee9ab411da16e0f219222ac28208b72d7dd430aa2e04ee"
+    },
+    {
+      "path": "projects/sdf/sdf_live_edit.h",
+      "sha256": "aba5ab7d9e47f1375cd429eb569da01fea966ab01ff51ffd6213601a54fa135b"
+    },
+    {
+      "path": "projects/sdf/sdf_material.cpp",
+      "sha256": "d808e95ed372742edcf7313351fe266aeeb041b5f0bd5d02f7e7fb9fd5ffb870"
+    },
+    {
+      "path": "projects/sdf/sdf_material.h",
+      "sha256": "418ea7f57de73c47f7e228a2288c191409ca8583a645b08d7ba322af66a9d718"
+    },
+    {
+      "path": "projects/sdf/sdf_material_tests.cpp",
+      "sha256": "db375f1ec56dd5dc447dc6c7802f18aaaef4255503827e3e3b64ecd004d2f506"
+    },
+    {
+      "path": "projects/sdf/sdf_prepared_cones.cpp",
+      "sha256": "dc4ef7350a99a0e444880583b7bbc464dcc6db112212c40c0f5d00e1c9d664d6"
+    },
+    {
+      "path": "projects/sdf/sdf_prepared_cones.h",
+      "sha256": "b58fe6e99dfa124c6d8a42251922c472b527979cc8558dbeaed28199713ec36c"
+    },
+    {
+      "path": "projects/sdf/sdf_recipe.cpp",
+      "sha256": "2a396d815d536e3010c78c38a4b910f65dae9ec552b63d62c2e0a4a8713d5b06"
+    },
+    {
+      "path": "projects/sdf/sdf_recipe.h",
+      "sha256": "aa1b4f1a481ab9ae65a1cd9235ec5b32c41a1db62ac45cc7a6cca77322023da1"
+    },
+    {
+      "path": "projects/sdf/sdf_recipe_tests.cpp",
+      "sha256": "c7baf28eca536afd2a6e9cf527e092f509e2c8b9c3c2765efbe1ccd8250b9dd7"
+    },
+    {
+      "path": "projects/sdf/sdf_region_tests.cpp",
+      "sha256": "1fe15edec02336c20fc2cd29c3ea65118070cc3c70421bfbf924fc21a51056c2"
+    },
+    {
+      "path": "projects/sdf/sdf_regions.cpp",
+      "sha256": "97effcc34643c04c93939401b0cd57ebbbf4e24304f1f9c1628f93aad7044ed2"
+    },
+    {
+      "path": "projects/sdf/sdf_regions.h",
+      "sha256": "c5d6c8c2232b35cac638061d815440f03e6c3dcd3ff93148faa829a70b0bb0c5"
+    },
+    {
+      "path": "projects/sdf/sdf_render_mode_tests.cpp",
+      "sha256": "d3aa714f09ba37f2bfa022f81e229fe6d8ebaebd2890040f33b4f5ad9a0f3e96"
+    },
+    {
+      "path": "projects/sdf/sdf_render_modes.cpp",
+      "sha256": "4f1f30b60c731076e6c069ff726b8e9ecc4717de8853a1311c2aa90405f5064f"
+    },
+    {
+      "path": "projects/sdf/sdf_render_modes.h",
+      "sha256": "de37e89bcb2be9bef351feb0b552dd9f5237dfdf30897de7caeef8b50a84d1b4"
+    },
+    {
+      "path": "projects/sdf/sdf_renderer.cpp",
+      "sha256": "e60d5d2e54477f0612970ec34da782214ebcd03d373e161b60dd0af40cdbdf87"
+    },
+    {
+      "path": "projects/sdf/sdf_renderer.h",
+      "sha256": "a3f32a2cf7db0447f1221d57b114fd0646981163baed4deaf114a3b0bfc4b1dd"
+    },
+    {
+      "path": "projects/sdf/sdf_shader_selection.cpp",
+      "sha256": "d5ea9f0dc1efb7d93882c154583a863b5c357dfe4e6a1e22da33194d0843c0b3"
+    },
+    {
+      "path": "projects/sdf/sdf_shader_selection.h",
+      "sha256": "c37e92c781a8ff71429cbb22df4ea87b1d5451cc099c497fd719fcb1d81c61b6"
+    },
+    {
+      "path": "projects/sdf/sdf_shader_selection_tests.cpp",
+      "sha256": "c68f3df97b54ad5bef5b629b6bcc368730cb8bbde897c646f72e18cf0152b050"
+    },
+    {
+      "path": "projects/sdf/sdf_stroke_preparation_tests.cpp",
+      "sha256": "35629db771440d69042f7996b0cca58faf4dc0a6c28ea32e14774f7102da3916"
+    },
+    {
+      "path": "projects/sdf/sdf_timeline.cpp",
+      "sha256": "4afc0de789af56f03a9db59767d3dc2d93d4b040e03e50370e5fe56695efc093"
+    },
+    {
+      "path": "projects/sdf/sdf_timeline.h",
+      "sha256": "7a9821cdd90ed4e1cda358748a99d2c548c567fea5b5bf065df4814800ab5df6"
+    },
+    {
+      "path": "projects/sdf/sdf_validation.cpp",
+      "sha256": "165f025fa290ae79eeb578decf0490297ebe991ae02f1465f21d0e3959b249bc"
+    },
+    {
+      "path": "projects/sdf/sdf_validation.h",
+      "sha256": "3d05bbd5dbab34e00abf14cb3901610627275302aa8602fcaf44cf2a64dd5ae4"
+    },
+    {
+      "path": "projects/sdf/sdf_workshop.cpp",
+      "sha256": "d0752f80e6bf4db5ce29385d277842dc5555abe576c8be9ed4e70d166c85aa58"
+    },
+    {
+      "path": "projects/sdf/sdf_workshop.h",
+      "sha256": "308b64a33647d94050bfcefc4ec19538b7616c96bc14ff5f9778c9e3a1549cfe"
+    },
+    {
+      "path": "projects/sdf/sdf_workshop_tests.cpp",
+      "sha256": "cddc3e857379a51e89e16081caf9a01aca4b0e46ae4a32d23c9993119d16975f"
+    },
+    {
+      "path": "projects/sdf/shaders/accel_comparison_analytic_pruned.comp",
+      "sha256": "571797a397c90ad4fe93e833bb234066f08a71f8f45a8d83a9520fb01f4f468a"
+    },
+    {
+      "path": "projects/sdf/shaders/accel_comparison_hybrid_pruned.comp",
+      "sha256": "e152935759db75cc7aeb47fd46f36755fa13941ae3ea6ed9c703a0c7cd7f07bf"
+    },
+    {
+      "path": "projects/sdf/shaders/accel_material_analytic_pruned.frag",
+      "sha256": "1531b762b6a347155c357012bb0e426e24add574c5c62db8efcf7c699f670905"
+    },
+    {
+      "path": "projects/sdf/shaders/accel_material_hybrid_pruned.frag",
+      "sha256": "a308d7168644a855cb06e93330483af848cea4ac486b066ccbf27ab4007f7a41"
+    },
+    {
+      "path": "projects/sdf/shaders/accel_sdf_analytic_pruned.frag",
+      "sha256": "143832b1b490492c331e472e0efad3036f34c8fc9afb4a039c54e7e88c087e99"
+    },
+    {
+      "path": "projects/sdf/shaders/accel_sdf_hybrid_pruned.frag",
+      "sha256": "753e2b20b01e5e25bbae91af6ef9a13e7d029f9005d87f111e073c7680a17445"
+    },
+    {
+      "path": "projects/sdf/shaders/accel_workload_analytic.comp",
+      "sha256": "4c15bed7b3671f91dd84fc9ef19de6f4e5e1679f10a7d5d09576a6c8afe278ff"
+    },
+    {
+      "path": "projects/sdf/shaders/accel_workload_hybrid.comp",
+      "sha256": "6adcaf8eaf25b3a2c6e4bf19bd1d7b0967f9839fbbd1aff78c0269f543a167a2"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "9d6d664d845a38c63cf4f85d0216fde4314e6fb0fc11397fdc435f701f55f495"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_guarded_contract.comp",
+      "sha256": "b935aa65481586ca11ddbab2c127611ebc95fb1bc89893f0ca3796abe6ea9bff"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_prepared_root_far_comparison_analytic_pruned.comp",
+      "sha256": "2074dd50f0664be10cc8283e37f71a5723d5a4e3bfd12c40c02c8d3eebd1d1b6"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_quality_workload_combined.comp",
+      "sha256": "34af2e8a8a7d7f1fe9cd07393b8a26aa293ba75d6ef5d74ee350e72ec1f76b44"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_query_validate_combined.frag",
+      "sha256": "5940bd190448c84e46255ece540dacb0f1c39303370a101a884401f3057efde9"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_query_validate_shadow.frag",
+      "sha256": "f8a07499453e270faa900462640b03befb1798e33090d53a9c9daf52d233c185"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_query_workload_combined.comp",
+      "sha256": "cf43cbf42ccec9b6cd68edfe7f918716d5b89b8edb4486bf87524ccf48b3a485"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_query_workload_shadow.comp",
+      "sha256": "f2dd66d2bcf0d5d1141ed4333ddd562d57946ecbe1d5b349608ae7b4772470e6"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_root_far_comparison_analytic_pruned.comp",
+      "sha256": "613409f73cf52c4c1777c0b5a2a62409e326fc2d0ddf1c8eece933405b532813"
+    },
+    {
+      "path": "projects/sdf/shaders/adaptive50_shadow_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "bdfd18f1690ba35fa8ee5acc011a0da224d97619ffe6efc2d2fe326170513307"
+    },
+    {
+      "path": "projects/sdf/shaders/authored.glsl",
+      "sha256": "3844a323989297e1fb11c80dabb0f3d90fef61dde2edd7cb883aef5037da4882"
+    },
+    {
+      "path": "projects/sdf/shaders/authored_bricks.comp",
+      "sha256": "9f62a2a70257eafb505a5d0990d7b3be818b53d4998c5e27a793488870d05717"
+    },
+    {
+      "path": "projects/sdf/shaders/authored_filter.comp",
+      "sha256": "6e9dcc6f4eff0997a093a0359ed19d2a52f3593fdd5fc4230c962c68c9ae2220"
+    },
+    {
+      "path": "projects/sdf/shaders/authored_material.glsl",
+      "sha256": "ffc79abab9d2b712d8d61960eb8fafcad91547090fe07825cb28807dd53a3379"
+    },
+    {
+      "path": "projects/sdf/shaders/authored_validate.comp",
+      "sha256": "fbf5c18e031b88d0433a96b6d67cbad33dc3b32949d6961d90a2def6a07a0f11"
+    },
+    {
+      "path": "projects/sdf/shaders/bricks.comp",
+      "sha256": "716c1aee86935b366f4c10c4f121cdd183f5a7566349897fcea6ba90d7c4e945"
+    },
+    {
+      "path": "projects/sdf/shaders/cached03125_comparison_sampled.comp",
+      "sha256": "d720412d3cb2c87200ab250ecb5b56a251f4a8d88a58786c0f5b073d40996fb8"
+    },
+    {
+      "path": "projects/sdf/shaders/cached03125_material_study.frag",
+      "sha256": "e06ef2701684ff2c3d820095e524651ca59fc69ba15e6ad3142edf4739c42832"
+    },
+    {
+      "path": "projects/sdf/shaders/cached03125_quality_workload_sampled.comp",
+      "sha256": "3c3636d4a31a9ca98951e24bd9eda908622ccb2388bd0d2133b58cd14e31b230"
+    },
+    {
+      "path": "projects/sdf/shaders/cached03125_sdf_authored.frag",
+      "sha256": "9fde52ea91749f5640ce99fab96218ecc18a1e814b50410098df171bcfed6f2e"
+    },
+    {
+      "path": "projects/sdf/shaders/cached05_comparison_sampled.comp",
+      "sha256": "f7287bde7da3d248f5ceab9ac3708ddc77fd4438802b6bc103435bcc0710f480"
+    },
+    {
+      "path": "projects/sdf/shaders/cached05_quality_workload_sampled.comp",
+      "sha256": "dbd84713ffafb31e410c97d0184562b016b32c6ee5c34de8cb2272567cf86c74"
+    },
+    {
+      "path": "projects/sdf/shaders/cached05_sdf_authored.frag",
+      "sha256": "99bc0dccd1e53683ad7af3f0cad945f3fe0cf28869b2553a43c96b781ee4c4ef"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_cell_contract.comp",
+      "sha256": "37e137790eda561283c05b0c0e724c3431af033bb9e5de86c52b461d9328c7e7"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_cell_math.glsl",
+      "sha256": "6662266f9282431aa0b9967a7571bb0a17bc8acaedeb5adee58487a4bc046632"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_edit_quality_workload.comp",
+      "sha256": "0e41945b8bf2abfa6ff6518a3c64ac8a109a5bc90008eb70fa2dcedb9295c08e"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_edit_queries.comp",
+      "sha256": "3221126ffdc984470cda572ba9054a0489f67c260419771c88de8f8a9db1cb40"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_edit_sdf.frag",
+      "sha256": "d81da525b2c21de4f3339e5002ed626382840d419cee80c3807a220112c8e41b"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_edit_trace.glsl",
+      "sha256": "e56927a10d48a8fd5da8d3cd35f6e16ca30bc8f364375ff58bdd98455e2c28d4"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_quality.glsl",
+      "sha256": "d2630cf4fce7639448234312585980d72b97b2f442ec6ea2931dd17829080e4a"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_stroke_quality_workload.comp",
+      "sha256": "f2696a4517b9a2503dce1180d775828905588ee6a39e2a9eba1f05c61fa71d65"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_stroke_queries.comp",
+      "sha256": "7e999add030c3ea5be9653375073f64d7a18a095e095b87698d9a070041da685"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_stroke_sdf.frag",
+      "sha256": "3f5ad25f0a718c00d60ed6ab6c7578bd48cd320d1c8c16ac7368d6dfcfc4e58c"
+    },
+    {
+      "path": "projects/sdf/shaders/cached_stroke_trace.glsl",
+      "sha256": "f170037342d72a296b6dfc8567b574e6720914e1ba613c28f6486147c53367ac"
+    },
+    {
+      "path": "projects/sdf/shaders/cachednormal_comparison_sampled.comp",
+      "sha256": "d2e412d2dc1c4dfbabe42054e2e7109bb6fb535cdf736138b036a51d91eb6f3f"
+    },
+    {
+      "path": "projects/sdf/shaders/cachednormal_quality_workload_sampled.comp",
+      "sha256": "cf527fa08416560a0fd8c424b466d128dded06a21e41943f2b8cd1328aed761a"
+    },
+    {
+      "path": "projects/sdf/shaders/cachednormal_sdf_authored.frag",
+      "sha256": "c1caada33e724d684d81653160ca52a9f2b09ac7e7b176985c71b939ddf55a90"
+    },
+    {
+      "path": "projects/sdf/shaders/cachedrefinenormal_comparison_sampled.comp",
+      "sha256": "20b1634292fd127f36ddf1ae3d05c0e730f93b363c0046dcf76e03d3a6ba967b"
+    },
+    {
+      "path": "projects/sdf/shaders/cachedrefinenormal_material_study.frag",
+      "sha256": "4911c735ab82439bd8414950d9c3618037b539414c1511a8cbc26f719d75b5e4"
+    },
+    {
+      "path": "projects/sdf/shaders/cachedrefinenormal_quality_workload_sampled.comp",
+      "sha256": "4309964c83fcb41bdc7ccdbb8856971a6c37dbe5c6be9a309d0f5a68535f3483"
+    },
+    {
+      "path": "projects/sdf/shaders/cachedrefinenormal_sdf_authored.frag",
+      "sha256": "3fd691a9859d82527055f9b668ccd2df9820f6502ae6c32b012bc92c8e13ceb2"
+    },
+    {
+      "path": "projects/sdf/shaders/combined_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "41319db98dd651cf8c01d01c84c514240ade6a5b4ec2ae24f8407e62de34397a"
+    },
+    {
+      "path": "projects/sdf/shaders/commit_canonical_fallback.comp",
+      "sha256": "5e5c90e974fd7de3412346d9def7a63e643cfe7470888b3e0b75a071d6f585b0"
+    },
+    {
+      "path": "projects/sdf/shaders/commit_prune_probe.comp",
+      "sha256": "5afc2a94ff42e4c23d4da484f8d222219d621b1ed56332303e2bfa1d208bb6eb"
+    },
+    {
+      "path": "projects/sdf/shaders/commit_pruned_bricks.comp",
+      "sha256": "6e621a0fd07d59edabcfe47f6a432587c048ab5b9ef25aef62deead1c9f2e70e"
+    },
+    {
+      "path": "projects/sdf/shaders/commit_pruned_filter.comp",
+      "sha256": "f46aac798643f679754ad7e64bb62a834feaaf273500e4fd2a046517f03bea6d"
+    },
+    {
+      "path": "projects/sdf/shaders/commit_reuse_bricks.comp",
+      "sha256": "eda57c03ca20ab1569ba87ef7ee5e486de97a91654f6a5c9d325cf872896ce09"
+    },
+    {
+      "path": "projects/sdf/shaders/comparison_analytic_pruned.comp",
+      "sha256": "a558d303a4249482c7c3a71797dd7dd20d7f1422c24b72fd3a8e74844feaf8cb"
+    },
+    {
+      "path": "projects/sdf/shaders/comparison_donor.comp",
+      "sha256": "84b92b47a4e7c3812859dad3ed635bd74a69a26cca3ad2da0aa9bbd7901f296f"
+    },
+    {
+      "path": "projects/sdf/shaders/comparison_full.comp",
+      "sha256": "d5ed9ee32a19eb0f7f7875e89129586903e608c7fdfc12d1a827599fa11b26c6"
+    },
+    {
+      "path": "projects/sdf/shaders/comparison_hybrid.comp",
+      "sha256": "cc60140c02194e38ec66ad02b083d37ce6dfff3a112143111ecd975d5329b7af"
+    },
+    {
+      "path": "projects/sdf/shaders/comparison_hybrid_pruned.comp",
+      "sha256": "69e3fe6b87867555b0bdef1c857fe52ebe511447a9c72eaacb976be9e8459967"
+    },
+    {
+      "path": "projects/sdf/shaders/comparison_queries.glsl",
+      "sha256": "0c5285c69636eda116f5273b475111b60076f8f9267e8c210e00c84fb080e919"
+    },
+    {
+      "path": "projects/sdf/shaders/comparison_sampled.comp",
+      "sha256": "6b6774cd4b864baea5e864047c82e60cc83f5fae5498a74ec66ce82ea0d2bc59"
+    },
+    {
+      "path": "projects/sdf/shaders/far_comparison_analytic_pruned.comp",
+      "sha256": "146ec25d90e9ab5051b7e21d4f4754524580d3b43d07dde3f08190582e717b1b"
+    },
+    {
+      "path": "projects/sdf/shaders/far_material_analytic_pruned.frag",
+      "sha256": "dd380596fffeac95e684ae04ac5e427ecd507c2661202856dd689f86e9313b17"
+    },
+    {
+      "path": "projects/sdf/shaders/far_sdf_analytic_pruned.frag",
+      "sha256": "fbad1d510639261c7374edb1b8c126206dd8cfcb51cc58d28fc440527f0f23b7"
+    },
+    {
+      "path": "projects/sdf/shaders/far_workload_analytic.comp",
+      "sha256": "a87f13b430c7572adb62601e9f9f48c348e8eebe757ea5dac215fbfabf4abc8c"
+    },
+    {
+      "path": "projects/sdf/shaders/field.glsl",
+      "sha256": "824f087482760219b3bf0087efcfdd74c12b6dfd7abfcfad86316fda6471ae5b"
+    },
+    {
+      "path": "projects/sdf/shaders/filter.comp",
+      "sha256": "be0aed2cc4890a747b8f9c9bb74a2f21890827d7f8f10c4f676eec19e793d0d1"
+    },
+    {
+      "path": "projects/sdf/shaders/guarded_contract.glsl",
+      "sha256": "7946a84f900c58c53115e3b180ec98773cf0b462661116520df77f8f043964f8"
+    },
+    {
+      "path": "projects/sdf/shaders/guarded_trace.glsl",
+      "sha256": "bc8687e67d673252c2b949f8f16e5ed42674f9019238d295c8f1bddac830497f"
+    },
+    {
+      "path": "projects/sdf/shaders/investigate_sdf_analytic_pruned.frag",
+      "sha256": "0250500f071a8597cffe09cec9b5db2968626a4229bf8d9dc6759e0fd030d598"
+    },
+    {
+      "path": "projects/sdf/shaders/investigate_sdf_authored.frag",
+      "sha256": "08f7184ba5b44a37b4dba0865d4b386bf74f1d7eb136c7c6ebec1db1e9fe1a63"
+    },
+    {
+      "path": "projects/sdf/shaders/investigate_sdf_hybrid_pruned.frag",
+      "sha256": "0b5083badd779682d2deb49ba53b29a5859ff5ef930649bc7bb50d5ecc4790bf"
+    },
+    {
+      "path": "projects/sdf/shaders/lighting.glsl",
+      "sha256": "4cc999b0181b87d28674d05b7fe71fbd48f7db1751db860969f713069daa5e53"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_accel_material_analytic_pruned.frag",
+      "sha256": "1481480517b81ce09246d4f724f5390a7685871bddeb4dab3961a57a0620e687"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_accel_material_hybrid_pruned.frag",
+      "sha256": "5e7549ae29e02d107c34d5302ebfde6b5a21ead7148b98a13cafafc05ce7e876"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_accel_sdf_analytic_pruned.frag",
+      "sha256": "2f0e5961943158a2ff18bb60ded996ed3f329b0eb6b7916794f8a5fa09f7ea8a"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_accel_sdf_hybrid_pruned.frag",
+      "sha256": "64255c1ff5abc12bb536c661c46b248d49b66ec41a180afcb834eb71db7afb58"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_far_material_analytic_pruned.frag",
+      "sha256": "79ab84e18ecf78111c042781371e4258a931fb6c826dc11fd5a99507bed9af16"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_far_sdf_analytic_pruned.frag",
+      "sha256": "d4505f7d3a2f25c2c07c508331fd51e572ad58d5a8caa2bf13005f28e31bb741"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_live_edit_sdf.frag",
+      "sha256": "673e4260cb01ec706d72675432fd487ee4867dd10ee95bfa2ea240ec972cec72"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_material_analytic.frag",
+      "sha256": "c08bd6d8e70ddaa1684c46ceed116184d97dfcac02f2874b5ab8c124499a5ed8"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_material_analytic_pruned.frag",
+      "sha256": "0b0d199fbe9cb5e56d0d8d711a1b51eb2cc9948566357c35528c3af2724e294c"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_material_hybrid.frag",
+      "sha256": "8a37348a14fcce2f705ef3e90e38ebc25df4a1a0445cef5345db0238631802c2"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_material_hybrid_pruned.frag",
+      "sha256": "caa8cf7df2964020c4044812fc5ff7e94367c49a2473ff7c23da1a98b547318c"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_root_far_material_analytic_pruned.frag",
+      "sha256": "79ab84e18ecf78111c042781371e4258a931fb6c826dc11fd5a99507bed9af16"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "d4505f7d3a2f25c2c07c508331fd51e572ad58d5a8caa2bf13005f28e31bb741"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_root_material_analytic_pruned.frag",
+      "sha256": "1481480517b81ce09246d4f724f5390a7685871bddeb4dab3961a57a0620e687"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_root_sdf_analytic_pruned.frag",
+      "sha256": "2f0e5961943158a2ff18bb60ded996ed3f329b0eb6b7916794f8a5fa09f7ea8a"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_sdf_analytic.frag",
+      "sha256": "d4a6fbbd829cc3aba2f39a35f80407c4462576524426f8d318ab1ff8e62f8b52"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_sdf_analytic_pruned.frag",
+      "sha256": "2d8cc7dae52ab2dd94430917fc2aaeb46fc8fe4f7bd09be0eb5f6fc515963ece"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_sdf_hybrid.frag",
+      "sha256": "c9d2cb19b0e57d1cc0476987824b95a879985385ebddf19f0d84bba7eeb76f9b"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_sdf_hybrid_pruned.frag",
+      "sha256": "e8f500834d07b67c87cdd81986b15ab0c8b1f22e9b101d63cde9abc78ec9082c"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_unclamped_material_hybrid_pruned.frag",
+      "sha256": "25047818a6eadf8c7b985cd0537f854407aed89ea7988f3a8dd7dae94ecf818f"
+    },
+    {
+      "path": "projects/sdf/shaders/lit_unclamped_sdf_hybrid_pruned.frag",
+      "sha256": "1219bf7c3085509d1c34c7baddaa44ac029434f469e5536c2e0e222b0ce3709b"
+    },
+    {
+      "path": "projects/sdf/shaders/live_edit_quality_workload.comp",
+      "sha256": "3408bb20bb6f31a3e989913e10b3ff96e50b0bd0cf91a611187497fd620f8f21"
+    },
+    {
+      "path": "projects/sdf/shaders/live_edit_queries.comp",
+      "sha256": "5340557732f95afe0ce5d20f76bc36c33407865045f43f621716b731fb113aa6"
+    },
+    {
+      "path": "projects/sdf/shaders/live_edit_sdf.frag",
+      "sha256": "d0574ca7ecb5f17a3bf28d52296cce62e8e226a0c07ee9195474467f15999113"
+    },
+    {
+      "path": "projects/sdf/shaders/live_edit_trace.glsl",
+      "sha256": "18a4cdb7c7ee9239df33e91fe44e8059fa0220a026b0017ccf0eefff8e0363b3"
+    },
+    {
+      "path": "projects/sdf/shaders/local_canonical.comp",
+      "sha256": "9be8ed4f3b5793731188ec33f52769c97322d278398bc1980afe48934d28c445"
+    },
+    {
+      "path": "projects/sdf/shaders/local_controls.glsl",
+      "sha256": "3c343897d2c1b090ebcd7072005193a8f8d256d9abf1544133ab0dd4a17174b0"
+    },
+    {
+      "path": "projects/sdf/shaders/local_dom_filter.comp",
+      "sha256": "b0da09ad5aaa82d81ee97d736a695b0ce3437a02dcbc4c0ee11f647cb61c74b5"
+    },
+    {
+      "path": "projects/sdf/shaders/local_dom_samples.comp",
+      "sha256": "c48b846a04405bfd817c07d81a180ce419e66457d41f7bcdf839077c17a22de0"
+    },
+    {
+      "path": "projects/sdf/shaders/local_filter.comp",
+      "sha256": "561682993575fd395cfb15b9f4624ae03288950a5b765834de2ff1b500be2a35"
+    },
+    {
+      "path": "projects/sdf/shaders/local_root_bound.glsl",
+      "sha256": "aa1707aab07fab1a5a3379d5b4ec549b414b5117d6e5161134030b5a773fa37a"
+    },
+    {
+      "path": "projects/sdf/shaders/local_samples.comp",
+      "sha256": "a96e49c40159576a49c02f9b75002ea4b0c715e3b62b6e69c432b2edca9302ec"
+    },
+    {
+      "path": "projects/sdf/shaders/material_analytic.frag",
+      "sha256": "982db62b585a127a88b004720eb89e4ec1a4d2a43079c545b87dfafbcf633141"
+    },
+    {
+      "path": "projects/sdf/shaders/material_analytic_pruned.frag",
+      "sha256": "ef4b194911e14601b7fa9ee93dd43e0f4930b4455f3e089e1ddc63285fae69ab"
+    },
+    {
+      "path": "projects/sdf/shaders/material_hybrid.frag",
+      "sha256": "2fb79afb93c0fa08ef20797d41edac3e2094db526dbd1b9399f987ba1dfe4d83"
+    },
+    {
+      "path": "projects/sdf/shaders/material_hybrid_pruned.frag",
+      "sha256": "582e48aa933f7156d2d247d638d320d117c1251d9eb7ca6e5be025a72fd92a80"
+    },
+    {
+      "path": "projects/sdf/shaders/material_study.frag",
+      "sha256": "ea46015346971782f4c54dc27f428ced71f1e6733f7592aa8925627db6074f4f"
+    },
+    {
+      "path": "projects/sdf/shaders/occluder.frag",
+      "sha256": "068db6c922f852ce14c7b9934b18ac4028b47359773df307bd86f69eae2ce446"
+    },
+    {
+      "path": "projects/sdf/shaders/occluder.vert",
+      "sha256": "c5ca2fb1ab83e0a189f6942e1e22cf2bd839b6bcef9f4aae94920fd2df9b67ae"
+    },
+    {
+      "path": "projects/sdf/shaders/optics_math.glsl",
+      "sha256": "e15aa201565a773fbb8d5db816ba2db6f859fd233957fe3064d2ffffcb045be4"
+    },
+    {
+      "path": "projects/sdf/shaders/prepared_cone_probe.comp",
+      "sha256": "2101e302c5328be5f192f5e71031f48c18533657b02febc8ebf8f6e597743efc"
+    },
+    {
+      "path": "projects/sdf/shaders/prepared_cones.glsl",
+      "sha256": "a5c79f074ad3ab08960df8d981bb90f62bc07a825a86dcb65a84666aab2a2001"
+    },
+    {
+      "path": "projects/sdf/shaders/prepared_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "319bdd31e599cdc4c745fefe686b292787eace971c73487e521297b426b90241"
+    },
+    {
+      "path": "projects/sdf/shaders/prepared_root_far_comparison_analytic_pruned.comp",
+      "sha256": "538c96df3af01a37b8dbd364d878b9a49e419535b7833fb0015b06fe928a8fac"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_fixed_full.frag",
+      "sha256": "1efb29fda589cad13db74f034fbeaeb58afe6f611a35023d7555ab1f1c252250"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_fixed_material.frag",
+      "sha256": "f7870917eb0820582c6b60256cecd417d0cd8580bb902dc43bc34d53a827eea4"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_fixed_normal.frag",
+      "sha256": "b143dfc536de6d755d320ea3c280362fe651956a121d9381a587282ec039ebc8"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_fixed_primary.frag",
+      "sha256": "1ef923163ee6532f9c3aa4c04a3692b047fdf4cd438ce0e7ef20cc70eae04c1a"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_fixed_shadow.frag",
+      "sha256": "62bd02fbc5aaf27644bb6b449951348f2c5a1b7c50689ff1c843f76064896aae"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_no-sky.frag",
+      "sha256": "f9b8d9a364b6eb70b054c416d8a795ca53e39013216085a2c63f4783454e90da"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_nodebug.frag",
+      "sha256": "83a457c9eb54cb81718d293fb83c7c514e98ac1c168aa938b4e5a897b5841893"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_opt-cull-dark-shadows.frag",
+      "sha256": "7a231f8413191e1711879b71daa5a2c17a04d7af54a234c3288c90675c32e0e9"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_opt-full.frag",
+      "sha256": "75f03c8bc84aeadf55d334d6eab91db6bbf11dc997dd69467f6f65f9bfc58462"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_opt-material.frag",
+      "sha256": "f30c41c080a7955fad9174122917dace336301b9bfe8c94905c666b6e17a427b"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_opt-no-sky.frag",
+      "sha256": "2237985bd00f63aa306b4b0f5f4927004af9fda1dadc797d6dddf82315676bf4"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_opt-normal.frag",
+      "sha256": "7f73ef3610f31bdd2f47cf82ad212d2303c8c3d9c11d0127b5597d53bc76c922"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_opt-primary.frag",
+      "sha256": "dd01992a5caac7a70ff24babccfe9626b3c1339e2149c86fac444e28c06b7c60"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_opt-reorder-shadow.frag",
+      "sha256": "8a21acb4ca0e8411aa93d2556115566547671a4e7649798160aa1a53e3be9aac"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_opt-shadow.frag",
+      "sha256": "11fdb44871983802cd203df9c9b1246fc877d2cacaed9bded1a56265f2138a97"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_single-material.frag",
+      "sha256": "3aea89b460fde76fedd096d2cc930150bc877e867756d6ebd4957f396c4b2830"
+    },
+    {
+      "path": "projects/sdf/shaders/profile_specialized.frag",
+      "sha256": "75f03c8bc84aeadf55d334d6eab91db6bbf11dc997dd69467f6f65f9bfc58462"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "b36d40f25151929a6cd18c528b84c8c1440ba7e756c564b8bb9bf92058aab02d"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_cached03125_sdf_authored.frag",
+      "sha256": "849c113aa373a08e3877a7c7c1d70341fe97f4a1b990f2ea5eee1bfc716582d2"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_cached05_sdf_authored.frag",
+      "sha256": "68b15824e9eb79207ca7fb23447384d524bb54f41144ad46c730eb79a9285fcf"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_cached_edit_sdf.frag",
+      "sha256": "d5df0250d990a64df5bd268a828958621ee8c6cb9e8dee63247b01c2e8e78d6e"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_cached_stroke_sdf.frag",
+      "sha256": "36758ad00b474a6de3b5ba71b53dd4ce6c266bec8b00b32b1433d963dd199c9a"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_cachednormal_sdf_authored.frag",
+      "sha256": "d67699038b607ebde3baf417345690d5e5ed654271eee6ca9ade01d283bf0ca7"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_cachedrefinenormal_sdf_authored.frag",
+      "sha256": "a08b04cc54dbc991b5d8c101273fadeb83a9bb9581da31151ddf08140b7b185f"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_combined_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "fda22cee6b8758b57adfe9d34b1aaf5e3ca62d209c6a098ff4a50635b45ee13f"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_layout.glsl",
+      "sha256": "c2793b89ffc6a0667ea189aa5550195fa61d849bca0abbd802b5d5ff2bc38193"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_lit_live_edit_sdf.frag",
+      "sha256": "9e3fa52d312c95d89d912bbccf26ad5e6aace078e838d8c3338518a7ce17b354"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "03a302c02cf38db79b55500f088b620e999833c194121151ddf646ff6a6b9d5a"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_live_edit_sdf.frag",
+      "sha256": "cece91c5f1c8ea3f16d5d5395be093c285fca7469514595d0f8fa0c6b60c9367"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_root_far_sdf_analytic_pruned.frag",
+      "sha256": "df95b382bcefb463517cffdb664f4d10483906f791ca48e8aaec8a84edf21b2a"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_sdf_authored.frag",
+      "sha256": "7c3d8587486cb166e3734503f861e8ebeab2e943d2c2604a56efd517bc962ea4"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_shadow_lit_live_edit_sdf.frag",
+      "sha256": "c4bcc8cea69a67c2fb312b79ab08c77fb0cacd67e11ee394760b17612d5d540b"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_validate.glsl",
+      "sha256": "73c7b32e566f625a7a4596429e18a2ab6c6244247cc03f77e8b08f303071a4f3"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_workload.glsl",
+      "sha256": "b895e00c56e0924b9e1cec91aa6e9258b4706986eec5dcb434daf6c86bfcf784"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_workload_combined.comp",
+      "sha256": "775ec0de79f173bfd632d639e42ddc7ac3b3dd09be12daff457e81a7800a549c"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_workload_reference.comp",
+      "sha256": "9df97efe2963c1d6bc880dae22bce5f6ff16ed0aae9ede7842f142c8ea3cd194"
+    },
+    {
+      "path": "projects/sdf/shaders/quality_workload_sampled.comp",
+      "sha256": "533611230a84ed4768dcf4f4f1f1ee83ba9dea8be3e348d00443b828552576bc"
+    },
+    {
+      "path": "projects/sdf/shaders/query_camera.frag",
+      "sha256": "2b63c7b672bdced2f422f7be32757e37e4364b96968394decced90169d036d71"
+    },
+    {
+      "path": "projects/sdf/shaders/query_validate.glsl",
+      "sha256": "e670f8ba252261903e0456b3b94b32c089e3323009a4c86a02823ae699431b2d"
+    },
+    {
+      "path": "projects/sdf/shaders/query_validate_combined.frag",
+      "sha256": "4430970f72e64ab39d2695f9e31a4338caa84ba01126fb9ef4ca2d92a66be464"
+    },
+    {
+      "path": "projects/sdf/shaders/query_validate_reference.frag",
+      "sha256": "e6a56191572083eb8acc239274166eb92f22456f33221796e3e786e025d421de"
+    },
+    {
+      "path": "projects/sdf/shaders/query_validate_shadow.frag",
+      "sha256": "266bb3d288f940337f75f1458d82b75d002ebb9a0c331fd8688928fcc4de4ba4"
+    },
+    {
+      "path": "projects/sdf/shaders/query_workload.glsl",
+      "sha256": "fc413dd734227e6a8afb85b3f8cf424f1198e71daba46a7b5ce5158adb45b980"
+    },
+    {
+      "path": "projects/sdf/shaders/query_workload_combined.comp",
+      "sha256": "64e5ca05a0a2c2067e3861cfa7bec56b162115e461997898aceee4f4e8360fd6"
+    },
+    {
+      "path": "projects/sdf/shaders/query_workload_layout.glsl",
+      "sha256": "1b21221673ed21e7033ebeb171e6520ffd46b211fb822e1f04fe54743f83fd54"
+    },
+    {
+      "path": "projects/sdf/shaders/query_workload_reference.comp",
+      "sha256": "32335796650e3d146b3d468aef9260a6c5ac31d21bab6c2f2df27c3cc50851c0"
+    },
+    {
+      "path": "projects/sdf/shaders/query_workload_shadow.comp",
+      "sha256": "dc7055dbc0c3ada367ea65b2d5f0e98464b230f26ea7ec7331c57e013b4d162b"
+    },
+    {
+      "path": "projects/sdf/shaders/regions.glsl",
+      "sha256": "e5be06f7bf297085e5d7faae3c583b85edae81529efc664f4b985bdc8377c54b"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed12_combined_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "9cd742050dfb1d7fcd8b773ca7e7df9655136cb81460b40122c8bf2a4bbc99f8"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed12_guarded_contract.comp",
+      "sha256": "eb168e21f03d4f3874406f0097518d0c293f57545fd532ebc74dc9beef7d4f59"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed12_prepared_root_far_comparison_analytic_pruned.comp",
+      "sha256": "f34c6fa6249eea610086552201a7c068c01e430fa469e34c3a4b57327fc68441"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed12_query_validate_combined.frag",
+      "sha256": "81bb39395ceaf2c59930b5f7d9241996ae24a7bb1bc53482d60593d529a15945"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed12_query_validate_shadow.frag",
+      "sha256": "2acca342b81bde64bf674d8f1b3194552c3100907fd7482a76f9aecff9ca9efa"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed12_query_workload_combined.comp",
+      "sha256": "7e211d281184b89adcfb1ce72377c49450722927454f4e9292afb290953200e6"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed12_query_workload_shadow.comp",
+      "sha256": "9b9c66aa1ba4132276f89c22bd0f327421a9b1ebde9384ca7de42701bfa2084f"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed12_root_far_comparison_analytic_pruned.comp",
+      "sha256": "9b2bff4919480b3c6798623ba9eb1badcea4e818398e2a357d31dc7a7014934b"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed12_shadow_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "2b860d366a86eeb25c3df6f274545de9ac85a2e74b2a9dcc57456445fd283741"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed15_combined_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "7082d6b1ffc0a28939d6f22a9d228b6238601028753f2760aeea34c40576b212"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed15_guarded_contract.comp",
+      "sha256": "1f1d5693e1b6a33b545ca69edb9d2dcae8d009e922da32756a25b0dea997dfc8"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed15_prepared_root_far_comparison_analytic_pruned.comp",
+      "sha256": "bbcd373ea488835e6d9e2046f8bbab410d2a67f2c70d7a347bb3a5d809cd31dc"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed15_query_validate_combined.frag",
+      "sha256": "c70c9c63fb009473332a0220202c8edc50a9dd9ed0ab7afcc89b3b093816ae5b"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed15_query_validate_shadow.frag",
+      "sha256": "f04b79327492bec674792aac86512e654752ad44564fe22811494ed9d9309bad"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed15_query_workload_combined.comp",
+      "sha256": "055574bedef77c57940c01e98ecc457331931f11082978e72537b6eb2e80881c"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed15_query_workload_shadow.comp",
+      "sha256": "ecc0178f6bc1fd51b584f9dab0b87c5a61a527e210bfbf5213b8f4ec67168b69"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed15_root_far_comparison_analytic_pruned.comp",
+      "sha256": "12e7b172def3a37940d16d2ddee7a430585964894d91c1df52f1a8c1cee63ba7"
+    },
+    {
+      "path": "projects/sdf/shaders/relaxed15_shadow_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "5b535d215a2a99e77090c005e8322ddeeb4b8ec3502d433eb1f8a88f20314e5a"
+    },
+    {
+      "path": "projects/sdf/shaders/root_comparison_analytic_pruned.comp",
+      "sha256": "571797a397c90ad4fe93e833bb234066f08a71f8f45a8d83a9520fb01f4f468a"
+    },
+    {
+      "path": "projects/sdf/shaders/root_far_comparison_analytic_pruned.comp",
+      "sha256": "146ec25d90e9ab5051b7e21d4f4754524580d3b43d07dde3f08190582e717b1b"
+    },
+    {
+      "path": "projects/sdf/shaders/root_far_investigate_sdf_analytic_pruned.frag",
+      "sha256": "542733a9614c8a06e9787d378e1cfc6d3b7459d8c49fe267eea8b7c6ef77ed3e"
+    },
+    {
+      "path": "projects/sdf/shaders/root_far_material_analytic_pruned.frag",
+      "sha256": "dd380596fffeac95e684ae04ac5e427ecd507c2661202856dd689f86e9313b17"
+    },
+    {
+      "path": "projects/sdf/shaders/root_far_sdf_analytic_pruned.frag",
+      "sha256": "fbad1d510639261c7374edb1b8c126206dd8cfcb51cc58d28fc440527f0f23b7"
+    },
+    {
+      "path": "projects/sdf/shaders/root_far_workload_analytic.comp",
+      "sha256": "a87f13b430c7572adb62601e9f9f48c348e8eebe757ea5dac215fbfabf4abc8c"
+    },
+    {
+      "path": "projects/sdf/shaders/root_material_analytic_pruned.frag",
+      "sha256": "1531b762b6a347155c357012bb0e426e24add574c5c62db8efcf7c699f670905"
+    },
+    {
+      "path": "projects/sdf/shaders/root_sdf_analytic_pruned.frag",
+      "sha256": "143832b1b490492c331e472e0efad3036f34c8fc9afb4a039c54e7e88c087e99"
+    },
+    {
+      "path": "projects/sdf/shaders/root_workload_analytic.comp",
+      "sha256": "4c15bed7b3671f91dd84fc9ef19de6f4e5e1679f10a7d5d09576a6c8afe278ff"
+    },
+    {
+      "path": "projects/sdf/shaders/rounded_stroke.glsl",
+      "sha256": "4d7dcb34d609add98f287ba8dda9e93411cd2db01f6343ba9f6a33a820e85df1"
+    },
+    {
+      "path": "projects/sdf/shaders/sdf.frag",
+      "sha256": "540000a3c965f3b5009994dae20bcfcf88b77ef74155690fec650f434dfa4b95"
+    },
+    {
+      "path": "projects/sdf/shaders/sdf.vert",
+      "sha256": "eeddaabf3fa8614fc2fc36209f17f8c8fbf0674579b8ea3589dcb3d4c4196931"
+    },
+    {
+      "path": "projects/sdf/shaders/sdf_analytic.frag",
+      "sha256": "d9c0d95622441c884e9b10c53cea2e170897d9f5b9364d353366df275f1f8af2"
+    },
+    {
+      "path": "projects/sdf/shaders/sdf_analytic_pruned.frag",
+      "sha256": "3f41ae59d496f1cd29acc8676b3f28a4d8e8fae51f68171041478111183443a9"
+    },
+    {
+      "path": "projects/sdf/shaders/sdf_authored.frag",
+      "sha256": "dd68f9450ad4466df8052b0cdf4f18ed73c4d1a58d989fa340a55f6ce92073d5"
+    },
+    {
+      "path": "projects/sdf/shaders/sdf_hybrid.frag",
+      "sha256": "01d6183b0027fd2cb1471e8b9b34fc60709d1014105c81c6dd5292681d46412c"
+    },
+    {
+      "path": "projects/sdf/shaders/sdf_hybrid_pruned.frag",
+      "sha256": "e64bb10ab803d308d9038f869636c55656df444d279450c160601f1e73d4609b"
+    },
+    {
+      "path": "projects/sdf/shaders/sdf_surface.glsl",
+      "sha256": "4818e86acf8d5fb59725e9b09b9afde2be90b2064eb9840b4c9af1d987f037b5"
+    },
+    {
+      "path": "projects/sdf/shaders/selected_trace.glsl",
+      "sha256": "3270f737f304ed08e433147219570158602c9c33927b0683c340ac438b3b6fb2"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_contract.glsl",
+      "sha256": "989ea5c9e01388ffbf561f302f1867cffebc334ed0968c79fbb6568bfe14f82f"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_contract_candidate.comp",
+      "sha256": "0e7268fe47bfb122d4c6d85c405fd92b6287d58a192754632fb6052e5efef289"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_contract_reference.comp",
+      "sha256": "4b936a41938f8f7fa0bae817d507eecbb02d627962eac9598375de1215ed50f7"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_accel_sdf_analytic_pruned.frag",
+      "sha256": "0a215dbd03bacc978e00907abf7a2975808ea0c9312d7b2850df4fd29ffe7d55"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_accel_sdf_hybrid_pruned.frag",
+      "sha256": "80dcc9131adcf952aa3a341ea405630bb82e06322997513a76f275f661cc6934"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_far_sdf_analytic_pruned.frag",
+      "sha256": "55c3a74a939ddb344640ce768023b3fdba3b9f6aa79153e1f1a4adb18ca3b462"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_live_edit_sdf.frag",
+      "sha256": "b6c0016b33da27db91201cc5850a3af3b03de041567d17f9408d6d6cb860ef3a"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_root_far_sdf_analytic_pruned.frag",
+      "sha256": "55c3a74a939ddb344640ce768023b3fdba3b9f6aa79153e1f1a4adb18ca3b462"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_root_sdf_analytic_pruned.frag",
+      "sha256": "0a215dbd03bacc978e00907abf7a2975808ea0c9312d7b2850df4fd29ffe7d55"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_sdf_analytic.frag",
+      "sha256": "5ddae25576f53102714dd6b463aad80be7f01820deb3c847f0577d26bb3eec1a"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_sdf_analytic_pruned.frag",
+      "sha256": "56010f35bdc139f8e79d8be301531cc005cf195d0f828bd57b8eeff0ae4a345b"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_sdf_hybrid.frag",
+      "sha256": "bc3bd3e554708a9a00ed0539e4455184bc319854abf29dae821a3e63cb138ddd"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_sdf_hybrid_pruned.frag",
+      "sha256": "51a43491523fbff969a1342a297b771a07d2b79db47cf45fc3a8a7fbb714d47b"
+    },
+    {
+      "path": "projects/sdf/shaders/shadow_lit_unclamped_sdf_hybrid_pruned.frag",
+      "sha256": "545a61ba86a4743a2a1f4185417d869f29ffe2d9d4734fa4d8f4eece223643f9"
+    },
+    {
+      "path": "projects/sdf/shaders/source_trace.glsl",
+      "sha256": "33b5637684a8ee9e905fb417110d277b87ba851ec9f104e89a66f229ddb13c8b"
+    },
+    {
+      "path": "projects/sdf/shaders/surface_pattern.glsl",
+      "sha256": "7d645b6d7fc3c3fbead2f678a7270b0387e6b3c2b6d0d69bc85062e45a158276"
+    },
+    {
+      "path": "projects/sdf/shaders/tight_comparison_analytic_pruned.comp",
+      "sha256": "0219bfef96fb3a331129a072f8fd24351c3c6563ee496a43ae6991a2a407eadd"
+    },
+    {
+      "path": "projects/sdf/shaders/tight_comparison_hybrid_pruned.comp",
+      "sha256": "ca15147e16b4b65e620424c237c4f340eeede5a164ecf03009f212b99e75954b"
+    },
+    {
+      "path": "projects/sdf/shaders/tight_investigate_sdf_analytic_pruned.frag",
+      "sha256": "d58870e78626d574d3a64f43caba27aeb8645cfceb0813653434b70721809197"
+    },
+    {
+      "path": "projects/sdf/shaders/tight_investigate_sdf_hybrid_pruned.frag",
+      "sha256": "9e774d0cccb99fc2db39b712d08bedb93c28a0006fd110972e4b69e1e814e2ac"
+    },
+    {
+      "path": "projects/sdf/shaders/tight_workload_analytic.comp",
+      "sha256": "ba9d50b34e56b1807787e971f9b4cb7242fac1d01bfbe0668ffbd608ad200ed0"
+    },
+    {
+      "path": "projects/sdf/shaders/tight_workload_hybrid.comp",
+      "sha256": "08b8a76a040bc847c2112c3620422e3a4e6ca1ed0d436cc0d7e8365268be8ba8"
+    },
+    {
+      "path": "projects/sdf/shaders/trace.glsl",
+      "sha256": "3a641b9db15e43cf81277db19b36b2dead518d270fa075581b6bd4130468f79e"
+    },
+    {
+      "path": "projects/sdf/shaders/unclamped_comparison_hybrid_pruned.comp",
+      "sha256": "0950238508e62dc7e7ea281f1f154b438511094ab96470d47931623d5c435c80"
+    },
+    {
+      "path": "projects/sdf/shaders/unclamped_material_hybrid_pruned.frag",
+      "sha256": "eff364673329facb33ff2fb211990063af8c2c9e0301a2aeabd48a3af3ad6655"
+    },
+    {
+      "path": "projects/sdf/shaders/unclamped_sdf_hybrid_pruned.frag",
+      "sha256": "daa83eb2fbe6017ee8ed6474e27886f826be70ffb0af586225eb292f9dc5eb3d"
+    },
+    {
+      "path": "projects/sdf/shaders/unclamped_workload_hybrid.comp",
+      "sha256": "35244a19e14f16261c68a4af917d19f71481c85b9d0790e9661e35ccbf0ca655"
+    },
+    {
+      "path": "projects/sdf/shaders/validate.comp",
+      "sha256": "e0ec69211cfdf0277d57bb6bb5a04e71d8ae0e4536354fe9e89c0a997f989ca6"
+    },
+    {
+      "path": "projects/sdf/shaders/workload.glsl",
+      "sha256": "a9537d0aa48624f472561f1985f1bdca696ad00311aa25a33995681effe1eb32"
+    },
+    {
+      "path": "projects/sdf/shaders/workload_analytic.comp",
+      "sha256": "2be121e2e7d13b330f3808d94469719a61c7676e26dfaea8dff61674b0ad14c7"
+    },
+    {
+      "path": "projects/sdf/shaders/workload_hybrid.comp",
+      "sha256": "2533bd51cd040f9aa1560bd5bcec53c0e5da1205832e79878055ad4c9e33b38d"
+    },
+    {
+      "path": "projects/sdf/shaders/workload_queries.glsl",
+      "sha256": "c25e7fd244ebf54de36dbac4d8f8772a5d216f9b4298590d169d3f3a7906d6c8"
+    },
+    {
+      "path": "projects/sdf/third_party/lipschitz_pruning/common_culling.glsl",
+      "sha256": "6b1245a31578862ad9f3128cd22aa2b8b56c267c1cc16bec2b985294337070c9"
+    },
+    {
+      "path": "projects/sdf/tools/cached_cell_contract.cpp",
+      "sha256": "570f1d391874c03d0a4dce8d3096fad2d003e3682099dc87eac49451e69fa2d6"
+    },
+    {
+      "path": "projects/sdf/tools/cached_commit_probe.cpp",
+      "sha256": "4934e6913eefd1568071e366ccce703ea94056766f00630240e2cac12c08251c"
+    },
+    {
+      "path": "projects/sdf/tools/cached_commit_study.cpp",
+      "sha256": "b04c9c634bda0f2043403563126f5eead03c7f0b4640e27a3691b1304ed4e0df"
+    },
+    {
+      "path": "projects/sdf/tools/cached_edit_study.cpp",
+      "sha256": "42f3e5b2dcc8f00ff564a63ea2979c3ae828902ec82ae388c57944df6a7bcb73"
+    },
+    {
+      "path": "projects/sdf/tools/cached_stroke_study.cpp",
+      "sha256": "9c3a9c93c4041c81abc60033fa80a66ee85c8e469d78e42ee4973345efc33c42"
+    },
+    {
+      "path": "projects/sdf/tools/guarded_contract.cpp",
+      "sha256": "33f7bfaf0431c3a1b678a031507b4b138aac401bd4898c753412d209e7ec1754"
+    },
+    {
+      "path": "projects/sdf/tools/live_edit_study.cpp",
+      "sha256": "584306cc46a8c9872ec5c33727108fd78103c2ed05103dd703b6450a47ee7980"
+    },
+    {
+      "path": "projects/sdf/tools/prepared_cone_probe.cpp",
+      "sha256": "eca9c2588f195736cff17b6931c13a7a58868b92da5f573e587670e3fd21a2b1"
+    },
+    {
+      "path": "projects/sdf/tools/profile_shader_stats.cpp",
+      "sha256": "434d1767973e8d0b5b47ead39e15bb4a1ad72d19505602621ace4d26345ed7aa"
+    },
+    {
+      "path": "projects/sdf/tools/query_pruning_pilot.cpp",
+      "sha256": "88507d36cfd230a96ab4d91fba7a389aafe936588c7a8d297126430651dc11e1"
+    },
+    {
+      "path": "projects/sdf/tools/shadow_contract.cpp",
+      "sha256": "865a7d9e2743566072d2fb4d85592e272353ba67d5800c0eb7ec09c228f58600"
+    },
+    {
+      "path": "projects/sdf/tools/stroke_renderer.cpp",
+      "sha256": "f0c8ce8f33d2468956799703f0885f0255dd8794c05f90172a516dd4f55a9d67"
+    },
+    {
+      "path": "projects/sdf/tools/stroke_service.cpp",
+      "sha256": "16d7265773af3f91b757eef477eb682162f7f56d4d0872c006bacc1e9d57d15e"
+    },
+    {
+      "path": "projects/sdf/tools/stroke_service.h",
+      "sha256": "55c7ecee4ffab5444a44ed9547d51ebf85ac884f185aea4635ccb3f96cd0f177"
+    },
+    {
+      "path": "projects/sdf/tools/stroke_service_gate.h",
+      "sha256": "a47ccc74425a8b4489849c930777bd51d4ad1b81668202c0fd39b4039aabade4"
+    },
+    {
+      "path": "projects/sdf/tools/stroke_stream.cpp",
+      "sha256": "290682f06912568f1fa27f2499c0c4a5a434de5de87b9f3b5d27c5e5f7275b69"
+    },
+    {
+      "path": "projects/sdf/tools/stroke_stream_sampling.h",
+      "sha256": "e8f1f804323edc187afd38eca81fc3168f5ade74fdbf21788b66022f577f91a3"
+    },
+    {
+      "path": "shaders/cubey/atmosphere/atmosphere.frag",
+      "sha256": "b7ca6737c597933152c8c5fa27f803c07b995664b6ede8cf68746fbbb261c40a"
+    },
+    {
+      "path": "shaders/cubey/atmosphere/atmosphere.vert",
+      "sha256": "8ea4eba154ea6207f977ed120092d581fae5ad6e760853d8d174d69a19705c12"
+    },
+    {
+      "path": "shaders/cubey/atmosphere/atmosphere_common.glsl",
+      "sha256": "e5295bb0ff2ffeaca66c4ad89ef6b08ae1ce92b188b74f76f94b2c0ab7f0a0e4"
+    },
+    {
+      "path": "shaders/cubey/atmosphere/atmosphere_debug.glsl",
+      "sha256": "90d80388b17cd4d996b6daffa62e6d9aa0fd9e833a6d89af24fe0fc49d23f950"
+    },
+    {
+      "path": "shaders/cubey/atmosphere/atmosphere_ground.glsl",
+      "sha256": "d8f6e9882d1a633363ee7c71a7641ff6badfa5518bb38a42635d0d3f0c290e6c"
+    },
+    {
+      "path": "shaders/cubey/atmosphere/atmosphere_night_sky.glsl",
+      "sha256": "70d7bbe71f887120b8577f10d16ec91cb9ada1db031183a7204979d8396df1b5"
+    },
+    {
+      "path": "shaders/cubey/atmosphere/atmosphere_stars.glsl",
+      "sha256": "e34b04c1b1806ab3c1591c4069dc80987419e5b2bc6030c396ab1ab7f4c4ee7b"
+    },
+    {
+      "path": "shaders/cubey/atmosphere/atmosphere_sun.glsl",
+      "sha256": "03fff46915fef5f9a9cb33443b44b7d47af216a326108807d89d88d6d361f52c"
+    },
+    {
+      "path": "shaders/cubey/atmosphere/sky_background_direction.glsl",
+      "sha256": "9a13824f1ce2cda79f05b6b562352d3ca742e852221e693674a5ccc94cb369ac"
+    },
+    {
+      "path": "shaders/cubey/atmosphere.glsl",
+      "sha256": "3dfd11fdfcc4a6a3e0b27e74f6c0cc974b766484cd23e5684775659b8ab6bc0a"
+    },
+    {
+      "path": "shaders/cubey/atmosphere_reflection_prefilter.frag",
+      "sha256": "790a13f7e88c57f8cff952e823d4c5e027d5a6af02e9109bc809d8401475b842"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud.vert",
+      "sha256": "b46282b7c442019cb6e74a7f82371c45907d262a92c6eecd549ffcf75f17d323"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_blue_noise.comp",
+      "sha256": "2705e0b6123257b3d0b40deb6b440bd51574143ce803dfe5fb930c70fa37c3ea"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_common.glsl",
+      "sha256": "f29cf632a329746256e31b64187549d19343137c57b681f5d84cfc50d00d87f8"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_composite_background.frag",
+      "sha256": "942f666fb1f15f796f47c2b8b3d8d509e830ce3e8858aee4f7af969dbafa1d80"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_composite_background_depth.frag",
+      "sha256": "ceeaabf25a751a5b17b727525b8e71c10e599a7b29b564510f9a5778457a8be9"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_composite_post.glsl",
+      "sha256": "acec338167c0f7373ff4142abc5991f1d55859c9da5cd187316caa165cd6817e"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_environment_prefilter.frag",
+      "sha256": "5fd1766e532ed7c60e1e31ddad28aa9bb52b96b8b2e53ff6e4d3cf3b713eb78a"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_march.comp",
+      "sha256": "0b892e1c94e10368f7001a10f0c71d6bb50e8f430fc7dd8df39ac64b67846fec"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_noise_common.glsl",
+      "sha256": "92a284e89b07712c9281aa8ddf0133b4d61af34936b89dd603872f054712d93e"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_perlin_worley.comp",
+      "sha256": "17c399aca19dea736a3ecb9b4f36708b15492358019ded4222829f1d7338fed5"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_planar_filter.frag",
+      "sha256": "f69576f4d8a1b0e118efcb9efc53a1b699646d2f6a9e6ac8a67883f3ad0ab1fd"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_resolve_common.glsl",
+      "sha256": "1ce87163dbe0697d6ee73a5ae7b58ee3de951fb8e41812e68f36d58cf371f5c4"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_shadow.comp",
+      "sha256": "fbd495969515fdf1db7a5e9ffa7cdaaba9158984411c46952ab4c93fe344d65e"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_surface_density.glsl",
+      "sha256": "5d998f4b94c33f9bc48351d4e76eab6a78d08afef11aa8fda8e1e5d64881f3b9"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_temporal.comp",
+      "sha256": "16db8e8f39796c45d35a0a8ecb27c5c8d9913566c7571cc9b8e1f3d491bf33b5"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_weather.comp",
+      "sha256": "236f22608241a4d38335a6707a63a6cac1cd3e6abe7f983734508e86cfaf8ca5"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_weather_common.glsl",
+      "sha256": "dedc7f6c098a31edd37df2843002dd87fac8cf6a3bfa2a33b94ba11298b1653e"
+    },
+    {
+      "path": "shaders/cubey/cloud/cloud_worley.comp",
+      "sha256": "817723f463a4436c70cc6d6b53b7ca4afa4d5c33eb6494b4851e139d5d4e32e1"
+    },
+    {
+      "path": "shaders/cubey/cloud/surface_cloud_march.comp",
+      "sha256": "8c7a7e7d402eef29058a1656cfc8f04f27790079552cae56c986f3e0b8123873"
+    },
+    {
+      "path": "shaders/cubey/color_space.glsl",
+      "sha256": "206d711b35ad2375f1152e40af1958a88681d232a9fee56f775038b8c27b8832"
+    },
+    {
+      "path": "shaders/cubey/debug.glsl",
+      "sha256": "5254f0b16e7b0d6372604675df96dbc78321fe56a7b8a1cacc91c9e036256e04"
+    },
+    {
+      "path": "shaders/cubey/environment_lighting.glsl",
+      "sha256": "ca8141fd318a5c6b8832d53eb989bc04830c5081d9d959f2268ade3b4f3f8ed5"
+    },
+    {
+      "path": "shaders/cubey/forward_pbr/forward_pbr.frag",
+      "sha256": "8b32867f5fc321ac604ce57d63b44a1efcfd8d97e5c366f9f6e5ea70a596dcbe"
+    },
+    {
+      "path": "shaders/cubey/forward_pbr/forward_pbr.vert",
+      "sha256": "20e2e9e888802eaa7fbec524603128c4a81b535b907d9fff452ef68e489923ce"
+    },
+    {
+      "path": "shaders/cubey/forward_pbr/forward_pbr_post.frag",
+      "sha256": "0df1a7da0ef9336a9ff92766eff9ff1b2bebdf0b25dcda04ef8a02f5f67cfdf3"
+    },
+    {
+      "path": "shaders/cubey/forward_pbr/forward_pbr_post.vert",
+      "sha256": "98160278ffe833539af72759ef29763194fb5e94d9064c0f05ee236e1422329c"
+    },
+    {
+      "path": "shaders/cubey/forward_pbr/forward_pbr_shadow_depth.frag",
+      "sha256": "a1debf1b2c4ab2b5dd7034fd6c81d8a097658b793cbf0d9542a8552b14b438fc"
+    },
+    {
+      "path": "shaders/cubey/forward_pbr/forward_pbr_shadow_depth.vert",
+      "sha256": "e9647ca9458095bf749b15e2e9c197a5065aeb95fd02cf906a79c73d1c67fa5d"
+    },
+    {
+      "path": "shaders/cubey/forward_pbr/forward_pbr_skybox.frag",
+      "sha256": "3d178a8f34d8305b21758e4bc931f9f2e697bd60b7e3b487aadd75f397995282"
+    },
+    {
+      "path": "shaders/cubey/forward_pbr/forward_pbr_skybox.vert",
+      "sha256": "f7eb7ba4c05b0d29b66b7650f3b28c4855b69bc6f318c4591993431e495fe1b4"
+    },
+    {
+      "path": "shaders/cubey/forward_pbr/hdr_color_pyramid.frag",
+      "sha256": "da562513e217c1fdec5c5349dc1ae447e2cb0f9f27b4d105da4e92dc57f9c47b"
+    },
+    {
+      "path": "shaders/cubey/lighting.glsl",
+      "sha256": "3c4fbfb053116fee252d8275d88ffbb24fbf52a2e9d61a3ee569fa7dc7168fbc"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean.frag",
+      "sha256": "7ad971a18b71409a5f395067201b1b290da4c0b62d47edd3509f5647c9905a2c"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean.vert",
+      "sha256": "1f539216a12c3ae301c1f31052f997b3837657c0cf64399df47386f7893dccca"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_debug.glsl",
+      "sha256": "677aa6e4c0a2f5bed52978c15bb444f6559a970a86670584de76a6de37363a5c"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_far_field.glsl",
+      "sha256": "9a67fe2e2cc3a0454198bbf68121eeb729d64d0182cfae8bf721c6283583377e"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_fft.comp",
+      "sha256": "60d97ecb88f8d3f549cc4ed435baf25aa4a6573d286c11abf949e6f2327a315c"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_fft_body.glsl",
+      "sha256": "82851386f0f21a635f8f86ffa5cfb04fe8b609ea0edb41ec9139f9bb8651c8f9"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_fft_half.comp",
+      "sha256": "eea589230683fcf6e7e826ce24fb52b682b17aafb78fec116cba328a8a91a124"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_foam.glsl",
+      "sha256": "82bf72d3f84bc7cfff850a3093afd1ab62ac2deb0132ad533eb36562ab45b98f"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_modulate.comp",
+      "sha256": "4cf383fef6aafac89bb5a47880eccc748dc2e39f24ba99e88d4b5bb9998f5811"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_modulate_body.glsl",
+      "sha256": "2db1918191b60e1b8439f27570b1d592eb70daa7252b57c21f34cf160bc99949"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_modulate_half.comp",
+      "sha256": "1425114bac1c19f92b848a5069572bb19ee8ff519fa8552d85888ac98d883350"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_shading.glsl",
+      "sha256": "f07dec7876f4d13c74d58bfc230410e5d3ee8a37fba94fabd25adbbb24837b8a"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_spectrum.comp",
+      "sha256": "eb9497d048074655336217c12995b0e2d3137e846535a8c0fd67584c67ab95ca"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_spectrum_body.glsl",
+      "sha256": "aa0a707e672424d7a663b18c94f0db755671e035d23cea9d1ca7f0e9aa279929"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_spectrum_half.comp",
+      "sha256": "a90e8e84460ad158125e29dfdc78d7b8ef0590bd47442c4741378bf1e4a65b00"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_unpack.comp",
+      "sha256": "1a537a8064044660fc0d672ee255659f913b5fe7cbae3a2c46fe779b79cdd0de"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_unpack_body.glsl",
+      "sha256": "0435cbcb047980516e5718bb5d99413c0e28b449033fe497abd7134b0d7c91a9"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean_unpack_half.comp",
+      "sha256": "d55374f4876e21768acea7d468173ae1175794a93c9be9a69140537b35fdeed9"
+    },
+    {
+      "path": "shaders/cubey/pbr.glsl",
+      "sha256": "c421fe1d890618d84fa102213d140edf52ab6fb244f2b269bba8dab081699b73"
+    },
+    {
+      "path": "shaders/cubey/procedural/fastnoise_lite.glsl",
+      "sha256": "99a2db88b6207cd13c2032226c9b7dcb4dac5746b1ef52e78a95091bcdaa3b30"
+    },
+    {
+      "path": "shaders/cubey/procedural/noise.glsl",
+      "sha256": "48ab527fb29ae4a24acec43f26e9e03c09d31cb9e933051a06f952aa9577b982"
+    },
+    {
+      "path": "shaders/cubey/procedural/operators.glsl",
+      "sha256": "4fad665cd54eae97b9af54f604cde50cf4e9a3014944b4eed5fb7e427688ae65"
+    },
+    {
+      "path": "shaders/cubey/procedural/random.glsl",
+      "sha256": "29f17b76c1e24a95de23e87974aafdf33cf2861548bcd12dd0689dc943740d1f"
+    },
+    {
+      "path": "shaders/cubey/procedural/surface_library.glsl",
+      "sha256": "7aa6bd491eb9023ee420ea349abff9ab5dbfad54f32519393e675482943192c9"
+    },
+    {
+      "path": "shaders/cubey/procedural/surface_material.glsl",
+      "sha256": "5b62c8106a17cfbaad20dea98d617c9c8ac16cd0bc4151e378d4b7ffb93ffaba"
+    },
+    {
+      "path": "shaders/cubey/reflection_prefilter.glsl",
+      "sha256": "de0b29f1dbb078ba648146eff6155c29eb9689942a7893b49cb228173d747b9d"
+    },
+    {
+      "path": "shaders/cubey/sky/celestial_body.frag",
+      "sha256": "52813496a4ed47a6d1cab09697d8001abd1d478025873f674433034735ee8db6"
+    },
+    {
+      "path": "shaders/cubey/sky/celestial_body.vert",
+      "sha256": "213e54b1574d2a2cdc5e4dcdb6657acd2a4f6d7689aafe70a89ca3ad5939ad7b"
+    },
+    {
+      "path": "shaders/cubey/temporal_aa/motion.comp",
+      "sha256": "fa3b7ebabdd13e5df6c3029a214b6900aab2fd551201574b82eba32599addb40"
+    },
+    {
+      "path": "shaders/cubey/temporal_aa/resolve.comp",
+      "sha256": "e935d13fcd11965db0a222b6976febd4d743da619c8b94a52da534bad9a3d262"
+    },
+    {
+      "path": "shaders/cubey/temporal_aa/rigid_motion.frag",
+      "sha256": "dbc973522167a77710bdaf0fa954c39dc0b1dfcafb9af9f908747edf8239dfec"
+    },
+    {
+      "path": "shaders/cubey/temporal_aa/rigid_motion.vert",
+      "sha256": "712765eb9e2b2caf73f2dd064563be55cc2af59a24e06867d73a7afb0edf8eb0"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d.vert",
+      "sha256": "2ac51b6499ea91659e7f8eaf43e2d3311bb19fb43fa4154836976152f6058fea"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_bank_edge.glsl",
+      "sha256": "e16acd124df879b59d6717bd3939e56daad61daec4a6496807417f48a2abca4f"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl",
+      "sha256": "b1fc73128a97bb07d2907f792d6eebe019f32024112b0b4a464c52ef93d03bd7"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_daylight.comp",
+      "sha256": "c1a1da8146510c167ec7ebe99438437a097ea88e11b76d14d24ab4e528ee6aa2"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_daylight.glsl",
+      "sha256": "87a12d20549de478a9ce7bf90980589e4ae7b7721d981e6407385d0b35b88d98"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.frag",
+      "sha256": "27038816cac175c87a908f2dc8924a0921d6422b70f787a7453aac18a6c7adbd"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.vert",
+      "sha256": "9fd197ec4e3f0d274cdf5842ef1fcd9b69fe8512772f55cbcbb38acb19e9afb4"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_scenic.glsl",
+      "sha256": "383a7d7a52e12d1118dad7a38a80d0c55aea6af8cfbb903e84d7f7220df3d535"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_scenic_copy.frag",
+      "sha256": "2ae4923ebecdda8b6d78667153dfa4a5ccd7d68834bbc0d8cc68d64505efc7f5"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_scenic_display.frag",
+      "sha256": "8ea3ac25c638c04f377dc6da1d88b01b9eafab02cf911b14853f2a1498fdf50e"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_scenic_flow.comp",
+      "sha256": "242857669d780a0bc38eec662b98f579831da31eda3e5fac166945b77a20490f"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_scenic_sky.frag",
+      "sha256": "f765080aa7e24922f7e5e6efd85210b67f1eaced4fed091100751c245b130d34"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain.frag",
+      "sha256": "31d66af57b1ba7dcb0a13cc3f76e05ba45f20f75239a98a6c38f294986a10246"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_body.glsl",
+      "sha256": "49b9401c830fc212c12becf6d44b1ccb0ed04273bcbabfedbe03f4629efa30c0"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_legacy.frag",
+      "sha256": "cc0ad716b56a74547a32a57a7a49989fc9247d937512a0204363b06acf273bfa"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_scenic_water.frag",
+      "sha256": "9a4dfb39c4755f673ebf9d74ecabaa1020c6ab1f31382e0561d890159c0d06fe"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_surface_gradient.glsl",
+      "sha256": "19c82453c32637fe484c24754c0a6110d222c746667bb012e70180bc7ef520eb"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_surface_sampling.glsl",
+      "sha256": "8a55660b95c0625aae8f18c38585aebd5dc06f8a7cdb0cf4a7ccae92695b1405"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_terrain.vert",
+      "sha256": "fffda6fccd52a3cb074d878ae4e0ff4e306a4609a21edecd336e1b5cb94ef64e"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline.vert",
+      "sha256": "7fe18656469bfa7ae457fb161224364a151aa56a5a70d79891e9ac204176dcb1"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline_body.glsl",
+      "sha256": "be193e23d2bb5e3b8873eeaf08946c46739d2309985a62c97e1e6fc499333542"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_terrain_wetness.glsl",
+      "sha256": "3750aefe2024207ad8f68e3feec4307020258e03f6843199b386f0167ead17e8"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_water.vert",
+      "sha256": "14b42eb53c7fb2747d1a226877667cef02071311e89915c52448e7c2cdd7d26d"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_water_agitation.glsl",
+      "sha256": "db15b023403c9501fe87185facb32ae1e0d559b33415c9b673a4f0081099ee0c"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_water_bspline.vert",
+      "sha256": "a3416b4ab4a2c36152303c9760d07c6f3453fc72e564eabefb81c0861ab7fcaf"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_water_bspline_body.glsl",
+      "sha256": "b8da4ba90888ac1cec4a4a392989bec13602886d4b4676e2794d187640860edd"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_water_detail.glsl",
+      "sha256": "3f59b7dd22c05bdaa761fe06b95dd72688fa4c12c860c040bc074c894264a12d"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_water_film.glsl",
+      "sha256": "0917ea5b258c0a0dc9f3e30b1def071125dbd4c29386e6dc72891ba8ea1e5bc3"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_water_rapids.glsl",
+      "sha256": "36b6bcdad44ce91dde3aefabc148e43526dfced326641d87fafa0aa6cde8b5ad"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.frag",
+      "sha256": "f43c49b0bf1739d5ef40cb1389b0acc9e6d5349a1b67b970ad2de3f5b3a8720f"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.vert",
+      "sha256": "bc31526af0c422835dc4f79250b9b176768cc3ccdaad42aa4d715663a7ce3409"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/fluid_25d_whitewater_motion.glsl",
+      "sha256": "24f58df9bfcb5bca16da023c069d749f9d4925535d07707df6edad518e7dc402"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/terrain_surface_context.frag",
+      "sha256": "2c8d40e074ab4a3226f2135646860a880b09a647a616c32a06e770684dd46db8"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/terrain_surface_context.vert",
+      "sha256": "4fa23bdccd676a4675c811affc291bd4117b28b1b8e93f9cd13470ca6f9652f8"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/terrain_surface_environment.comp",
+      "sha256": "d1407315d716b5f516473d865bb48c6d08900b1b8c1150c607868c0114efd859"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/terrain_surface_foreground.frag",
+      "sha256": "ab701d0472c49b4f6e6b2fb53341786b00a4e599e8ee8ee2882103f4d5703b95"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/terrain_surface_patch_lod_ground.vert",
+      "sha256": "b3968ffcf878c111d52e72aaac41d4c35fefce2079a4d96606bfe399e3a36088"
+    },
+    {
+      "path": "shaders/cubey/terrain/surface_patch/terrain_surface_patch_lod_water.vert",
+      "sha256": "d186436323cdb1ddeeb9f5764714d0d7deaae570c0c97008fe50c3655a764fc6"
+    },
+    {
+      "path": "shaders/cubey/terrain/terrain_backdrop.vert",
+      "sha256": "dce16a61a155c6970b6ed0074c3d6ff93c8ee2d9036fde7fa4e07ba513101ef9"
+    },
+    {
+      "path": "shaders/cubey/terrain/terrain_backdrop_detail.frag",
+      "sha256": "ffa49a09c47d29b62c6a3bc17818b1cbf79b4a9c8edf9caefaad4a9a36b39a65"
+    },
+    {
+      "path": "shaders/cubey/terrain/terrain_backdrop_material.comp",
+      "sha256": "97401576e3798d8d089b095dac64f3a6007951a4ee46ab0793a54e0d30d87e07"
+    },
+    {
+      "path": "shaders/cubey/terrain/terrain_environment.glsl",
+      "sha256": "601a8ca8a864705d7b1995730a58dcbdf7323e560075acf493ac5ada85671d5c"
+    },
+    {
+      "path": "shaders/cubey/terrain/terrain_lighting.glsl",
+      "sha256": "01bab4b1b0a367d20749a95845186513c966177e8717b75b57e9df3e5242ea44"
+    },
+    {
+      "path": "shaders/cubey/terrain/terrain_material_readability.glsl",
+      "sha256": "2f02be9945225979519b3b5f27556dc82a3d29dbf30683f13055bbf804db4b5b"
+    },
+    {
+      "path": "shaders/cubey/terrain/terrain_shadow_depth.vert",
+      "sha256": "6cbe65a1f53842dbba4f08d0c1c235f3389335d2873c17d0a021138c9cb74335"
+    },
+    {
+      "path": "shaders/cubey/view.glsl",
+      "sha256": "56ea38de9052df34658c0ea94bea541bc3c5ca57afc046a62c1087f716f58457"
+    },
+    {
+      "path": "src/cubey/animation/gltf_animation.cpp",
+      "sha256": "203d47abf7323144a9966aea1ae3f5dfb7b853e4b3128cedca6ac17489020ad9"
+    },
+    {
+      "path": "src/cubey/asset/file_digest.cpp",
+      "sha256": "ab3943c92e0b82139e744ac091d9158406bc237a8ad929dbf6651423f6567360"
+    },
+    {
+      "path": "src/cubey/asset/gltf_asset.cpp",
+      "sha256": "6068c4e9ed994e636a0ab4bb1da0371279e7a0aa623aa175e28adf09b1782289"
+    },
+    {
+      "path": "src/cubey/asset/gltf_asset_animation.cpp",
+      "sha256": "7f59a15e3325108160a82c31be7519a7b6c9cf4e3c24313138c69e868dfdb4e3"
+    },
+    {
+      "path": "src/cubey/asset/gltf_asset_geometry.cpp",
+      "sha256": "fec35e1772fd73b23610ccde8df0b6967df0a8c8eeacf1b1afdd6e8c927e878c"
+    },
+    {
+      "path": "src/cubey/asset/gltf_asset_internal.h",
+      "sha256": "59b36ee7e8f914802c9611d31bf93616ca3c7a6bee12128c71f7c2adb6c63768"
+    },
+    {
+      "path": "src/cubey/asset/gltf_asset_io.cpp",
+      "sha256": "17da981b8f7ddfd8ea2032b6b1fa83a560a05e6b0ba20db9dc5e567efc41441c"
+    },
+    {
+      "path": "src/cubey/asset/gltf_asset_materials.cpp",
+      "sha256": "2e16eee9ecb685669dd5cf29be8a2774fd3b086904972a27322985b586387aef"
+    },
+    {
+      "path": "src/cubey/asset/gltf_asset_probe.cpp",
+      "sha256": "4255b064bcff85a937039394ee6e2dac81fa039150bcc687a24d5d14758a29d7"
+    },
+    {
+      "path": "src/cubey/asset/gltf_asset_scene.cpp",
+      "sha256": "9b27f5a980187fbe8dbbcefa2e9e7f1c2a9a19dd1321431ab9b8cd30860f1568"
+    },
+    {
+      "path": "src/cubey/asset/gltf_runtime_scene.cpp",
+      "sha256": "d1070d4ecb599f943101b5feb15fe584b76fe575ba666ed0d064957600ec1a78"
+    },
+    {
+      "path": "src/cubey/asset/hdr_image.cpp",
+      "sha256": "ed6015819d210a74d7cdab649c9e8571981c8146dc8dbd4e0fe48ae3c7db94fb"
+    },
+    {
+      "path": "src/cubey/asset/material_recipe.cpp",
+      "sha256": "bafd0c78e565b343e3b9db3c39c7d36f02e415f30504067b1b0fa56a4c17a5c3"
+    },
+    {
+      "path": "src/cubey/asset/terrain_height_source.cpp",
+      "sha256": "459756d4315aab147f321719afbfeda9ac60e6e1aa3881c47cd814cc509ee041"
+    },
+    {
+      "path": "src/cubey/asset/terrain_landscape_catalog.cpp",
+      "sha256": "480c885c6b8cc8b96e765ded437aab6808330d28d44dcc38372bea20a8f78d1d"
+    },
+    {
+      "path": "src/cubey/asset/terrain_raster_climate_source.cpp",
+      "sha256": "f65ad5fef56398dd34c0448c51ae5ca66cad32cbe1094d0343adf8b48cea8b08"
+    },
+    {
+      "path": "src/cubey/asset/terrain_raster_height_source.cpp",
+      "sha256": "543555a4063b71aea9116729d20f669dbb2d66d384cbfa5359f11d96bf944643"
+    },
+    {
+      "path": "src/cubey/asset/terrain_site.cpp",
+      "sha256": "9eacd05441a442380e3e4c353178bba090c62b9d84e2058bec2ac621880073dd"
+    },
+    {
+      "path": "src/cubey/asset/terrain_site_water.cpp",
+      "sha256": "80d8df568d2bb3404121942cd0ad3e7e7ff479f53d443e62518d0840c60ef318"
+    },
+    {
+      "path": "src/cubey/asset/terrain_water_capture.cpp",
+      "sha256": "35e8962b1ecdcd68638e2fdc95b7cc9e94c236c6e749d9b322165f8bb46e91f8"
+    },
+    {
+      "path": "src/cubey/core/config_schema.cpp",
+      "sha256": "0a8f3aabdc3c6ed2fc3d47b4e0ad93e5af08a19665a5a54d6f9930582694ef8d"
+    },
+    {
+      "path": "src/cubey/core/file_io.cpp",
+      "sha256": "d91c1933c846118f9aa7297ad00ed0ed2b9c8500c0b1001af732ecf0d53e5d8d"
+    },
+    {
+      "path": "src/cubey/core/frame_clock.cpp",
+      "sha256": "2016a6bb6ffb622a0665275477c90151d0fb34a622ed30a946426b6801cdf710"
+    },
+    {
+      "path": "src/cubey/core/image_io.cpp",
+      "sha256": "1b6dfb1d92bd2ea8c09aa4e525197e6820210fb643a01832d031a633dca324d2"
+    },
+    {
+      "path": "src/cubey/core/jobs.cpp",
+      "sha256": "12e1c32379f71681dd82e151c31ab184f13393738b7a7aadb6d905e941d50971"
+    },
+    {
+      "path": "src/cubey/core/profiling.cpp",
+      "sha256": "3742391d2a44787505cedd02062b6829f2524fea1ed058bead5ab19177cce0a5"
+    },
+    {
+      "path": "src/cubey/core/stb_image_write.cpp",
+      "sha256": "c53ec5ab86191419d5cb681091bfa8db28302da54ef0f028d32c701559b1b981"
+    },
+    {
+      "path": "src/cubey/engine/atmosphere_background_atlas_runtime.cpp",
+      "sha256": "7b0382bdf460eaf29b70d04462c6427bd52ab9c073eb0957ec42b6e45091389d"
+    },
+    {
+      "path": "src/cubey/engine/atmosphere_environment_config.cpp",
+      "sha256": "94d33c5c52a1a363127b8db20ad24de6f8b5ab78c01019bf42ce7354814dd3b1"
+    },
+    {
+      "path": "src/cubey/engine/atmosphere_environment_runtime.cpp",
+      "sha256": "7a06ac32394fd36616eeefcdefc94148d5f0960ed9df83affec3440bd6cb20cc"
+    },
+    {
+      "path": "src/cubey/engine/capture_queue.cpp",
+      "sha256": "0b5c106756d5222ab0783c02ded7775539313f6d466782add8fa36ba9827c528"
+    },
+    {
+      "path": "src/cubey/engine/cloud_environment_runtime.cpp",
+      "sha256": "a31cc8a5939d9edc6eda718fa3839e3e7bf96235ec3daeabd7c80f0e80b74ed9"
+    },
+    {
+      "path": "src/cubey/engine/engine.cpp",
+      "sha256": "6b37dacfa2ec0609d448b586a763da0d748058cbf2b9ba865fc5f9faa6ffc8f2"
+    },
+    {
+      "path": "src/cubey/engine/forward_pbr_renderer_3d.cpp",
+      "sha256": "2c3bfb43f2c9802459325ac1aaf87aa6f2b630978228db1ed44f5272f28e778e"
+    },
+    {
+      "path": "src/cubey/engine/forward_pbr_renderer_3d_draw_plan.cpp",
+      "sha256": "e8f83110794afdcc6faafad693debf893c8c7c8d57e64f771050b28f0949ba16"
+    },
+    {
+      "path": "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp",
+      "sha256": "8a377fcb842d6e5033b0405f5c7a8eda89d53405b1092ef1a0aec73d6ab2d634"
+    },
+    {
+      "path": "src/cubey/engine/forward_pbr_renderer_3d_internal.h",
+      "sha256": "0f36c7c7807f85af5eb6bb2182b49f6c2fb265dc35cea665bf02ef4380987a75"
+    },
+    {
+      "path": "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp",
+      "sha256": "b68ffc683294b2803a3f60bf8626ca63bbfceacf2df3b47a22d5e2152926e923"
+    },
+    {
+      "path": "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp",
+      "sha256": "020bbf4023faf6778be1d96f5db8010d33bbcbbb9c89eb76b90635decec9d8fa"
+    },
+    {
+      "path": "src/cubey/engine/gltf_basisu_texture.cpp",
+      "sha256": "d887d4db3318706e4f1521d965fb36c90ce490f9d303a2f32e10d58c5bfd7cef"
+    },
+    {
+      "path": "src/cubey/engine/gltf_basisu_texture.h",
+      "sha256": "162a5cc6ac2fa95011abe6de9b35c7182287527e3ff2734dd51f367c84084b88"
+    },
+    {
+      "path": "src/cubey/engine/gltf_scene_importer.cpp",
+      "sha256": "5c6110283bf672fb4a4515bea26ad00a913fe630941cda67f4705ad6589a87e0"
+    },
+    {
+      "path": "src/cubey/engine/gltf_scene_importer_deformation.cpp",
+      "sha256": "ef1582bc224412198f2fced17b78d92e087fe88f3daf2c30d6365ae290c0f1b0"
+    },
+    {
+      "path": "src/cubey/engine/gltf_scene_importer_internal.h",
+      "sha256": "03c1edd93053efd4e4cef657865392e8ccec88cb4b4f1c431eecd6ffe6367f52"
+    },
+    {
+      "path": "src/cubey/engine/gltf_scene_importer_materials.cpp",
+      "sha256": "8cb1ff06e6269c81ba071a298572c87caa3a1a381c60022b5bc635df9d153fb2"
+    },
+    {
+      "path": "src/cubey/engine/gltf_scene_resident_builder.cpp",
+      "sha256": "7339b46e443ec5663e6a8d46046de58e24bc666b80e73918059c7582777e3d33"
+    },
+    {
+      "path": "src/cubey/engine/gltf_scene_resident_builder.h",
+      "sha256": "c1b38526dc111b157da46d9a041a4c7c49f38cdb78e595641065f647e80c4a98"
+    },
+    {
+      "path": "src/cubey/engine/gltf_scene_upload_session.cpp",
+      "sha256": "0a6f3990004e99f5d61d381df4039a0d337dd3ac977aea0c932a34c3c328861b"
+    },
+    {
+      "path": "src/cubey/engine/libav_video_encoder.cpp",
+      "sha256": "874dd551a89fcdaa6c99abed8bcbd14e929e8174953b381533c205f0a01991cd"
+    },
+    {
+      "path": "src/cubey/engine/ocean_surface_internal.h",
+      "sha256": "d5b75712f028ca0658ca01cb238a3362631ff060d72d4dc01f772aa409a4e2ad"
+    },
+    {
+      "path": "src/cubey/engine/ocean_surface_recording.cpp",
+      "sha256": "58803e4f18b1b46befbfef9a5670897259b9d32e8dafec7fb998a3ea0f807b56"
+    },
+    {
+      "path": "src/cubey/engine/ocean_surface_resources.cpp",
+      "sha256": "fda1773a9f40ddc7eeae2fee1d1f6ddf92d2c44aea94d78feb87a0c90c909f1a"
+    },
+    {
+      "path": "src/cubey/engine/ocean_surface_runtime.cpp",
+      "sha256": "2f0421367e97944305bbcb6ba6988ba9f5f2648e3fa1ccca3f9fb18448699ebc"
+    },
+    {
+      "path": "src/cubey/engine/project_gpu_services.cpp",
+      "sha256": "6c86717e92030dbd1f3bf46c1153f07ea122a0ae664365f81b55f8715f131d1c"
+    },
+    {
+      "path": "src/cubey/engine/project_runtime.cpp",
+      "sha256": "f1130f82feb1c923ca756476c7c96626a43c7ba695a09930c00ba3958f30c8f3"
+    },
+    {
+      "path": "src/cubey/engine/renderer_service.cpp",
+      "sha256": "ee1e96b1293688978c72fefb97063702c1df2b8e86b4980eb419694f0a9c4b65"
+    },
+    {
+      "path": "src/cubey/engine/terrain_backdrop_runtime.cpp",
+      "sha256": "7a9cddf1c2bd8e39f192048279c1b02a395221bc25f78cc2b12a4968305a0cf5"
+    },
+    {
+      "path": "src/cubey/engine/terrain_surface_context_resources.cpp",
+      "sha256": "ed789ec848db895bde077ac28f4985d8f8a64e458d440b87980713b0a9347647"
+    },
+    {
+      "path": "src/cubey/engine/terrain_surface_environment.cpp",
+      "sha256": "156377154b5014b9232c4f6317f96e138a5358e2b0230d2a0746db16b32e2e1f"
+    },
+    {
+      "path": "src/cubey/engine/terrain_surface_patch_resources.cpp",
+      "sha256": "15272991ba93f88295767c43d0f6f59e4ee62697c121e5f5f32488e17d3edf97"
+    },
+    {
+      "path": "src/cubey/engine/terrain_surface_patch_scene.cpp",
+      "sha256": "002bf61affce6e4d788b480ada41430b2d0f0ef40df21f92df1a2494d47d5293"
+    },
+    {
+      "path": "src/cubey/engine/terrain_surface_patch_scene_internal.h",
+      "sha256": "ce451277774b2d3802c4b2ca46ca880d8357b5d6f2fb605467b952c4f14d2d35"
+    },
+    {
+      "path": "src/cubey/engine/terrain_water_capture_runtime.cpp",
+      "sha256": "f19628d4169dc8e34c7fd8bd476ee2f95642cc01d0491f5f9b9bc87c6abe8d30"
+    },
+    {
+      "path": "src/cubey/engine/upload_queue.cpp",
+      "sha256": "9a0e309ee7ff7460de9bb08e6f893531f7bff2ac778c87c096363b1a3d43ff1f"
+    },
+    {
+      "path": "src/cubey/engine/video_encoder.cpp",
+      "sha256": "78cbcf9ca31aa56117d5efedc864c3c2fe20c10ea3e26db97320df2bb283e134"
+    },
+    {
+      "path": "src/cubey/host/atmosphere_environment_ui.cpp",
+      "sha256": "d5fe003754214726a5f8d16deb3090ea913ecb6c0783e390483df8e13ae24b4a"
+    },
+    {
+      "path": "src/cubey/host/cleanup.h",
+      "sha256": "eabf44830075458cd5441d021c3e43e823307c5dc26ab34348ce9b0e81bf7488"
+    },
+    {
+      "path": "src/cubey/host/cloud_environment_ui.cpp",
+      "sha256": "bc382fb10984a0f8be6896cda69a1ffed579588a487d3c6346cf10cbaba7c6b8"
+    },
+    {
+      "path": "src/cubey/host/common_config.cpp",
+      "sha256": "cdacdcf9251894053f55ff189019243aa2464e5856e978807bfedadb766add5a"
+    },
+    {
+      "path": "src/cubey/host/frame_stats.cpp",
+      "sha256": "1221b1c03c35980983260aa59ef9a097ac892bc61de004a54dc4db5fab2d65cb"
+    },
+    {
+      "path": "src/cubey/host/glfw_window.cpp",
+      "sha256": "caf70b2406584503ab5b1a6893aa0a51a509bbd586a091fc414861c45c95aa86"
+    },
+    {
+      "path": "src/cubey/host/headless_png_host.cpp",
+      "sha256": "510c26e649e2445be81eecbd728dea1874cb3c390ee0a9a8e1fe119d08ee8955"
+    },
+    {
+      "path": "src/cubey/host/imgui_overlay.cpp",
+      "sha256": "ea2d9a441e970da2597d6f03006f19d3d0b0c3a9f0766324ab2b43cb90310f07"
+    },
+    {
+      "path": "src/cubey/host/imgui_overlay.h",
+      "sha256": "582d7e5ad1112a809ffdad0135a4c5c329c98e3734447dae3c8124fac83034a5"
+    },
+    {
+      "path": "src/cubey/host/performance_ui.cpp",
+      "sha256": "a117c2aad9dc7643ad61bbd9b1fdd7d17a351e46c52a1d8911681928fc2a3ae1"
+    },
+    {
+      "path": "src/cubey/host/windowed_app.cpp",
+      "sha256": "5be9039d6701578b2ab42c45509f3f6b0783d2c43d44e1872bb0a3952fb0fc95"
+    },
+    {
+      "path": "src/cubey/host/windowed_host.cpp",
+      "sha256": "8cc440bc953385c924eb30a4155647828d5cb0fba39af4639fdbbf0ee590e919"
+    },
+    {
+      "path": "src/cubey/input/input.cpp",
+      "sha256": "ede946461c5b7ce29f2f41342324e95fefc9091f21d22c487d759d929ede27bc"
+    },
+    {
+      "path": "src/cubey/input/orbit_controller.cpp",
+      "sha256": "a1ed65fdffd38f47f591e6d8c7e308f4ac7a11d2eedc3b0d7ea56cb2fe0a797f"
+    },
+    {
+      "path": "src/cubey/input/pan_zoom_2d_controller.cpp",
+      "sha256": "7f0c74be11f88972527ff357748eee31824f15491e520b53510c553afbc136a2"
+    },
+    {
+      "path": "src/cubey/input/pointer_drag.cpp",
+      "sha256": "b6172e0c79f70af54bbe3caedd9e969b8586c0ef3ca69c68f8b4c261485b4cbb"
+    },
+    {
+      "path": "src/cubey/procedural/artifact_cache.cpp",
+      "sha256": "cd2805424122f5761963f7de2856b69ed2d4238be4c0b460b95652dc33d7c38d"
+    },
+    {
+      "path": "src/cubey/procedural/artifact_metadata.cpp",
+      "sha256": "895600ac87ef3d3858ca8b48dbedcad6e8bdb7822cd2233d0c6a24f18bfc6de1"
+    },
+    {
+      "path": "src/cubey/procedural/field_2d.cpp",
+      "sha256": "f8657aa2e16f934c57b314796f76113ae0231da9c5fabfec720e5f316fb20cba"
+    },
+    {
+      "path": "src/cubey/procedural/field_metadata.cpp",
+      "sha256": "d92b389939d7532cb19454db9086d0486cc69447b85a08c5d38498ddc71de309"
+    },
+    {
+      "path": "src/cubey/procedural/field_set_2d.cpp",
+      "sha256": "5920ac35bcec84605258857b5cb32196465a589f69edefd34f43dbe9eec5d2bc"
+    },
+    {
+      "path": "src/cubey/procedural/hash.cpp",
+      "sha256": "2f9b895d469ceed0431548e55d70b01415f16c343be3e71f38cad8383e587bee"
+    },
+    {
+      "path": "src/cubey/procedural/noise.cpp",
+      "sha256": "342a2a875c5ed6b2259085d574aab4454e7af0f8cd448d6b84b4919301bd4c60"
+    },
+    {
+      "path": "src/cubey/procedural/operators.cpp",
+      "sha256": "3425356ee49aa3de25c1f4b017553420f9933adadb080e17877f2fee0ea6e242"
+    },
+    {
+      "path": "src/cubey/procedural/patch_domain.cpp",
+      "sha256": "ebe6cf43ead05cf609891a21fbac81555fc4f70df7bfa148ba49dffd70f9af7d"
+    },
+    {
+      "path": "src/cubey/procedural/sample_domain.cpp",
+      "sha256": "02cdd56e734b9206f517be4ad5e1b17e6894d7d3b1255f28f8e281561559536e"
+    },
+    {
+      "path": "src/cubey/procedural/seed.cpp",
+      "sha256": "224db5157b8834704239de9a162d52928a3088fe01ff530aec4ef0b17a554bbb"
+    },
+    {
+      "path": "src/cubey/procedural/source_fields.cpp",
+      "sha256": "13581769b53a33174374577e56bd9a5db92c4cbbd444fb6988ae1b6598314a0d"
+    },
+    {
+      "path": "src/cubey/procedural/surface_library.cpp",
+      "sha256": "7e19d76e8386ffa0e9a387bb326fab1f0c9a6a906aad9671a2fc479173136cd4"
+    },
+    {
+      "path": "src/cubey/procedural/surface_material.cpp",
+      "sha256": "1736dfc85b32150c86f8b36a83be009ee49e2fb4d128bfeb1fd1732b7d201f3e"
+    },
+    {
+      "path": "src/cubey/render/adaptive_patch_lod.cpp",
+      "sha256": "8406c850587d95e4e89ea3185954b20b3bcc292d90b1addd608fc7cdeaa7ad82"
+    },
+    {
+      "path": "src/cubey/render/atmosphere_atlas_cache.cpp",
+      "sha256": "5f260cb79e98ffc4f000870b17d566c943144fa39584138a02d88f53b61c9353"
+    },
+    {
+      "path": "src/cubey/render/atmosphere_background_frame.cpp",
+      "sha256": "b2b3a6804e18b456542b4d90a03293a370f8ceec4dc687f3afd0121d91929292"
+    },
+    {
+      "path": "src/cubey/render/atmosphere_environment.cpp",
+      "sha256": "d641804535281172a535100df261b1762753d86aecf32be951830c515b2aaf97"
+    },
+    {
+      "path": "src/cubey/render/atmosphere_night_sky_atlas.cpp",
+      "sha256": "d2b0f5bbf9538034c404e48e348c979058a69b23caf6627a989627444a70a3f1"
+    },
+    {
+      "path": "src/cubey/render/atmosphere_reflection_probe.cpp",
+      "sha256": "1ed735d3fb34251def331113ad058d0fe5e325e99addb9ee9ee6c2c23841bca9"
+    },
+    {
+      "path": "src/cubey/render/backdrop_surface_placement.cpp",
+      "sha256": "234bb96ccd1b11dce1f8e50fe9181d5b3e8f9bbd7bd4d5c5d5d88dfbecf7e15a"
+    },
+    {
+      "path": "src/cubey/render/celestial_body_frame.cpp",
+      "sha256": "9708f8412a43342534d041dd623368f27928bfe082c627ec3158fdfe64dc0e49"
+    },
+    {
+      "path": "src/cubey/render/celestial_system.cpp",
+      "sha256": "0aeab86b845dc22455ada0cf9e17e3eca827dae6fcd79cf7b834ec80230fd3b0"
+    },
+    {
+      "path": "src/cubey/render/cloud_environment_probe.cpp",
+      "sha256": "a7ad91f43832c218d0ffeadcd637372831da41e0db38c2d68da57a36ff946325"
+    },
+    {
+      "path": "src/cubey/render/cloud_layer.cpp",
+      "sha256": "68bff646731547b13d28e1ebf0ff320b525c338dc834117e9223fdff3a0aff5b"
+    },
+    {
+      "path": "src/cubey/render/cloud_layer_generation.cpp",
+      "sha256": "6d793b134dc002f92dafdc24d986772dc2ee5a8f6333bbaec70451afde68beb1"
+    },
+    {
+      "path": "src/cubey/render/cloud_layer_graph.cpp",
+      "sha256": "291dabbad0956a2363962dd87c861800d6aaf3657a6548ca2e78d656dcb132ba"
+    },
+    {
+      "path": "src/cubey/render/cloud_layer_history.cpp",
+      "sha256": "584081d54991a933933cec596f3fee45ea32e4b0d76ed1b6c30a960c2b975062"
+    },
+    {
+      "path": "src/cubey/render/cloud_layer_internal.h",
+      "sha256": "0b568cb32df07f2c57a8067dcc16d9ac01fba1bdde6dbb39d3778957e6e45688"
+    },
+    {
+      "path": "src/cubey/render/cloud_layer_resources.cpp",
+      "sha256": "1b461989d01683e58dda8761ff0d9ef92e7e172027d59235e5d43b54e761b702"
+    },
+    {
+      "path": "src/cubey/render/cloud_planar_reflection.cpp",
+      "sha256": "f0928e39e20f39e4da45c42da9fe9bf224b325b77386b73290e0f46b53003381"
+    },
+    {
+      "path": "src/cubey/render/deformation.cpp",
+      "sha256": "c5a2259060d68d09134d4ac0dbb13d345d1dbbd5c35da906d2124562b2c4fc93"
+    },
+    {
+      "path": "src/cubey/render/forward_pass.cpp",
+      "sha256": "97d92c9f5edd18a69ad489f9d92c659c87af979889ea100706631c29d5a31d03"
+    },
+    {
+      "path": "src/cubey/render/frame_data.cpp",
+      "sha256": "1dc8b54164d5a0f946e3a51f88a02360f3d00a15e425454c052891be18e9fc26"
+    },
+    {
+      "path": "src/cubey/render/generated_ibl.cpp",
+      "sha256": "766f8092e4f06c1e12e9dbc2e0b0b6d2a422c697382f94d1e1fcf5b411c3f40b"
+    },
+    {
+      "path": "src/cubey/render/generated_texture.cpp",
+      "sha256": "5fc53007163282476fc3c7647363fd747d5431e0501e48e73a305cc36dfed161"
+    },
+    {
+      "path": "src/cubey/render/hdr_color_pyramid.cpp",
+      "sha256": "81d4f361f2226a19369f4d4b3bce591dd127d011905d0a1b95dda1c03f1388f8"
+    },
+    {
+      "path": "src/cubey/render/hdr_post_frame.cpp",
+      "sha256": "d092e9c2c6130dd32800ab8f5920e74bc9bb526e21e283750bf499d4b2dd9e80"
+    },
+    {
+      "path": "src/cubey/render/instance_buffer.cpp",
+      "sha256": "3497a71d807ae3833a8381bdc649a918f83a3f79e4e92b7482024cc3679b1bae"
+    },
+    {
+      "path": "src/cubey/render/lunar_surface_map.cpp",
+      "sha256": "42acf8e1e2d7b4c36e61579e80535139be320f809286e0e0d6554b7e83d9a497"
+    },
+    {
+      "path": "src/cubey/render/material.cpp",
+      "sha256": "1341fa7af4cf9d30fffa7f8080fa756bc573fa6bc9a0772f96b3f1d05dfb1b1a"
+    },
+    {
+      "path": "src/cubey/render/material_instance.cpp",
+      "sha256": "e31a64f605b202366eb45f720f7478b13f4077b6f851ffa57e77b99e5c267488"
+    },
+    {
+      "path": "src/cubey/render/mesh.cpp",
+      "sha256": "92cf8f3391b28a6ea346a2867c2b3b0cf1825acbd34fd2da85e4826ffe73aa13"
+    },
+    {
+      "path": "src/cubey/render/ocean_sea_state.cpp",
+      "sha256": "892c227f5d497d95a045d428e57af30714fbc0eaef27669e448c74fd25febaf3"
+    },
+    {
+      "path": "src/cubey/render/pass.cpp",
+      "sha256": "1229e98e81fb7e71146a9bbc97c81575187d865d3486f18ba0f41aaedb3e5da8"
+    },
+    {
+      "path": "src/cubey/render/pbr.cpp",
+      "sha256": "a88999143c355af6082458251763956472028db19c450d7309cbdd9f5b5b56ae"
+    },
+    {
+      "path": "src/cubey/render/pbr_material_resources.cpp",
+      "sha256": "bc634ef3c6d290963b37ea9931e0a76755e3ac17ee0c271e8afb3f9cf58e89a3"
+    },
+    {
+      "path": "src/cubey/render/pipeline_resource.cpp",
+      "sha256": "5c5f48c9d9b9554a038473d5a7ca178fcbde20e9aadbfb1474a3b244e62bff75"
+    },
+    {
+      "path": "src/cubey/render/primitive_mesh.cpp",
+      "sha256": "43e722fed23b5416d230e04d32f9af6094da86dc733169766646365b0c1e95fc"
+    },
+    {
+      "path": "src/cubey/render/render_graph.cpp",
+      "sha256": "1c52651967604114f7ed0273d2bc1fa305dcce933c2d9ad0656b1dfbeab9bc75"
+    },
+    {
+      "path": "src/cubey/render/render_graph_barriers.cpp",
+      "sha256": "731dbf4a8821aa7ab4f9390007d2fec27a3738f69761b507a838822414f731f5"
+    },
+    {
+      "path": "src/cubey/render/render_graph_builder.cpp",
+      "sha256": "e365a543dd3cb3b1826cfcabf50728b4a34dc5cefe431be04a10c9e60f6ed210"
+    },
+    {
+      "path": "src/cubey/render/render_graph_execution.cpp",
+      "sha256": "7f08d0fa1f50771e2d7fb7dcacfc2b967a27f565136e9aa1215ce6f45a3b0aab"
+    },
+    {
+      "path": "src/cubey/render/render_graph_frame.cpp",
+      "sha256": "5888cd49c43409d13f81d625543d9b43c891ba7af1fd6a9448045a4cac3f1954"
+    },
+    {
+      "path": "src/cubey/render/render_graph_private.h",
+      "sha256": "834dabff33cd305ac6436437ab9790bc3a020b2f111e4695ddf750ea39436a39"
+    },
+    {
+      "path": "src/cubey/render/render_graph_resolve.cpp",
+      "sha256": "6fcd29c097e35f831d8736ecac9c15bc85169eefc0d5b79989690ed543457bb0"
+    },
+    {
+      "path": "src/cubey/render/render_graph_resources.cpp",
+      "sha256": "38841fcddfcf7e30e31f68a547ff75061628ab0e1444999dfefb3f0bf1fd1852"
+    },
+    {
+      "path": "src/cubey/render/render_graph_sync.cpp",
+      "sha256": "fb0d192a75ffe8f14a361980df7ccbae0f66b7b765e24309f8282642d4ba5a97"
+    },
+    {
+      "path": "src/cubey/render/render_graph_usage_traits.h",
+      "sha256": "81900f8bbb7ac18b7c145f532920a51f1df1274e46876fdbc6c70cd13eed0c82"
+    },
+    {
+      "path": "src/cubey/render/render_item.cpp",
+      "sha256": "30c9e2ff9900d4fb28c0d62843ba45306399754cbeefef5df7ecaa450699c5e2"
+    },
+    {
+      "path": "src/cubey/render/shadow_map.cpp",
+      "sha256": "6fd10db4a18d362185739f24527ff1191a8b07d63c27bf6e427f07feda8b7773"
+    },
+    {
+      "path": "src/cubey/render/target.cpp",
+      "sha256": "398d64f7216c4e234306d4f2d3088651e527687421daa4dee777fce22f523ae6"
+    },
+    {
+      "path": "src/cubey/render/temporal_aa.cpp",
+      "sha256": "b0b916744695263ffafcffd4ad62792f82a36b1feeae45a6acc44c7fffd1794c"
+    },
+    {
+      "path": "src/cubey/render/temporal_view.cpp",
+      "sha256": "46314aa78c4602f6e98ef9f70d46733e9752c7be0cdb07b72ce683766a9281cb"
+    },
+    {
+      "path": "src/cubey/render/terrain_ocean_fields.cpp",
+      "sha256": "69d41f3204315c945250dd4ec132691da7e5bbfb965f21581eac5bbaa674d07a"
+    },
+    {
+      "path": "src/cubey/render/terrain_shadow.cpp",
+      "sha256": "a1f77bbfeed6e4ba59419730721f6845e91726a841cffea63f29af75d85e45f1"
+    },
+    {
+      "path": "src/cubey/render/terrain_surface_patch.cpp",
+      "sha256": "1be0c8cde608fb87b2ad768ea4e1326fdda6619732cab9cbcca830ecc82c6fb6"
+    },
+    {
+      "path": "src/cubey/render/texture.cpp",
+      "sha256": "65382d11c40c93aee6d6896ddea8313f05c0a1cce1e2526b5718d9f8ce365ea0"
+    },
+    {
+      "path": "src/cubey/render/uniform_buffer.cpp",
+      "sha256": "4e20a1e07eed7dceb7baadd496d2feb7657a4ac5ad1ed09ef9b222982a357bf1"
+    },
+    {
+      "path": "src/cubey/scene/camera_2d.cpp",
+      "sha256": "9a179aeaa7da6ef2b14209007673c51b4eabc382390d93f05873ee62142db44b"
+    },
+    {
+      "path": "src/cubey/scene/camera_3d.cpp",
+      "sha256": "b405e2243087134884e6ba265b4e760b4472c78b5d64c66dc005114d31397bc6"
+    },
+    {
+      "path": "src/cubey/scene/entity.cpp",
+      "sha256": "67c935fd786a3dbb453b581bf036c75903c840d381e55334836e26e2424b058f"
+    },
+    {
+      "path": "src/cubey/scene/light_manager.cpp",
+      "sha256": "811fe869920d13ea01802038daaae38fbb25838344314675afe5628309a7aff0"
+    },
+    {
+      "path": "src/cubey/scene/renderable_manager.cpp",
+      "sha256": "0fc731c672b9608cb7fdfcc9cc55a00d62990f246f86563e08b8aac66ff2119c"
+    },
+    {
+      "path": "src/cubey/scene/scene.cpp",
+      "sha256": "d98c6a741925c0bf5ed3ea706352a4181dd4e0c7fc5aac6501a154bc911fe91f"
+    },
+    {
+      "path": "src/cubey/scene/transform_manager.cpp",
+      "sha256": "eefe07f615ac1fab95e3c64d5b4285b7839ebe30c5b9ec3e37aecdf97172ad71"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_backdrop_density.cpp",
+      "sha256": "af9a8f087db65bb745f73b9583417446ffcbd0065f04f6568a85b1da14eabbb7"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_backdrop_placement.cpp",
+      "sha256": "4e72461be862316d919012d26a1d15f8981f4b50728e4688dfe97aecd6d1cdfc"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_backdrop_preparation.cpp",
+      "sha256": "b0f1ba0f3a755caaaf0e0263c691bfe772e51e26801f6dc24cb0945b18bede2f"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_backdrop_product.cpp",
+      "sha256": "16c7aa3216c1b53f12c55bbb5d00a300f0a5ca2b8a418f8a4891b7205ef55a8d"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_backdrop_product_cache.cpp",
+      "sha256": "4b7be6b00541ed6e50e54047b8667c2b24132b74e6a405b45764c79ee9b5c80c"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_backdrop_profile.cpp",
+      "sha256": "95218da3b0b6d399b99effe9fbbdd3129701acb8e6929864bb0714bfc867256b"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_backdrop_surface.cpp",
+      "sha256": "bc6f405f9c60e6bda47d92801c2f7bd305a41c1362e73fe2db3171f15e916ebc"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_directional_placement.cpp",
+      "sha256": "5c0de427b06c7ed790c7ca8cb765a26d0af3c7058ed9d62a8aafc9a361bc5435"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_surface_context.cpp",
+      "sha256": "fc4d6188dee96c5be47f064a71227b8abcc1afb6f6f71fbcdac031310e531b53"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_surface_field.cpp",
+      "sha256": "83bb947647b0eaa9600d55667b832d0cbf60d770737d9c9b2e5d8d000c8ae5c5"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_surface_model.cpp",
+      "sha256": "960c924cd6892a690c36844abf9223393952d1e71b833b3b90120e7646e735b9"
+    },
+    {
+      "path": "src/cubey/terrain/terrain_surface_patch_lod.cpp",
+      "sha256": "36c0b50eb25d914c7a796202e89caef5fde56c325365247f9ff1ed12502a59c3"
+    },
+    {
+      "path": "src/cubey/vulkan/buffer.cpp",
+      "sha256": "8f81a30e20aeb5af84e0909d2bbae2b61bff54dd54c33aa3269694d18fd39abd"
+    },
+    {
+      "path": "src/cubey/vulkan/buffer_upload_plan.cpp",
+      "sha256": "796c10f425ba2c720413d24662e23b15fbe10f3457699c91545ab54709756080"
+    },
+    {
+      "path": "src/cubey/vulkan/command_pool.cpp",
+      "sha256": "83cf3ec2ca44beb2623b5a99d9d3f5c3d5f083d31e9fa562163597056c51bc0d"
+    },
+    {
+      "path": "src/cubey/vulkan/command_recorder.cpp",
+      "sha256": "1e735e8f2d37bf762dd03e2752b714d4b39c1a2a08f45de5b6e90e61aea89802"
+    },
+    {
+      "path": "src/cubey/vulkan/descriptors.cpp",
+      "sha256": "bd46cdb14f91920cd2e4da413b6caddbd2c118c24aca2de0db10509ad6cd9185"
+    },
+    {
+      "path": "src/cubey/vulkan/device.cpp",
+      "sha256": "03af57b45bae5c6965c1fb4c0e02c9ea8ff5b0399d14c1c290c0d7b50633ee50"
+    },
+    {
+      "path": "src/cubey/vulkan/dynamic_rendering.cpp",
+      "sha256": "6c61d56996b067355bfc125620a5fa84ad809075185d730774a3c7ffc229d59f"
+    },
+    {
+      "path": "src/cubey/vulkan/frame_resources.cpp",
+      "sha256": "83a6732a8e48eac3acaaf3264a12af10c51210e489f97b0caf311738dc455c84"
+    },
+    {
+      "path": "src/cubey/vulkan/gpu_runtime.cpp",
+      "sha256": "5e638850c8631bbcd7e4cabae5a8f0b0e16313006f5f415f0d83666635cdd0c1"
+    },
+    {
+      "path": "src/cubey/vulkan/gpu_timestamps.cpp",
+      "sha256": "56819cb962f914c79ef060e3ca858a7c128a201b4eb09b7503967c8bd5d5e649"
+    },
+    {
+      "path": "src/cubey/vulkan/image.cpp",
+      "sha256": "15a0b47514e7dc0a9c203de77a7c8d1f5ef0e9bcd838bb9ed3949331010bb940"
+    },
+    {
+      "path": "src/cubey/vulkan/image_transitions.cpp",
+      "sha256": "ba23013f615b808717f90381aa1aaa1e9d7f7f0467f9ccd3155af16466d30664"
+    },
+    {
+      "path": "src/cubey/vulkan/immediate_commands.cpp",
+      "sha256": "219c63d2326a0fcd63b4533c88c2a3403dc09934e96a3f42333cb8141ccef772"
+    },
+    {
+      "path": "src/cubey/vulkan/instance.cpp",
+      "sha256": "e73d2e5e466cefa3edeee12ef98b7c28c5ba46102753dacbeefc050472c5c062"
+    },
+    {
+      "path": "src/cubey/vulkan/pipeline.cpp",
+      "sha256": "d565b903ac9ef0425194cb8d4a536c0d6266b51fa6f3e2958e1331a0d885e709"
+    },
+    {
+      "path": "src/cubey/vulkan/queue_submit.cpp",
+      "sha256": "0d92ed2d69ddaf27815a52ea9551abf8cd41830d17cf68a307a9102b3d86fab0"
+    },
+    {
+      "path": "src/cubey/vulkan/render_context.cpp",
+      "sha256": "14670c133d2b4bdc9e865215f9355fc72735297239fa3890d3ae5fbbecfe1856"
+    },
+    {
+      "path": "src/cubey/vulkan/sampler.cpp",
+      "sha256": "5df9121ad95040dcc2b19117b66df4fdbfa872eb035a465c7fdb755202155827"
+    },
+    {
+      "path": "src/cubey/vulkan/shader_bytecode.cpp",
+      "sha256": "0e652442d73eafd5d52e38633d63bdf16dc7afa336251f394deaa3a956f7b991"
+    },
+    {
+      "path": "src/cubey/vulkan/shader_module.cpp",
+      "sha256": "e4000feae5e827c987d1f750ac005db3b5d8299282e9c3a1017c6ccdc7042c98"
+    },
+    {
+      "path": "src/cubey/vulkan/staging_pool.cpp",
+      "sha256": "95819a626be49ecb688bee4956deef63b2c933eed1141e8c2095fe9636c2c364"
+    },
+    {
+      "path": "src/cubey/vulkan/staging_pool_plan.cpp",
+      "sha256": "43273af8f8aaffcdfdbca8e3b1e8a0cccd8dc1801d4f9c983d4636e91209454a"
+    },
+    {
+      "path": "src/cubey/vulkan/submission_coordinator.cpp",
+      "sha256": "040ac60d367df349c4cb41d442fbd8efe650893f8b35a2e77ade40a6e5fe1705"
+    },
+    {
+      "path": "src/cubey/vulkan/submission_tickets.cpp",
+      "sha256": "853d7509f2ad610d88d76cb3ea77dd57977e6e6a05b23cc710db294e3c61c536"
+    },
+    {
+      "path": "src/cubey/vulkan/swapchain.cpp",
+      "sha256": "1e3e290c1465aba6b05eecc619b43b8c5255f5bb26f6b9cb0aa9edf65fec6cb6"
+    },
+    {
+      "path": "src/cubey/vulkan/upload_batch.cpp",
+      "sha256": "ddfa655c93c9dcaaeab86776ca29c2580bb149b47b6144172b9fc87cac61f061"
+    },
+    {
+      "path": "src/cubey/vulkan/upload_step.cpp",
+      "sha256": "52745946fafe9397dce4c0a1886a2520beb9be24734efb78b06783e1d1becba3"
+    },
+    {
+      "path": "src/cubey/vulkan/upload_step_resources.cpp",
+      "sha256": "1b07c6c1057a7a812c9aaa760f0ff012427f0dcabb65c8fc8ec24f59296a28c3"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "build/release/projects/sdf/sdf",
+      "sha256": "fb767b21da6570229af9c260d2192e349231a8556dfc0d1842f88c006f3fc83d",
+      "shaders": [
+        {
+          "path": "build/release/projects/sdf/shaders/accel_comparison_analytic_pruned.comp.spv",
+          "sha256": "5b2c630d7a9c98132bb7f87972edd0920741a288571719b6cdbe57d5c912daa2"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/accel_comparison_hybrid_pruned.comp.spv",
+          "sha256": "0a3c66409378a3b69722dddbe15602c7462d64224c5670920a0adbd40ce3f7cc"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/accel_material_analytic_pruned.frag.spv",
+          "sha256": "08c5fb497f845d37dd3763540c706929a17e1dd0dae0d000878a0209470a381e"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/accel_material_hybrid_pruned.frag.spv",
+          "sha256": "46689d89a0088110be752470e413989ef06fc4d6725aafb777f2407e2ce07245"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/accel_sdf_analytic_pruned.frag.spv",
+          "sha256": "46d966049fb2105ce7ae63254a868adfbcb953c86acb0f420751078cb008f649"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/accel_sdf_hybrid_pruned.frag.spv",
+          "sha256": "ff30f490fe054cfed17a7dbbca3f7fca35570363e0a45ef1155c6bd3948a00b1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/accel_workload_analytic.comp.spv",
+          "sha256": "be735464d59818f55b2188439b98644b2a6cde360b1e57ff2842a5f11a58bd6f"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/accel_workload_hybrid.comp.spv",
+          "sha256": "54a9a5af8737daf962dbd6d8a07837664cd7fc12a34ded09df8c69874467c5aa"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "7cbc551c5ac52a96817f842d8fd9a711520eb950cf794dae953efd430eeb82aa"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_guarded_contract.comp.spv",
+          "sha256": "270c04a0d024da48f25e68e365bc174edf3b10864a26e77543cdb6cebbc27bc0"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_prepared_root_far_comparison_analytic_pruned.comp.spv",
+          "sha256": "e2247c0a96719ee76f12714ed777986fc62c3e265fe2710cde637c10797ff893"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_quality_workload_combined.comp.spv",
+          "sha256": "5bf1ce19118323b8d368fe14d85d620926536c89bbf38bf0919b6799b03eae11"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_query_validate_combined.frag.spv",
+          "sha256": "29a12ed3b549ad383af336319fb6cdc466e519cc9cad9d624dc93f0c05d3a296"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_query_validate_shadow.frag.spv",
+          "sha256": "cdac12d2a40cb191b1e0e18da20aa2ccb38742f14eb1ebc062effcd856f9ae6b"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_query_workload_combined.comp.spv",
+          "sha256": "695605e6e847f9f75948f5c56dc3486f20beaf258c982f695a651f6614a52f06"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_query_workload_shadow.comp.spv",
+          "sha256": "efc3e4221474760dab636d3e60fa1d6687fab8fae3f5f107f0881a9cfdbafc9b"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_root_far_comparison_analytic_pruned.comp.spv",
+          "sha256": "ec7961fc8bc1aefcbaf2632d38cc378a7e53e3d61db4fc8b874e897cc6ff8743"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/adaptive50_shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "db86c542a3eedabe7c8d27ff066c1304d9418e4269e0334b71c902a3fd33ea8c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/atmosphere.frag.spv",
+          "sha256": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/atmosphere.vert.spv",
+          "sha256": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/atmosphere_reflection_prefilter.frag.spv",
+          "sha256": "9b68c1059e22d5f9676206644efda693c195cf179c34c6c6c107a8636965d10d"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/authored_bricks.comp.spv",
+          "sha256": "6792b381fdac5bfb8ce3e9207bb8e5581e73cf1e662bbeb73f471aa58d726880"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/authored_filter.comp.spv",
+          "sha256": "def16143f1e0d4d008a6b58cec85d21053361fb14775040beb40a63ca1feb806"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/authored_validate.comp.spv",
+          "sha256": "28c8411c0781b07578de27bbc543bd0017895bc41ecf2c53f9545e63c462e921"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/bricks.comp.spv",
+          "sha256": "90a2ec847d648475fc93e400231c80c48ed444eb3274f687b88bb71ba8f2bb26"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached03125_comparison_sampled.comp.spv",
+          "sha256": "4e8925e8caf596d66c390e273e81874c3bfdf54302a58c0a5d17ddfad8f80eab"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached03125_material_study.frag.spv",
+          "sha256": "f67c8c57d6032ffa332fad12f00cee8ab9c61b6f2160e4cee043a56f1250ad23"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached03125_quality_workload_sampled.comp.spv",
+          "sha256": "3cb9d913a9769eaabf8dd5982231d77b2b6f852f5aa6269b48736077cb56b4dd"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached03125_sdf_authored.frag.spv",
+          "sha256": "7ce450cc97dab5ea1b7ab46afc5db76468b59a0b6b7db7577a048dc5a4bde4f9"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached05_comparison_sampled.comp.spv",
+          "sha256": "f182c3f6fe5c2bda11ac00f5b7d1059aeb700a652f1b3ef87165017f9df52847"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached05_quality_workload_sampled.comp.spv",
+          "sha256": "d052e44e645fb085f97f21a79b199a983bd6d603505ccae419407a62cc2972cb"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached05_sdf_authored.frag.spv",
+          "sha256": "328eaaf80df492bf4d3f2ea79b6d44186069617ebfa5e5c1a475843794511356"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached_cell_contract.comp.spv",
+          "sha256": "496607e84c7925961bcf6176212ccca4b70d27da350e6ee5320da76b48867103"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached_edit_quality_workload.comp.spv",
+          "sha256": "bbdd0597144e0610ff2588a93edea211dc9634ad8c3a27b625ae548baf6538f1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached_edit_queries.comp.spv",
+          "sha256": "ce65f3c55857136c5fbf9dade42012d484de2de5ccec45621764dff5e61ea92f"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached_edit_sdf.frag.spv",
+          "sha256": "ea05462e87cfd62772b8568ca40c708afcfb0b92184017e68b118b91c56b37d6"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached_stroke_quality_workload.comp.spv",
+          "sha256": "01a1a81065a553bcd97d19f98b5a3785ca34bca8e7733d87cbff324ea967a231"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached_stroke_queries.comp.spv",
+          "sha256": "519f58e0a0cad9c6556328ff2cdab3a926bfacbf9b1a04a930268b04644fe302"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cached_stroke_sdf.frag.spv",
+          "sha256": "0312278505568ba27df7c6fb428af5c461212be473b8292b8e30d5d4a132afac"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cachednormal_comparison_sampled.comp.spv",
+          "sha256": "6ab90832f44fcf5ec546321b0a07a0b57ad7896dab8b757908d231618f8eb726"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cachednormal_quality_workload_sampled.comp.spv",
+          "sha256": "f3e455324f80fbdf5b4f1aa03c4fb7fc3e770a7ef6bf1acec268770aac950163"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cachednormal_sdf_authored.frag.spv",
+          "sha256": "f87ebc8b7efab127ba06df43fcc6432b2e1ffef5c7a9966cf686203991984395"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cachedrefinenormal_comparison_sampled.comp.spv",
+          "sha256": "f5888637c78d0f715c243a2176fd288f0b5296c5479bb1c61ba7f0be7d00bf2e"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cachedrefinenormal_material_study.frag.spv",
+          "sha256": "876b570344129e1086c432047643d4e642dd197bc0039df34ce32b3b1257ce54"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cachedrefinenormal_quality_workload_sampled.comp.spv",
+          "sha256": "52b5b2c845f6d391778a44b3321b21bf4534ee4e8b66f1757be51551a73993c1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cachedrefinenormal_sdf_authored.frag.spv",
+          "sha256": "e024f8136e13a524c7df5d0dc0355b1997b386e71e325fb91f5729bff2348c41"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud.vert.spv",
+          "sha256": "26c234ac7ec90b56ba819dc766e667a128794169fbb3fbacfda77deb2b303570"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_blue_noise.comp.spv",
+          "sha256": "146c2ff5ed518aed440bbcd0369138a3cd8dcac880f75948cd11a53c935421fb"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_composite_background_depth.frag.spv",
+          "sha256": "8ce3af4e2ea8970c0033e260e244869c0125df2c1db7ce00bc16650feaf516f3"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_environment_prefilter.frag.spv",
+          "sha256": "29543da30bf3e9f748e683b2177af42256d1b4139ae7c82a34d9555c8d822cbc"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_march.comp.spv",
+          "sha256": "9a183a4151804d9599400313c1ab1730f45815f4b77c15f643712f3e0b3775b1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_perlin_worley.comp.spv",
+          "sha256": "deffea12880a2a5ea03092ebbc33b8d8dfec2f7698d0965d2e1c16dc4b8f7572"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_planar_filter.frag.spv",
+          "sha256": "ac13147f666b0f46acf52eeaa3902628283e5771f6f6fac01b1fb9bbf16f6778"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_shadow.comp.spv",
+          "sha256": "86b9266e22f12e9d2ce4d8fc4d38195cee683760cf6e2c9b14af771dfa4f22d1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_temporal.comp.spv",
+          "sha256": "077dbccfc31d8cdc0baa5c52d6ca758d657c91c1ce32b5b090c3748017c47759"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_weather.comp.spv",
+          "sha256": "e6e398c73d09d8e09b1d1c8a6b556f881f59bd6696bfb5464291c60c5db92ef0"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/cloud_worley.comp.spv",
+          "sha256": "00e93d590387242acba1b386144e33a5395c5901ca9f5abaefb5b6823fcdfac0"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "da9748d2b011d5c48b8742e1d3d0d7841784ed7c09e7fa261d55f0529a34c22d"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/commit_canonical_fallback.comp.spv",
+          "sha256": "6086287eef48a5fbef5140ffebe6e2f1a821b9b6c54397400bbaf875dae73f2b"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/commit_prune_probe.comp.spv",
+          "sha256": "ce2432e519b92830fcbcabd66d92bd9f3ca8bf461ca32afb4a64f3f77041e37a"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/commit_pruned_bricks.comp.spv",
+          "sha256": "bc22aa5962ee905ad096d9274e8440b9b4c4ba3011b4578b6ca2a9ad52a7296c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/commit_pruned_filter.comp.spv",
+          "sha256": "26f79b8d6f1ee8e83d73f5d31b6a2a9582d4b35645a38d2a8f78ac2a937888f3"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/commit_reuse_bricks.comp.spv",
+          "sha256": "d64fb0c80293faf97f6f03330c0780f692469b244e92d8146446ebb0c7729a48"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/comparison_analytic_pruned.comp.spv",
+          "sha256": "a6ef22930872de54700d3162e558e2d9705f4ee470586da86de812715d946a0e"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/comparison_donor.comp.spv",
+          "sha256": "3c7a06cf2483b5aba5e52fa47aa786ce11d416f632b5a86d16d8bde87bae79a4"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/comparison_full.comp.spv",
+          "sha256": "daea996f3dbcadbb21b77484eb10adf69cf180072af6c8f1f284ef9487da99fe"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/comparison_hybrid.comp.spv",
+          "sha256": "4a1c9148a6d5a6368a3c37729850f37609d745f5dc9c24957e5022d03ac09524"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/comparison_hybrid_pruned.comp.spv",
+          "sha256": "fe6833a7739747f3a4b3de6e40150dce4d67b28328839a449f610c46553f5494"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/comparison_sampled.comp.spv",
+          "sha256": "3e672b4043ec24922c7d89dc2cb836ea0f0b519e5b961a1fc5d075d873a9b963"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/far_comparison_analytic_pruned.comp.spv",
+          "sha256": "838689b4e1ebec5f30d3b8a76da47b40ab94f11458808f9e91600a68f85a8d53"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/far_material_analytic_pruned.frag.spv",
+          "sha256": "2785d1029948c12de8081407af824bc52be71acc8a79eb5cb3f8e09b2b53cdd4"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/far_sdf_analytic_pruned.frag.spv",
+          "sha256": "7a1e1fffb73046c957f010a8d710ebc2aa9d14bcbfaf96e9a81181f2826d1293"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/far_workload_analytic.comp.spv",
+          "sha256": "22c74355783bde2fb714dd68eff322e87d83d203caa35effa81c5811c8cc83fb"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/filter.comp.spv",
+          "sha256": "f3589f2ef32c4d06a9b30ec8b00e7ac2c5456cf359d026f8f4e0638b9ed19c6c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/forward_pbr_post.frag.spv",
+          "sha256": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/forward_pbr_post.vert.spv",
+          "sha256": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/investigate_sdf_analytic_pruned.frag.spv",
+          "sha256": "c3179e8a67e5b1c6d56bb0255d1a5338dd8681f132cd5a3806efdb53b56019d1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/investigate_sdf_authored.frag.spv",
+          "sha256": "e7635111f2cde0ae8f3abcc65f9aa2409bbfb89ec0dd927303aaa1cc09f5821c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/investigate_sdf_hybrid_pruned.frag.spv",
+          "sha256": "2053949e00178ded9503a92258a9459eb72875c2dd17507546e83d5232472c0f"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_accel_material_analytic_pruned.frag.spv",
+          "sha256": "b60307670a79097700969567a1b6efc9b5116997a91ac3aa6c527194c1648336"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_accel_material_hybrid_pruned.frag.spv",
+          "sha256": "b06eab628cb5678e066bee57db4e1fe91c057632fd5a17bd2b80dd5303bb5e19"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_accel_sdf_analytic_pruned.frag.spv",
+          "sha256": "7c83e782e3971c4d41aa084052917fdcbef6874e183ec1fc3c49aa6bc9fa9d5c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_accel_sdf_hybrid_pruned.frag.spv",
+          "sha256": "97c2f57a5b6e35aa0e47a5c3b83b8593709c186b719544f3a11ef393585569b5"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_far_material_analytic_pruned.frag.spv",
+          "sha256": "e0efe4f8c5c525f5fe572a47772c9862198baed83d20b2faebd83d672f81fb48"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_live_edit_sdf.frag.spv",
+          "sha256": "5dda6d9c1dab0a3b3cea80700ba95217a4afdcdb67e92c3c640c9a3a6281cb8e"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_material_analytic.frag.spv",
+          "sha256": "5670749e0b2a83595f5fc3e56dcc0b37b0c8958a9714c7105611f7a906c232ae"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_material_analytic_pruned.frag.spv",
+          "sha256": "c196c46239bcb16deae5b18ace401a040041d18db37e8f2258c6618f3ef863e9"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_material_hybrid.frag.spv",
+          "sha256": "8f384d4899ac3f6d60456f325b569b8c7c3390cdb866a4f266f320276ca3e10c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_material_hybrid_pruned.frag.spv",
+          "sha256": "3cf53f454ab433a3daef8ba4aa2bc52974616c19cf43dee3c0cd482b87c282af"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_root_far_material_analytic_pruned.frag.spv",
+          "sha256": "e0efe4f8c5c525f5fe572a47772c9862198baed83d20b2faebd83d672f81fb48"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_root_material_analytic_pruned.frag.spv",
+          "sha256": "b60307670a79097700969567a1b6efc9b5116997a91ac3aa6c527194c1648336"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_root_sdf_analytic_pruned.frag.spv",
+          "sha256": "7c83e782e3971c4d41aa084052917fdcbef6874e183ec1fc3c49aa6bc9fa9d5c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_sdf_analytic.frag.spv",
+          "sha256": "ccb53c1c14bee22f2f5efb118579ed66fbf62578d35ed2dc2abc5571a00ac599"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_sdf_analytic_pruned.frag.spv",
+          "sha256": "953160367eec925f678de24efdf50cd0ab58b412c7debcc47b44d08ab7c0cfda"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_sdf_hybrid.frag.spv",
+          "sha256": "866c7ea3bb148252144c1ff7f2ff18758b8ec3870e2bcac1ff07f061716ec994"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_sdf_hybrid_pruned.frag.spv",
+          "sha256": "53466bc4cd4109b8935f5e9950b62d32266ba08b8e4d355a1e121aec017e8f66"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_unclamped_material_hybrid_pruned.frag.spv",
+          "sha256": "ca1ca58d2d8cf8951defbbe147a4a34a8823d58037793f16d1e41934df952fcb"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/lit_unclamped_sdf_hybrid_pruned.frag.spv",
+          "sha256": "a503a648a3599233266d5d3c75aadd689284e1570fec7bb39a394f0a64518062"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/live_edit_quality_workload.comp.spv",
+          "sha256": "d311f571460c38e8668078401a83a37c701e04bcd7f1cc94f10408a3c0aded9c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/live_edit_queries.comp.spv",
+          "sha256": "d0f3829baabbe13eb1cc224df185de83e657589bcc716492e859209a31889023"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/live_edit_sdf.frag.spv",
+          "sha256": "667e1c36a9f05d548b0a91d302f82fc965b5663ef8053f2ae0cc75853c05058b"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/local_canonical.comp.spv",
+          "sha256": "4103fd5c3347d037bca6d0e5ab69564ccffabc6f4981ca1edde909afe7b6c7c3"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/local_dom_filter.comp.spv",
+          "sha256": "cfc9af42756fe995dc5de953585d6064e999a4f158440a4b909b01691e74c796"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/local_dom_samples.comp.spv",
+          "sha256": "656c2d801601488bd7d8fdfda863c9c642eff27e3b86b44e34ce15f6a8bc9cc1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/local_filter.comp.spv",
+          "sha256": "770f821a2dca049f597e5f2a1db3412ba39619a4b6de3ac99c744e7cfea7ac8d"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/local_samples.comp.spv",
+          "sha256": "1514c9d765cfa4a74d3c83201fd4e30e4d0ef816fe38c58075d3163910f103a7"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/material_analytic.frag.spv",
+          "sha256": "59e6e0492b9d69dc3dcd27690283514a86bf11a44cce64d1a64efa0eaa52a488"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/material_analytic_pruned.frag.spv",
+          "sha256": "d8e150533dd2c208f12862fb8c4473537c32067aca9b182643986788cc790d21"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/material_hybrid.frag.spv",
+          "sha256": "0e17938790ef37c80b4df95518eaf6f2f8f90e2801c9009245e5a8c670075094"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/material_hybrid_pruned.frag.spv",
+          "sha256": "9fd390b991970916764b1c9a8d5dd4bfe7980980c2cba0f8defd7160d47550f1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/material_study.frag.spv",
+          "sha256": "64dfd0bd1930162b843458332845c471a104b68098d098c174ba007249bea56c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/motion.comp.spv",
+          "sha256": "ab5025b97d169e949bd48514402f52c6a5af4961a72847c7abc2af6c41aca929"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/occluder.frag.spv",
+          "sha256": "e592d45c44f430da47367715bd58068a78d914861e13e5d2df5bf0df55a5775e"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/occluder.vert.spv",
+          "sha256": "d20392e4249444cf65afbdad2cd01de9c703256d0c4fe912d6b2a309a92bfe3a"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/prepared_cone_probe.comp.spv",
+          "sha256": "ec07b62a155b52f090c4ae26117fd096cf10c8625d390113845423d4672f9c20"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/prepared_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "f0405c7be0820fd2646b7a960be887249d4766e448175fb915f9a1d64849cf3d"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/prepared_root_far_comparison_analytic_pruned.comp.spv",
+          "sha256": "ebaf4c916e435a62c8f90baa76f8912569ba8ba83ba390ef7b1ffd40b1faba88"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_fixed_full.frag.spv",
+          "sha256": "684f63d6a48200dbb44fcfca850e35d9a5128210ec35c5a21d4224a3a271fc12"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_fixed_material.frag.spv",
+          "sha256": "a63d7c9e85c1529cd97bca3e2c38fe80760eec4f48b6f97d0533b5d9e08f5f1e"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_fixed_normal.frag.spv",
+          "sha256": "7805d21fbf80ad7e65eb08a1d118c3eb7c8415834c455258a07ced9fe70c99e7"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_fixed_primary.frag.spv",
+          "sha256": "b1d20a7020c56257d86e8470222c0a0c9e0f8705925402bd34aae3604a1626db"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_fixed_shadow.frag.spv",
+          "sha256": "3e68a7ab59257a8854907bd93318fed89f6b8dd3c04b443a603601c7b18770ea"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_no-sky.frag.spv",
+          "sha256": "f87baae1822c5cd0d580a87bc9195a0efa5d5cbcf8d3b5ddfa291f62f1b25df6"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_nodebug.frag.spv",
+          "sha256": "8943b51e5b1bd154b271ba7b2859cc054b410d86ddf17a53f0786e95d9c9068f"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_opt-cull-dark-shadows.frag.spv",
+          "sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_opt-full.frag.spv",
+          "sha256": "037f311d85d57526309ce079cad793d6eef156247d726cfbed299ae33afe5cf8"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_opt-material.frag.spv",
+          "sha256": "8ceac9b15bc65083fe834df2e675e5d2a91cb1447b552cbbb55de9c161917ed2"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_opt-no-sky.frag.spv",
+          "sha256": "038c44dccef4f3f4528c78fac35845bfaaa404dcc36f463c7a5da8bbfda0907a"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_opt-normal.frag.spv",
+          "sha256": "eed43eb028081b023713f131ded26e55481a5535e38f80d3984349eb56399c9d"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_opt-primary.frag.spv",
+          "sha256": "c26025662006091e5b7040457da47b2a602db1e4ddeb96c78da06c6ae03c6612"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_opt-reorder-shadow.frag.spv",
+          "sha256": "61755fe5ac4069686f859a7f505ac52e8d9bc2f1ef34663bda18c215c9c14b27"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_opt-shadow.frag.spv",
+          "sha256": "a7e0b8d89added498ab84a5ed343166ac74fa26b26d20bc67ccbf12fdd8d5d49"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_single-material.frag.spv",
+          "sha256": "ed2261b95c4499c8941b261bf4f2e21c58f7d000b0f9e87b9e52946f8b866c72"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/profile_specialized.frag.spv",
+          "sha256": "037f311d85d57526309ce079cad793d6eef156247d726cfbed299ae33afe5cf8"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "8bb6462dde68223d7e4cfde87c4d3e4f4e7725a9307ff0a8baf95970277906f7"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_cached03125_sdf_authored.frag.spv",
+          "sha256": "1cbb594cd558d3b258a4f987a8fc50745a91a6312a228c3f57c2dc853649cd32"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_cached05_sdf_authored.frag.spv",
+          "sha256": "0a5758db6a7fd18fec9537a264ed98e3eb82783510514c16e4fb81ebbfab3ff5"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_cached_edit_sdf.frag.spv",
+          "sha256": "b2d7221c2ad00061182527e9ceb395072c157dc7687019ee5a5557b857400011"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_cached_stroke_sdf.frag.spv",
+          "sha256": "a1856e9c03554c87b027424a9b72622650b2619bf99740ea8ea283778a45ec8b"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_cachednormal_sdf_authored.frag.spv",
+          "sha256": "d3e323b7a3f8154a27701e46e922bd7a8cfc20f43b50c01b243a951441f8a0cc"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_cachedrefinenormal_sdf_authored.frag.spv",
+          "sha256": "5f56c9f5b00296457444c826bf7680e44bb72880c3b50e9c5a5b665414853d4b"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "cc83fbed69c15c6991a315e4fefe78d7a762a9435de190f354a3314f8e68ab67"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_lit_live_edit_sdf.frag.spv",
+          "sha256": "072a344c2589e484dfc0ed4949c9a1a189da084b50463511d1dd44f60520bb7c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "c5d81a3cf542d51bc307817a1746956eb530ba77d20a7c59bcd537f8f247a9b1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_live_edit_sdf.frag.spv",
+          "sha256": "84cd870e55d874b27239bb9fd0adb2da419259f2aa2443c4a8bb6f0294c87b08"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "94b6596fdaf6aeaa5dd3caf446a0f7fb7cbb28bf65049fe9bdc2e9930c9ba1a4"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_sdf_authored.frag.spv",
+          "sha256": "aea801ebfa9d1cc19aa4edf4aac32f7bb8e747625d27a5988925d108304353e3"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_shadow_lit_live_edit_sdf.frag.spv",
+          "sha256": "4559f74791d52eb2444920bfefb39b2d373e127c73e693b174bfa82993098113"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_workload_combined.comp.spv",
+          "sha256": "bde058256960fba19e6e040c0599255256aa0515cd56d14e0692314ca008678c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_workload_reference.comp.spv",
+          "sha256": "3d620654d0d885bb72c8c42d2bca97c2f178de2c3095be413efc9b9e30507c54"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/quality_workload_sampled.comp.spv",
+          "sha256": "a00cea5d5eefbd627bd334c6a33517a6abc2d389ea07ae24cd45b1c8e02d4904"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/query_camera.frag.spv",
+          "sha256": "6223f8007b719e8b05a66d2cf588989d8c9b74c6b25e035fcb5f79cdae72096c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/query_validate_combined.frag.spv",
+          "sha256": "f8a0977a97570aa452de17637e56e7f63a42fd04679b2a72d439b070e4262cff"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/query_validate_reference.frag.spv",
+          "sha256": "839a7fd024036626bcc3c446294b4bd4647009debf78ac4687e93d63cb193b01"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/query_validate_shadow.frag.spv",
+          "sha256": "4328893cd1b0cf74f34ce225a0372388d37938c88be29ebea2cb5270002e550a"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/query_workload_combined.comp.spv",
+          "sha256": "46ef7028f82e1fdc64c284a402646ff2c4fe59269113249519542a8189ac6e55"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/query_workload_reference.comp.spv",
+          "sha256": "8ad21df43b801d2b425b2452bc9cb32f6c4dca7dc6bf611c4fc5c6cb858a131c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/query_workload_shadow.comp.spv",
+          "sha256": "74c61ef1e82eaa82902710069c269e7f0076311901d7fbc1c22247423ac99f56"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed12_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "2220ae880f4885496e9f229bdd11e6ddbe7850827ecb1e14a0a735375a302461"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed12_guarded_contract.comp.spv",
+          "sha256": "c1a85db8fa03f62c06c5f4e1022bbc063ec687914f45e1430cc12f33eacb75d2"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed12_prepared_root_far_comparison_analytic_pruned.comp.spv",
+          "sha256": "8448f8b4f729831244223103db5349598a8eef98e667533b491e8a31381103a9"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed12_query_validate_combined.frag.spv",
+          "sha256": "5a3e57ba3b5d2d8710672b5679bd965d053488a5d62a46488ff479394a71af79"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed12_query_validate_shadow.frag.spv",
+          "sha256": "04e0b6f83a73ff960af95625095d448cca17228271e8bd1109d7750d9da018a8"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed12_query_workload_combined.comp.spv",
+          "sha256": "dcdce0f34014c759b97ece218f56924f2637ddee37d5f7d80d8ac75a0db819f0"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed12_query_workload_shadow.comp.spv",
+          "sha256": "5b847510b8bd6a355bcbaab5512b26d2293124492d91ba6688912b15df589fb2"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed12_root_far_comparison_analytic_pruned.comp.spv",
+          "sha256": "26e212fed36830168ae12c14ce211b8db5bd1ac6861e974ec426bb68b161f5a2"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed12_shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "67c09ada1829a5ea3386518bee12661a0783f99ce02cfbca1a68f2b8bb2e13fb"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed15_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "5390493c6ebaef898f89aecea22dc9f72275b2364929070af62cf85ca8b5afff"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed15_guarded_contract.comp.spv",
+          "sha256": "cd380c12a0c3f415d6ba6edcf502085f84db178afbbdf51c6a0aeee5854d1054"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed15_prepared_root_far_comparison_analytic_pruned.comp.spv",
+          "sha256": "18dfc53037da68fdb91c91736f21f1c34399b8d5683468f4e1257ec010772bc8"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed15_query_validate_combined.frag.spv",
+          "sha256": "416396c7fba961eb13a1d5a4fa75d1b244c30075956b0bcc34ef9740a3b3df91"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed15_query_validate_shadow.frag.spv",
+          "sha256": "b96012a7c78fe2bc2c6dac011bc69302920c68235145b0754df791411064e4c0"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed15_query_workload_combined.comp.spv",
+          "sha256": "d317d2a4dac98ab0e61df046df3a63b7855ca566b5599bb4eb3b6d93d344bccc"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed15_query_workload_shadow.comp.spv",
+          "sha256": "46f518d99a81863e88dc848f69ab6716c385d5e982d0625ad001ebe30751e868"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed15_root_far_comparison_analytic_pruned.comp.spv",
+          "sha256": "d58419b85d0e9d64986e528bad76ae64fe15ca089cd17a810b9ad0ca805f6419"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/relaxed15_shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "8a90dd62080a299ec1cedeb9a55013714eb9cb5cb7dd64bbdb69d2b8f89b7cff"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/resolve.comp.spv",
+          "sha256": "991a164f5ebc385035cd8c7c9955016462c9e5b536166e68227a0a3a0c0b1fb6"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/root_comparison_analytic_pruned.comp.spv",
+          "sha256": "5b2c630d7a9c98132bb7f87972edd0920741a288571719b6cdbe57d5c912daa2"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/root_far_comparison_analytic_pruned.comp.spv",
+          "sha256": "838689b4e1ebec5f30d3b8a76da47b40ab94f11458808f9e91600a68f85a8d53"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/root_far_investigate_sdf_analytic_pruned.frag.spv",
+          "sha256": "47205de1fe11e3cae0bfa09be6adf5690e4bd393d98de2791e9f74b969bb7a94"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/root_far_material_analytic_pruned.frag.spv",
+          "sha256": "2785d1029948c12de8081407af824bc52be71acc8a79eb5cb3f8e09b2b53cdd4"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "7a1e1fffb73046c957f010a8d710ebc2aa9d14bcbfaf96e9a81181f2826d1293"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/root_far_workload_analytic.comp.spv",
+          "sha256": "22c74355783bde2fb714dd68eff322e87d83d203caa35effa81c5811c8cc83fb"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/root_material_analytic_pruned.frag.spv",
+          "sha256": "08c5fb497f845d37dd3763540c706929a17e1dd0dae0d000878a0209470a381e"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/root_sdf_analytic_pruned.frag.spv",
+          "sha256": "46d966049fb2105ce7ae63254a868adfbcb953c86acb0f420751078cb008f649"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/root_workload_analytic.comp.spv",
+          "sha256": "be735464d59818f55b2188439b98644b2a6cde360b1e57ff2842a5f11a58bd6f"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/sdf.frag.spv",
+          "sha256": "44dd5df203134bbbf1757309328400c68db96348a80f86ab48a40cb31cf3b3b6"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/sdf.vert.spv",
+          "sha256": "ae9983b94db66576a2d02fb1e286ac642aca8252887cf39d4d9b82af48f1ebd0"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/sdf_analytic.frag.spv",
+          "sha256": "c7f78cbebee817494baae557ce2ae3abf34c06600dacc628ab4296fc51bd53d3"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/sdf_analytic_pruned.frag.spv",
+          "sha256": "ecd56b8565943ff503ed1f0682113f069caa4c43f3f714a1f84445c380100f5f"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/sdf_authored.frag.spv",
+          "sha256": "fc623a7a0b9e99aad040c47d34c0ddbd8b6a09a97dbc9d6663780f48626a9942"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/sdf_hybrid.frag.spv",
+          "sha256": "170a291183916de591560b5d9cadf9431b1378e66785f4cc1f23b3a285ba269e"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/sdf_hybrid_pruned.frag.spv",
+          "sha256": "2c039e4694063c847bfef3b0c1d96aaefe246157ec42d8b5a1aa10501036f667"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_contract_candidate.comp.spv",
+          "sha256": "56012b80e4967d5205bacefdff66ce7784068e49ca47e408fd24d2f0163269c7"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_contract_reference.comp.spv",
+          "sha256": "4e56955d7998d90dc5ae5e1308553077e09ab8b3b3c87d3cce30fef41519a116"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_accel_sdf_analytic_pruned.frag.spv",
+          "sha256": "4b93e12947915b49adfb6fff451d83aac055c5a89584f4d673ef96e7d7d73388"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_accel_sdf_hybrid_pruned.frag.spv",
+          "sha256": "74a25878c5ea3b9a21fe4333bab338d7a654603c2b0221f3d4d9b3f430c9cba1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "86aa1ede87bc9c3bb238d78b6ab69f5e4defd9fc017f92921c3f3c9a65e7a3fb"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_live_edit_sdf.frag.spv",
+          "sha256": "6cd130738ecd9bc7a686298c60f3720934b46f4d1958cc436ca5efbedfbe1b8c"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+          "sha256": "86aa1ede87bc9c3bb238d78b6ab69f5e4defd9fc017f92921c3f3c9a65e7a3fb"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_root_sdf_analytic_pruned.frag.spv",
+          "sha256": "4b93e12947915b49adfb6fff451d83aac055c5a89584f4d673ef96e7d7d73388"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_sdf_analytic.frag.spv",
+          "sha256": "37e621b0e1a919fa78fda2818d23c259c17b8d250db6608fbfb43ee978aea449"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_sdf_analytic_pruned.frag.spv",
+          "sha256": "f9a1ad92cea27ca4987be051add7e35d23ebd4e7c7d316baa7e195d6e3692230"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_sdf_hybrid.frag.spv",
+          "sha256": "c0fbf734a5f8dfa4cb15d11b271f6a4a9d11caad4d534d95d972f7a98c750a54"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_sdf_hybrid_pruned.frag.spv",
+          "sha256": "82f106887677b3e430322e3efc7189e525e0033eca742d0c40dfe7d40705de97"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/shadow_lit_unclamped_sdf_hybrid_pruned.frag.spv",
+          "sha256": "1009a93ba85e7e17e37391fda974a7e97a259ada8d884993c1bc2822978618a1"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/surface_cloud_march.comp.spv",
+          "sha256": "7e02f26b57e4e4997a99a544a85e9056e59dc2d828f44078433e9a1228ad11f3"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/tight_comparison_analytic_pruned.comp.spv",
+          "sha256": "b1e7782f17aef2295e4750313db264a0d934d7c350f7cb3502a1d65600f99c26"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/tight_comparison_hybrid_pruned.comp.spv",
+          "sha256": "8011c6f714663918139950803c26667a20deb4bb39ce7a72ff0cf1a0b207faa3"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/tight_investigate_sdf_analytic_pruned.frag.spv",
+          "sha256": "32f55d747d6abbadf30c3f722584323aeade9eff08316ac2caecb1c21163f765"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/tight_investigate_sdf_hybrid_pruned.frag.spv",
+          "sha256": "f8d7d9e399669473e9cdf93add95ac9246e535d55c3880a7d868318f19131d31"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/tight_workload_analytic.comp.spv",
+          "sha256": "5c9fd8b6341103c63c2882ef82f85d99607ff01eabd3622a12e7095ce79dc03d"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/tight_workload_hybrid.comp.spv",
+          "sha256": "a2fe2323b52ac318304e4f619e1c5444bf7216d8e9d00bd96cb5a40319a5d2bc"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/unclamped_comparison_hybrid_pruned.comp.spv",
+          "sha256": "f988c5bcdbe54cf2cb80d73e8e6fef99a97f9fc7361fde5238f91ac5055cc546"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/unclamped_material_hybrid_pruned.frag.spv",
+          "sha256": "5d0660994da05986b4a2e0d86be5d54d93ae6edd27a774c188c1b8f7cfea7cc0"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/unclamped_sdf_hybrid_pruned.frag.spv",
+          "sha256": "b51dd71e2a96eabe53c655c89db8ecf31f1cf93339f54f2f830a80096096ab74"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/unclamped_workload_hybrid.comp.spv",
+          "sha256": "772588f81e4aa4c31eca65dbe3c419bac84f78d17878bb5ed5d9960c550758f5"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/validate.comp.spv",
+          "sha256": "46f0591dac8a4cd15c8a7d8e398226b833ee9b2b3153de65f202842239eb7f26"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/workload_analytic.comp.spv",
+          "sha256": "b80460dab415cb3a44e5b0ed5e87b4edee5218fd0db7d132285534b6c2e9fc92"
+        },
+        {
+          "path": "build/release/projects/sdf/shaders/workload_hybrid.comp.spv",
+          "sha256": "04ec54813ee39dcdb6c8d2d2bf18e51448141c86630aace1ab742e4a03d49b09"
+        }
+      ]
+    },
+    {
+      "path": "build/release/projects/pbr_materials/pbr_materials",
+      "sha256": "0892ce0f4d52d8447c44b89c342ffc216535b7e59f31bd5e32a134f012b074fb",
+      "shaders": [
+        {
+          "path": "build/release/projects/pbr_materials/shaders/atmosphere.frag.spv",
+          "sha256": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/atmosphere.vert.spv",
+          "sha256": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/atmosphere_reflection_prefilter.frag.spv",
+          "sha256": "9b68c1059e22d5f9676206644efda693c195cf179c34c6c6c107a8636965d10d"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud.vert.spv",
+          "sha256": "26c234ac7ec90b56ba819dc766e667a128794169fbb3fbacfda77deb2b303570"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_blue_noise.comp.spv",
+          "sha256": "146c2ff5ed518aed440bbcd0369138a3cd8dcac880f75948cd11a53c935421fb"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_composite_background_depth.frag.spv",
+          "sha256": "8ce3af4e2ea8970c0033e260e244869c0125df2c1db7ce00bc16650feaf516f3"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_environment_prefilter.frag.spv",
+          "sha256": "29543da30bf3e9f748e683b2177af42256d1b4139ae7c82a34d9555c8d822cbc"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_march.comp.spv",
+          "sha256": "9a183a4151804d9599400313c1ab1730f45815f4b77c15f643712f3e0b3775b1"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_perlin_worley.comp.spv",
+          "sha256": "deffea12880a2a5ea03092ebbc33b8d8dfec2f7698d0965d2e1c16dc4b8f7572"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_planar_filter.frag.spv",
+          "sha256": "ac13147f666b0f46acf52eeaa3902628283e5771f6f6fac01b1fb9bbf16f6778"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_shadow.comp.spv",
+          "sha256": "86b9266e22f12e9d2ce4d8fc4d38195cee683760cf6e2c9b14af771dfa4f22d1"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_temporal.comp.spv",
+          "sha256": "077dbccfc31d8cdc0baa5c52d6ca758d657c91c1ce32b5b090c3748017c47759"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_weather.comp.spv",
+          "sha256": "e6e398c73d09d8e09b1d1c8a6b556f881f59bd6696bfb5464291c60c5db92ef0"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/cloud_worley.comp.spv",
+          "sha256": "00e93d590387242acba1b386144e33a5395c5901ca9f5abaefb5b6823fcdfac0"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/forward_pbr.frag.spv",
+          "sha256": "cd902fe842cde883f26d2fdd924488cf9fc169540946d6dde108547cd57328b8"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/forward_pbr.vert.spv",
+          "sha256": "f67cb5ccbc74393dbb4514f75ab1a7e3623799702aeb323ac86fce7413b33ab6"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/forward_pbr_post.frag.spv",
+          "sha256": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/forward_pbr_post.vert.spv",
+          "sha256": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/forward_pbr_shadow_depth.frag.spv",
+          "sha256": "3cc261f5e66eb04e9c5950c862252e4547755b3ff8b77407a0386dcf83573b47"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/forward_pbr_shadow_depth.vert.spv",
+          "sha256": "dc2654c9ad4dd87d1cfc4d9529f4d3faf71b0915878af207e51d2f80c9d4bfbe"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/forward_pbr_skybox.frag.spv",
+          "sha256": "fbfb5a5d54683314ff93827b9ac174456ed504df849bab7aad97b148ccc197de"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/forward_pbr_skybox.vert.spv",
+          "sha256": "21d1aa6e81e63bf885e48899a8853eb793bbcce08211bed986ea5c9c58e9d83e"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/hdr_color_pyramid.frag.spv",
+          "sha256": "99d3f5f11e939ef65aad6f85f3f0a07bfa978bf2c6dcd24255e72622712b04cb"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/motion.comp.spv",
+          "sha256": "ab5025b97d169e949bd48514402f52c6a5af4961a72847c7abc2af6c41aca929"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/resolve.comp.spv",
+          "sha256": "991a164f5ebc385035cd8c7c9955016462c9e5b536166e68227a0a3a0c0b1fb6"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/rigid_motion.frag.spv",
+          "sha256": "fa0f990d62f4476e3a65d385a7debd6efb0e94865ebe52b73bc0be8525782ba2"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/rigid_motion.vert.spv",
+          "sha256": "b19667e89fb571f2f1967ff36edf41bf62494d31b843db27c6bfdcb50dd3ca49"
+        },
+        {
+          "path": "build/release/projects/pbr_materials/shaders/surface_cloud_march.comp.spv",
+          "sha256": "7e02f26b57e4e4997a99a544a85e9056e59dc2d828f44078433e9a1228ad11f3"
+        }
+      ]
+    }
+  ]
+}

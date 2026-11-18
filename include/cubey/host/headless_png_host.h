@@ -11,6 +11,7 @@
 #include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/submission_coordinator.h>
+#include <cubey/vulkan/submission_tickets.h>
 
 #include <vulkan/vulkan.h>
 
@@ -103,6 +104,13 @@ struct HeadlessPngHostCallbacks {
     std::function<void(HeadlessPngContext&, const HeadlessCaptureFrame&, VkCommandBuffer,
                        const HeadlessRenderTarget&)>
         record_frame;
+    // Called once after the application frame's queue submission succeeds.
+    // Simulation-only callbacks and unrelated readbacks do not produce events.
+    std::function<void(HeadlessPngContext&, const HeadlessCaptureFrame&,
+                       cubey::vulkan::GpuSubmissionTicket)>
+        frame_submitted;
+    // Called when application recording began but failed before submission.
+    std::function<void(HeadlessPngContext&, const HeadlessCaptureFrame&)> frame_discarded;
     std::function<void(HeadlessPngContext&)> shutdown;
 };
 

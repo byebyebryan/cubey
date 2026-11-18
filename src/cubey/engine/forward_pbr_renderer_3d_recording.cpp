@@ -297,4 +297,53 @@ void ForwardPbrRenderer3D::Impl::record_post_pass(const vulkan::CommandRecorder&
         });
 }
 
+void ForwardPbrRenderer3D::Impl::record_rigid_motion_pass(
+    const vulkan::CommandRecorder& recorder, render::ColorTargetView motion_target,
+    render::DepthTargetView depth_target, render::FrameSlot frame_slot,
+    const render::MeshResolver& mesh_resolver,
+    std::span<const ForwardPbrTemporalRigidMotionDraw> draws) const {
+    if (!swapchain_.temporal_rigid_motion_material.has_value() ||
+        !swapchain_.temporal_rigid_motion_pipeline_back.has_value() ||
+        !swapchain_.temporal_rigid_motion_pipeline_no_cull.has_value()) {
+        throw std::logic_error("forward PBR rigid-motion resources are not initialized");
+    }
+    render::record_render_target_pass(
+        recorder, render::render_target_view(motion_target, depth_target), {},
+        render::RenderTargetAttachmentOps{
+            .color = vulkan::load_store_attachment_ops(),
+            .depth = vulkan::load_store_attachment_ops(),
+        },
+        [this, frame_slot, mesh_resolver, draws](const vulkan::CommandRecorder& pass_recorder) {
+            const auto record_culled = [&](const render::GraphicsPipelineResource& pipeline,
+                                           VkCullModeFlags cull_mode) {
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
+                render::bind_material_instance(
+                    pass_recorder, pipeline, swapchain_.temporal_rigid_motion_material->material(),
+                    frame_slot);
+                for (const ForwardPbrTemporalRigidMotionDraw& draw : draws) {
+                    if (draw.cull_mode != cull_mode) {
+                        continue;
+                    }
+                    const ForwardPbrTemporalRigidMotionPushConstants push{
+                        .current_model = draw.current_model,
+                        .previous_model = draw.previous_model,
+                    };
+                    pass_recorder.push_constants(
+                        pipeline.layout(),
+                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, push);
+                    const render::Mesh* mesh = render::resolve_mesh(mesh_resolver, draw.key.mesh);
+                    render::record_draw_item(
+                        pass_recorder.handle(),
+                        render::DrawItem{.mesh = mesh,
+                                         .instance_count = draw.key.instance_count,
+                                         .first_index = draw.key.first_index,
+                                         .vertex_offset = draw.key.vertex_offset,
+                                         .first_instance = draw.key.first_instance});
+                }
+            };
+            record_culled(*swapchain_.temporal_rigid_motion_pipeline_back, VK_CULL_MODE_BACK_BIT);
+            record_culled(*swapchain_.temporal_rigid_motion_pipeline_no_cull, VK_CULL_MODE_NONE);
+        });
+}
+
 } // namespace cubey

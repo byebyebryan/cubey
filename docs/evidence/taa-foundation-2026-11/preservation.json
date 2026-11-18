@@ -1,0 +1,17 @@
+{
+  "/home/bryan/code/cubey": {
+    "head": "211903e865fab09edd4f740509765f4eda016fa2",
+    "clean": true
+  },
+  "/home/bryan/code/cubey-raytracing-first-pass": {
+    "head": "211903e865fab09edd4f740509765f4eda016fa2",
+    "clean": true
+  },
+  "parking": {
+    "head": "7ae104eec89ed00cac785fc635adbe8c32d43f0e",
+    "bundle_verified": true,
+    "recovery_dir": "/home/bryan/code/cubey/outputs/parking/sdf-horse-20261117T231303Z"
+  },
+  "push": false,
+  "publish": false
+}

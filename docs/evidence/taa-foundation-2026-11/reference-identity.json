@@ -1,0 +1,27 @@
+{
+  "source_commit": "52efbe37d7f550ea1c5c7ee02b75404ec7c72c09",
+  "source_sha256": "3be4d6e4b923fda7f24556e3f5b3e7460f1370e9c1103181373601afa5559730",
+  "source_url": "https://github.com/NVIDIA-RTX/Donut/blob/52efbe37d7f550ea1c5c7ee02b75404ec7c72c09/shaders/passes/taa_cs.hlsl",
+  "adapted_sha256": "eddb632063404878fda85f54cf301fe20614255c36b3842cfa3ffe7071eaa5e9",
+  "binary_sha256": "e5133decb61a7b0c2820342192b443ac25082eb19410d1e68583e20a7f51396e",
+  "compiler_sha256": "4fe4c9feafebb68e36cc6453360eafd76ab0b43647a0328c4771f79752ee1d86",
+  "command": [
+    "/home/bryan/code/cubey/cache/aa-references/dlss-v310.9.16-linux-demo/DLSS_Sample_App/donut/thirdparty/chk/dxc/bin/dxc",
+    "-spirv",
+    "-fspv-target-env=vulkan1.2",
+    "-fvk-use-dx-layout",
+    "-T",
+    "cs_6_0",
+    "-E",
+    "main",
+    "-D",
+    "SAMPLE_COUNT=1",
+    "-D",
+    "USE_CATMULL_ROM_FILTER=1",
+    "-Fo",
+    "outputs/taa/foundation-loop/parity/reference/donut_native_oracle.spv",
+    "outputs/taa/foundation-loop/parity/reference/donut_native_oracle.hlsl"
+  ],
+  "specialization": "native resolution, zero resolve input offset, no relax mask, PQ C=10000",
+  "boundary_changes": "finite/clamp input guards, explicit OOB loads, one pixel inset, dispatch bounds"
+}

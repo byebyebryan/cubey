@@ -1,0 +1,22 @@
+Test project /home/bryan/code/cubey-aa/build/dev
+    Start 15: temporal_view
+1/5 Test #15: temporal_view ....................   Passed    0.00 sec
+    Start 16: temporal_gpu
+2/5 Test #16: temporal_gpu .....................   Passed    0.20 sec
+    Start 17: temporal_gpu_slots_1
+3/5 Test #17: temporal_gpu_slots_1 .............   Passed    0.14 sec
+    Start 18: temporal_gpu_slots_3
+4/5 Test #18: temporal_gpu_slots_3 .............   Passed    0.14 sec
+    Start 19: temporal_gpu_sync
+5/5 Test #19: temporal_gpu_sync ................   Passed    0.14 sec
+
+100% tests passed out of 5
+
+Label Time Summary:
+gpu                =   0.61 sec*proc (4 tests)
+render             =   0.61 sec*proc (5 tests)
+sync_validation    =   0.14 sec*proc (1 test)
+taa                =   0.61 sec*proc (5 tests)
+unit               =   0.00 sec*proc (1 test)
+
+Total Test time (real) =   0.62 sec

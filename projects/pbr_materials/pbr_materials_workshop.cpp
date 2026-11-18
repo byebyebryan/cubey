@@ -19,6 +19,8 @@ void PbrMaterialsApp::save_view(const std::filesystem::path& path) const {
     saved.view_output.clear();
     saved.recipe_output.clear();
     saved.stress_edits = 0;
+    if (saved.taa_moving_fixture)
+        saved.taa_fixture_time = fixture_seconds_;
     if (selected_ >= 0)
         saved.material = catalog_.at(static_cast<std::size_t>(selected_)).id;
     else
@@ -88,6 +90,7 @@ void PbrMaterialsApp::publish_materials(render::FrameSlot slot) {
     }
 }
 void PbrMaterialsApp::refresh_specimens() {
+    ++temporal_content_generation_;
     auto edits = scene().create_edit_queue();
     if (!config_.presentation.empty()) {
         const auto layout = presentation_layout(config_.presentation);
@@ -176,12 +179,14 @@ void PbrMaterialsApp::draw_ui() {
                 orbit_controller_.toggle_pause();
             ImGui::SameLine();
             if (ImGui::Button("Replay presentation")) {
+                forward_pbr_renderer().reset_temporal();
                 presentation_seconds_ = 0;
                 orbit_controller_.reset();
                 orbit_controller_.set_pitch(config_.pitch);
             }
             float t = static_cast<float>(presentation_seconds_);
             if (ImGui::SliderFloat("Presentation time", &t, 0, 8, "%.2f s")) {
+                forward_pbr_renderer().reset_temporal();
                 presentation_seconds_ = t;
                 if (!orbit_controller_.paused())
                     orbit_controller_.toggle_pause();
@@ -272,8 +277,8 @@ void PbrMaterialsApp::draw_ui() {
         const char* sources[]{"Screen", "Environment"};
         int source = config_.transmission_source == "environment" ? 1 : 0;
         ImGui::SetNextItemWidth(std::max(80.0F, ImGui::GetContentRegionAvail().x -
-                                                  ImGui::CalcTextSize("Transmission source").x -
-                                                  ImGui::GetStyle().ItemInnerSpacing.x));
+                                                    ImGui::CalcTextSize("Transmission source").x -
+                                                    ImGui::GetStyle().ItemInnerSpacing.x));
         if (ImGui::Combo("Transmission source", &source, sources, 2))
             config_.transmission_source = source == 1 ? "environment" : "screen";
         const char* shapes[]{"sphere", "block", "swatch", "cut-block"};
@@ -422,6 +427,7 @@ void PbrMaterialsApp::draw_ui() {
         ImGui::SameLine();
         ImGui::TextUnformatted(render::pbr_debug_view_name(debug_view_).data());
         if (ImGui::Button("Reset camera")) {
+            forward_pbr_renderer().reset_temporal();
             orbit_controller_.reset();
             orbit_controller_.set_pitch(config_.pitch);
         }
@@ -436,6 +442,22 @@ void PbrMaterialsApp::draw_ui() {
                 ui_error_ = e.what();
             }
         }
+        ImGui::Separator();
+        const char* aa_modes[]{"Off", "TAA"};
+        int aa_index = config_.anti_aliasing == "taa" ? 1 : 0;
+        if (ImGui::Combo("Anti-aliasing", &aa_index, aa_modes, 2))
+            config_.anti_aliasing = aa_index ? "taa" : "off";
+        const auto temporal = forward_pbr_renderer().temporal_status();
+        if (config_.anti_aliasing == "taa") {
+            if (temporal.effective == render::AntiAliasingMode::Taa)
+                ImGui::Text("TAA active / history %u", temporal.history_age);
+            else
+                ImGui::TextWrapped(
+                    "TAA bypassed: %s",
+                    forward_pbr_renderer_3d_taa_bypass_reason_name(temporal.bypass_reason).data());
+        }
+        if (config_.taa_moving_fixture)
+            ImGui::TextWrapped("Rigid motion fixture: hold, cross, stop and return. R restarts.");
     }
     ImGui::End();
 }

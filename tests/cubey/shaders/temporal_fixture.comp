@@ -1,0 +1,18 @@
+#version 450
+layout(local_size_x=16, local_size_y=16) in;
+layout(rgba32f, set=0, binding=0) writeonly uniform image2D color_image;
+layout(r32f, set=0, binding=1) writeonly uniform image2D depth_image;
+layout(push_constant) uniform Fixture { vec4 size_jitter; vec4 values; } u;
+void main() {
+    ivec2 p=ivec2(gl_GlobalInvocationID.xy), size=ivec2(u.size_jitter.xy);
+    if(any(greaterThanEqual(p,size))) return;
+    vec2 position=vec2(p)+.5+u.size_jitter.zw;
+    float edge=step(position.x + position.y*.27, 19.4+u.values.y);
+    vec3 color=mix(vec3(.02, .06, .2),vec3(2.5, .5, .1),edge);
+    color *= .7 + .3*sin(position.x*.4)*cos(position.y*.31);
+    // Known bright/invalid data exercise finite guards, independently of alpha.
+    if(p==ivec2(1,1)) color=vec3(50000);
+    if(p==ivec2(2,1)) color=vec3(uintBitsToFloat(0x7fc00000u));
+    imageStore(color_image,p,vec4(color,u.values.z));
+    imageStore(depth_image,p,vec4(p.y<4 ? 1.0 : u.values.x));
+}

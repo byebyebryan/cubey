@@ -27,6 +27,28 @@ make_draw_ui_callback(WindowedAppCallbacks& callbacks) {
     return [&callbacks](WindowedAppContext& context) { callbacks.draw_ui(context); };
 }
 
+[[nodiscard]] std::function<void(WindowedAppContext&, const WindowedRenderFrame&,
+                                 cubey::vulkan::GpuSubmissionTicket)>
+make_frame_submitted_callback(WindowedAppCallbacks& callbacks) {
+    if (!callbacks.frame_submitted) {
+        return {};
+    }
+    return [&callbacks](WindowedAppContext& context, const WindowedRenderFrame& frame,
+                        cubey::vulkan::GpuSubmissionTicket ticket) {
+        callbacks.frame_submitted(context, frame, ticket);
+    };
+}
+
+[[nodiscard]] std::function<void(WindowedAppContext&, const WindowedRenderFrame&)>
+make_frame_discarded_callback(WindowedAppCallbacks& callbacks) {
+    if (!callbacks.frame_discarded) {
+        return {};
+    }
+    return [&callbacks](WindowedAppContext& context, const WindowedRenderFrame& frame) {
+        callbacks.frame_discarded(context, frame);
+    };
+}
+
 } // namespace
 
 int run_windowed_app(WindowedAppConfig config, WindowedAppCallbacks callbacks) {
@@ -91,6 +113,8 @@ int run_windowed_app(WindowedAppConfig config, WindowedAppCallbacks callbacks) {
                 [&callbacks](WindowedAppContext& context, const WindowedRenderFrame& frame) {
                     callbacks.record_frame(context, frame);
                 },
+            .frame_submitted = make_frame_submitted_callback(callbacks),
+            .frame_discarded = make_frame_discarded_callback(callbacks),
             .frame_stats_sample =
                 [&callbacks](WindowedAppContext& context,
                              const FrameTiming& timing) -> std::optional<FrameStatsSample> {

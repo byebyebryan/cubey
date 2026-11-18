@@ -39,6 +39,10 @@ struct WindowedAppCallbacks {
     std::function<void(WindowedAppContext&)> draw_ui;
     std::function<void(WindowedAppContext&, const FrameTiming&)> update;
     std::function<void(WindowedAppContext&, const WindowedRenderFrame&)> record_frame;
+    std::function<void(WindowedAppContext&, const WindowedRenderFrame&,
+                       cubey::vulkan::GpuSubmissionTicket)>
+        frame_submitted;
+    std::function<void(WindowedAppContext&, const WindowedRenderFrame&)> frame_discarded;
     std::function<std::optional<FrameStatsSample>(WindowedAppContext&, const FrameTiming&)>
         frame_stats_sample;
     std::function<void(WindowedAppContext&)> shutdown;

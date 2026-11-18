@@ -89,6 +89,10 @@ class PbrMaterialsApp {
                       std::uint64_t);
     void record_workshop_frame(cubey::host::WindowedAppContext& context,
                                const cubey::host::WindowedRenderFrame& frame);
+    void frame_submitted(cubey::render::FrameSlot slot, std::uint64_t index,
+                         cubey::vulkan::GpuSubmissionTicket ticket);
+    void frame_discarded(cubey::render::FrameSlot slot);
+    void collect_profile_slot(std::uint32_t slot);
 
     [[nodiscard]] const cubey::render::GeneratedPbrEnvironment& ibl_environment() const;
     [[nodiscard]] cubey::ForwardPbrRenderer3D& forward_pbr_renderer() const;
@@ -114,10 +118,18 @@ class PbrMaterialsApp {
     std::vector<std::uint64_t> published_revision_;
     std::vector<bool> stress_done_;
     std::uint64_t revision_ = 1;
+    std::uint64_t temporal_content_generation_ = 1;
+    std::uint64_t temporal_material_revision_ = 0;
+    double fixture_clock_origin_ = 0;
+    double fixture_seconds_ = 0;
+    math::Vec3 fixture_position_{0};
+    std::vector<cubey::Entity> fixture_background_entities_;
     int selected_ = -1;
     cubey::render::MeshHandle block_mesh_handle_{};
     cubey::render::MeshHandle swatch_mesh_handle_{}, cut_block_mesh_handle_{};
     std::optional<vulkan::GpuTimestampProfiler> whole_profiler_, pass_profiler_;
+    std::vector<std::optional<std::uint64_t>> accepted_profile_frames_, pending_profile_frames_;
+    cubey::profiling::ProfileRecorder* profile_ = nullptr;
     AtmosphereEnvironmentRuntime atmosphere_;
     std::optional<render::AtmosphereBackgroundPlaceholderTextures> atmosphere_textures_;
     render::CloudLayerRuntimeShaderFiles cloud_shaders_{};

@@ -1,0 +1,207 @@
+{
+  "source": "13997bc1",
+  "identity": "../baseline-identity.json",
+  "runs": [
+    {
+      "id": "observatory-ss1",
+      "command": [
+        "/home/bryan/code/cubey-aa/build/taa-baseline/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/inputs/observatory-ss1.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/captures/observatory-ss1.png"
+      ],
+      "exit_code": 0,
+      "validation_log_screen_passed": true,
+      "wall_seconds": 3.3204565120395273,
+      "log": "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/logs/observatory-ss1.log"
+    },
+    {
+      "id": "observatory-ss2",
+      "command": [
+        "/home/bryan/code/cubey-aa/build/taa-baseline/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/inputs/observatory-ss2.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/captures/observatory-ss2.png"
+      ],
+      "exit_code": 0,
+      "validation_log_screen_passed": true,
+      "wall_seconds": 2.1203355520265177,
+      "log": "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/logs/observatory-ss2.log"
+    },
+    {
+      "id": "workshop-cloth",
+      "command": [
+        "/home/bryan/code/cubey-aa/build/taa-baseline/projects/pbr_materials/pbr_materials",
+        "--headless",
+        "--require-validation",
+        "--material",
+        "woven-cloth",
+        "--specimen",
+        "swatch",
+        "--lighting",
+        "studio",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/captures/workshop-cloth.png"
+      ],
+      "exit_code": 0,
+      "validation_log_screen_passed": true,
+      "wall_seconds": 0.5644630810129456,
+      "log": "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/logs/workshop-cloth.log"
+    },
+    {
+      "id": "orbit-ss1",
+      "command": [
+        "/home/bryan/code/cubey-aa/build/taa-baseline/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/inputs/orbit-ss1.json",
+        "--capture",
+        "video",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--fps",
+        "30",
+        "--frames",
+        "300",
+        "--output",
+        "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/captures/orbit-ss1.mp4"
+      ],
+      "exit_code": 0,
+      "validation_log_screen_passed": true,
+      "wall_seconds": 140.644828443008,
+      "log": "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/logs/orbit-ss1.log"
+    },
+    {
+      "id": "orbit-ss2",
+      "command": [
+        "/home/bryan/code/cubey-aa/build/taa-baseline/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/inputs/orbit-ss2.json",
+        "--capture",
+        "video",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--fps",
+        "30",
+        "--frames",
+        "300",
+        "--output",
+        "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/captures/orbit-ss2.mp4"
+      ],
+      "exit_code": 0,
+      "validation_log_screen_passed": true,
+      "wall_seconds": 419.7284087179578,
+      "log": "/home/bryan/code/cubey-aa/outputs/taa/foundation-loop/baseline/logs/orbit-ss2.log"
+    }
+  ],
+  "scope": "Pre-implementation AA-off native still/video baselines; no TAA or timing qualification.",
+  "files": [
+    {
+      "path": "captures/observatory-ss1.png",
+      "bytes": 476641,
+      "sha256": "a17eb6cde970d71b6e0ea14097d42cae33318b9980cfbbdf13cb0061d0bbd981"
+    },
+    {
+      "path": "captures/observatory-ss2.png",
+      "bytes": 529540,
+      "sha256": "89cf6d47761097994584373d7908801db6f84f09363be12d85594706f9054f5f"
+    },
+    {
+      "path": "captures/orbit-ss1.mp4",
+      "bytes": 5475156,
+      "sha256": "0f579b9fa397dd737b8a022fdf901f8b43c0ba606363a82eeb6d2daf2585e3aa"
+    },
+    {
+      "path": "captures/orbit-ss2.mp4",
+      "bytes": 4821715,
+      "sha256": "46f68d300742606ced2627e9d0283104b9caa61fa21aaed4541bb9053f031062"
+    },
+    {
+      "path": "captures/workshop-cloth.png",
+      "bytes": 581632,
+      "sha256": "4cc9257ac445aa3b8e64660ce62f9e71339813e0e67a4c52dc5d0faa2e8a3ac7"
+    },
+    {
+      "path": "inputs/observatory-ss1.json",
+      "bytes": 389,
+      "sha256": "f185cdbd07a34d3cee6d9b6ba352e582b6436dcc8937e9ade698b89356c3f9c6"
+    },
+    {
+      "path": "inputs/observatory-ss2.json",
+      "bytes": 389,
+      "sha256": "bf9d9e7c786536e2b77f861143d21d8c706c7bcbcdfa6c5063e1871afe506462"
+    },
+    {
+      "path": "inputs/observatory.json",
+      "bytes": 134061,
+      "sha256": "762f1f050d48cb15c6d16e3061a9e285f6985dfff55236bda7eac5a575e8fe48"
+    },
+    {
+      "path": "inputs/orbit-ss1.json",
+      "bytes": 443,
+      "sha256": "6c86ab1596d265455d12028290e7e6e105f22c8ed014773a97a32ed20040715d"
+    },
+    {
+      "path": "inputs/orbit-ss2.json",
+      "bytes": 443,
+      "sha256": "dc245fa4b99b3fe1599c0e56742b4752709104633a1ca88fa4abe87c550daed3"
+    },
+    {
+      "path": "logs/observatory-ss1.log",
+      "bytes": 711,
+      "sha256": "e9bad2cc2f45a6ba735a92abde3c5055656dec26579cc8cc05c076d5e77311a7"
+    },
+    {
+      "path": "logs/observatory-ss2.log",
+      "bytes": 711,
+      "sha256": "fa14af45304107c9fb28148a14c2b6d476a09eaf345ccc825efc373d3c5bdbae"
+    },
+    {
+      "path": "logs/orbit-ss1.log",
+      "bytes": 743,
+      "sha256": "9a11918b1091cf48faec63e205c4add8cbb0b9a5304a9525210bb0d83dc0c6c8"
+    },
+    {
+      "path": "logs/orbit-ss2.log",
+      "bytes": 743,
+      "sha256": "8c739d78f7079f50e8d6a6134e5f4a8c5ea5658f27fc4358063746443f84a334"
+    },
+    {
+      "path": "logs/workshop-cloth.log",
+      "bytes": 279,
+      "sha256": "a2065b58d346efe6ce4d2446ec63bfc15d86871d502e39a79fae4b038bb328ba"
+    }
+  ],
+  "complete": true
+}

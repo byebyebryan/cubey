@@ -8,6 +8,28 @@ The current visual collection is on the
 [Materials page](https://dev.byebyebryan.com/cubey/demos/materials/#mesh-materials);
 this guide remains the native run and editing reference.
 
+## Temporal anti-aliasing
+
+Native TAA is opt-in for opaque rigid specimens with frozen lighting:
+
+```sh
+build/release/projects/pbr_materials/pbr_materials --material woven-cloth --specimen swatch --anti-aliasing taa
+build/release/projects/pbr_materials/pbr_materials --config projects/pbr_materials/presets/taa-foundation-2026-11/rigid-motion-taa.json
+```
+
+The moving fixture holds, crosses a patterned board and thin bronze bars, stops,
+then returns. Its camera starts fixed; R restarts the fixture and history.
+`--taa-fixture-time 3.5` freezes a reproducible pose while submitted frames still
+advance TAA. Use the matching `rigid-motion-off.json` for comparison. The new
+preset directory also contains matched clay, cloth, wood and bronze controls.
+
+The Anti-aliasing selector is at the end of the workshop panel. Unsupported
+glass, clouds, dynamic lighting and raw diagnostic/readback paths show a bypass
+reason and retain the original unjittered image. Fine detail can soften during
+motion; TAA remains separate from the existing material/optical recipes and
+display exposure. The [shared foundation contract](../../docs/architecture/temporal-aa.md)
+describes history, motion, admission and validation.
+
 ## Presentation
 
 The [public material showcase](https://dev.byebyebryan.com/cubey/demos/materials/)

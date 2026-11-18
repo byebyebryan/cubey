@@ -1,0 +1,7 @@
+{
+  "material": "wood",
+  "anti_aliasing": "off",
+  "environment": "studio",
+  "specimen": "sphere",
+  "lighting_cycle": "frozen"
+}

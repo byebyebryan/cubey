@@ -1,0 +1,7 @@
+{
+  "material": "clay",
+  "anti_aliasing": "taa",
+  "environment": "studio",
+  "specimen": "sphere",
+  "lighting_cycle": "frozen"
+}

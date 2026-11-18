@@ -1,0 +1,145 @@
+{
+  "status": "complete_opt_in_qualified",
+  "checks": [
+    {
+      "phase": "P0",
+      "requirement": "baseline subject and identities",
+      "state": "verified",
+      "evidence": "baseline/receipt.json; baseline-identity.json; subject visually present"
+    },
+    {
+      "phase": "P0",
+      "requirement": "numeric thresholds before port",
+      "state": "deviation",
+      "evidence": "Exact threshold was fixed during fixture qualification; source core was not tuned to the observed result"
+    },
+    {
+      "phase": "P1",
+      "requirement": "shared render runtime used by SDF",
+      "state": "verified",
+      "evidence": "temporal_aa.cpp, sdf_renderer.cpp, native captures"
+    },
+    {
+      "phase": "P1",
+      "requirement": "same runtime used by ForwardPbrRenderer3D",
+      "state": "verified",
+      "evidence": "forward-temporal-tests.log; final/pbr/runs.json; one cubey::render runtime"
+    },
+    {
+      "phase": "P1",
+      "requirement": "reference numerical fidelity",
+      "state": "verified",
+      "evidence": "parity-final-core/comparison.json; max scaled error0.001789 <=0.005 over24 accepted frames"
+    },
+    {
+      "phase": "P1",
+      "requirement": "CPU motion/history tests",
+      "state": "verified",
+      "evidence": "dev-temporal-tests.log temporal_view"
+    },
+    {
+      "phase": "P1",
+      "requirement": "GPU motion/history lifecycle",
+      "state": "verified",
+      "evidence": "dev-temporal-tests.log slots1/2/3, sync; synthetic partial workgroups, discard/retry and failed replacement"
+    },
+    {
+      "phase": "P2",
+      "requirement": "forward rigid moving object and cache lifetime",
+      "state": "verified",
+      "evidence": "final-forward-tests.log direct actual GPU motion probe stationary0/right-moving130; full-sync-tests.log; stable bounded value-only cache"
+    },
+    {
+      "phase": "P2",
+      "requirement": "forward AA-off and strict admission",
+      "state": "verified",
+      "evidence": "integration/receipt.json; forward-temporal-tests.log; final/window-pbr-x11/acceptance.json"
+    },
+    {
+      "phase": "P3",
+      "requirement": "SDF matched intact SS1/TAA/SS2",
+      "state": "verified",
+      "evidence": "showcase 128 matched cameras and scene identity receipts"
+    },
+    {
+      "phase": "P3",
+      "requirement": "SDF matched section views",
+      "state": "verified",
+      "evidence": "final/sdf/section-taa.json; cutaway-intact-taa.json; matched approved camera and 65 updates"
+    },
+    {
+      "phase": "P3",
+      "requirement": "stationary age0..64, orbit/stop/return/cut",
+      "state": "verified",
+      "evidence": "showcase/taa.metrics.csv and matched uncompressed frames"
+    },
+    {
+      "phase": "P3",
+      "requirement": "raw diagnostics and unsupported bypass",
+      "state": "verified",
+      "evidence": "bypass/receipt.json; Off pixels identical for diagnostic/SS2/transmission; forward GPU admission tests"
+    },
+    {
+      "phase": "P3",
+      "requirement": "AA-off pixel compatibility",
+      "state": "verified",
+      "evidence": "showcase/off-pixel-identity.json"
+    },
+    {
+      "phase": "P3",
+      "requirement": "motion/blur/ghosting visual acceptance",
+      "state": "verified",
+      "evidence": "Agent reviewed matched crops, native crossing/stop/return and browser playback. Accept opt-in with softness disclosed; no user aesthetic acceptance claimed."
+    },
+    {
+      "phase": "P4",
+      "requirement": "host submitted/discarded callbacks",
+      "state": "verified",
+      "evidence": "host-seam-review.json; host-seam-tests.log"
+    },
+    {
+      "phase": "P4",
+      "requirement": "native resize/toggle/cut return",
+      "state": "verified",
+      "evidence": "final/window-pbr-x11/acceptance.json; final/window-sdf-roundtrip/acceptance.json; owned X11 only"
+    },
+    {
+      "phase": "P4",
+      "requirement": "serial native GPU cost",
+      "state": "verified",
+      "evidence": "final/sdf/analysis.json; final/pbr/cost-analysis.json; no validation/encoding/readback"
+    },
+    {
+      "phase": "P4",
+      "requirement": "full dev and sync validation gates",
+      "state": "verified",
+      "evidence": "full-dev-tests.log 301/301; full-sync-tests.log 9/9; final-forward-tests.log direct rigid-motion probe"
+    },
+    {
+      "phase": "P4",
+      "requirement": "current docs, source hashes, reviewable artifact",
+      "state": "verified",
+      "evidence": "docs/evidence/taa-foundation-2026-11; all1093 native identity entries unchanged; review/browser-final-state.json and browser-final.png; final navigation/build/shader gates passed"
+    },
+    {
+      "phase": "boundary",
+      "requirement": "no default promotion/push/publish; preserve main RT horse",
+      "state": "verified",
+      "evidence": "preservation.json; clean main and RT at211903e8; parked branch7ae104ee and verified incremental bundle"
+    }
+  ],
+  "qualified_filter_constants": {
+    "new_frame_weight": 0.1,
+    "variance_factor": 1,
+    "radiance_limit": 10000
+  },
+  "physical_desktop_acceptance": "not claimed",
+  "user_aesthetic_acceptance": "not claimed; default promotion remains separate",
+  "routing": {
+    "primary": "core/SDF/PBR fixture/integration and acceptance",
+    "luna": "bounded forward audit, host seam and forward engine implementation",
+    "takeover": "Primary accepted explicit partial PBR handoff, completed project integration and corrected velocity vertex attributes; no automatic escalation"
+  },
+  "required_work_remaining": [],
+  "full_dev_process_receipt_limit": "All301 unique Passed records and final100% summary verified; launcher143, actual CTest exit unavailable"
+}

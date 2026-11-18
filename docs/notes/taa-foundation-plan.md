@@ -1,8 +1,9 @@
 # Native TAA foundation plan
 
-Date: 2026-11-17. Status: proposed implementation contract, based on `211903e8`.
-TAA first and shared foundation ownership are user requirements. The showcase,
-consumer order and acceptance targets below are proposals for review.
+Date: 2026-11-17. Status: implemented opt-in; see the
+[results and limits](taa-foundation-closeout.md). This retained contract is based
+on `211903e8`. TAA first and shared foundation ownership are user requirements;
+the showcase, consumer order and targets below record the implementation plan.
 
 Build native-resolution temporal antialiasing as a reusable `cubey::render`
 feature. Prove it through the forward PBR renderer and the independent SDF
@@ -138,8 +139,11 @@ continuously evolving clouds/appearance need a later quality decision.
 
 ## Algorithm and admission
 
-Start from the MIT-noticed Donut TAA core bundled with the runnable Linux sample
-from NVIDIA's DLSS `v310.9.16` release. The verified archive SHA-256 is
+Start from the explicitly MIT-licensed public Donut TAA core at pinned commit
+`52efbe37d7f550ea1c5c7ee02b75404ec7c72c09`. The runnable Linux sample
+from NVIDIA's DLSS `v310.9.16` release remains comparison evidence only. Its bundled
+shader has no MIT notice and companion files are proprietary; the original donor
+description was corrected during implementation. The verified archive SHA-256 is
 `985019f1307c0367d0d4dff35f06b2615c5c3ad6b469ffec5b0c16e28758610d`.
 The donor's PQ-domain history, neighborhood variance clamp, history sampling and
 blend form the first parity target. Do not mix Filament's filters or add sharpening

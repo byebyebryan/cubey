@@ -27,6 +27,23 @@ int main() {
     require(!mesh.pattern && !mesh.bump && mesh.environment == "clear");
     require(mesh.sphere_density == "standard");
     require(mesh.transmission_source == "screen");
+    require(mesh.anti_aliasing == "off" && !mesh.taa_moving_fixture);
+    const auto temporal =
+        parse(pbr_materials::parse_pbr_materials_config, {"--taa-moving-fixture"});
+    require(temporal.anti_aliasing == "taa" && temporal.material == "clay" &&
+            temporal.environment == "studio" && temporal.distance == 2.2F && temporal.yaw == 0 &&
+            temporal.pitch == 0);
+    const auto temporal_off =
+        parse(pbr_materials::parse_pbr_materials_config,
+              {"--taa-moving-fixture", "--anti-aliasing", "off", "--taa-fixture-time", "3.5"});
+    require(temporal_off.anti_aliasing == "off" && temporal_off.taa_fixture_time == 3.5);
+    bool invalid_aa = false;
+    try {
+        (void)parse(pbr_materials::parse_pbr_materials_config, {"--anti-aliasing", "fxaa"});
+    } catch (const std::runtime_error&) {
+        invalid_aa = true;
+    }
+    require(invalid_aa);
     const auto environment_source =
         parse(pbr_materials::parse_pbr_materials_config, {"--transmission-source", "environment"});
     require(environment_source.transmission_source == "environment");

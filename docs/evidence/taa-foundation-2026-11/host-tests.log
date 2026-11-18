@@ -1,0 +1,6 @@
+headless_render_only_ready: NVIDIA GeForce RTX 5070 Ti at 16x16 slots=2 pacing_hz=0 readback=0 encode=0
+headless_render_only_complete: frames=3 wall_s=0.001601 readback=0 encode=0
+headless_render_only_ready: NVIDIA GeForce RTX 5070 Ti at 16x16 slots=2 pacing_hz=0 readback=0 encode=0
+headless_render_only_ready: NVIDIA GeForce RTX 5070 Ti at 16x16 slots=2 pacing_hz=0 readback=0 encode=0
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /tmp/cubey-frame-submit-353358214647088.png at 16x16
+headless_video: NVIDIA GeForce RTX 5070 Ti wrote /tmp/cubey-frame-submit-353358340912081.mp4 at 16x16, 2 frames @ 30 fps via libav h264

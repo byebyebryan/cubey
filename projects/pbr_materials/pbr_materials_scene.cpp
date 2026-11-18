@@ -8,7 +8,9 @@
 #include <glm/geometric.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include <algorithm>
 #include <cmath>
+#include <glm/gtc/constants.hpp>
 #include <stdexcept>
 
 namespace cubey::projects::pbr_materials::detail {
@@ -57,6 +59,33 @@ void PbrMaterialsApp::create_scene() {
         });
     }
 
+    if (config_.taa_moving_fixture) {
+        const auto material = [&](std::string_view name) {
+            const auto found = std::find_if(catalog_.begin(), catalog_.end(),
+                                            [&](const auto& entry) { return entry.id == name; });
+            if (found == catalog_.end())
+                throw std::runtime_error("TAA fixture material missing");
+            return material_handles_.at(static_cast<std::size_t>(found - catalog_.begin()));
+        };
+        const auto add = [&](render::MeshHandle mesh, render::MaterialHandle surface,
+                             Transform3D transform) {
+            fixture_background_entities_.push_back(cubey::scene::create_renderable_entity_3d(
+                setup, {.transform = transform,
+                        .mesh = mesh,
+                        .material = surface,
+                        .local_bounds = {.half_extent = {.25F, .25F, .25F}},
+                        .cast_shadows = false,
+                        .receive_shadows = false}));
+        };
+        add(swatch_mesh_handle_, material("wood"),
+            {.translation = {0, 0, -.4F}, .scale = {3.4F, 2.3F, 1}});
+        for (float x : {-.45F, 0.F, .45F})
+            add(block_mesh_handle_, material("bronze"),
+                {.translation = {x, 0, -.32F},
+                 .rotation = glm::angleAxis(.35F, math::Vec3{0, 0, 1}),
+                 .scale = {.045F, 1.8F, .045F}});
+    }
+
     camera_entity_ = cubey::scene::create_camera_entity_3d(
         setup,
         cubey::orbit_camera_transform(cubey::OrbitCameraState{
@@ -95,9 +124,25 @@ cubey::Transform3D PbrMaterialsApp::camera_transform() const {
     });
 }
 void PbrMaterialsApp::update_scene_transform(const FrameTiming& timing) {
-    (void)timing;
     cubey::SceneEditQueue edits = scene().create_edit_queue();
     edits.transforms3d().set_local_transform(camera_entity_, camera_transform());
+    if (config_.taa_moving_fixture && selected_ >= 0) {
+        const double time = config_.taa_fixture_time >= 0
+                                ? config_.taa_fixture_time
+                                : std::max(0.0, timing.elapsed_seconds - fixture_clock_origin_);
+        float x = -.55F;
+        if (time > 1 && time < 3)
+            x = -.55F * std::cos(static_cast<float>((time - 1) * glm::pi<double>() / 2));
+        else if (time >= 3 && time <= 4)
+            x = .55F;
+        else if (time > 4 && time < 6)
+            x = .55F * std::cos(static_cast<float>((time - 4) * glm::pi<double>() / 2));
+        fixture_seconds_ = time;
+        fixture_position_ = {x, 0, .06F};
+        edits.transforms3d().set_local_transform(
+            specimens_.at(static_cast<std::size_t>(selected_)).entity,
+            {.translation = fixture_position_, .scale = {.8F, .8F, .8F}});
+    }
     scene().commit(edits);
 }
 
@@ -161,6 +206,7 @@ void PbrMaterialsApp::destroy_scene_if_needed() {
     engine_.destroy_scene(*scene_);
     scene_ = nullptr;
     specimens_.clear();
+    fixture_background_entities_.clear();
     camera_entity_ = {};
     light_camera_entity_ = {};
     light_entity_ = {};

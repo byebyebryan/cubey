@@ -1,0 +1,152 @@
+{
+  "frames": [
+    {
+      "frame": 1,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 2,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 3,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 4,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 5,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 6,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 7,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 8,
+      "max_abs": 0.000244140625,
+      "max_scaled": 0.000244140625,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 9,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 10,
+      "max_abs": 0.001953125,
+      "max_scaled": 0.0017889087656529517,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 11,
+      "max_abs": 0.001953125,
+      "max_scaled": 0.0017809439002671415,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 12,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 13,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 14,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 15,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 16,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 17,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 18,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 19,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 20,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 21,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 22,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 23,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    },
+    {
+      "frame": 24,
+      "max_abs": 0.0,
+      "max_scaled": 0.0,
+      "p99_scaled": 0.0
+    }
+  ],
+  "max_scaled": 0.0017889087656529517,
+  "tolerance": 0.005,
+  "metric": "abs(candidate-reference)/max(1,abs(reference))",
+  "pass": true
+}

@@ -51,6 +51,8 @@ void test_headless_png_host_validates_capture_shape() {
     require(config.gpu_execution_mode == cubey::vulkan::GpuRuntimeExecutionMode::Threaded,
             "headless PNG host config should default to threaded GPU runtime");
     cubey::host::HeadlessPngHostCallbacks callbacks;
+    require(!callbacks.frame_submitted && !callbacks.frame_discarded,
+            "headless submission notifications should default to empty");
     require_throws([&] { cubey::host::HeadlessPngHost host(config, callbacks); },
                    "headless PNG host should require a record callback");
 

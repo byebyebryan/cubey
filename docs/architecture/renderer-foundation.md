@@ -24,6 +24,8 @@ stable across the repo:
   helpers for the descriptor/pipeline shapes already shared by examples;
 - explicit frame slots and per-frame uniform buffers for CPU-updated render
   data;
+- [native temporal anti-aliasing](temporal-aa.md), with shared resolve and
+  submission-owned view history independent of frame slots;
 - draw packet metadata for simple indexed draws;
 - opaque render resource handles that scene snapshots can carry, plus a small
   CPU-side registry for handle identity/liveness that does not own Vulkan

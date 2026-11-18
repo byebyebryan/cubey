@@ -36,19 +36,21 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     shadow_candidate_ = source_shadow_pipeline_enabled(config);
     prepared_candidate_ = source_prepared_cones_enabled(config);
     if (cached_edit_controls_ &&
-        (live_edit_controls_ || !field || !scene || regions ||
-         config.surface_trace != "sampled" || config.csg_evaluation != "full" ||
-         config.acceleration_variant != "off" || config.cached_quality != "ordinary" ||
-         config.lighting != "atmosphere" || config.debug || config.ao || config.clouds ||
-         config.ground || config.occluder || !config.query_workload_output.empty()))
-        throw std::invalid_argument("private cached edit renderer requires Cached opaque atmosphere and a frozen field");
+        (live_edit_controls_ || !field || !scene || regions || config.surface_trace != "sampled" ||
+         config.csg_evaluation != "full" || config.acceleration_variant != "off" ||
+         config.cached_quality != "ordinary" || config.lighting != "atmosphere" || config.debug ||
+         config.ao || config.clouds || config.ground || config.occluder ||
+         !config.query_workload_output.empty()))
+        throw std::invalid_argument(
+            "private cached edit renderer requires Cached opaque atmosphere and a frozen field");
     if (live_edit_controls_ &&
         (!field || !regions || !scene || config.lighting != "atmosphere" ||
          config.surface_trace != "analytic" || config.acceleration_variant != "root-far" ||
          config.debug || config.ao || config.clouds || config.ground || config.occluder ||
          config.cached_quality != "ordinary" || config.query_stepping != "ordinary" ||
          prepared_candidate_))
-        throw std::invalid_argument("private live renderer requires a frozen field/regions and opaque analytic atmosphere");
+        throw std::invalid_argument(
+            "private live renderer requires a frozen field/regions and opaque analytic atmosphere");
     acceleration_uploads_ = config.acceleration_variant != "off" ? &gpu : nullptr;
     scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
     executor_.resize(slots);
@@ -374,15 +376,18 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
             device,
             render::ComputePipelineResourceConfig{
                 .shader_stage = render::compute_shader_file(
-                    path / (cached_edit_controls_ ?
+                    path / (cached_edit_controls_
+                                ?
 #ifdef CUBEY_SDF_STROKE_STUDY
-                                  "cached_stroke_quality_workload.comp.spv"
+                                "cached_stroke_quality_workload.comp.spv"
 #else
-                                  "cached_edit_quality_workload.comp.spv"
+                                "cached_edit_quality_workload.comp.spv"
 #endif
-                            : live_edit_controls_ ? "live_edit_quality_workload.comp.spv"
-                            : prefix + (quality_capture_ ? "quality_workload_" : "query_workload_") +
-                                  variant + ".comp.spv")),
+                                : live_edit_controls_ ? "live_edit_quality_workload.comp.spv"
+                                                      : prefix +
+                                                            (quality_capture_ ? "quality_workload_"
+                                                                              : "query_workload_") +
+                                                            variant + ".comp.spv")),
                 .descriptor_set_layouts = layouts,
                 .push_constants = push});
         const std::array uv_stages{render::vertex_shader_file(path / "sdf.vert.spv"),
@@ -420,12 +425,13 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     post_.create_pipeline(
         device, {.extent = extent, .color_format = format, .shader_stage_files = post_stages});
     if (!config.common.profile_output_prefix.empty() || config.common.print_frame_stats)
-        profiler_.emplace(device, slots, material_atmosphere_ ? 16 : 4);
+        profiler_.emplace(device, slots, 16);
     if (profiler_)
         whole_profiler_.emplace(device, slots, 1);
     recorded_frames_.resize(slots);
 }
 void Renderer::update_field(vulkan::Device& device, const Field& field) {
+    ++temporal_content_generation_;
     field_ = &field;
     for (std::uint32_t i = 0; i < descriptors_->size(); ++i) {
         vulkan::DescriptorWriteBatch writes;
@@ -450,6 +456,9 @@ void Renderer::save_quality_snapshot(const std::filesystem::path& path) {
     quality_snapshot_saved_ = true;
 }
 void Renderer::destroy() {
+    temporal_.destroy();
+    temporal_frame_.reset();
+    temporal_used_ = false;
     if (query_workload_ && !quality_snapshot_saved_) {
         std::vector<std::uint8_t> bytes(query_workload_->size());
         query_workload_->download(bytes.data(), bytes.size());
@@ -646,6 +655,10 @@ void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scen
 }
 void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scene,
                                const GpuRegionPrograms* regions, PreparedAuthored prepared) {
+    ++temporal_content_generation_;
+    temporal_transmission_ =
+        scene && std::any_of(scene->optics.begin(), scene->optics.end(),
+                             [](const auto& optics) { return optics.settings.y > 0; });
     if (prepared_candidate_) {
         if (!prepared.materials)
             prepared = prepare_authored(device, scene, regions);
@@ -738,6 +751,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       const BoxEdit* cutter, float cutter_opacity,
                       std::span<const SceneInstruction> previews) {
     profile_ = profile;
+    pending_profile_slot_ = slot.index;
     const auto route = shader_route(config);
     const auto* selected_pipeline =
         route == SourceShaderRoute::LitSingleMaterial ? &*lit_single_pipeline_
@@ -808,19 +822,23 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                regions_ ? regions_->build_upload_ms : 0);
     }
     if (profiler_) {
-        profiler_->collect(slot.index);
-        if (recorded_frames_[slot.index] && profile)
-            for (const auto& timing : profiler_->latest_timings())
-                profile->record_gpu_span(*recorded_frames_[slot.index], timing.label,
-                                         timing.milliseconds);
+        if (recorded_frames_[slot.index]) {
+            profiler_->collect(slot.index);
+            if (profile)
+                for (const auto& timing : profiler_->latest_timings())
+                    profile->record_gpu_span(*recorded_frames_[slot.index], timing.label,
+                                             timing.milliseconds);
+        }
         profiler_->begin_frame(command, slot.index);
     }
     if (whole_profiler_) {
-        whole_profiler_->collect(slot.index);
-        if (recorded_frames_[slot.index] && profile)
-            for (const auto& timing : whole_profiler_->latest_timings())
-                profile->record_gpu_span(*recorded_frames_[slot.index], timing.label,
-                                         timing.milliseconds);
+        if (recorded_frames_[slot.index]) {
+            whole_profiler_->collect(slot.index);
+            if (profile)
+                for (const auto& timing : whole_profiler_->latest_timings())
+                    profile->record_gpu_span(*recorded_frames_[slot.index], timing.label,
+                                             timing.milliseconds);
+        }
         whole_profiler_->begin_frame(command, slot.index);
     }
     if (profiler_)
@@ -833,11 +851,101 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                   std::cos(pitch) * std::cos(yaw)} *
                            distance;
     prepare_environment(device, command, slot, config, eye, target_point);
-    const auto vp = math::perspective(glm::radians(45.0F),
-                                      static_cast<float>(target.extent.width) /
-                                          static_cast<float>(target.extent.height),
-                                      0.01F, 100.0F) *
-                    glm::lookAt(eye, target_point, math::Vec3{0, 1, 0});
+    const auto projection = math::perspective(glm::radians(45.0F),
+                                              static_cast<float>(target.extent.width) /
+                                                  static_cast<float>(target.extent.height),
+                                              0.01F, 100.0F);
+    const auto view = glm::lookAt(eye, target_point, math::Vec3{0, 1, 0});
+    auto vp = projection * view;
+    const bool raw_diagnostic = (config.debug > 0 && config.debug < 10) || config.debug == 12;
+    const bool taa_requested = config.anti_aliasing == "taa";
+    const int bypass = raw_diagnostic || config.debug != 0            ? 1
+                       : config.supersample != 1                      ? 2
+                       : clouds_enabled_                              ? 3
+                       : temporal_transmission_                       ? 4
+                       : query_workload_pipeline_ || quality_capture_ ? 5
+                       : live_edit_controls_ || cached_edit_controls_ || !previews.empty() ||
+                               (cutter && cutter_opacity > 0)
+                           ? 6
+                       : config.lighting_cycle != "frozen" ? 7
+                                                           : 0;
+    const bool taa_effective = taa_requested && bypass == 0;
+    constexpr std::array reasons{"Active",
+                                 "Bypassed for diagnostics",
+                                 "Requires supersampling 1x",
+                                 "Cloud motion unsupported",
+                                 "Transmission unsupported",
+                                 "Bypassed for raw query output",
+                                 "Live edit/cutter preview unsupported",
+                                 "Dynamic lighting unsupported"};
+    temporal_status_ = taa_requested ? reasons.at(static_cast<std::size_t>(bypass)) : "Off";
+    if (taa_effective) {
+        if (!temporal_.created())
+            temporal_.create(
+                device,
+                {.extent = scene_extent_,
+                 .frame_slot_count = slot.count,
+                 .motion_shader = std::filesystem::path(CUBEY_SDF_SHADER_DIR) / "motion.comp.spv",
+                 .resolve_shader =
+                     std::filesystem::path(CUBEY_SDF_SHADER_DIR) / "resolve.comp.spv"});
+        // The settings identity excludes camera motion and post-only exposure.
+        std::uint64_t settings = 1469598103934665603ULL;
+        auto mix = [&](auto value) {
+            const auto bytes = std::as_bytes(std::span(&value, 1));
+            for (auto byte : bytes)
+                settings = (settings ^ std::to_integer<unsigned>(byte)) * 1099511628211ULL;
+        };
+        mix(config.sun_elevation);
+        mix(config.sun_azimuth);
+        mix(config.roughness);
+        mix(config.shadow_softness);
+        mix(config.shadows);
+        mix(config.ao);
+        mix(config.ground);
+        mix(config.clay);
+        mix(config.procedural);
+        mix(config.bump);
+        mix(config.material_fast_path);
+        mix(config.debug);
+        if (temporal_settings_ != settings) {
+            ++temporal_content_generation_;
+            temporal_settings_ = settings;
+        }
+        temporal_frame_ =
+            temporal_.begin_frame(slot, {.projection = projection,
+                                         .view = view,
+                                         .content_generation = temporal_content_generation_,
+                                         .reset = !temporal_used_});
+        vp = temporal_frame_->jittered_view_projection;
+    }
+    temporal_used_ = taa_effective;
+    if (profile) {
+        profile->record_metric(frame_index, "aa", "requested", taa_requested ? 1 : 0);
+        profile->record_metric(frame_index, "aa", "effective", taa_effective ? 1 : 0);
+        profile->record_metric(frame_index, "aa", "bypass_reason", taa_requested ? bypass : 0);
+        if (taa_effective) {
+            const auto memory = temporal_.metrics();
+            profile->record_metric(frame_index, "taa", "history_age", temporal_frame_->history_age);
+            profile->record_metric(frame_index, "taa", "reset_reason",
+                                   static_cast<unsigned>(temporal_frame_->reset_reason));
+            profile->record_metric(frame_index, "taa", "jitter_x",
+                                   temporal_frame_->sample_offset_pixels.x);
+            profile->record_metric(frame_index, "taa", "jitter_y",
+                                   temporal_frame_->sample_offset_pixels.y);
+            profile->record_metric(frame_index, "taa", "persistent_requested_bytes",
+                                   static_cast<double>(memory.persistent_requested_bytes));
+            profile->record_metric(frame_index, "taa", "per_slot_transient_requested_bytes",
+                                   static_cast<double>(memory.per_slot_transient_requested_bytes));
+            profile->record_metric(frame_index, "taa", "uniform_requested_bytes",
+                                   static_cast<double>(memory.uniform_requested_bytes));
+            profile->record_metric(frame_index, "taa", "persistent_image_allocation_bytes",
+                                   static_cast<double>(memory.persistent_image_allocation_bytes));
+            profile->record_metric(frame_index, "taa", "per_slot_transient_image_allocation_bytes",
+                                   static_cast<double>(memory.per_slot_transient_image_allocation_bytes));
+            profile->record_metric(frame_index, "taa", "uniform_allocation_bytes",
+                                   static_cast<double>(memory.uniform_allocation_bytes));
+        }
+    }
     if (material_atmosphere_) {
         const auto forward = glm::normalize(target_point - eye),
                    right = glm::normalize(glm::cross(forward, math::Vec3{0, 1, 0}));
@@ -845,12 +953,23 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
             slot,
             atmosphere_
                 .frame(
-                    {.view_rays = {.right_aspect = {right,
-                                                    static_cast<float>(scene_extent_.width) /
-                                                        static_cast<float>(scene_extent_.height)},
-                                   .up_tan_half_fovy = {glm::cross(right, forward),
-                                                        std::tan(glm::radians(22.5F))},
-                                   .forward = {forward, 0}}})
+                    {.view_rays =
+                         {.right_aspect = {right, static_cast<float>(scene_extent_.width) /
+                                                      static_cast<float>(scene_extent_.height)},
+                          .up_tan_half_fovy = {glm::cross(right, forward),
+                                               std::tan(glm::radians(22.5F))},
+                          .forward =
+                              {forward +
+                                   (taa_effective
+                                        ? (right *
+                                               (2.0F * temporal_frame_->sample_offset_pixels.x /
+                                                static_cast<float>(scene_extent_.height)) -
+                                           glm::cross(right, forward) *
+                                               (2.0F * temporal_frame_->sample_offset_pixels.y /
+                                                static_cast<float>(scene_extent_.height))) *
+                                              std::tan(glm::radians(22.5F))
+                                        : math::Vec3{0}),
+                               0}}})
                 .background);
     }
     const auto& light = atmosphere_.lighting();
@@ -908,7 +1027,6 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                                                                           : 0.F},
         {glm::normalize(target_point - eye),
          2.0F * std::tan(glm::radians(22.5F)) / static_cast<float>(scene_extent_.height)}};
-    const bool raw_diagnostic = (config.debug > 0 && config.debug < 10) || config.debug == 12;
     post_.upload(slot, render::hdr_post_uniforms(
                            target.format, raw_diagnostic ? 0.0F : config.exposure,
                            raw_diagnostic ? render::PbrTonemap::Linear : render::PbrTonemap::Aces));
@@ -965,10 +1083,11 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     std::optional<render::RenderGraphBufferHandle> live_controls;
     if (live_edit_controls_)
         live_controls = builder.import_buffer({"sdf.live-controls", live_edit_controls_->size()},
-                                               live_edit_controls_->handle());
+                                              live_edit_controls_->handle());
     if (cached_edit_controls_)
-        live_controls = builder.import_buffer({"sdf.cached-edit-controls", cached_edit_controls_->size()},
-                                               cached_edit_controls_->handle());
+        live_controls =
+            builder.import_buffer({"sdf.cached-edit-controls", cached_edit_controls_->size()},
+                                  cached_edit_controls_->handle());
     if (regions_) {
         region_cells = builder.import_buffer({"sdf.regions", regions_->cells->size()},
                                              regions_->cells->handle());
@@ -1089,6 +1208,10 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         });
     std::optional<render::CloudLayerRuntimeFrame> cloud_product;
     auto post_scene = scene;
+    if (taa_effective) {
+        const auto motion = temporal_.declare_camera_motion(builder, depth, *temporal_frame_);
+        post_scene = temporal_.declare_resolve(builder, scene, motion, *temporal_frame_);
+    }
     if (clouds_enabled_ && config.cloud_backdrop && config.debug == 0) {
         auto& clouds = atmosphere_.clouds();
         const auto frame = cloud_frame(eye, target_point);
@@ -1105,21 +1228,37 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                               slot);
         });
     const auto graph = builder.compile();
-    executor_.record({.device = &device,
-                      .command_buffer = command,
-                      // Pose probes drain the GPU after every frame. Reuse one
-                      // graph-resource slot so the UV image is not duplicated.
-                      .frame_slot = quality_capture_ ? render::FrameSlot{0, slot.count} : slot,
-                      .command_buffer_mode = render::RenderGraphCommandBufferMode::AlreadyRecording,
-                      .profiler = profiler_ ? &*profiler_ : nullptr},
-                     graph, [&](const render::RenderGraphResourceSet& resources) {
-                         post_.update_scene_color_descriptor(device, slot, graph, resources,
-                                                             post_scene);
-                         if (cloud_product)
-                             atmosphere_.clouds().update_surface_descriptors(
-                                 device, slot, graph, resources, *cloud_product, scene, depth);
-                     });
+    executor_.record(
+        {.device = &device,
+         .command_buffer = command,
+         // Pose probes drain the GPU after every frame. Reuse one
+         // graph-resource slot so the UV image is not duplicated.
+         .frame_slot = quality_capture_ ? render::FrameSlot{0, slot.count} : slot,
+         .command_buffer_mode = render::RenderGraphCommandBufferMode::AlreadyRecording,
+         .profiler = profiler_ ? &*profiler_ : nullptr},
+        graph, [&](const render::RenderGraphResourceSet& resources) {
+            if (taa_effective)
+                temporal_.update_descriptors(device, graph, resources, *temporal_frame_);
+            post_.update_scene_color_descriptor(device, slot, graph, resources, post_scene);
+            if (cloud_product)
+                atmosphere_.clouds().update_surface_descriptors(device, slot, graph, resources,
+                                                                *cloud_product, scene, depth);
+        });
     if (cloud_product)
         atmosphere_.clouds().complete_surface_frame(slot, *cloud_product);
+}
+void Renderer::frame_submitted(vulkan::GpuSubmissionTicket ticket) {
+    pending_profile_slot_.reset();
+    if (temporal_frame_) {
+        temporal_.commit_frame(temporal_frame_->token, ticket);
+        temporal_frame_.reset();
+    }
+}
+void Renderer::frame_discarded() {
+    if (pending_profile_slot_ && *pending_profile_slot_ < recorded_frames_.size())
+        recorded_frames_[*pending_profile_slot_].reset();
+    pending_profile_slot_.reset();
+    temporal_.discard_frame();
+    temporal_frame_.reset();
 }
 } // namespace cubey::projects::sdf

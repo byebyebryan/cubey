@@ -1,0 +1,534 @@
+{
+  "gpu": "NVIDIA GeForce RTX 5070 Ti",
+  "driver": "620.70.06",
+  "sdf": {
+    "matched_frames": 128,
+    "quality": {
+      "dome": {
+        "crop_xywh": [
+          760,
+          85,
+          355,
+          350
+        ],
+        "stationary_age64": {
+          "ss1": {
+            "display_luma_rmse_vs_ss2": 10.716889019746795,
+            "psnr_db": 27.529428941916155
+          },
+          "taa": {
+            "display_luma_rmse_vs_ss2": 5.952314194125975,
+            "psnr_db": 32.63708665935495
+          }
+        },
+        "orbit_residual_change_rms": {
+          "ss1": 14.039725110485604,
+          "taa": 13.327194115598775
+        }
+      },
+      "rails_steps": {
+        "crop_xywh": [
+          925,
+          425,
+          290,
+          340
+        ],
+        "stationary_age64": {
+          "ss1": {
+            "display_luma_rmse_vs_ss2": 9.499327402260366,
+            "psnr_db": 28.57694648359236
+          },
+          "taa": {
+            "display_luma_rmse_vs_ss2": 5.494864834893806,
+            "psnr_db": 33.33166333020135
+          }
+        },
+        "orbit_residual_change_rms": {
+          "ss1": 12.72008333968234,
+          "taa": 10.29359610266181
+        }
+      }
+    },
+    "cost": {
+      "ss1": {
+        "sdf.trace": {
+          "samples": 72,
+          "p50_ms": 466.635584,
+          "p95_ms": 489.693984
+        },
+        "sdf.post": {
+          "samples": 72,
+          "p50_ms": 0.013056,
+          "p95_ms": 0.116992
+        },
+        "sdf.whole_scene": {
+          "samples": 72,
+          "p50_ms": 466.64867200000003,
+          "p95_ms": 489.707584
+        }
+      },
+      "taa": {
+        "sdf.trace": {
+          "samples": 72,
+          "p50_ms": 465.842576,
+          "p95_ms": 487.286848
+        },
+        "taa.motion": {
+          "samples": 72,
+          "p50_ms": 0.016624,
+          "p95_ms": 0.12
+        },
+        "taa.resolve": {
+          "samples": 72,
+          "p50_ms": 0.06496,
+          "p95_ms": 0.066304
+        },
+        "sdf.post": {
+          "samples": 72,
+          "p50_ms": 0.016144,
+          "p95_ms": 0.023136
+        },
+        "sdf.whole_scene": {
+          "samples": 72,
+          "p50_ms": 465.940336,
+          "p95_ms": 487.383872
+        },
+        "taa.motion_plus_resolve": {
+          "samples": 72,
+          "p50_ms": 0.081632,
+          "p95_ms": 0.18518400000000002
+        }
+      },
+      "ss2": {
+        "sdf.trace": {
+          "samples": 72,
+          "p50_ms": 1418.9017760000002,
+          "p95_ms": 1446.867808
+        },
+        "sdf.post": {
+          "samples": 72,
+          "p50_ms": 0.026272,
+          "p95_ms": 0.129344
+        },
+        "sdf.whole_scene": {
+          "samples": 72,
+          "p50_ms": 1418.928208,
+          "p95_ms": 1446.894496
+        }
+      }
+    },
+    "quality_scope": "8-bit displayed luma. SS2 is a spatial reference, not ground truth. Orbit metric compares changes in error against each matching SS2 pose; it is not raw interframe difference. Human blur/ghosting review remains required.",
+    "cost_scope": "serial 1080p render-only, validation off, no encoding/readback, first 24 frames excluded",
+    "identities": {
+      "ss1": "75de1c6ef8451a58339f529896b489e75f1777452799c645559b58fda2101902",
+      "taa": "84e084cc7a3f190525c4c6f08bd534900de1a17dd29f1db648c8679c681c29ec",
+      "ss2": "4cdeafd2ddac22774f357dc3871f7f9c2bc84571d13b710a0bf9e964479ec646"
+    }
+  },
+  "forward_cost": {
+    "off": {
+      "material workshop whole scene": {
+        "samples": 448,
+        "p50_ms": 0.22705599999999998,
+        "p95_ms": 0.244992
+      },
+      "shadow": {
+        "samples": 448,
+        "p50_ms": 0.004704,
+        "p95_ms": 0.015328
+      },
+      "scene": {
+        "samples": 448,
+        "p50_ms": 0.209952,
+        "p95_ms": 0.216992
+      },
+      "post": {
+        "samples": 448,
+        "p50_ms": 0.012288,
+        "p95_ms": 0.012544
+      }
+    },
+    "taa": {
+      "material workshop whole scene": {
+        "samples": 448,
+        "p50_ms": 0.3312,
+        "p95_ms": 0.382688
+      },
+      "shadow": {
+        "samples": 448,
+        "p50_ms": 0.005248,
+        "p95_ms": 0.017504
+      },
+      "scene": {
+        "samples": 448,
+        "p50_ms": 0.219008,
+        "p95_ms": 0.233376
+      },
+      "taa.motion": {
+        "samples": 448,
+        "p50_ms": 0.015616,
+        "p95_ms": 0.015968
+      },
+      "rigid object motion": {
+        "samples": 448,
+        "p50_ms": 0.015663999999999997,
+        "p95_ms": 0.017216
+      },
+      "taa.resolve": {
+        "samples": 448,
+        "p50_ms": 0.058112,
+        "p95_ms": 0.081152
+      },
+      "post": {
+        "samples": 448,
+        "p50_ms": 0.016992,
+        "p95_ms": 0.018592
+      },
+      "all TAA motion and resolve": {
+        "samples": 448,
+        "p50_ms": 0.090304,
+        "p95_ms": 0.113888
+      }
+    }
+  },
+  "memory": {
+    "bytes": {
+      "persistent_requested_bytes": 33177600,
+      "per_slot_transient_requested_bytes": 24883200,
+      "uniform_requested_bytes": 960,
+      "persistent_image_allocation_bytes": 35389440,
+      "per_slot_transient_image_allocation_bytes": 26542080,
+      "uniform_allocation_bytes": 1024
+    },
+    "scope": "Dedicated history/transient/uniform payload and Vulkan memory requirements, two CPU slots; no descriptor/pipeline or process peak claim"
+  },
+  "history": {
+    "pbr_rigid_accepted_ages": 211,
+    "moving_object_never_reset_history": true,
+    "sdf_stationary_orbit_stop_return_ages_correct": true,
+    "sdf_cut_frame": 113,
+    "sdf_cut_age": 0
+  },
+  "sections": {
+    "section": {
+      "taa_submitted_updates": 65,
+      "camera": {
+        "distance": 0.9399999976158142,
+        "pitch": 0.28999999165534973,
+        "target_y": -0.08500000089406967,
+        "yaw": 0.27000001072883606
+      },
+      "geometry_hash": 15938308158194323821,
+      "appearance_hash": 6857704275362615614,
+      "additional_field_builds": 0
+    },
+    "cutaway-intact": {
+      "taa_submitted_updates": 65,
+      "camera": {
+        "distance": 0.9399999976158142,
+        "pitch": 0.28999999165534973,
+        "target_y": -0.08500000089406967,
+        "yaw": 0.27000001072883606
+      },
+      "geometry_hash": 3110259854448730574,
+      "appearance_hash": 6837981851330869224,
+      "additional_field_builds": 0
+    }
+  },
+  "native_identity_recheck": {
+    "entries_checked": 1093,
+    "mismatches": [],
+    "pass": true
+  },
+  "final_sdf_requalification": {
+    "ss1": {
+      "frames": 128,
+      "byte_identical_to_pre_integration": 128
+    },
+    "taa": {
+      "frames": 128,
+      "byte_identical_to_pre_integration": 128
+    },
+    "ss2": {
+      "frames": 128,
+      "byte_identical_to_pre_integration": 128
+    }
+  },
+  "sdf_aa_off_identity": {
+    "source": "ss1.frame-64.png",
+    "baseline": "../baseline/captures/observatory-ss1.png",
+    "decoded_rgb_bytes_equal": true,
+    "byte_count": 6220800
+  },
+  "cut_fresh_seed_identity": {
+    "cut_frame": 113,
+    "fresh_seed": "cut-fresh-seed.png",
+    "decoded_pixel_equal": true,
+    "cut_sha256": "91098fad449623653e7bbf965909dcc6dd7222284a4dd673f572516b021bbe42",
+    "fresh_sha256": "91098fad449623653e7bbf965909dcc6dd7222284a4dd673f572516b021bbe42"
+  },
+  "forward_aa_off_and_sync": {
+    "forward_off_png_byte_equal": true,
+    "forward_off_sha256": "4cc9257ac445aa3b8e64660ce62f9e71339813e0e67a4c52dc5d0faa2e8a3ac7",
+    "rigid_sync": {
+      "command": [
+        "/home/bryan/code/cubey-aa/build/release/projects/pbr_materials/pbr_materials",
+        "--headless",
+        "--require-validation",
+        "--taa-moving-fixture",
+        "--width",
+        "1280",
+        "--height",
+        "720",
+        "--capture",
+        "video",
+        "--frames",
+        "12",
+        "--fps",
+        "30",
+        "--profile-output",
+        "outputs/taa/foundation-loop/integration/rigid-sync",
+        "--output",
+        "outputs/taa/foundation-loop/integration/rigid-sync.mp4"
+      ],
+      "exit_code": 0,
+      "validation_clean": true
+    }
+  },
+  "unsupported_bypass": {
+    "runs": [
+      {
+        "id": "diagnostic-off",
+        "command": [
+          "/home/bryan/code/cubey-aa/build/release/projects/sdf/sdf",
+          "--headless",
+          "--require-validation",
+          "--config",
+          "projects/sdf/presets/taa-foundation-2026-11/observatory-ss1.json",
+          "--debug",
+          "2",
+          "--anti-aliasing",
+          "off",
+          "--width",
+          "320",
+          "--height",
+          "180",
+          "--output",
+          "outputs/taa/foundation-loop/bypass/diagnostic-off.png",
+          "--profile-output",
+          "outputs/taa/foundation-loop/bypass/diagnostic-off"
+        ],
+        "exit_code": 0,
+        "aa": {
+          "requested": 0.0,
+          "effective": 0.0,
+          "bypass_reason": 0.0
+        },
+        "taa_metrics_absent": true
+      },
+      {
+        "id": "diagnostic-taa",
+        "command": [
+          "/home/bryan/code/cubey-aa/build/release/projects/sdf/sdf",
+          "--headless",
+          "--require-validation",
+          "--config",
+          "projects/sdf/presets/taa-foundation-2026-11/observatory-ss1.json",
+          "--debug",
+          "2",
+          "--anti-aliasing",
+          "taa",
+          "--width",
+          "320",
+          "--height",
+          "180",
+          "--output",
+          "outputs/taa/foundation-loop/bypass/diagnostic-taa.png",
+          "--profile-output",
+          "outputs/taa/foundation-loop/bypass/diagnostic-taa"
+        ],
+        "exit_code": 0,
+        "aa": {
+          "requested": 1.0,
+          "effective": 0.0,
+          "bypass_reason": 1.0
+        },
+        "taa_metrics_absent": true
+      },
+      {
+        "id": "supersample-off",
+        "command": [
+          "/home/bryan/code/cubey-aa/build/release/projects/sdf/sdf",
+          "--headless",
+          "--require-validation",
+          "--config",
+          "projects/sdf/presets/taa-foundation-2026-11/observatory-ss2.json",
+          "--anti-aliasing",
+          "off",
+          "--width",
+          "320",
+          "--height",
+          "180",
+          "--output",
+          "outputs/taa/foundation-loop/bypass/supersample-off.png",
+          "--profile-output",
+          "outputs/taa/foundation-loop/bypass/supersample-off"
+        ],
+        "exit_code": 0,
+        "aa": {
+          "requested": 0.0,
+          "effective": 0.0,
+          "bypass_reason": 0.0
+        },
+        "taa_metrics_absent": true
+      },
+      {
+        "id": "supersample-taa",
+        "command": [
+          "/home/bryan/code/cubey-aa/build/release/projects/sdf/sdf",
+          "--headless",
+          "--require-validation",
+          "--config",
+          "projects/sdf/presets/taa-foundation-2026-11/observatory-ss2.json",
+          "--anti-aliasing",
+          "taa",
+          "--width",
+          "320",
+          "--height",
+          "180",
+          "--output",
+          "outputs/taa/foundation-loop/bypass/supersample-taa.png",
+          "--profile-output",
+          "outputs/taa/foundation-loop/bypass/supersample-taa"
+        ],
+        "exit_code": 0,
+        "aa": {
+          "requested": 1.0,
+          "effective": 0.0,
+          "bypass_reason": 2.0
+        },
+        "taa_metrics_absent": true
+      },
+      {
+        "id": "transmission-off",
+        "command": [
+          "/home/bryan/code/cubey-aa/build/release/projects/sdf/sdf",
+          "--headless",
+          "--require-validation",
+          "--workshop",
+          "sphere",
+          "--material",
+          "glass",
+          "--anti-aliasing",
+          "off",
+          "--width",
+          "320",
+          "--height",
+          "180",
+          "--output",
+          "outputs/taa/foundation-loop/bypass/transmission-off.png",
+          "--profile-output",
+          "outputs/taa/foundation-loop/bypass/transmission-off"
+        ],
+        "exit_code": 0,
+        "aa": {
+          "requested": 0.0,
+          "effective": 0.0,
+          "bypass_reason": 0.0
+        },
+        "taa_metrics_absent": true
+      },
+      {
+        "id": "transmission-taa",
+        "command": [
+          "/home/bryan/code/cubey-aa/build/release/projects/sdf/sdf",
+          "--headless",
+          "--require-validation",
+          "--workshop",
+          "sphere",
+          "--material",
+          "glass",
+          "--anti-aliasing",
+          "taa",
+          "--width",
+          "320",
+          "--height",
+          "180",
+          "--output",
+          "outputs/taa/foundation-loop/bypass/transmission-taa.png",
+          "--profile-output",
+          "outputs/taa/foundation-loop/bypass/transmission-taa"
+        ],
+        "exit_code": 0,
+        "aa": {
+          "requested": 1.0,
+          "effective": 0.0,
+          "bypass_reason": 4.0
+        },
+        "taa_metrics_absent": true
+      }
+    ],
+    "pixel_equal": true
+  },
+  "native_pbr_window": {
+    "native_ui_off_taa_toggle": true,
+    "diagnostic_bypass": true,
+    "explicit_reset": true,
+    "resized_twice": true,
+    "effective_counts": {
+      "1": 3283,
+      "0": 5233
+    },
+    "nonzero_reset_reasons": {
+      "1": 3,
+      "2": 1
+    },
+    "validation_clean": true,
+    "scope": "Owned virtual X11 window; no physical desktop acceptance",
+    "requested_effective_bypass_counts": [
+      {
+        "requested": 1,
+        "effective": 1,
+        "bypass_reason": 0,
+        "frames": 3283
+      },
+      {
+        "requested": 1,
+        "effective": 0,
+        "bypass_reason": 1,
+        "frames": 2466
+      },
+      {
+        "requested": 0,
+        "effective": 0,
+        "bypass_reason": 0,
+        "frames": 2767
+      }
+    ]
+  },
+  "native_sdf_window": {
+    "native_ui_off_taa_toggle": true,
+    "explicit_reset": true,
+    "resized_twice_with_taa": true,
+    "effective_counts": {
+      "1.000000": 266,
+      "0.000000": 179
+    },
+    "nonzero_reset_reasons": {
+      "1": 4,
+      "2": 1,
+      "5": 1
+    },
+    "validation_clean": true,
+    "input_note": "Final TAA menu selection required a one-second held XTest click because the expensive SDF frame missed short clicks.",
+    "scope": "Owned virtual X11 window; no physical desktop acceptance",
+    "initial_field_build_log_entries": 1,
+    "additional_field_builds_during_toggle_reset_resize": 0
+  },
+  "visual_review": {
+    "reviewer": "primary agent",
+    "decision": "Accept opt-in opaque foundation with motion softness disclosed; no persistent sphere trail in inspected crossing, stop and return frames",
+    "user_aesthetic_acceptance": "not claimed",
+    "physical_desktop_acceptance": "not claimed"
+  }
+}

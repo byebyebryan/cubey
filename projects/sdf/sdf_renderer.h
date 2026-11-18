@@ -10,6 +10,7 @@
 #include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/render_graph_frame.h>
+#include <cubey/render/temporal_aa.h>
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/gpu_timestamps.h>
 #include <span>
@@ -45,6 +46,14 @@ class Renderer {
                 const vulkan::Buffer* live_edit_controls = nullptr,
                 const vulkan::Buffer* cached_edit_controls = nullptr);
     void destroy();
+    void frame_submitted(vulkan::GpuSubmissionTicket ticket);
+    void frame_discarded();
+    void reset_temporal() {
+        ++temporal_content_generation_;
+    }
+    [[nodiscard]] std::string_view anti_aliasing_status() const {
+        return temporal_status_;
+    }
     void save_quality_snapshot(const std::filesystem::path& path);
     void update_field(vulkan::Device& device, const Field& field);
     [[nodiscard]] std::unique_ptr<vulkan::Buffer> prepare_program(const AuthoredScene* scene);
@@ -129,10 +138,18 @@ class Renderer {
     unsigned shader_pipeline_count_ = 0;
     double shader_pipeline_setup_ms_ = 0;
     render::HdrPostFrame post_;
+    render::TemporalAntiAliasing temporal_;
+    std::optional<render::TemporalFrame> temporal_frame_;
+    std::uint64_t temporal_content_generation_ = 0;
+    std::uint64_t temporal_settings_ = 0;
+    bool temporal_transmission_ = false;
+    bool temporal_used_ = false;
+    std::string_view temporal_status_ = "Off";
     render::RenderGraphFrameExecutor executor_;
     std::optional<vulkan::GpuTimestampProfiler> profiler_;
     std::optional<vulkan::GpuTimestampProfiler> whole_profiler_;
     std::vector<std::optional<std::uint64_t>> recorded_frames_;
+    std::optional<std::uint32_t> pending_profile_slot_;
     const Field* field_ = nullptr;
     const GpuRegionPrograms* regions_ = nullptr;
     const vulkan::Buffer* live_edit_controls_ = nullptr;

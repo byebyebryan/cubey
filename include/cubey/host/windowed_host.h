@@ -15,6 +15,7 @@
 #include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/submission_coordinator.h>
+#include <cubey/vulkan/submission_tickets.h>
 #include <cubey/vulkan/swapchain.h>
 
 #include <vulkan/vulkan.h>
@@ -135,6 +136,14 @@ struct WindowedHostCallbacks {
     std::function<void(WindowedAppContext&)> draw_ui;
     std::function<void(WindowedAppContext&, const FrameTiming&)> update;
     std::function<void(WindowedAppContext&, const WindowedRenderFrame&)> record_frame;
+    // Called once after this recorded frame's queue submission succeeds. The
+    // ticket identifies submitted work even when presentation requests a
+    // swapchain recreation.
+    std::function<void(WindowedAppContext&, const WindowedRenderFrame&,
+                       cubey::vulkan::GpuSubmissionTicket)>
+        frame_submitted;
+    // Called when record_frame ran but the application frame was not submitted.
+    std::function<void(WindowedAppContext&, const WindowedRenderFrame&)> frame_discarded;
     std::function<std::optional<FrameStatsSample>(WindowedAppContext&, const FrameTiming&)>
         frame_stats_sample;
     std::function<void(WindowedAppContext&)> shutdown;

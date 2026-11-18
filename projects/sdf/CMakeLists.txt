@@ -9,6 +9,8 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
     SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp sdf_render_modes.cpp
     SHADERS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/temporal_aa/motion.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/temporal_aa/resolve.comp"
         shaders/local_filter.comp shaders/local_samples.comp shaders/local_canonical.comp
         shaders/local_dom_filter.comp shaders/local_dom_samples.comp
         shaders/cached_stroke_sdf.frag shaders/quality_cached_stroke_sdf.frag

@@ -1,0 +1,16 @@
+#version 450
+// Qualification-only replacement resolve: expose the actual engine-produced
+// motion through the normal display path. A static camera cannot produce red
+// for a right-moving object unless the depth-matched rigid overlay works.
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(set = 0, binding = 2) uniform sampler2D motion_image;
+layout(rgba16f, set = 0, binding = 4) writeonly uniform image2D resolved_image;
+layout(rgba16f, set = 0, binding = 5) writeonly uniform image2D next_history;
+void main() {
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    if (any(greaterThanEqual(p, imageSize(resolved_image)))) return;
+    vec2 motion = texelFetch(motion_image, p, 0).rg;
+    imageStore(resolved_image, p, vec4(max(-motion.x, 0.0) / 8.0,
+                                     abs(motion.y) / 8.0, 0.0, 1.0));
+    imageStore(next_history, p, vec4(0.0));
+}

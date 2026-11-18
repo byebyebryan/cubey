@@ -1,0 +1,7 @@
+{
+  "material": "woven-cloth",
+  "anti_aliasing": "taa",
+  "environment": "studio",
+  "specimen": "swatch",
+  "lighting_cycle": "frozen"
+}

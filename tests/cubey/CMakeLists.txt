@@ -1,3 +1,61 @@
+add_executable(cubey_temporal_view_tests temporal_view_tests.cpp)
+target_link_libraries(cubey_temporal_view_tests PRIVATE cubey::render cubey_project_options cubey_project_warnings)
+add_test(NAME temporal_view COMMAND cubey_temporal_view_tests)
+set_tests_properties(temporal_view PROPERTIES LABELS "unit;render;taa")
+
+add_executable(cubey_temporal_gpu_tests temporal_gpu_tests.cpp)
+target_link_libraries(cubey_temporal_gpu_tests PRIVATE cubey::render cubey_project_options cubey_project_warnings)
+target_compile_definitions(cubey_temporal_gpu_tests PRIVATE CUBEY_TEMPORAL_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/temporal_shaders")
+cubey_add_glsl_shaders(cubey_temporal_gpu_tests OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/temporal_shaders" SOURCES
+    shaders/temporal_fixture.comp
+    "${PROJECT_SOURCE_DIR}/shaders/cubey/temporal_aa/motion.comp"
+    "${PROJECT_SOURCE_DIR}/shaders/cubey/temporal_aa/resolve.comp")
+add_test(NAME temporal_gpu COMMAND cubey_temporal_gpu_tests)
+set_tests_properties(temporal_gpu PROPERTIES LABELS "gpu;render;taa" RUN_SERIAL TRUE
+    FAIL_REGULAR_EXPRESSION "vulkan validation error:")
+foreach(slots 1 3)
+    add_test(NAME temporal_gpu_slots_${slots} COMMAND cubey_temporal_gpu_tests
+        "${CMAKE_CURRENT_BINARY_DIR}/temporal_shaders/resolve.comp.spv" "" ${slots})
+    set_tests_properties(temporal_gpu_slots_${slots} PROPERTIES LABELS "gpu;render;taa"
+        RUN_SERIAL TRUE FAIL_REGULAR_EXPRESSION "vulkan validation error:")
+endforeach()
+add_test(NAME temporal_gpu_sync COMMAND cubey_temporal_gpu_tests)
+set_tests_properties(temporal_gpu_sync PROPERTIES LABELS "gpu;render;taa;sync_validation"
+    ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1" RUN_SERIAL TRUE
+    FAIL_REGULAR_EXPRESSION "vulkan validation error:")
+
+add_executable(cubey_host_frame_submission_tests host_frame_submission_tests.cpp
+    host_frame_submission_main.cpp)
+target_link_libraries(cubey_host_frame_submission_tests PRIVATE cubey::host
+    cubey_project_options cubey_project_warnings)
+add_test(NAME host_frame_submission COMMAND cubey_host_frame_submission_tests)
+set_tests_properties(host_frame_submission PROPERTIES LABELS "gpu;headless;taa" RUN_SERIAL TRUE
+    FAIL_REGULAR_EXPRESSION "vulkan validation error:")
+add_test(NAME host_frame_submission_sync COMMAND cubey_host_frame_submission_tests)
+set_tests_properties(host_frame_submission_sync PROPERTIES LABELS "gpu;headless;taa;sync_validation"
+    ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1" RUN_SERIAL TRUE
+    FAIL_REGULAR_EXPRESSION "vulkan validation error:")
+
+add_executable(cubey_forward_temporal_gpu_tests forward_temporal_gpu_tests.cpp)
+target_link_libraries(cubey_forward_temporal_gpu_tests PRIVATE cubey::cubey
+    cubey_project_options cubey_project_warnings)
+target_compile_definitions(cubey_forward_temporal_gpu_tests PRIVATE
+    CUBEY_FORWARD_TEMPORAL_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/forward_temporal_shaders")
+cubey_forward_pbr_shader_sources(CUBEY_FORWARD_TEMPORAL_TEST_SOURCES)
+cubey_forward_pbr_shader_depends(CUBEY_FORWARD_TEMPORAL_TEST_DEPENDS)
+cubey_add_glsl_shaders(cubey_forward_temporal_gpu_tests
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/forward_temporal_shaders"
+    SOURCES ${CUBEY_FORWARD_TEMPORAL_TEST_SOURCES}
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/temporal_motion_probe.comp"
+    DEPENDS ${CUBEY_FORWARD_TEMPORAL_TEST_DEPENDS})
+add_test(NAME forward_temporal_gpu COMMAND cubey_forward_temporal_gpu_tests)
+set_tests_properties(forward_temporal_gpu PROPERTIES LABELS "gpu;render;taa" RUN_SERIAL TRUE
+    FAIL_REGULAR_EXPRESSION "vulkan validation (error|warning):")
+add_test(NAME forward_temporal_gpu_sync COMMAND cubey_forward_temporal_gpu_tests)
+set_tests_properties(forward_temporal_gpu_sync PROPERTIES LABELS "gpu;render;taa;sync_validation"
+    ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1" RUN_SERIAL TRUE
+    FAIL_REGULAR_EXPRESSION "vulkan validation (error|warning):")
+
 add_executable(cubey_core_tests
     animation_tests.cpp
     atmosphere_environment_runtime_tests.cpp

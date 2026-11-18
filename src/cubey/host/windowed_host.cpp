@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <cstdio>
+#include <exception>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -504,19 +505,69 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
         .color_target = cubey::render::swapchain_color_target_view(swapchain(), frame.image_index),
         .timing = timing,
     };
-    {
-        [[maybe_unused]] auto span = profile_span(frame_index, "host.record_frame");
-        callbacks_.record_frame(active_context, render_frame);
-    }
-    std::vector<VkCommandBuffer> ui_command_buffers;
-    {
-        [[maybe_unused]] auto span = profile_span(frame_index, "host.record_ui_commands");
-        ui_command_buffers = record_ui_command_buffers(render_frame);
-    }
-    {
+    const auto record_and_submit = [&] {
+        {
+            [[maybe_unused]] auto span = profile_span(frame_index, "host.record_frame");
+            callbacks_.record_frame(active_context, render_frame);
+        }
+        std::vector<VkCommandBuffer> ui_command_buffers;
+        {
+            [[maybe_unused]] auto span = profile_span(frame_index, "host.record_ui_commands");
+            ui_command_buffers = record_ui_command_buffers(render_frame);
+        }
         [[maybe_unused]] auto span = profile_span(frame_index, "host.end_frame");
         return render_context.end_frame(frame, ui_command_buffers);
+    };
+
+    if (!callbacks_.frame_submitted && !callbacks_.frame_discarded) {
+        return record_and_submit();
     }
+
+    const cubey::vulkan::GpuSubmissionTicket ticket_before =
+        frame_resources().submitted_ticket(frame.frame_slot_index);
+    cubey::vulkan::RenderFrameResult submitted_result = cubey::vulkan::RenderFrameResult::Rendered;
+    try {
+        submitted_result = record_and_submit();
+    } catch (...) {
+        const std::exception_ptr original_failure = std::current_exception();
+        const cubey::vulkan::GpuSubmissionTicket ticket_after =
+            frame_resources().submitted_ticket(frame.frame_slot_index);
+        const bool submitted = ticket_after.value != 0U && ticket_after != ticket_before;
+        if (submitted) {
+            if (callbacks_.frame_submitted) {
+                try {
+                    callbacks_.frame_submitted(active_context, render_frame, ticket_after);
+                } catch (...) {
+                    // The present/end-frame failure remains the primary error.
+                }
+            }
+        } else if (callbacks_.frame_discarded) {
+            try {
+                callbacks_.frame_discarded(active_context, render_frame);
+            } catch (...) {
+                // Preserve the recording or submission failure.
+            }
+        }
+        std::rethrow_exception(original_failure);
+    }
+
+    const cubey::vulkan::GpuSubmissionTicket ticket_after =
+        frame_resources().submitted_ticket(frame.frame_slot_index);
+    const bool submitted = ticket_after.value != 0U && ticket_after != ticket_before;
+    if (!submitted) {
+        if (callbacks_.frame_discarded) {
+            try {
+                callbacks_.frame_discarded(active_context, render_frame);
+            } catch (...) {
+                // The missing-ticket invariant is the primary error.
+            }
+        }
+        throw std::runtime_error("windowed frame ended without publishing its submission ticket");
+    }
+    if (callbacks_.frame_submitted) {
+        callbacks_.frame_submitted(active_context, render_frame, ticket_after);
+    }
+    return submitted_result;
 }
 
 std::vector<VkCommandBuffer>

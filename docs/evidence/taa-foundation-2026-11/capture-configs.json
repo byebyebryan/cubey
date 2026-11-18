@@ -1,0 +1,301 @@
+{
+  "projects/sdf/presets/taa-foundation-2026-11/cutaway-intact-ss1.json": {
+    "sha256": "7f9080a2dfa260f62b59a1bc921c25da6f8f8ae22f655bbc7f0101cc42eb91d0",
+    "config": {
+      "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "atlas-axis": 64,
+      "motion": "static",
+      "yaw": 0.27,
+      "pitch": 0.29,
+      "distance": 0.94,
+      "target-y": -0.085,
+      "sun-elevation": 43,
+      "sun-azimuth": 135,
+      "shadows": 1,
+      "ao": true,
+      "ground": false,
+      "exposure": 0.4,
+      "supersample": 1,
+      "render-mode": "balanced",
+      "anti-aliasing": "off"
+    }
+  },
+  "projects/sdf/presets/taa-foundation-2026-11/cutaway-intact-ss2.json": {
+    "sha256": "de54747d69c8a550f3dabdc2c10b934f86052217198258ab3a4e6b1a774ee469",
+    "config": {
+      "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "atlas-axis": 64,
+      "motion": "static",
+      "yaw": 0.27,
+      "pitch": 0.29,
+      "distance": 0.94,
+      "target-y": -0.085,
+      "sun-elevation": 43,
+      "sun-azimuth": 135,
+      "shadows": 1,
+      "ao": true,
+      "ground": false,
+      "exposure": 0.4,
+      "supersample": 2,
+      "render-mode": "balanced",
+      "anti-aliasing": "off"
+    }
+  },
+  "projects/sdf/presets/taa-foundation-2026-11/cutaway-intact-taa.json": {
+    "sha256": "f6647703ec135030a4badd877739d4f3292fe9dc11cf14f582694779fdbd004f",
+    "config": {
+      "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "atlas-axis": 64,
+      "motion": "static",
+      "yaw": 0.27,
+      "pitch": 0.29,
+      "distance": 0.94,
+      "target-y": -0.085,
+      "sun-elevation": 43,
+      "sun-azimuth": 135,
+      "shadows": 1,
+      "ao": true,
+      "ground": false,
+      "exposure": 0.4,
+      "supersample": 1,
+      "render-mode": "balanced",
+      "anti-aliasing": "taa"
+    }
+  },
+  "projects/sdf/presets/taa-foundation-2026-11/observatory-ss1.json": {
+    "sha256": "56b4b2258d60712cb1915c4b4da14209d0e79a2097090b990f2f63a8d68332ce",
+    "config": {
+      "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "atlas-axis": 64,
+      "motion": "static",
+      "yaw": 0.55,
+      "pitch": 0.36,
+      "distance": 0.97,
+      "target-y": -0.1,
+      "sun-elevation": 43,
+      "sun-azimuth": 135,
+      "shadows": 1,
+      "ao": true,
+      "ground": false,
+      "exposure": 0.4,
+      "supersample": 1,
+      "render-mode": "balanced",
+      "anti-aliasing": "off"
+    }
+  },
+  "projects/sdf/presets/taa-foundation-2026-11/observatory-ss2.json": {
+    "sha256": "af9a7fce1e686dd90f77055b6b3c88f9735cccee59165bf25c8be65f1b9fb3bf",
+    "config": {
+      "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "atlas-axis": 64,
+      "motion": "static",
+      "yaw": 0.55,
+      "pitch": 0.36,
+      "distance": 0.97,
+      "target-y": -0.1,
+      "sun-elevation": 43,
+      "sun-azimuth": 135,
+      "shadows": 1,
+      "ao": true,
+      "ground": false,
+      "exposure": 0.4,
+      "supersample": 2,
+      "render-mode": "balanced",
+      "anti-aliasing": "off"
+    }
+  },
+  "projects/sdf/presets/taa-foundation-2026-11/observatory-taa.json": {
+    "sha256": "6e8ef3c7144680254b66e2e77bd5dcc38b0e8415f17d0ebd0ad855bd720dd5c1",
+    "config": {
+      "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "atlas-axis": 64,
+      "motion": "static",
+      "yaw": 0.55,
+      "pitch": 0.36,
+      "distance": 0.97,
+      "target-y": -0.1,
+      "sun-elevation": 43,
+      "sun-azimuth": 135,
+      "shadows": 1,
+      "ao": true,
+      "ground": false,
+      "exposure": 0.4,
+      "supersample": 1,
+      "render-mode": "balanced",
+      "anti-aliasing": "taa"
+    }
+  },
+  "projects/sdf/presets/taa-foundation-2026-11/section-ss1.json": {
+    "sha256": "f06de447b1be42dee7f7dcacd9a14b102e655558be758b56131941ca9142824a",
+    "config": {
+      "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory-section.json",
+      "atlas-axis": 64,
+      "motion": "static",
+      "yaw": 0.27,
+      "pitch": 0.29,
+      "distance": 0.94,
+      "target-y": -0.085,
+      "sun-elevation": 43,
+      "sun-azimuth": 135,
+      "shadows": 1,
+      "ao": true,
+      "ground": false,
+      "exposure": 0.4,
+      "supersample": 1,
+      "render-mode": "balanced",
+      "anti-aliasing": "off"
+    }
+  },
+  "projects/sdf/presets/taa-foundation-2026-11/section-ss2.json": {
+    "sha256": "6e48c16b23e6e91e5eec4dcf4c0ad0ad6694e8def165468409d62b233dc2af92",
+    "config": {
+      "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory-section.json",
+      "atlas-axis": 64,
+      "motion": "static",
+      "yaw": 0.27,
+      "pitch": 0.29,
+      "distance": 0.94,
+      "target-y": -0.085,
+      "sun-elevation": 43,
+      "sun-azimuth": 135,
+      "shadows": 1,
+      "ao": true,
+      "ground": false,
+      "exposure": 0.4,
+      "supersample": 2,
+      "render-mode": "balanced",
+      "anti-aliasing": "off"
+    }
+  },
+  "projects/sdf/presets/taa-foundation-2026-11/section-taa.json": {
+    "sha256": "9f3969b5c6e7100005e389ca6854e9c191e7a076f00cf55aa09967f6c543471d",
+    "config": {
+      "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory-section.json",
+      "atlas-axis": 64,
+      "motion": "static",
+      "yaw": 0.27,
+      "pitch": 0.29,
+      "distance": 0.94,
+      "target-y": -0.085,
+      "sun-elevation": 43,
+      "sun-azimuth": 135,
+      "shadows": 1,
+      "ao": true,
+      "ground": false,
+      "exposure": 0.4,
+      "supersample": 1,
+      "render-mode": "balanced",
+      "anti-aliasing": "taa"
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/bronze-off.json": {
+    "sha256": "30bc77c07b1f0260f6b8c1ba47bbce0059f6e48be7d16fef572ffc02195af441",
+    "config": {
+      "material": "bronze",
+      "anti_aliasing": "off",
+      "environment": "studio",
+      "specimen": "sphere",
+      "lighting_cycle": "frozen"
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/bronze-taa.json": {
+    "sha256": "57bf2727bddf4da20095c3d494cdd39786f972ec6cb6194e9f5db33666082c05",
+    "config": {
+      "material": "bronze",
+      "anti_aliasing": "taa",
+      "environment": "studio",
+      "specimen": "sphere",
+      "lighting_cycle": "frozen"
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/clay-off.json": {
+    "sha256": "8d45a2f55f65aa9f0cc07b58e79fa6d81f0fec7c807c189666f146215d9ed91b",
+    "config": {
+      "material": "clay",
+      "anti_aliasing": "off",
+      "environment": "studio",
+      "specimen": "sphere",
+      "lighting_cycle": "frozen"
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/clay-taa.json": {
+    "sha256": "41f7fe4618cb1d28966356282696889a743d95328de527609fe32fafc8294292",
+    "config": {
+      "material": "clay",
+      "anti_aliasing": "taa",
+      "environment": "studio",
+      "specimen": "sphere",
+      "lighting_cycle": "frozen"
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/rigid-motion-off.json": {
+    "sha256": "e15bc3ba28875c21e78b808ab34207c38d3655f931447dbffb985d60288e5562",
+    "config": {
+      "taa_moving_fixture": true,
+      "anti_aliasing": "off",
+      "material": "clay",
+      "environment": "studio",
+      "lighting_cycle": "frozen",
+      "distance": 2.2,
+      "yaw": 0,
+      "pitch": 0
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/rigid-motion-taa.json": {
+    "sha256": "41f786c6db0ae5d71968a87f32340498ec1048054730b9eb9282f1234bfacdc1",
+    "config": {
+      "taa_moving_fixture": true,
+      "anti_aliasing": "taa",
+      "material": "clay",
+      "environment": "studio",
+      "lighting_cycle": "frozen",
+      "distance": 2.2,
+      "yaw": 0,
+      "pitch": 0
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/wood-off.json": {
+    "sha256": "72cdae4d8d75620aa81d7a4285c4bd707ed4c46bdb48d3eaef0ed64804f0bc1a",
+    "config": {
+      "material": "wood",
+      "anti_aliasing": "off",
+      "environment": "studio",
+      "specimen": "sphere",
+      "lighting_cycle": "frozen"
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/wood-taa.json": {
+    "sha256": "7ccd0c11af72b159c6ce17b512eb17c3641c241f480e45f6c708b1bb985cdc97",
+    "config": {
+      "material": "wood",
+      "anti_aliasing": "taa",
+      "environment": "studio",
+      "specimen": "sphere",
+      "lighting_cycle": "frozen"
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/woven-cloth-off.json": {
+    "sha256": "d77307063ed155bee2c76b5fbccff8e58f8119f65a9b2b511c31c8336b77a609",
+    "config": {
+      "material": "woven-cloth",
+      "anti_aliasing": "off",
+      "environment": "studio",
+      "specimen": "swatch",
+      "lighting_cycle": "frozen"
+    }
+  },
+  "projects/pbr_materials/presets/taa-foundation-2026-11/woven-cloth-taa.json": {
+    "sha256": "61f086f8b4ca834781cd3dea7f8df740387f92c3dbadaa3c44a820efb24462b0",
+    "config": {
+      "material": "woven-cloth",
+      "anti_aliasing": "taa",
+      "environment": "studio",
+      "specimen": "swatch",
+      "lighting_cycle": "frozen"
+    }
+  },
+  "outputs/taa/foundation-loop/final/sdf/section-actions.json": {
+    "sha256": "b3216f1034479b03cd5c187d39adb01749aa5b7acaf660b32604b6859366e1f7",
+    "deduplicated_evidence": "section-actions.json"
+  }
+}

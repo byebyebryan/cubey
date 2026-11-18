@@ -30,6 +30,20 @@ template <typename F> void rejects(F&& run) {
 } // namespace
 int main() {
     auto c = parse({});
+    require(c.anti_aliasing == "off");
+    auto temporal =
+        parse({"--anti-aliasing", "taa", "--render-mode", "balanced", "--supersample", "1"});
+    resolve_render_mode(temporal, true);
+    require(temporal.anti_aliasing == "taa" && temporal.supersample == 1 &&
+            temporal.effective_render_mode == "balanced");
+    require(config_for_render_mode(temporal, "cached", true).anti_aliasing == "taa");
+    bool invalid_aa_rejected = false;
+    try {
+        static_cast<void>(parse({"--anti-aliasing", "fxaa"}));
+    } catch (const std::runtime_error&) {
+        invalid_aa_rejected = true;
+    }
+    require(invalid_aa_rejected);
     require(c.named_render_mode && c.render_mode == "auto");
     resolve_render_mode(c, false);
     require(c.effective_render_mode == "cached");

@@ -24,6 +24,29 @@ a project preset. Authored construction presets replay saved edits, and the
 material workshop uses the same SDF renderer. The executable does not provide
 continuous freehand sculpting.
 
+## Temporal anti-aliasing
+
+Native TAA uses the same shared resolve/history implementation as the forward
+PBR workshop and is selected independently of the SDF tracing mode:
+
+```sh
+build/release/projects/sdf/sdf --config projects/sdf/presets/taa-foundation-2026-11/observatory-taa.json
+```
+
+The comparison directory retains the approved Balanced model, A64 field,
+materials and lighting. `observatory-ss1.json` and `observatory-ss2.json` provide
+matched Off controls. `section-*` and `cutaway-intact-*` use the same camera to
+inspect occlusion around the interior. Existing presets and defaults remain
+unchanged.
+
+TAA requires supersampling 1x. The selector at the end of the SDF panel reports
+when diagnostics, transmission, clouds, dynamic lighting or edit/cutter previews
+bypass it. Camera motion preserves history; cuts/restarts/seeks and scene or
+material publication reset it. Exposure is applied after the HDR resolve.
+TAA reduces sampling aliasing and can soften motion; it cannot recover geometry
+absent from the cache or accelerate the underlying SDF trace. See the
+[foundation contract](../../docs/architecture/temporal-aa.md).
+
 ## Rendering modes
 
 Saved authored scenes, the material workshop and box recipes default to

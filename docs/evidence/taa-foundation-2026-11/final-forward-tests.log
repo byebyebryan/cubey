@@ -1,0 +1,30 @@
+UpdateCTestConfiguration  from :/home/bryan/code/cubey-aa/build/dev/DartConfiguration.tcl
+Parse Config file:/home/bryan/code/cubey-aa/build/dev/DartConfiguration.tcl
+Test project /home/bryan/code/cubey-aa/build/dev
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 22
+    Start 22: forward_temporal_gpu
+
+22: Test command: /home/bryan/code/cubey-aa/build/dev/tests/cubey/cubey_forward_temporal_gpu_tests
+22: Working Directory: /home/bryan/code/cubey-aa/build/dev/tests/cubey
+22: Test timeout computed to be: 1500
+22: Rigid motion probe: stationary red=0, right-moving red=130
+22: PASS: forward lazy-create retry, unsubmitted depth/history rollback, rigid movement and signed GPU motion, identity/mask/debug bypass and Off return
+1/1 Test #22: forward_temporal_gpu .............   Passed    0.30 sec
+
+The following tests passed:
+	forward_temporal_gpu
+
+100% tests passed out of 1
+
+Label Time Summary:
+gpu       =   0.30 sec*proc (1 test)
+render    =   0.30 sec*proc (1 test)
+taa       =   0.30 sec*proc (1 test)
+
+Total Test time (real) =   0.31 sec

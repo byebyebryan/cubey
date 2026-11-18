@@ -1,0 +1,35 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16) in;
+layout(std140, set = 0, binding = 0) uniform TemporalUniforms {
+    mat4 inverse_jittered_vp;
+    mat4 current_vp;
+    mat4 previous_vp;
+    vec4 eye;
+    vec4 size;
+    vec4 controls;
+} u;
+layout(set = 0, binding = 1) uniform sampler2D depth_image;
+layout(rg16f, set = 0, binding = 2) writeonly uniform image2D motion_image;
+bool finite4(vec4 v) { return !any(isnan(v)) && !any(isinf(v)); }
+void main() {
+    ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+    if (any(greaterThanEqual(p, ivec2(u.size.xy)))) return;
+    vec2 ndc = (vec2(p) + .5) * u.size.zw * 2.0 - 1.0;
+    float depth = texelFetch(depth_image, p, 0).r;
+    vec4 world = u.inverse_jittered_vp * vec4(ndc, depth, 1);
+    vec2 motion = u.size.xy + 16.0;
+    if (finite4(world) && abs(world.w) > 1e-8) {
+        world /= world.w;
+        // A clear-depth pixel is a direction at infinity; camera translation
+        // must not move the sky. Both matrices exclude temporal jitter.
+        if (depth >= 1.0) world = vec4(world.xyz - u.eye.xyz, 0);
+        vec4 current = u.current_vp * world;
+        vec4 previous = u.previous_vp * world;
+        bool previous_depth_valid = depth >= 1.0 ||
+            (previous.z >= 0.0 && previous.z <= previous.w);
+        if (finite4(current) && finite4(previous) && current.w > 1e-8 && previous.w > 1e-8 &&
+            previous_depth_valid)
+            motion = (previous.xy / previous.w - current.xy / current.w) * .5 * u.size.xy;
+    }
+    imageStore(motion_image, p, vec4(motion, 0, 0));
+}

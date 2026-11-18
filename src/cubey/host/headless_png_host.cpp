@@ -455,20 +455,66 @@ void HeadlessPngHost::record_capture(HeadlessPngContext& context,
         .label = "headless PNG capture",
         .work =
             [this, &context, target, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
-                cubey::vulkan::ImmediateCommands commands(gpu_context.device(),
-                                                          gpu_context.submission());
-                const VkCommandBuffer command_buffer = commands.command_buffer();
-                cubey::vulkan::transition_image_layout(
-                    command_buffer, cubey::vulkan::begin_color_attachment_transition(target.image));
-                if (callbacks_.record_frame) {
-                    callbacks_.record_frame(context, frame, command_buffer, target);
-                } else {
-                    callbacks_.record_capture(context, command_buffer, target);
+                cubey::vulkan::GpuSubmissionTicket ticket_before{};
+                bool record_started = false;
+                bool submission_attempted = false;
+                bool submission_notification_attempted = false;
+                try {
+                    cubey::vulkan::ImmediateCommands commands(gpu_context.device(),
+                                                              gpu_context.submission());
+                    const VkCommandBuffer command_buffer = commands.command_buffer();
+                    cubey::vulkan::transition_image_layout(
+                        command_buffer,
+                        cubey::vulkan::begin_color_attachment_transition(target.image));
+                    if (callbacks_.record_frame) {
+                        record_started = true;
+                        callbacks_.record_frame(context, frame, command_buffer, target);
+                    } else {
+                        record_started = true;
+                        callbacks_.record_capture(context, command_buffer, target);
+                    }
+                    cubey::vulkan::transition_image_layout(
+                        command_buffer,
+                        cubey::vulkan::finish_color_attachment_for_readback_transition(
+                            target.image));
+                    ticket_before = gpu_context.submission().last_submitted();
+                    submission_attempted = true;
+                    commands.submit_and_wait();
+                    const cubey::vulkan::GpuSubmissionTicket ticket_after =
+                        gpu_context.submission().last_submitted();
+                    if (ticket_after.value == 0U || ticket_after == ticket_before) {
+                        throw std::runtime_error("headless PNG frame completed without publishing "
+                                                 "its submission ticket");
+                    }
+                    submission_notification_attempted = true;
+                    if (callbacks_.frame_submitted) {
+                        callbacks_.frame_submitted(context, frame, ticket_after);
+                    }
+                } catch (...) {
+                    const std::exception_ptr original_failure = std::current_exception();
+                    if (record_started && !submission_notification_attempted) {
+                        const cubey::vulkan::GpuSubmissionTicket ticket_after =
+                            gpu_context.submission().last_submitted();
+                        const bool submitted = submission_attempted && ticket_after.value != 0U &&
+                                               ticket_after != ticket_before;
+                        if (submitted) {
+                            if (callbacks_.frame_submitted) {
+                                try {
+                                    callbacks_.frame_submitted(context, frame, ticket_after);
+                                } catch (...) {
+                                    // Preserve a submission/wait failure after the accepted submit.
+                                }
+                            }
+                        } else if (callbacks_.frame_discarded) {
+                            try {
+                                callbacks_.frame_discarded(context, frame);
+                            } catch (...) {
+                                // Preserve the recording or queue-submit failure.
+                            }
+                        }
+                    }
+                    std::rethrow_exception(original_failure);
                 }
-                cubey::vulkan::transition_image_layout(
-                    command_buffer,
-                    cubey::vulkan::finish_color_attachment_for_readback_transition(target.image));
-                commands.submit_and_wait();
             },
     }));
     drain_gpu_work();
@@ -546,40 +592,83 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
             .label = "headless video capture",
             .work =
                 [this, &frame_context, &slot, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
-                    cubey::vulkan::check(
-                        vkResetFences(gpu_context.device().handle(), 1, &slot.fence),
-                        "vkResetFences headless video capture");
-                    cubey::vulkan::check(vkResetCommandBuffer(slot.command_buffer, 0),
-                                         "vkResetCommandBuffer headless video capture");
-                    cubey::vulkan::begin_command_buffer(
-                        slot.command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-                    cubey::vulkan::transition_image_layout(
-                        slot.command_buffer,
-                        cubey::vulkan::begin_color_attachment_transition(slot.target.image));
-                    if (callbacks_.record_frame) {
-                        callbacks_.record_frame(frame_context, frame, slot.command_buffer,
-                                                slot.target);
-                    } else {
-                        callbacks_.record_capture(frame_context, slot.command_buffer, slot.target);
+                    cubey::vulkan::GpuSubmissionTicket ticket_before{};
+                    bool record_started = false;
+                    bool submission_attempted = false;
+                    bool submission_notification_attempted = false;
+                    try {
+                        cubey::vulkan::check(
+                            vkResetFences(gpu_context.device().handle(), 1, &slot.fence),
+                            "vkResetFences headless video capture");
+                        cubey::vulkan::check(vkResetCommandBuffer(slot.command_buffer, 0),
+                                             "vkResetCommandBuffer headless video capture");
+                        cubey::vulkan::begin_command_buffer(
+                            slot.command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+                        cubey::vulkan::transition_image_layout(
+                            slot.command_buffer,
+                            cubey::vulkan::begin_color_attachment_transition(slot.target.image));
+                        if (callbacks_.record_frame) {
+                            record_started = true;
+                            callbacks_.record_frame(frame_context, frame, slot.command_buffer,
+                                                    slot.target);
+                        } else {
+                            record_started = true;
+                            callbacks_.record_capture(frame_context, slot.command_buffer,
+                                                      slot.target);
+                        }
+                        cubey::vulkan::transition_image_layout(
+                            slot.command_buffer,
+                            cubey::vulkan::finish_color_attachment_for_readback_transition(
+                                slot.target.image));
+                        const VkBufferImageCopy copy = cubey::vulkan::buffer_image_copy(
+                            VkExtent3D{slot.target.extent.width, slot.target.extent.height, 1});
+                        vkCmdCopyImageToBuffer(slot.command_buffer, slot.target.image,
+                                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                               slot.readback->handle(), 1, &copy);
+                        cubey::vulkan::end_command_buffer(
+                            slot.command_buffer, "vkEndCommandBuffer headless video capture");
+                        ticket_before = gpu_context.submission().last_submitted();
+                        submission_attempted = true;
+                        slot.ticket = gpu_context.submission().submit(
+                            {
+                                .command_buffers = {slot.command_buffer},
+                                .fence = slot.fence,
+                            },
+                            "vkQueueSubmit headless video capture");
+                        slot.submitted = true;
+                        submission_notification_attempted = true;
+                        if (callbacks_.frame_submitted) {
+                            callbacks_.frame_submitted(frame_context, frame, slot.ticket);
+                        }
+                    } catch (...) {
+                        const std::exception_ptr original_failure = std::current_exception();
+                        if (record_started && !submission_notification_attempted) {
+                            const cubey::vulkan::GpuSubmissionTicket ticket_after =
+                                gpu_context.submission().last_submitted();
+                            const bool submitted = submission_attempted &&
+                                                   ticket_after.value != 0U &&
+                                                   ticket_after != ticket_before;
+                            if (submitted) {
+                                slot.ticket = ticket_after;
+                                slot.submitted = true;
+                                if (callbacks_.frame_submitted) {
+                                    try {
+                                        callbacks_.frame_submitted(frame_context, frame,
+                                                                   ticket_after);
+                                    } catch (...) {
+                                        // Preserve a failure after the accepted queue submit.
+                                    }
+                                }
+                            } else if (callbacks_.frame_discarded) {
+                                try {
+                                    callbacks_.frame_discarded(frame_context, frame);
+                                } catch (...) {
+                                    // Preserve the recording or queue-submit failure.
+                                }
+                            }
+                        }
+                        std::rethrow_exception(original_failure);
                     }
-                    cubey::vulkan::transition_image_layout(
-                        slot.command_buffer,
-                        cubey::vulkan::finish_color_attachment_for_readback_transition(
-                            slot.target.image));
-                    const VkBufferImageCopy copy = cubey::vulkan::buffer_image_copy(
-                        VkExtent3D{slot.target.extent.width, slot.target.extent.height, 1});
-                    vkCmdCopyImageToBuffer(slot.command_buffer, slot.target.image,
-                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                           slot.readback->handle(), 1, &copy);
-                    cubey::vulkan::end_command_buffer(slot.command_buffer,
-                                                      "vkEndCommandBuffer headless video capture");
-                    slot.ticket = gpu_context.submission().submit(
-                        {
-                            .command_buffers = {slot.command_buffer},
-                            .fence = slot.fence,
-                        },
-                        "vkQueueSubmit headless video capture");
-                    slot.submitted = true;
                 },
         }));
         drain_gpu_work();
@@ -682,37 +771,83 @@ void HeadlessPngHost::run_render_only(HeadlessPngContext&, const HeadlessRenderT
                                     frame.index, "headless.owner_dispatch_wait", dispatched,
                                     std::chrono::steady_clock::now());
                             }
-                            cubey::vulkan::check(
-                                vkResetFences(owner.device().handle(), 1, &slot.fence),
-                                "vkResetFences offscreen render");
-                            cubey::vulkan::check(vkResetCommandBuffer(slot.command_buffer, 0),
-                                                 "vkResetCommandBuffer offscreen render");
-                            cubey::vulkan::begin_command_buffer(
-                                slot.command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-                            cubey::vulkan::transition_image_layout(
-                                slot.command_buffer,
-                                cubey::vulkan::begin_color_attachment_transition(
-                                    slot.target.image));
-                            {
-                                [[maybe_unused]] auto record_span =
-                                    profile_span(frame.index, "headless.record_frame");
-                                if (callbacks_.record_frame)
-                                    callbacks_.record_frame(frame_context, frame,
-                                                            slot.command_buffer, slot.target);
-                                else
-                                    callbacks_.record_capture(frame_context, slot.command_buffer,
-                                                              slot.target);
+                            cubey::vulkan::GpuSubmissionTicket ticket_before{};
+                            bool record_started = false;
+                            bool submission_attempted = false;
+                            bool submission_notification_attempted = false;
+                            try {
+                                cubey::vulkan::check(
+                                    vkResetFences(owner.device().handle(), 1, &slot.fence),
+                                    "vkResetFences offscreen render");
+                                cubey::vulkan::check(vkResetCommandBuffer(slot.command_buffer, 0),
+                                                     "vkResetCommandBuffer offscreen render");
+                                cubey::vulkan::begin_command_buffer(
+                                    slot.command_buffer,
+                                    VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+                                cubey::vulkan::transition_image_layout(
+                                    slot.command_buffer,
+                                    cubey::vulkan::begin_color_attachment_transition(
+                                        slot.target.image));
+                                {
+                                    [[maybe_unused]] auto record_span =
+                                        profile_span(frame.index, "headless.record_frame");
+                                    if (callbacks_.record_frame) {
+                                        record_started = true;
+                                        callbacks_.record_frame(frame_context, frame,
+                                                                slot.command_buffer, slot.target);
+                                    } else {
+                                        record_started = true;
+                                        callbacks_.record_capture(frame_context,
+                                                                  slot.command_buffer, slot.target);
+                                    }
+                                }
+                                cubey::vulkan::end_command_buffer(
+                                    slot.command_buffer, "vkEndCommandBuffer offscreen render");
+                                {
+                                    [[maybe_unused]] auto submit_span =
+                                        profile_span(frame.index, "headless.queue_submit");
+                                    ticket_before = owner.submission().last_submitted();
+                                    submission_attempted = true;
+                                    slot.ticket = owner.submission().submit(
+                                        {.command_buffers = {slot.command_buffer},
+                                         .fence = slot.fence},
+                                        "vkQueueSubmit offscreen render");
+                                }
+                                slot.submitted = true;
+                                submission_notification_attempted = true;
+                                if (callbacks_.frame_submitted) {
+                                    callbacks_.frame_submitted(frame_context, frame, slot.ticket);
+                                }
+                            } catch (...) {
+                                const std::exception_ptr original_failure =
+                                    std::current_exception();
+                                if (record_started && !submission_notification_attempted) {
+                                    const cubey::vulkan::GpuSubmissionTicket ticket_after =
+                                        owner.submission().last_submitted();
+                                    const bool submitted = submission_attempted &&
+                                                           ticket_after.value != 0U &&
+                                                           ticket_after != ticket_before;
+                                    if (submitted) {
+                                        slot.ticket = ticket_after;
+                                        slot.submitted = true;
+                                        if (callbacks_.frame_submitted) {
+                                            try {
+                                                callbacks_.frame_submitted(frame_context, frame,
+                                                                           ticket_after);
+                                            } catch (...) {
+                                                // Preserve a failure after the accepted submit.
+                                            }
+                                        }
+                                    } else if (callbacks_.frame_discarded) {
+                                        try {
+                                            callbacks_.frame_discarded(frame_context, frame);
+                                        } catch (...) {
+                                            // Preserve the recording or queue-submit failure.
+                                        }
+                                    }
+                                }
+                                std::rethrow_exception(original_failure);
                             }
-                            cubey::vulkan::end_command_buffer(
-                                slot.command_buffer, "vkEndCommandBuffer offscreen render");
-                            {
-                                [[maybe_unused]] auto submit_span =
-                                    profile_span(frame.index, "headless.queue_submit");
-                                slot.ticket = owner.submission().submit(
-                                    {.command_buffers = {slot.command_buffer}, .fence = slot.fence},
-                                    "vkQueueSubmit offscreen render");
-                            }
-                            slot.submitted = true;
                         },
                 }));
             }

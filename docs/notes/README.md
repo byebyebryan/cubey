@@ -27,9 +27,12 @@ These records explain why the current contracts exist. Their measurements,
 manual-acceptance limits and historical sections retain their original scope;
 the architecture and project guides remain current authority.
 
-- [Native TAA foundation plan](taa-foundation-plan.md): proposed shared temporal
-  contracts, forward/SDF integration, observatory showcase, consumer order and
-  native acceptance gates; implementation has not started.
+- [Native TAA foundation results](taa-foundation-closeout.md) and
+  [evidence](../evidence/taa-foundation-2026-11/README.md): opt-in shared
+  forward/SDF history and resolve, matched observatory/rigid-motion comparisons,
+  reference parity and native lifecycle/cost limits.
+- [Native TAA foundation plan](taa-foundation-plan.md): retained implementation
+  contract, showcase choice, consumer order and acceptance gates.
 - [RT material workshop plan](raytracing-material-workshop-plan.md): proposed
   shared twelve-recipe forward/SDF/RT workshop under matched clear atmosphere,
   with rough specular transport, per-material optics and bounded sampling.

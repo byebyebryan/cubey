@@ -1,0 +1,18 @@
+{
+  "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+  "atlas-axis": 64,
+  "motion": "static",
+  "yaw": 0.27,
+  "pitch": 0.29,
+  "distance": 0.94,
+  "target-y": -0.085,
+  "sun-elevation": 43,
+  "sun-azimuth": 135,
+  "shadows": 1,
+  "ao": true,
+  "ground": false,
+  "exposure": 0.4,
+  "supersample": 1,
+  "render-mode": "balanced",
+  "anti-aliasing": "off"
+}
