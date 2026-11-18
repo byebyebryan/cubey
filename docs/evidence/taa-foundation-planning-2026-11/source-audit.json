@@ -1,0 +1,136 @@
+{
+  "date": "2026-11-18T02:45:51.258243+00:00",
+  "source_revision": "211903e865fab09edd4f740509765f4eda016fa2",
+  "scope": "Read-only source/design and retained-poster review. No implementation, new native qualification or measured TAA benefit.",
+  "proposed_showcase": "Approved completed SDF observatory and matched section; opaque PBR workshop is first integration/calibration consumer.",
+  "required_producers": [
+    "ForwardPbrRenderer3D",
+    "SDF independent renderer"
+  ],
+  "confirmed_facts": {
+    "forward_hdr_and_sampled_depth": true,
+    "sdf_hdr_post_frame": true,
+    "sdf_actual_hit_depth": true,
+    "sdf_projection_near_far": [
+      0.01,
+      100.0
+    ],
+    "sdf_hit_depth_matches_projection_formula": true,
+    "sdf_depth_misses_clear_to": 1,
+    "approved_observatory_preset_supersample": 2,
+    "approved_observatory_render_mode": "balanced",
+    "observatory_materials": 16,
+    "observatory_materials_have_transmission_or_opacity_fields": false,
+    "ocean_producer_has_dynamic_displacement_and_foam": true,
+    "cloud_history_is_frame_slot_indexed": true,
+    "observatory_intact_section_presets_differ_only_in_scene": true
+  },
+  "source_files": [
+    {
+      "path": "docs/architecture/renderer-foundation.md",
+      "bytes": 32160,
+      "sha256": "016acf4539b313a16e998b6842761082d2660d3f35f92d282e304f93792f2cc1"
+    },
+    {
+      "path": "docs/architecture/render-graph.md",
+      "bytes": 14986,
+      "sha256": "80de2bff31dc6dae8e08bdd6d04c42eecd1e86a23944711464aa3eae05ba20fe"
+    },
+    {
+      "path": "docs/architecture/rendering-feature-workflow.md",
+      "bytes": 5243,
+      "sha256": "ae2b99f3056daa3cda4f961737455cc21341a9117f9c4e1f810f9676155f2e0e"
+    },
+    {
+      "path": "include/cubey/render/hdr_post_frame.h",
+      "bytes": 2757,
+      "sha256": "1cf91cc89ae47b96549a091d68b322372d796c1cb7fca8af4ac36e2410a6b0c5"
+    },
+    {
+      "path": "include/cubey/engine/forward_pbr_renderer_3d.h",
+      "bytes": 11455,
+      "sha256": "4d0c5bd82dd95d7a3258ca643b5f6cd8eb0dbb0c11ac19d687a9b3e6c39eb2fa"
+    },
+    {
+      "path": "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp",
+      "bytes": 30089,
+      "sha256": "6a8e1dc3c4c7a165c05199bed2dedb4a4db5a05474351c67aabbfe574da3b0f6"
+    },
+    {
+      "path": "src/cubey/render/cloud_layer_history.cpp",
+      "bytes": 9970,
+      "sha256": "584081d54991a933933cec596f3fee45ea32e4b0d76ed1b6c30a960c2b975062"
+    },
+    {
+      "path": "projects/pbr_materials/pbr_materials_render.cpp",
+      "bytes": 5306,
+      "sha256": "99b6c6f03a56b6ab7f2954bdb5be4bb8792f5c6ad483894259e055c8cb707fe9"
+    },
+    {
+      "path": "projects/gltf_viewer/gltf_viewer_render.cpp",
+      "bytes": 25438,
+      "sha256": "4b93074217090a711f0f3b46a54b6faac82260600fc5a0f6c2cfa8a14f38f9cf"
+    },
+    {
+      "path": "projects/sdf/sdf_renderer.cpp",
+      "bytes": 66591,
+      "sha256": "2f58ae3eac415894650ccb6b044650ddb4e2c711fb677db42e186455adfd5298"
+    },
+    {
+      "path": "projects/sdf/shaders/sdf_surface.glsl",
+      "bytes": 10880,
+      "sha256": "4818e86acf8d5fb59725e9b09b9afde2be90b2064eb9840b4c9af1d987f037b5"
+    },
+    {
+      "path": "projects/ocean/ocean_app_render.cpp",
+      "bytes": 28089,
+      "sha256": "ffaf64e0b21d150fcc52933160526db981760826dc7c977a4241b0cd42f233a4"
+    },
+    {
+      "path": "shaders/cubey/ocean/ocean.vert",
+      "bytes": 13970,
+      "sha256": "1f539216a12c3ae301c1f31052f997b3837657c0cf64399df47386f7893dccca"
+    },
+    {
+      "path": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "bytes": 134061,
+      "sha256": "762f1f050d48cb15c6d16e3061a9e285f6985dfff55236bda7eac5a575e8fe48"
+    },
+    {
+      "path": "projects/sdf/scenes/csg-showcase-2026-11/observatory-section.json",
+      "bytes": 158018,
+      "sha256": "ba6a401c89a9501ad852a985f8d5837a784d7bc3ecd81069500937dbb1133308"
+    },
+    {
+      "path": "projects/sdf/presets/csg-showcase-2026-11/observatory.json",
+      "bytes": 360,
+      "sha256": "17cc7b1afc8bd4f98943572e37c601783488b9900d9d8c23ed58a89d449f9803"
+    },
+    {
+      "path": "projects/sdf/presets/csg-showcase-2026-11/observatory-cutaway-section.json",
+      "bytes": 370,
+      "sha256": "c3e036517cb0a2ae2ecf224d55e4e37c388d09d9f95fc94719839aee0bdb4ddd"
+    },
+    {
+      "path": "projects/sdf/presets/csg-showcase-2026-11/observatory-cutaway-intact.json",
+      "bytes": 362,
+      "sha256": "7d5998fd3e13ba5d206a2da25ed551e5b236e64d413b68b9f2eaf32e418e18e3"
+    }
+  ],
+  "visuals_inspected": [
+    "site/public/media/csg-observatory.webp",
+    "site/public/media/csg-observatory-section.webp",
+    "site/public/media/gltf-textures.webp",
+    "site/public/media/ocean-surface.webp"
+  ],
+  "visual_review_limit": "Posters establish subject/detail and composition only; moving SS1/SS2 baselines are P0 work.",
+  "reference_sources": {
+    "donut_current": "52efbe37d7f550ea1c5c7ee02b75404ec7c72c09",
+    "filament": "ac7ac4f306494dd1c7acb37e8607798289b0b02e",
+    "executed_sdk_release": "v310.9.16",
+    "executed_archive_sha256": "985019f1307c0367d0d4dff35f06b2615c5c3ad6b469ffec5b0c16e28758610d",
+    "earlier_research_path": "/home/bryan/code/cubey/outputs/aa/research-20261117",
+    "scope": "Earlier unmodified Linux donor smoke captures; neither a GLSL port nor Cubey TAA qualification."
+  },
+  "decisions": "TAA first and foundation ownership are requested. Other choices are proposed for review."
+}
