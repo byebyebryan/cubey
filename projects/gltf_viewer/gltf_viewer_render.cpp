@@ -24,7 +24,7 @@ void GltfViewerApp::initialize_dlss(VkInstance instance, cubey::vulkan::GpuRunti
     dlss_cleanup_ = gpu.register_owner_cleanup(
         "glTF Viewer DLSS shutdown", [this](cubey::vulkan::GpuOwnerContext&) { dlss_.reset(); });
     gpu.submit("initialize DLSS", [this, instance](cubey::vulkan::GpuOwnerContext& owner) {
-           dlss_ = std::make_unique<GltfViewerDlss>(instance, owner.device());
+           dlss_ = std::make_unique<cubey::host::DlssUpscaler>(instance, owner.device(), config_.dlss_preset);
        }).get();
 }
 
@@ -500,9 +500,10 @@ void GltfViewerApp::viewer_frame_submitted(cubey::profiling::ProfileRecorder* pr
     if (status.upscaled) {
         if (!dlss_status_reported_) {
             std::printf("upscaler: requested=dlss-quality effective=dlss-quality "
-                        "render=%ux%u display=%ux%u\n",
+                        "render=%ux%u display=%ux%u requested_preset=%s\n",
                         dlss_render_extent_.width, dlss_render_extent_.height,
-                        dlss_output_extent_.width, dlss_output_extent_.height);
+                        dlss_output_extent_.width, dlss_output_extent_.height,
+                        config_.dlss_preset.c_str());
             dlss_status_reported_ = true;
         }
         if (profile != nullptr && profile->should_record_frame(index)) {

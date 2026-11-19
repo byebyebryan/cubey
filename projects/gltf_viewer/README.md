@@ -92,6 +92,10 @@ build/dlss/projects/gltf_viewer/gltf_viewer --input path/to/opaque.glb \
   --pbr-environment-source static --upscaler dlss-quality
 ```
 
+Native rendering with AA Auto is the default. The same static-IBL launch
+without `--upscaler dlss-quality` uses native TAA when the interactive view
+is eligible. DLSS is selected at launch.
+
 DLSS Quality requires a supported NVIDIA adapter, static IBL, opaque rigid
 geometry, final PBR, and `--anti-aliasing auto`. Explicit selection reports
 an error when those requirements fail. The display extent comes from the
@@ -99,6 +103,14 @@ window or capture. NGX supplies the lower render extent. Headless video and
 render-only runs can select the same mode. Profiles record the two extents,
 history age and reset reason under `dlss`. Use `--upscaler native` for the
 ordinary Off and TAA policy. An empty SDK path produces the SDK-free build.
+
+DLSS Quality defaults to model preset K. Choose an experimental model with
+`--dlss-preset m` or `--dlss-preset l`. The same values are available under
+`gltf.dlss_preset` in a config file. The model option applies only when DLSS
+Quality is selected, and all three models use the Quality render extent.
+Startup logs report the requested model. M and L produced frames in the
+native Vulkan trial and also triggered image-layout validation errors inside
+NGX v310.9.16. Both cost more GPU time than K on the tested RTX 5070 Ti.
 
 See the [native DLSS qualification results](../../docs/notes/dlss-super-resolution-2026-11.md).
 

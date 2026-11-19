@@ -8,6 +8,8 @@ struct Config {
     host::CommonRunConfig common;
     std::string scene = "fixture", view = "final";
     std::string renderer = "rt", transport_mode = "sampled";
+    std::string upscaler = "native", experimental_glass = "none";
+    bool glass_sequence = false;
     std::string forward_transmission_source = "screen";
     std::uint32_t demo_samples = 4;
     std::uint32_t fixed_opaque_samples = 4;
@@ -70,9 +72,12 @@ inline bool fixed_opaque_transport(const Config& c) {
     return c.renderer == "rt" && c.transport_mode == "fixed-opaque";
 }
 inline bool fixed_opaque_taa_requested(const Config& c) {
-    return fixed_opaque_transport(c) && host::native_taa_requested(c.common);
+    return fixed_opaque_transport(c) && c.upscaler == "native" &&
+           host::native_taa_requested(c.common);
 }
 inline std::string_view anti_aliasing_bypass_reason(const Config& c) {
+    if (c.upscaler != "native")
+        return c.upscaler;
     if (c.renderer == "forward")
         return "forward-renderer-unsupported";
     if (demo_transport(c))
@@ -121,6 +126,27 @@ inline float fixed_opaque_sequence_yaw_offset(std::uint64_t frame,
     if (frame < fixed_opaque_sequence_cut_frame(frame_count))
         return .16F;
     return -.16F;
+}
+struct GlassSequencePose {
+    std::string_view phase;
+    float yaw;
+    bool cut = false;
+};
+// Validated lengths are multiples of eight. Reach each endpoint on the last
+// moving frame, then hold it without resetting history before the actual cut.
+inline GlassSequencePose glass_sequence_pose(std::uint64_t frame, std::uint64_t count) {
+    const auto block = count / 8;
+    if (frame < block)
+        return {"hold", 0};
+    if (frame < 3 * block)
+        return {"orbit", .24F * float(frame + 1 - block) / float(2 * block)};
+    if (frame < 4 * block)
+        return {"stop", .24F};
+    if (frame < 6 * block)
+        return {"return", .24F * float(6 * block - 1 - frame) / float(2 * block)};
+    if (frame < 7 * block)
+        return {"home", 0};
+    return {frame == 7 * block ? "cut" : "post-cut-hold", -.4F, frame == 7 * block};
 }
 inline int dump_mode(const Config& c) {
     return !c.query_output.empty()
@@ -179,11 +205,20 @@ inline config::Schema schema(Config& c) {
     renderer.enum_values = {"rt", "forward"};
     auto transport = opt("transport-mode", ValueType::Enum);
     transport.enum_values = {"sampled", "demo", "fixed-opaque"};
+    auto upscaler = opt("upscaler", ValueType::Enum);
+    upscaler.enum_values = {"native", "spatial-quality", "dlss-quality"};
+    upscaler.help = "Fixed RT render resolution and reconstruction";
+    auto glass_study = opt("experimental-glass", ValueType::Enum);
+    glass_study.enum_values = {"none", "dragon", "sphere"};
+    glass_study.help = "Opt in to the fixed glass demo reconstruction study";
     auto controls = opt("controls", ValueType::Bool);
     controls.negative_cli_name = "--no-controls";
     b.bind(renderer, c.renderer)
         .bind(controls, c.controls)
         .bind(transport, c.transport_mode)
+        .bind(upscaler, c.upscaler)
+        .bind(glass_study, c.experimental_glass)
+        .bind(opt("glass-sequence", ValueType::Bool), c.glass_sequence)
         .bind(opt("demo-samples", ValueType::UInt32), c.demo_samples)
         .bind(opt("fixed-opaque-samples", ValueType::UInt32), c.fixed_opaque_samples)
         .bind(opt("fixed-opaque-sequence", ValueType::Bool), c.fixed_opaque_sequence)
@@ -314,6 +349,19 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         throw std::invalid_argument("fixed-opaque transport requires the RT renderer");
     if (fixed_opaque_transport(c) && c.scene != "dragon-materials")
         throw std::invalid_argument("fixed-opaque transport requires dragon-materials");
+    const bool glass_study = c.experimental_glass != "none";
+    if (glass_study && (!demo_transport(c) || c.scene != "dragon-optics"))
+        throw std::invalid_argument("experimental glass requires RT demo transport on dragon-optics");
+    if (c.glass_sequence && (!glass_study || !c.common.headless || c.common.frames < 16 ||
+                             (!c.common.headless_render_only && c.common.capture_mode != CaptureMode::Video) ||
+                             c.common.run_seconds != 0 || c.common.frames % 8 != 0 ||
+                             c.orbit_speed != 0 || c.sun_speed != 0))
+        throw std::invalid_argument("glass sequence requires experimental glass, headless frames "
+                                    "in multiples of eight (at least 16), and a static camera/sun");
+    if (c.upscaler != "native" && ((!fixed_opaque_transport(c) && !glass_study) ||
+                                  c.common.anti_aliasing == "taa"))
+        throw std::invalid_argument(
+            "upscaling requires fixed-opaque transport or experimental glass and AA auto or off");
     if (c.common.anti_aliasing == "taa" && !fixed_opaque_transport(c))
         throw std::invalid_argument("TAA currently requires fixed-opaque transport");
     if (c.fixed_opaque_sequence && !fixed_opaque_transport(c))
@@ -361,6 +409,15 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         if (c.throughput_cutoff != 0)
             throw std::invalid_argument("sampled dragon requires zero raw-throughput cutoff");
     }
+    if (glass_study &&
+        (c.material != "glass" || c.shadows || !c.smooth_normals || !c.pattern || !c.bump ||
+         c.hide_dragon || c.view != "final" || c.workshop_lighting != "combined" ||
+         !c.recipe_input.empty() || !c.recipe_output.empty() || c.material_roughness != -1 ||
+         c.firefly_clamp != 100 || c.max_events != 128 || c.max_path_rays != 1024 ||
+         c.max_total_rays != 4096 || c.stress_edits || c.sun_speed != 0 || dump_mode(c) != 0 ||
+         c.exercise_retry || c.fault != "none"))
+        throw std::invalid_argument("experimental glass requires the fixed demo's canonical sharp "
+                                    "glass, lighting, path budgets and final view; use --no-shadows");
     if (fixed_opaque_transport(c)) {
         if (c.samples != 256 || c.demo_samples != 4 || c.material != "bronze" ||
             c.support_material != "marble" ||
@@ -511,12 +568,12 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
         throw std::invalid_argument("raytracing: invalid optical range or path budget");
     if (c.hide_dragon && c.scene != "dragon-optics")
         throw std::invalid_argument("hidden dragon control requires the optical dragon scene");
-    const bool dragon = c.scene.find("dragon") != std::string::npos;
+    const bool dragon = c.scene.find("dragon") != std::string::npos && c.experimental_glass != "sphere";
     if (dragon && (c.model.empty() || !std::filesystem::is_regular_file(c.model)))
         throw std::invalid_argument("dragon requires --model prepared.glb; run "
                                     "projects/raytracing/tools/prepare_dragon.py first");
     if (!dragon && !c.model.empty())
-        throw std::invalid_argument("--model requires --scene dragon");
+        throw std::invalid_argument("--model requires a dragon mesh scene");
     if (c.exercise_retry && c.fault == "none")
         throw std::invalid_argument("--exercise-retry requires --fault scene|pipeline|target");
     const auto outputs =

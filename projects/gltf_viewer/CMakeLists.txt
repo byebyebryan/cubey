@@ -40,7 +40,7 @@ cubey_add_app_target(
         ${CUBEY_GLTF_VIEWER_OCEAN_SHADER_DEPENDS}
         ${CUBEY_GLTF_VIEWER_PATCH_SHADER_DEPENDS}
 )
-include(cmake/Dlss.cmake)
+target_link_libraries(cubey_project_gltf_viewer PRIVATE cubey::dlss)
 target_compile_definitions(cubey_project_gltf_viewer PRIVATE
     CUBEY_GLTF_VIEWER_LANDSCAPE_CATALOG="${CMAKE_SOURCE_DIR}/projects/terrain/terrain_landscape_presets.json"
     CUBEY_GLTF_VIEWER_TERRAIN_CACHE="${CMAKE_SOURCE_DIR}/cache/terrain")

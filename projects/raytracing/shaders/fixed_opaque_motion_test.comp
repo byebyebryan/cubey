@@ -1,6 +1,7 @@
 #version 460
 #extension GL_GOOGLE_include_directive : require
 #include "fixed_opaque_motion.glsl"
+#include "fixed_opaque_depth.glsl"
 
 layout(local_size_x = 1) in;
 
@@ -26,5 +27,7 @@ void main() {
                                     motionCase.currentViewProjection,
                                     motionCase.previousViewProjection,
                                     motionCase.extentHit.xy);
-    results[index] = vec4(motion, 0, 0);
+    float depth = fixedOpaqueDepth(motionCase.hitPoint.xyz, motionCase.extentHit.z > 0.5,
+                                   motionCase.currentViewProjection);
+    results[index] = vec4(motion, depth, 0);
 }

@@ -95,6 +95,7 @@ struct GltfViewerStartupOptions {
 struct GltfViewerProjectConfig : GltfViewerStartupOptions {
     host::CommonRunConfig common;
     std::string upscaler = "native";
+    std::string dlss_preset = "k";
 };
 
 // The selected PBR source is a viewer-wide rendering policy, not a collection
@@ -205,10 +206,15 @@ using config::ValueType;
 inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig& config) {
     auto builder = config::Schema::builder().compose(host::common_run_config_schema(config.common));
     auto upscaler = detail::option("gltf.upscaler", "--upscaler", "Upscaler", "PBR",
-                                   "Native rendering or opt-in NVIDIA DLSS Super Resolution Quality.",
+                                   "Native rendering follows the anti-aliasing policy. DLSS Quality "
+                                   "is an opt-in launch option for compatible opaque assets.",
                                    config::ValueType::Enum);
     upscaler.enum_values = {"native", "dlss-quality"};
     builder.bind(upscaler, config.upscaler);
+    builder.bind(detail::option("gltf.dlss_preset", "--dlss-preset", "DLSS Model Preset", "PBR",
+                                "Model for DLSS Quality. K is the default. M and L are experimental.",
+                                ValueType::Enum, {}, {"k", "m", "l"}),
+                 config.dlss_preset);
     builder.bind(detail::option("gltf.input", "--input", "Input", "glTF", "glTF or GLB asset path.",
                                 ValueType::Path),
                  config.gltf.input_path);

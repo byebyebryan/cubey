@@ -48,12 +48,12 @@ frames at 30 Hz and writes a video. Both record accepted submission tickets,
 primary dispatch counts and, for TAA, history age, reset reason and jitter in
 the metrics JSON.
 
-The original prepared model is outside this checkout. Use the protected cache
-copy below; it is read-only and its expected SHA256 is
+Use the prepared model from the repository cache, or set `MODEL` to its
+absolute path in another checkout. Its expected SHA256 is
 `3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e`.
 
 ```sh
-MODEL=/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb
+MODEL=cache/raytracing/stanford-dragon/dragon.glb
 BIN=build/release/projects/raytracing/raytracing
 
 "$BIN" --config projects/raytracing/presets/optics/dragon-fixed-opaque-off.json \
@@ -91,3 +91,45 @@ The fixed sequence phase boundaries are hold frames 0–11, orbit 12–47, stop
 the orbit endpoint to the same final pose in both runs and explicitly resets
 TAA. The 14-frame fixture uses hold 0–2, orbit 3–7, stop 8–10, cut 11, and
 post-cut hold 12–13.
+
+## Reduced-resolution controls
+
+Use the same Off preset, model, output size, fixed sample count and sequence
+with `--upscaler spatial-quality` or `--upscaler dlss-quality`. Both accept
+`--anti-aliasing auto` or `off`. The default upscaler is `native`. The
+spatial control traces at two thirds of each output dimension, rounded to the
+nearest pixel, and linearly samples scene-linear HDR before the existing
+display transform. It uses the fixed Off raygen. DLSS requires an SDK-enabled
+build and supported runtime, queries the Quality render dimensions and uses
+preset K. The camera aspect ratio always follows the output.
+
+The DLSS raygen adds the accepted temporal jitter to all existing spatial
+lanes. The first lane writes the previous-minus-current RG16F motion and
+R32F Vulkan depth from its actual hit. Sky misses write depth 1 and the
+rotation-only sky vector. Each accepted frame records the lane count, total
+primary rays, render and output dimensions, jitter, history age and reset
+reason in `fixed_opaque_accepted_frames`. Spatial has no history. For render-only
+timings use the profile summary's `raytracing.trace`, `raytracing.post`,
+`dlss.evaluate` (DLSS), `raytracing.whole_scene` and `raytracing.total_frame`
+GPU spans. The total also includes the environment update.
+
+See the [opaque producer trial](../../../docs/notes/dlss-opaque-producers-2026-11.md) for matched timing and image evidence.
+
+## Interactive opaque RT launch
+
+The Auto preset uses the qualified bronze dragon, marble support and four
+primary samples. In an interactive window, the first command selects native
+TAA. The second selects DLSS Quality K. The optional binary is built with
+the pinned SDK. [Build instructions](../README.md#build-and-run)
+
+```sh
+MODEL=cache/raytracing/stanford-dragon/dragon.glb
+PRESET=projects/raytracing/presets/optics/dragon-fixed-opaque-auto.json
+
+build/dev/projects/raytracing/raytracing --config "$PRESET" --model "$MODEL"
+build/dlss/projects/raytracing/raytracing --config "$PRESET" --model "$MODEL" \
+  --upscaler dlss-quality
+```
+
+For headless captures use the explicit Off or TAA presets above, or
+`--upscaler dlss-quality` with the Auto preset.

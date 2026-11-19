@@ -64,15 +64,11 @@ evaluation was 0.84 ms. At 2160p it was 1.66–1.67 ms. Reconstruction cost
 exceeded the shading savings in this forward scene. Native TAA is the
 Viewer's Auto choice.
 
-## Next producers
+## Opaque producers
 
-The analytic SDF route already computes forward depth and temporal motion.
-Its first trial needs trace and post targets with separate extents, preserved
-cut and edit semantics, and paired motion and cost at an equal output size.
-Fixed opaque RT needs depth from the same jittered primary hit used for its
-motion vector, with the same sky convention and a separately measured ray
-budget. These pixel-heavy routes are stronger candidates for measuring
-whether the cost of reconstruction pays off.
+Analytic SDF and fixed opaque RT now use the shared NGX backend. Their
+matched native TAA, spatial scaling and DLSS timings are documented in the
+[opaque producer trial](dlss-opaque-producers-2026-11.md).
 
 Retained local evidence is under `outputs/dlss/sr-20261118/`, including the
 pinned NGX source and readback probe, paired orbit clips, window screenshots,

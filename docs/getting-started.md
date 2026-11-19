@@ -256,6 +256,11 @@ recipes. The [docs index](README.md#project-docs) links the maintained guides.
 The paused [Planet study](../studies/planet/README.md#explicit-build-and-use)
 has its own opt-in build and is excluded from normal project builds.
 
+The native path uses AA Auto. Compatible interactive views apply TAA.
+The Viewer, SDF and ray tracing projects also offer an explicit DLSS Quality
+launch option for qualified scenes. The supported paths and launch recipes
+are listed in the [upscaler selection guide](architecture/temporal-aa.md#upscaler-selection).
+
 Windowed `--frames N` runs exit after the requested frame count and print a
 final `windowed_perf` summary. Add `--print-frame-stats` for periodic stdout
 samples while a window remains open.

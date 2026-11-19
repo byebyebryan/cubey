@@ -37,3 +37,5 @@ target_link_libraries(
         cubey_project_warnings
         glfw
 )
+
+include(Dlss.cmake)

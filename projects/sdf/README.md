@@ -47,6 +47,33 @@ TAA reduces sampling aliasing and can soften motion; it cannot recover geometry
 absent from the cache or accelerate the underlying SDF trace. See the
 [foundation contract](../../docs/architecture/temporal-aa.md).
 
+## Quality upscaling
+
+The analytic robot preset starts at native resolution and uses TAA in an
+eligible interactive view. Select DLSS Quality K at launch using the same
+scene, camera and lighting.
+
+```sh
+build/dlss/projects/sdf/sdf \
+  --config projects/sdf/presets/csg-showcase-2026-11/robot-analytic.json
+
+build/dlss/projects/sdf/sdf \
+  --config projects/sdf/presets/csg-showcase-2026-11/robot-analytic.json \
+  --upscaler dlss-quality
+```
+
+For a matched spatial control use `--upscaler spatial-quality`. Both reduced
+resolution options take over reconstruction and accept AA Auto or Off.
+DLSS Quality reports its configured render and display dimensions, history
+age and reset reason. The SDF route requires an authored, opaque analytic
+scene at SS1, final shading, frozen atmosphere lighting, and clouds disabled.
+Configure `build/dlss` with `CUBEY_DLSS_SDK_DIR` pointing to the NVIDIA SDK
+and build `cubey_project_sdf` to enable DLSS.
+
+Clouds continue to use native rendering. The earlier alpha and
+independent-coverage tests remain headless experiments in their dedicated
+worktrees. [Opaque producer qualification](../../docs/notes/dlss-opaque-producers-2026-11.md)
+
 ## Rendering modes
 
 Saved authored scenes, the material workshop and box recipes default to

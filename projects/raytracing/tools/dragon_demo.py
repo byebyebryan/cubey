@@ -1,7 +1,9 @@
 """Launch the matched dragon showcase from any working directory.
 
 Choose forward hybrid, fixed-quality RT, or the progressive sampled comparison.
-Native renderer arguments can follow --. Model preparation stays explicit.
+Native rendering is the default. The optional DLSS Quality candidate applies
+only to fixed-quality RT. Native renderer arguments can follow --. Model
+preparation stays explicit.
 """
 import argparse
 from pathlib import Path
@@ -16,6 +18,7 @@ MODES = {
     "forward": ("dragon-forward.json", "forward", "sampled"),
     "sampled": ("dragon-glass.json", "rt", "sampled"),
 }
+UPSCALERS = ("native", "dlss-quality")
 # Identical camera values are applied to all three rendering paths.
 VIEWS = {
     "whole": {"yaw": .45, "pitch": .35, "distance": 1.75,
@@ -27,19 +30,35 @@ VIEWS = {
 }
 
 
-def command(binary, mode, view, rt_samples=None, extra=()):
+def _repo_path(path):
+    path = Path(path).expanduser()
+    if not path.is_absolute():
+        path = ROOT / path
+    return path.resolve()
+
+
+def command(binary, mode, view, rt_samples=None, extra=(), upscaler="native", model=None):
     if rt_samples is not None and mode != "rt":
         raise ValueError("--rt-samples applies to fixed-quality RT mode")
+    if upscaler not in UPSCALERS:
+        raise ValueError(f"unsupported launcher upscaler: {upscaler}")
+    if upscaler == "dlss-quality" and mode != "rt":
+        raise ValueError("--upscaler dlss-quality applies only to --mode rt. "
+                         "Forward and sampled use native rendering.")
     preset, renderer, transport = MODES[mode]
     args = [str(Path(binary).resolve()), "--config", str(PRESETS / preset),
             "--renderer", renderer, "--transport-mode", transport,
             "--no-shadows", "--fov", "45"]
+    if model is not None:
+        args += ["--model", str(_repo_path(model))]
     for name, value in VIEWS[view].items():
         args += ["--" + name, str(value)]
     if mode == "forward":
         args += ["--forward-transmission-source", "hybrid"]
     elif mode == "rt":
         args += ["--demo-samples", str(rt_samples or 4)]
+    if upscaler == "dlss-quality":
+        args += ["--experimental-glass", "dragon", "--upscaler", upscaler]
     return args + list(extra)
 
 
@@ -50,6 +69,10 @@ def main():
     parser.add_argument("--view", choices=VIEWS, default="whole")
     parser.add_argument("--rt-samples", type=int, choices=(2, 4),
                         help="fixed RT samples per frame (default: 4)")
+    parser.add_argument("--upscaler", choices=UPSCALERS, default="native",
+                        help="native (default) or experimental DLSS Quality for fixed RT")
+    parser.add_argument("--model", type=Path,
+                        help="override the preset model path; relative paths use the repository root")
     parser.add_argument("--binary", type=Path,
                         default=ROOT / "build/dev/projects/raytracing/raytracing")
     parser.add_argument("--print-command", action="store_true",
@@ -61,7 +84,8 @@ def main():
     if extra[:1] == ["--"]:
         extra = extra[1:]
     try:
-        native = command(args.binary, args.mode, args.view, args.rt_samples, extra)
+        native = command(args.binary, args.mode, args.view, args.rt_samples, extra,
+                         args.upscaler, args.model)
     except ValueError as error:
         parser.error(str(error))
     if args.print_command:
@@ -69,8 +93,11 @@ def main():
         return 0
     if not args.binary.is_file():
         parser.error("build the executable first: cmake --build build/dev --target cubey_project_raytracing")
-    if not MODEL.is_file():
-        parser.error("prepare the optical model explicitly; see projects/raytracing/README.md")
+    model = _repo_path(args.model) if args.model is not None else MODEL
+    if not model.is_file():
+        if args.model is None:
+            parser.error("prepare the optical model explicitly; see projects/raytracing/README.md")
+        parser.error(f"model not found: {model}")
     return subprocess.run(native, cwd=ROOT).returncode
 
 

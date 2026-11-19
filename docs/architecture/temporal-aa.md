@@ -9,14 +9,37 @@ of the forward renderer.
 
 ## Application policy
 
-Projects share `--anti-aliasing off|auto|taa`. On the dogfood branch, Auto
-requests TAA for interactive views. An adapter admits the current frame before
+Projects share `--anti-aliasing off|auto|taa`. Auto is the application
+default and requests TAA for interactive views. An adapter admits the current frame before
 applying jitter or allocating history. Headless Auto uses the direct render
 path. A headless beauty capture can explicitly select TAA and define its
 history warm-up. Reference captures and raw diagnostics use direct output.
-The lower-level forward renderer defaults to Off for callers that supply their
-own settings. The glTF Viewer has a separate, explicit
-[DLSS Quality option](../notes/dlss-super-resolution-2026-11.md).
+The lower-level forward renderer defaults to Off for callers that supply
+their own settings.
+
+### Upscaler selection
+
+`--upscaler native` is the default on the Viewer, SDF and ray tracing
+launch paths. Native rendering follows each app's AA policy. Select
+`--upscaler dlss-quality` at launch for a qualified path. The app requests
+NGX's Vulkan capabilities at device creation and uses one reconstruction
+pass. Quality uses preset K. The Viewer also exposes M and L as experimental
+choices.
+
+| Path | Native Auto | Explicit DLSS Quality |
+| --- | --- | --- |
+| Eligible opaque Viewer | TAA in interactive views | K with static IBL and rigid opaque geometry |
+| Eligible opaque analytic SDF | TAA in interactive views | K at SS1 with frozen lighting and clouds disabled |
+| Fixed opaque RT | TAA in interactive views | K for the qualified bronze dragon |
+| Certified fixed glass | Four primary samples per render pixel in the showcase launcher | Experimental K through the glass launcher |
+| Cloud paths | Native rendering and the project's cloud history policy | Separate headless studies |
+
+The compatible opaque launch examples and their measured limits are in the
+[Viewer guide](../../projects/gltf_viewer/README.md#dlss-quality-on-native-linux),
+[SDF guide](../../projects/sdf/README.md#quality-upscaling), and
+[fixed opaque RT guide](../../projects/raytracing/docs/fixed-opaque-taa.md).
+The certified glass launcher is documented in the
+[ray tracing project guide](../../projects/raytracing/README.md).
 
 The CLI uses one flag across projects. Saved SDF and ray tracing configs keep
 `anti-aliasing`, and the workshop and other projects use `anti_aliasing`.

@@ -230,7 +230,7 @@ void traceWorkshop() {
     vec2 pixelOffset=demo?(workshop.sampling.y==2u?vec2(.25+.5*float(completed)):
         (vec2(completed&1u,completed>>1u)+.5)*.5):rtStratified(completed,0u);
 #endif
-#ifdef CUBEY_RT_FIXED_OPAQUE_TAA
+#ifdef CUBEY_RT_PRIMARY_MOTION
     // Add one coherent temporal offset to every fixed spatial lane. Lane zero
     // remains (.25,.25)+jitter rather than becoming a pixel-center ray.
     pixelOffset+=temporalRayMotion.extentJitter.zw;
@@ -256,13 +256,19 @@ void traceWorkshop() {
     if(view==10)color=textureLod(visibleBackground,uv,0).rgb*environment.options.w;
     Surface primary=Surface(vec3(0),vec3(0),vec3(0),vec3(0),-1,-1,0u,0u,0,vec3(0) RT_JOURNAL_ARG(0xffffffffu));
     if(view!=10){primary=surfaceRayMedium(origin,direction,255u,medium);++radianceQueries;}
-#ifdef CUBEY_RT_FIXED_OPAQUE_TAA
+#ifdef CUBEY_RT_PRIMARY_MOTION
     if(completed==0u)
         imageStore(temporalMotionImage,pixel,
                    vec4(fixedOpaqueMotion(primary.p, direction, primary.id >= 0,
                                           temporalRayMotion.currentViewProjection,
                                           temporalRayMotion.previousViewProjection,
                                           temporalRayMotion.extentJitter.xy), 0, 0));
+#endif
+#ifdef CUBEY_RT_PRIMARY_DEPTH
+    if(completed==0u)
+        imageStore(temporalDepthImage, pixel,
+                   vec4(fixedOpaqueDepth(primary.p, primary.id >= 0,
+                                         temporalRayMotion.currentViewProjection)));
 #endif
     uint trials=1u;
     if(primary.id>=0) {

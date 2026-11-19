@@ -210,19 +210,35 @@ Scene make_material_dragon(const Config& c) {
             "sampled dragon requires its marble slab and shared atmosphere");
     auto geometry = c;
     geometry.scene = "reflection-dragon-solo";
-    auto scene = make_optical_scene(geometry);
+    const bool sphere = c.experimental_glass == "sphere";
+    Scene scene;
+    if (sphere) {
+        // Alternating marble slats and open sky put high-contrast features
+        // behind both the silhouette and the smoothly refracted sphere interior.
+        scene.meshes.push_back(prepare_workshop_mesh(render::make_material_sphere_mesh(.25F, 64, 128)));
+        scene.meshes.push_back(prepare_workshop_mesh(
+            render::make_material_beveled_block_mesh({.035F, .6F, .025F}, .004F)));
+        scene.instances.push_back({0, math::translation({0, .32F, 0}), {1, 1, 1, 1}});
+        for (int strip = -10; strip <= 10; ++strip)
+            scene.instances.push_back({1, math::translation({.13F * float(strip), .32F, -.48F}), {1, 1, 1, 1}});
+        scene.support_recipe = marble_base_recipe();
+    } else {
+        scene = make_optical_scene(geometry);
+    }
     scene.optical_dragon = c.scene == "dragon-optics";
-    if (scene.optical_dragon)
+    if (scene.optical_dragon && !sphere)
         admit_optical_dragon(scene.meshes.at(0), c.model);
     scene.workshop = std::make_shared<WorkshopState>(c);
     scene.material_layout = Scene::MaterialLayout::Dragon;
-    scene.routes = {{"dragon", 0, 2}};
+    scene.routes = {{workshop_route(c), 0, static_cast<std::uint32_t>(scene.instances.size())}};
     scene.instances.at(0).material = scene.workshop->selected;
     scene.instances.at(0).recipe_role = Instance::RecipeRole::Selected;
     // A separate immutable instance slot keeps edits to a marble dragon from
     // changing its base, even when both consume the same canonical recipe.
-    scene.instances.at(1).material = static_cast<std::uint32_t>(scene.workshop->recipes.size());
-    scene.instances.at(1).recipe_role = Instance::RecipeRole::Support;
+    for (std::size_t i = 1; i < scene.instances.size(); ++i) {
+        scene.instances[i].material = static_cast<std::uint32_t>(scene.workshop->recipes.size());
+        scene.instances[i].recipe_role = Instance::RecipeRole::Support;
+    }
     resolve_materials(scene);
     const auto& base = *scene.support_recipe;
     scene.materials.push_back({base.surface.base_roughness,

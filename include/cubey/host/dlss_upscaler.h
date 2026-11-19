@@ -4,19 +4,20 @@
 #include <cubey/render/temporal_upscaler.h>
 
 #include <memory>
+#include <string_view>
 
 namespace cubey::vulkan {
 class GpuOwnerContext;
 }
 
-namespace cubey::projects::gltf_viewer {
+namespace cubey::host {
 
-class GltfViewerDlss final : public render::TemporalUpscaler {
+class DlssUpscaler final : public render::TemporalUpscaler {
   public:
-    [[nodiscard]] static host::VulkanRequirements vulkan_requirements();
+    [[nodiscard]] static VulkanRequirements vulkan_requirements();
 
-    GltfViewerDlss(VkInstance instance, const vulkan::Device& device);
-    ~GltfViewerDlss() override;
+    DlssUpscaler(VkInstance instance, const vulkan::Device& device, std::string_view preset = "k");
+    ~DlssUpscaler() override;
 
     // The target owner retires all previous frame submissions before replacing or destroying it.
     [[nodiscard]] VkExtent2D create_target(vulkan::GpuOwnerContext& context,
@@ -32,4 +33,4 @@ class GltfViewerDlss final : public render::TemporalUpscaler {
     std::unique_ptr<Impl> impl_;
 };
 
-} // namespace cubey::projects::gltf_viewer
+} // namespace cubey::host

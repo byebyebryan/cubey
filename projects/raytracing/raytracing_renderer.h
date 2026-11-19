@@ -6,7 +6,7 @@
 #include "raytracing_trace_space.h"
 #include <cubey/core/profiling.h>
 #include <cubey/render/hdr_post_frame.h>
-#include <cubey/render/temporal_aa.h>
+#include <cubey/render/temporal_upscaler.h>
 #include <cubey/render/texture.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
@@ -49,14 +49,16 @@ class Renderer {
   public:
     Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene& scene,
              std::uint32_t slots, std::string_view fault = "none", bool diagnostic = false,
-             bool collect_metrics = false, const Config* config = nullptr);
+             bool collect_metrics = false, const Config* config = nullptr,
+             render::TemporalUpscaler* upscaler = nullptr);
     ~Renderer();
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
-    void resize(VkExtent2D extent, VkFormat output_format, bool fault = false);
+    void resize(VkExtent2D extent, VkExtent2D output_extent, VkFormat output_format,
+                bool fault = false);
     void render(VkCommandBuffer command, render::ColorTargetView output, render::FrameSlot slot,
                 const Config& config, bool present, profiling::ProfileRecorder* profile,
-                std::uint64_t frame, bool temporal_reset = false);
+                std::uint64_t frame, bool temporal_reset = false, float frame_time_ms = 0);
     void frame_submitted(vulkan::GpuSubmissionTicket ticket);
     void frame_discarded();
     void finish();
@@ -81,6 +83,15 @@ class Renderer {
   private:
     std::unique_ptr<ForwardComparison> forward_;
     bool demo_mode_ = false, fixed_opaque_mode_ = false, fixed_opaque_taa_ = false;
+    std::string upscaler_mode_ = "native", glass_study_ = "none";
+    [[nodiscard]] bool tracks_fixed_frames() const {
+        return fixed_opaque_mode_ || glass_study_ != "none";
+    }
+    render::TemporalUpscaler* upscaler_ = nullptr;
+    render::TemporalViewState upscale_history_;
+    [[nodiscard]] bool produces_motion() const {
+        return fixed_opaque_taa_ || upscaler_;
+    }
     bool fixed_opaque_taa_requested_at_creation_ = false;
     std::string temporal_aa_bypass_reason_;
     bool force_temporal_reset_ = false;
@@ -97,7 +108,7 @@ class Renderer {
     };
     struct Target {
         std::unique_ptr<render::Texture2D> color;
-        std::unique_ptr<render::Texture2D> motion;
+        std::unique_ptr<render::Texture2D> motion, depth;
         std::unique_ptr<vulkan::Buffer> queries;
         bool initialized = false, motion_initialized = false;
     };
@@ -153,17 +164,17 @@ class Renderer {
     VkPipeline pipeline_{};
     VkStridedDeviceAddressRegionKHR raygen_{}, miss_{}, hit_{}, callable_{};
     std::vector<Target> targets_;
-    VkExtent2D extent_{};
+    VkExtent2D extent_{}, output_extent_{};
     VkFormat output_format_{};
     render::HdrPostFrame post_;
     render::RenderGraphFrameExecutor executor_;
-    std::optional<vulkan::GpuTimestampProfiler> trace_timer_, whole_timer_;
+    std::optional<vulkan::GpuTimestampProfiler> trace_timer_, whole_timer_, post_timer_;
     std::optional<vulkan::GpuTimestampProfiler> environment_timer_, total_timer_;
     std::vector<std::optional<std::uint64_t>> recorded_;
     profiling::ProfileRecorder* profile_ = nullptr;
     nlohmann::json timing_ = nlohmann::json::array();
     nlohmann::json sampling_frames_ = nlohmann::json::array();
-    nlohmann::json fixed_opaque_frames_ = nlohmann::json::array();
+    nlohmann::json accepted_fixed_frames_ = nlohmann::json::array();
     double scene_ms_ = 0, pipeline_ms_ = 0, as_build_ms_ = 0, as_gpu_ms_ = 0;
     std::uint64_t geometry_bytes_ = 0, as_bytes_ = 0, scratch_peak_ = 0, triangle_count_ = 0;
     std::uint64_t target_generations_ = 0;

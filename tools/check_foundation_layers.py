@@ -13,6 +13,8 @@ ALLOWED = {
     "input": {"core", "scene"},
     "engine": {"core", "asset", "animation", "terrain", "vulkan", "render", "scene"},
     "host": {"core", "asset", "animation", "terrain", "vulkan", "render", "scene", "engine", "input"},
+    # The optional host adapter has its own link target. Core host does not depend on it.
+    "dlss": {"render", "vulkan"},
 }
 ADAPTERS = {("include/cubey/scene/render_recording.h", "vulkan")}
 INCLUDE = re.compile(r'^\s*#\s*include\s*[<"]([^>\"]+)[>\"]', re.MULTILINE)

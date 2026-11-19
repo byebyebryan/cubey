@@ -146,7 +146,7 @@ std::vector<WorkshopVolume> workshop_volumes(const Scene& scene) {
 }
 std::string workshop_route(const Config& c) {
     if (sampled_dragon_scene(c))
-        return "dragon";
+        return c.experimental_glass == "sphere" ? "glass-sphere" : "dragon";
     return c.optical_pair != "none"  ? "optical-pair"
            : c.material == "gallery" ? "gallery"
                                      : c.specimen;

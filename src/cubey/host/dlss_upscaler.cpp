@@ -1,4 +1,4 @@
-#include "gltf_viewer_dlss.h"
+#include <cubey/host/dlss_upscaler.h>
 
 #include <stdexcept>
 
@@ -16,13 +16,23 @@
 #include <utility>
 #endif
 
-namespace cubey::projects::gltf_viewer {
+namespace cubey::host {
 #ifdef CUBEY_DLSS_FEATURE_DIR
 namespace {
 
 constexpr char project_id[] = "702455f3-f733-4dd9-86d6-eb296e458760";
 constexpr char engine_version[] = "0.1.0";
 constexpr auto quality = NVSDK_NGX_PerfQuality_Value_MaxQuality;
+
+NVSDK_NGX_DLSS_Hint_Render_Preset ngx_quality_preset(std::string_view preset) {
+    if (preset == "k")
+        return NVSDK_NGX_DLSS_Hint_Render_Preset_K;
+    if (preset == "m")
+        return NVSDK_NGX_DLSS_Hint_Render_Preset_M;
+    if (preset == "l")
+        return NVSDK_NGX_DLSS_Hint_Render_Preset_L;
+    throw std::invalid_argument("unknown DLSS Quality preset");
+}
 
 void check_ngx(NVSDK_NGX_Result result, const char* operation) {
     if (NVSDK_NGX_FAILED(result)) {
@@ -118,7 +128,7 @@ using Feature = std::unique_ptr<NVSDK_NGX_Handle, FeatureDeleter>;
 
 } // namespace
 
-struct GltfViewerDlss::Impl {
+struct DlssUpscaler::Impl {
     NgxConfiguration config;
     VkDevice device = VK_NULL_HANDLE;
     NVSDK_NGX_Parameter* parameters = nullptr;
@@ -135,7 +145,7 @@ struct GltfViewerDlss::Impl {
     }
 };
 
-host::VulkanRequirements GltfViewerDlss::vulkan_requirements() {
+VulkanRequirements DlssUpscaler::vulkan_requirements() {
     auto config = std::make_shared<NgxConfiguration>();
     const auto discovery = config->discovery();
     std::uint32_t count = 0;
@@ -143,7 +153,7 @@ host::VulkanRequirements GltfViewerDlss::vulkan_requirements() {
     check_ngx(
         NVSDK_NGX_VULKAN_GetFeatureInstanceExtensionRequirements(&discovery, &count, &properties),
         "instance extension discovery");
-    host::VulkanRequirements requirements;
+    VulkanRequirements requirements;
     requirements.instance_extensions = extension_names(properties, count);
     requirements.device.buffer_device_address = true;
     requirements.device.query_extensions =
@@ -172,7 +182,8 @@ host::VulkanRequirements GltfViewerDlss::vulkan_requirements() {
     return requirements;
 }
 
-GltfViewerDlss::GltfViewerDlss(VkInstance instance, const vulkan::Device& device)
+DlssUpscaler::DlssUpscaler(VkInstance instance, const vulkan::Device& device,
+                           std::string_view preset)
     : impl_(std::make_unique<Impl>()) {
     auto& p = *impl_;
     check_ngx(NVSDK_NGX_VULKAN_Init_with_ProjectID(
@@ -187,9 +198,11 @@ GltfViewerDlss::GltfViewerDlss(VkInstance instance, const vulkan::Device& device
               "availability query");
     if (available == 0)
         throw std::runtime_error("DLSS Super Resolution unavailable on the selected device");
+    NVSDK_NGX_Parameter_SetUI(p.parameters, NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Quality,
+                              static_cast<unsigned int>(ngx_quality_preset(preset)));
 }
 
-VkExtent2D GltfViewerDlss::create_target(vulkan::GpuOwnerContext& context,
+VkExtent2D DlssUpscaler::create_target(vulkan::GpuOwnerContext& context,
                                          VkExtent2D output_extent) {
     context.require_owner_thread("DLSS target creation");
     auto& p = *impl_;
@@ -231,14 +244,14 @@ VkExtent2D GltfViewerDlss::create_target(vulkan::GpuOwnerContext& context,
     return optimal;
 }
 
-void GltfViewerDlss::destroy_target() noexcept {
+void DlssUpscaler::destroy_target() noexcept {
     impl_->feature.reset();
     impl_->render_extent = {};
     impl_->output_extent = {};
 }
 
 render::RenderGraphTextureHandle
-GltfViewerDlss::declare(render::RenderGraphBuilder& graph,
+DlssUpscaler::declare(render::RenderGraphBuilder& graph,
                         const render::TemporalUpscaleInputs& inputs) {
     auto& p = *impl_;
     if (!p.feature || !same_extent(p.render_extent, inputs.view.extent) ||
@@ -303,23 +316,23 @@ namespace {
 }
 } // namespace
 
-struct GltfViewerDlss::Impl {};
-host::VulkanRequirements GltfViewerDlss::vulkan_requirements() {
+struct DlssUpscaler::Impl {};
+VulkanRequirements DlssUpscaler::vulkan_requirements() {
     sdk_required();
 }
-GltfViewerDlss::GltfViewerDlss(VkInstance, const vulkan::Device&) {
+DlssUpscaler::DlssUpscaler(VkInstance, const vulkan::Device&, std::string_view) {
     sdk_required();
 }
-VkExtent2D GltfViewerDlss::create_target(vulkan::GpuOwnerContext&, VkExtent2D) {
+VkExtent2D DlssUpscaler::create_target(vulkan::GpuOwnerContext&, VkExtent2D) {
     sdk_required();
 }
-void GltfViewerDlss::destroy_target() noexcept {}
-render::RenderGraphTextureHandle GltfViewerDlss::declare(render::RenderGraphBuilder&,
+void DlssUpscaler::destroy_target() noexcept {}
+render::RenderGraphTextureHandle DlssUpscaler::declare(render::RenderGraphBuilder&,
                                                          const render::TemporalUpscaleInputs&) {
     sdk_required();
 }
 #endif
 
-GltfViewerDlss::~GltfViewerDlss() = default;
+DlssUpscaler::~DlssUpscaler() = default;
 
-} // namespace cubey::projects::gltf_viewer
+} // namespace cubey::host

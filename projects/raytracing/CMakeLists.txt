@@ -11,6 +11,7 @@ cubey_add_app_target(cubey_project_raytracing
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
     SHADER_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
 )
+target_link_libraries(cubey_project_raytracing PRIVATE cubey::dlss)
 # The opt-in opaque fixed transport shares the production raygen source while
 # compiling private variants. The TAA variant adds only producer motion and
 # camera matrices; the default RT shader/layout stays unchanged.
@@ -25,10 +26,28 @@ cubey_add_glsl_shaders(cubey_raytracing_fixed_opaque_off
 cubey_add_glsl_shaders(cubey_raytracing_fixed_opaque_taa
     OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/fixed_opaque_taa"
     TARGET_ENV vulkan1.3
-    DEFINES CUBEY_RT_FIXED_OPAQUE=1 CUBEY_RT_FIXED_OPAQUE_TAA=1
+    DEFINES CUBEY_RT_FIXED_OPAQUE=1 CUBEY_RT_PRIMARY_MOTION=1
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+    SOURCES shaders/trace.rgen)
+add_custom_target(cubey_raytracing_fixed_opaque_dlss)
+cubey_add_glsl_shaders(cubey_raytracing_fixed_opaque_dlss
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/fixed_opaque_dlss"
+    TARGET_ENV vulkan1.3
+    DEFINES CUBEY_RT_FIXED_OPAQUE=1 CUBEY_RT_PRIMARY_MOTION=1 CUBEY_RT_PRIMARY_DEPTH=1
+    INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+    SOURCES shaders/trace.rgen)
+# The demo keeps its own integrator and spatial lanes. Its DLSS variant records
+# the existing first hit and jitters all lanes, exactly as the opaque producer does.
+add_custom_target(cubey_raytracing_glass_dlss)
+cubey_add_glsl_shaders(cubey_raytracing_glass_dlss
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/glass_dlss"
+    TARGET_ENV vulkan1.3
+    DEFINES CUBEY_RT_PRIMARY_MOTION=1 CUBEY_RT_PRIMARY_DEPTH=1
     INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
     SOURCES shaders/trace.rgen)
 add_dependencies(cubey_project_raytracing
+    cubey_raytracing_glass_dlss_shaders
+    cubey_raytracing_fixed_opaque_dlss_shaders
     cubey_raytracing_fixed_opaque_off_shaders
     cubey_raytracing_fixed_opaque_taa_shaders)
 # Compile shared raster shaders with their usual Vulkan target. Compiling the

@@ -28,7 +28,9 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                       const SdfConfig& config, const AuthoredScene* scene,
                       const GpuRegionPrograms* regions, std::string_view preparation_fault,
                       const vulkan::Buffer* live_edit_controls,
-                      const vulkan::Buffer* cached_edit_controls) {
+                      const vulkan::Buffer* cached_edit_controls,
+                      render::TemporalUpscaler* upscaler,
+                      VkExtent2D dlss_render_extent) {
     live_edit_controls_ = live_edit_controls;
     cached_edit_controls_ = cached_edit_controls;
     field_ = field;
@@ -52,7 +54,27 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         throw std::invalid_argument(
             "private live renderer requires a frozen field/regions and opaque analytic atmosphere");
     acceleration_uploads_ = config.acceleration_variant != "off" ? &gpu : nullptr;
-    scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
+    display_extent_ = extent;
+    upscaler_ = upscaler;
+    if (config.upscaler == "spatial-quality") {
+        scene_extent_ = render::quality_spatial_render_extent(extent);
+        effective_upscaler_ = "spatial-quality";
+        upscaler_reason_ = "linear HDR spatial reconstruction; no temporal history";
+    } else if (config.upscaler == "dlss-quality") {
+        if (!upscaler_ || !dlss_render_extent.width || !dlss_render_extent.height)
+            throw std::invalid_argument("DLSS Quality target was not created for the SDF view");
+        scene_extent_ = dlss_render_extent;
+        effective_upscaler_ = "dlss-quality";
+        upscaler_reason_ = "active";
+        upscaler_motion_ = std::make_unique<render::TemporalCameraMotion>(
+            device, slots, std::filesystem::path(CUBEY_SDF_SHADER_DIR) / "motion.comp.spv");
+    } else {
+        scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
+        effective_upscaler_ = "native";
+        upscaler_reason_ = config.supersample == 1 ? "native resolution" : "native supersampling";
+    }
+    upscaler_history_age_ = 0;
+    upscaler_reset_reason_ = render::TemporalResetReason::FirstFrame;
     executor_.resize(slots);
     lighting_.emplace(device, slots);
     const auto host_buffer = [&](std::size_t bytes, bool local = false) {
@@ -456,8 +478,13 @@ void Renderer::save_quality_snapshot(const std::filesystem::path& path) {
     quality_snapshot_saved_ = true;
 }
 void Renderer::destroy() {
+    if (upscaler_motion_)
+        upscaler_view_state_.invalidate(render::TemporalResetReason::TargetChanged);
     temporal_.destroy();
     temporal_frame_.reset();
+    upscaler_frame_.reset();
+    upscaler_motion_.reset();
+    upscaler_ = nullptr;
     temporal_used_ = false;
     if (query_workload_ && !quality_snapshot_saved_) {
         std::vector<std::uint8_t> bytes(query_workload_->size());
@@ -534,6 +561,8 @@ void Renderer::destroy() {
     cloud_sky_generation_ = 0;
     field_ = nullptr;
     regions_ = nullptr;
+    scene_extent_ = {};
+    display_extent_ = {};
 }
 std::unique_ptr<vulkan::Buffer> Renderer::prepare_program(const AuthoredScene* scene) {
     if (!acceleration_uploads_)
@@ -749,7 +778,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       const SdfConfig& config, float yaw, float pitch, float distance,
                       profiling::ProfileRecorder* profile, std::uint64_t frame_index,
                       const BoxEdit* cutter, float cutter_opacity,
-                      std::span<const SceneInstruction> previews) {
+                      std::span<const SceneInstruction> previews, float frame_time_ms) {
     profile_ = profile;
     pending_profile_slot_ = slot.index;
     const auto route = shader_route(config);
@@ -757,6 +786,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         route == SourceShaderRoute::LitSingleMaterial ? &*lit_single_pipeline_
         : route == SourceShaderRoute::LitGeneral      ? &*lit_general_pipeline_
                                                       : &*pipeline_;
+    const bool dlss_effective = config.upscaler == "dlss-quality";
     if (profile) {
         const auto mode =
             std::find(render_modes.begin(), render_modes.end(), config.effective_render_mode);
@@ -765,6 +795,20 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         profile->record_metric(frame_index, "sdf.render_mode", "named",
                                config.named_render_mode ? 1 : 0);
         profile->record_metric(frame_index, "sdf.render_mode", "supersample", config.supersample);
+        const auto upscaler_code = [](std::string_view name) {
+            return name == "spatial-quality" ? 1U : name == "dlss-quality" ? 2U : 0U;
+        };
+        profile->record_metric(frame_index, "sdf.upscaler", "requested",
+                               upscaler_code(config.upscaler));
+        profile->record_metric(frame_index, "sdf.upscaler", "effective",
+                               upscaler_code(effective_upscaler_));
+        profile->record_metric(frame_index, "sdf.upscaler", "render_width", scene_extent_.width);
+        profile->record_metric(frame_index, "sdf.upscaler", "render_height", scene_extent_.height);
+        profile->record_metric(frame_index, "sdf.upscaler", "display_width", display_extent_.width);
+        profile->record_metric(frame_index, "sdf.upscaler", "display_height",
+                               display_extent_.height);
+        profile->record_metric(frame_index, "sdf.upscaler", "spatial_no_history",
+                               config.upscaler == "spatial-quality" ? 1 : 0);
         profile->record_metric(frame_index, "sdf.cached_quality", "mode",
                                config.cached_quality == "ordinary"         ? 0
                                : config.cached_quality == "refine-0.05"    ? 5
@@ -858,7 +902,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     const auto view = glm::lookAt(eye, target_point, math::Vec3{0, 1, 0});
     auto vp = projection * view;
     const bool raw_diagnostic = (config.debug > 0 && config.debug < 10) || config.debug == 12;
-    const bool taa_requested = host::native_taa_requested(config.common);
+    const bool taa_requested =
+        config.upscaler == "native" && host::native_taa_requested(config.common);
     const int bypass = raw_diagnostic || config.debug != 0            ? 1
                        : config.supersample != 1                      ? 2
                        : clouds_enabled_                              ? 3
@@ -883,16 +928,11 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                  "Dynamic lighting unsupported",
                                  "Unsupported device"};
     temporal_status_ = taa_requested ? reasons.at(static_cast<std::size_t>(bypass)) : "Off";
-    if (taa_effective) {
-        if (!temporal_.created())
-            temporal_.create(
-                device,
-                {.extent = scene_extent_,
-                 .frame_slot_count = slot.count,
-                 .motion_shader = std::filesystem::path(CUBEY_SDF_SHADER_DIR) / "motion.comp.spv",
-                 .resolve_shader =
-                     std::filesystem::path(CUBEY_SDF_SHADER_DIR) / "resolve.comp.spv"});
-        // The settings identity excludes camera motion and post-only exposure.
+    if (config.upscaler != "native")
+        temporal_status_ = "Suppressed by selected upscaler";
+    if (taa_effective || dlss_effective) {
+        // Camera motion and post-only exposure are excluded. Static appearance
+        // changes advance the same accepted-frame identity for TAA and DLSS.
         std::uint64_t settings = 1469598103934665603ULL;
         auto mix = [&](auto value) {
             const auto bytes = std::as_bytes(std::span(&value, 1));
@@ -915,6 +955,16 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
             ++temporal_content_generation_;
             temporal_settings_ = settings;
         }
+    }
+    if (taa_effective) {
+        if (!temporal_.created())
+            temporal_.create(
+                device,
+                {.extent = scene_extent_,
+                 .frame_slot_count = slot.count,
+                 .motion_shader = std::filesystem::path(CUBEY_SDF_SHADER_DIR) / "motion.comp.spv",
+                 .resolve_shader =
+                     std::filesystem::path(CUBEY_SDF_SHADER_DIR) / "resolve.comp.spv"});
         temporal_frame_ =
             temporal_.begin_frame(slot, {.projection = projection,
                                          .view = view,
@@ -922,8 +972,35 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                          .reset = !temporal_used_});
         vp = temporal_frame_->jittered_view_projection;
     }
+    if (dlss_effective) {
+        if (!upscaler_ || !upscaler_motion_)
+            throw std::logic_error("DLSS Quality was requested without a live target");
+        upscaler_frame_ =
+            upscaler_view_state_.prepare({.projection = projection,
+                                          .view = view,
+                                          .content_generation = temporal_content_generation_},
+                                         scene_extent_);
+        vp = upscaler_frame_->jittered_view_projection;
+        upscaler_history_age_ = upscaler_frame_->history_age;
+        upscaler_reset_reason_ = upscaler_frame_->reset_reason;
+        upscaler_reason_ = "active";
+    }
     temporal_used_ = taa_effective;
     if (profile) {
+        if (dlss_effective) {
+            profile->record_metric(frame_index, "sdf.upscaler", "history_age",
+                                   upscaler_frame_->history_age);
+            profile->record_metric(frame_index, "sdf.upscaler", "reset_reason",
+                                   static_cast<unsigned>(upscaler_frame_->reset_reason));
+            profile->record_metric(frame_index, "sdf.upscaler", "jitter_x",
+                                   upscaler_frame_->sample_offset_pixels.x);
+            profile->record_metric(frame_index, "sdf.upscaler", "jitter_y",
+                                   upscaler_frame_->sample_offset_pixels.y);
+        } else {
+            profile->record_metric(frame_index, "sdf.upscaler", "history_age", 0);
+            profile->record_metric(frame_index, "sdf.upscaler", "reset_reason",
+                                   static_cast<unsigned>(render::TemporalResetReason::None));
+        }
         profile->record_metric(frame_index, "aa", "requested", taa_requested ? 1 : 0);
         profile->record_metric(frame_index, "aa", "effective", taa_effective ? 1 : 0);
         profile->record_metric(frame_index, "aa", "bypass_reason", taa_requested ? bypass : 0);
@@ -958,8 +1035,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
             atmosphere_
                 .frame(
                     {.view_rays =
-                         {.right_aspect = {right, static_cast<float>(scene_extent_.width) /
-                                                      static_cast<float>(scene_extent_.height)},
+                         {.right_aspect = {right, static_cast<float>(display_extent_.width) /
+                                                      static_cast<float>(display_extent_.height)},
                           .up_tan_half_fovy = {glm::cross(right, forward),
                                                std::tan(glm::radians(22.5F))},
                           .forward =
@@ -1211,10 +1288,19 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                 });
         });
     std::optional<render::CloudLayerRuntimeFrame> cloud_product;
+    std::optional<render::RenderGraphTextureHandle> dlss_motion;
     auto post_scene = scene;
     if (taa_effective) {
         const auto motion = temporal_.declare_camera_motion(builder, depth, *temporal_frame_);
         post_scene = temporal_.declare_resolve(builder, scene, motion, *temporal_frame_);
+    } else if (dlss_effective) {
+        dlss_motion = upscaler_motion_->declare(builder, slot, depth, *upscaler_frame_);
+        post_scene = upscaler_->declare(builder, {.color = scene,
+                                                  .depth = depth,
+                                                  .motion = *dlss_motion,
+                                                  .view = *upscaler_frame_,
+                                                  .output_extent = display_extent_,
+                                                  .frame_time_ms = frame_time_ms});
     }
     if (clouds_enabled_ && config.cloud_backdrop && config.debug == 0) {
         auto& clouds = atmosphere_.clouds();
@@ -1243,6 +1329,9 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         graph, [&](const render::RenderGraphResourceSet& resources) {
             if (taa_effective)
                 temporal_.update_descriptors(device, graph, resources, *temporal_frame_);
+            if (dlss_motion)
+                upscaler_motion_->update_descriptors(device, slot, graph, resources, depth,
+                                                     *dlss_motion);
             post_.update_scene_color_descriptor(device, slot, graph, resources, post_scene);
             if (cloud_product)
                 atmosphere_.clouds().update_surface_descriptors(device, slot, graph, resources,
@@ -1257,6 +1346,10 @@ void Renderer::frame_submitted(vulkan::GpuSubmissionTicket ticket) {
         temporal_.commit_frame(temporal_frame_->token, ticket);
         temporal_frame_.reset();
     }
+    if (upscaler_frame_) {
+        upscaler_view_state_.commit(upscaler_frame_->token, ticket);
+        upscaler_frame_.reset();
+    }
 }
 void Renderer::frame_discarded() {
     if (pending_profile_slot_ && *pending_profile_slot_ < recorded_frames_.size())
@@ -1264,5 +1357,9 @@ void Renderer::frame_discarded() {
     pending_profile_slot_.reset();
     temporal_.discard_frame();
     temporal_frame_.reset();
+    if (upscaler_frame_) {
+        upscaler_view_state_.discard();
+        upscaler_frame_.reset();
+    }
 }
 } // namespace cubey::projects::sdf

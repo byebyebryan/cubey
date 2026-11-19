@@ -182,6 +182,7 @@ cubey_add_app_target(
     SHADER_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
     SHADER_DEPENDS "${PROJECT_SOURCE_DIR}/shaders/cubey/procedural/surface_material.glsl" "${PROJECT_SOURCE_DIR}/shaders/cubey/procedural/surface_library.glsl" shaders/field.glsl shaders/trace.glsl ${CUBEY_SDF_ATMOSPHERE_DEPENDS} ${CUBEY_SDF_CLOUD_DEPENDS}
 )
+target_link_libraries(cubey_project_sdf PRIVATE cubey::dlss)
 
 if (BUILD_TESTING)
     add_executable(cubey_project_sdf_cached_stroke_study tools/cached_stroke_study.cpp tools/stroke_service.cpp tools/stroke_stream.cpp tools/stroke_renderer.cpp sdf_cached_stroke.cpp sdf_cached_commit.cpp sdf_cached_local.cpp sdf_cached_edit.cpp sdf_environment.cpp sdf_field.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp sdf_render_modes.cpp)

@@ -31,6 +31,7 @@ static_assert(sizeof(MotionCase) == 176);
 struct ExpectedMotion {
     std::string_view name;
     math::Vec2 pixels;
+    float depth;
     float tolerance = 0.001F;
 };
 
@@ -55,7 +56,7 @@ void run() {
     vulkan::SubmissionCoordinator submission(device);
 
     const math::Mat4 identity{1.0F};
-    constexpr std::size_t case_count = 6;
+    constexpr std::size_t case_count = 7;
     std::array<MotionCase, case_count> cases{};
     cases[0] = motion_case(identity, identity, {0.25F, -0.2F, 0.5F, 1.0F},
                            {0.0F, 0.0F, -1.0F, 0.0F}, true);
@@ -94,6 +95,10 @@ void run() {
     rotated_sky_projection[3][2] = 0.5F;
     cases[5] = motion_case(rotated_sky_projection, sky_projection,
                            {0.0F, 0.0F, 0.0F, 0.0F}, {0.0F, 0.0F, -1.0F, 0.0F}, false);
+
+    // Clip w = 2, z = .5 gives Vulkan depth .25 for this primary hit.
+    cases[6] = motion_case(sky_projection, sky_projection, {0.0F, 0.0F, -2.0F, 1.0F},
+                           {0.0F, 0.0F, -1.0F, 0.0F}, true);
 
     constexpr VkMemoryPropertyFlags host_memory = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -166,23 +171,24 @@ void run() {
     std::array<math::Vec4, case_count> actual{};
     result_buffer.download(actual.data(), sizeof(actual));
     const std::array expected{
-        ExpectedMotion{"stationary hit, jitter sample A", {0.0F, 0.0F}},
-        ExpectedMotion{"stationary hit, jitter sample B", {0.0F, 0.0F}},
-        ExpectedMotion{"hit with camera moving right", {64.0F, 0.0F}},
-        ExpectedMotion{"hit with camera moving left", {-64.0F, 0.0F}},
-        ExpectedMotion{"sky under camera translation", {0.0F, 0.0F}},
-        ExpectedMotion{"sky under 30-degree camera rotation",
-                       {320.0F / std::sqrt(3.0F), 0.0F}, 0.01F},
+        ExpectedMotion{"stationary hit, jitter sample A", {0.0F, 0.0F}, 0.5F},
+        ExpectedMotion{"stationary hit, jitter sample B", {0.0F, 0.0F}, 0.5F},
+        ExpectedMotion{"hit with camera moving right", {64.0F, 0.0F}, 0.5F},
+        ExpectedMotion{"hit with camera moving left", {-64.0F, 0.0F}, 0.5F},
+        ExpectedMotion{"sky under camera translation", {0.0F, 0.0F}, 1.0F},
+        ExpectedMotion{
+            "sky under 30-degree camera rotation", {320.0F / std::sqrt(3.0F), 0.0F}, 1.0F, 0.01F},
+        ExpectedMotion{"perspective depth at jittered hit", {0.0F, 0.0F}, 0.25F},
     };
     for (std::size_t index = 0; index < expected.size(); ++index) {
         if (!std::isfinite(actual[index].x) || !std::isfinite(actual[index].y) ||
             std::abs(actual[index].x - expected[index].pixels.x) > expected[index].tolerance ||
             std::abs(actual[index].y - expected[index].pixels.y) > expected[index].tolerance ||
-            actual[index].z != 0.0F || actual[index].w != 0.0F)
-            throw std::runtime_error("fixed-opaque GLSL motion vector mismatch: " +
+            actual[index].z != expected[index].depth || actual[index].w != 0.0F)
+            throw std::runtime_error("fixed-opaque GLSL motion or depth mismatch: " +
                                      std::string(expected[index].name));
     }
-    std::cout << "raytracing: fixed-opaque GLSL hit/sky motion vectors pass\n";
+    std::cout << "raytracing: fixed-opaque GLSL hit/sky motion and depth pass\n";
 }
 } // namespace
 

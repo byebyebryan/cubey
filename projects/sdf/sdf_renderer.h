@@ -11,6 +11,7 @@
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/render_graph_frame.h>
 #include <cubey/render/temporal_aa.h>
+#include <cubey/render/temporal_upscaler.h>
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/gpu_timestamps.h>
 #include <span>
@@ -44,7 +45,9 @@ class Renderer {
                 const AuthoredScene* scene = nullptr, const GpuRegionPrograms* regions = nullptr,
                 std::string_view preparation_fault = {},
                 const vulkan::Buffer* live_edit_controls = nullptr,
-                const vulkan::Buffer* cached_edit_controls = nullptr);
+                const vulkan::Buffer* cached_edit_controls = nullptr,
+                render::TemporalUpscaler* upscaler = nullptr,
+                VkExtent2D dlss_render_extent = {});
     void destroy();
     void frame_submitted(vulkan::GpuSubmissionTicket ticket);
     void frame_discarded();
@@ -55,6 +58,24 @@ class Renderer {
         return temporal_status_;
     }
     [[nodiscard]] bool temporal_active() const { return temporal_used_; }
+    [[nodiscard]] std::string_view effective_upscaler() const {
+        return effective_upscaler_;
+    }
+    [[nodiscard]] std::string_view upscaler_reason() const {
+        return upscaler_reason_;
+    }
+    [[nodiscard]] VkExtent2D render_extent() const {
+        return scene_extent_;
+    }
+    [[nodiscard]] VkExtent2D display_extent() const {
+        return display_extent_;
+    }
+    [[nodiscard]] std::uint32_t upscaler_history_age() const {
+        return upscaler_history_age_;
+    }
+    [[nodiscard]] render::TemporalResetReason upscaler_reset_reason() const {
+        return upscaler_reset_reason_;
+    }
     void save_quality_snapshot(const std::filesystem::path& path);
     void update_field(vulkan::Device& device, const Field& field);
     [[nodiscard]] std::unique_ptr<vulkan::Buffer> prepare_program(const AuthoredScene* scene);
@@ -90,7 +111,8 @@ class Renderer {
                 render::FrameSlot slot, bool present, const SdfConfig& config, float yaw,
                 float pitch, float distance, profiling::ProfileRecorder* profile,
                 std::uint64_t frame_index, const BoxEdit* cutter = nullptr,
-                float cutter_opacity = 0, std::span<const SceneInstruction> previews = {});
+                float cutter_opacity = 0, std::span<const SceneInstruction> previews = {},
+                float frame_time_ms = 0.0F);
 
   private:
     void create_environment(vulkan::Device& device, vulkan::GpuRuntime& gpu,
@@ -140,7 +162,15 @@ class Renderer {
     double shader_pipeline_setup_ms_ = 0;
     render::HdrPostFrame post_;
     render::TemporalAntiAliasing temporal_;
+    std::unique_ptr<render::TemporalCameraMotion> upscaler_motion_;
+    render::TemporalViewState upscaler_view_state_;
     std::optional<render::TemporalFrame> temporal_frame_;
+    std::optional<render::TemporalFrame> upscaler_frame_;
+    render::TemporalUpscaler* upscaler_ = nullptr;
+    std::string_view effective_upscaler_ = "native";
+    std::string_view upscaler_reason_ = "native rendering";
+    std::uint32_t upscaler_history_age_ = 0;
+    render::TemporalResetReason upscaler_reset_reason_ = render::TemporalResetReason::FirstFrame;
     std::uint64_t temporal_content_generation_ = 0;
     std::uint64_t temporal_settings_ = 0;
     bool temporal_transmission_ = false;
@@ -161,5 +191,6 @@ class Renderer {
     bool prepared_candidate_ = false;
     vulkan::GpuRuntime* acceleration_uploads_ = nullptr;
     VkExtent2D scene_extent_{};
+    VkExtent2D display_extent_{};
 };
 } // namespace cubey::projects::sdf

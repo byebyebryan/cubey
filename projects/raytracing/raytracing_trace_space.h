@@ -15,6 +15,11 @@ struct TraceSpace {
     [[nodiscard]] math::Vec3 from_world(math::Vec3 point) const {
         return point - world_origin;
     }
+    [[nodiscard]] math::Mat4 clip_from_trace(math::Mat4 clip_from_world) const {
+        // trace points are offset, directions (w=0) are unchanged.
+        clip_from_world[3] = clip_from_world * math::Vec4(world_origin, 1);
+        return clip_from_world;
+    }
     [[nodiscard]] math::Vec3 to_world(math::Vec3 point) const {
         return point + world_origin;
     }

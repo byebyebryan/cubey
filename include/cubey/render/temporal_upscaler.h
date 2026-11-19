@@ -2,7 +2,17 @@
 
 #include <cubey/render/temporal_aa.h>
 
+#include <cstdint>
+
 namespace cubey::render {
+
+// Spatial control at the nominal DLSS Quality scale, with nearest-integer dimensions.
+[[nodiscard]] constexpr VkExtent2D quality_spatial_render_extent(VkExtent2D display) noexcept {
+    const auto scaled = [](std::uint32_t pixels) {
+        return static_cast<std::uint32_t>((std::uint64_t{pixels} * 2U + 1U) / 3U);
+    };
+    return {scaled(display.width), scaled(display.height)};
+}
 
 struct TemporalUpscaleInputs {
     RenderGraphTextureHandle color;

@@ -28,13 +28,26 @@ rtk proxy python3 projects/raytracing/tools/dragon_demo.py --mode sampled
 Reuse the certified cache if it is already prepared. Optical preparation expects
 a new, empty output directory; it does not replace an existing model.
 
-The default is fixed-quality RT at four samples per frame. `--view whole|detail|front`
-selects a matched camera for any mode; `--mode rt --rt-samples 2` trades edge
-quality for cost. All three launch choices share the certified dragon, marble
-base, clear atmosphere, camera and disabled shadows. Forward uses hybrid
-screen/environment transmission. Sampled mode accumulates while stationary and
-restarts during camera movement; it is a diagnostic comparison, not an optical
-ground truth. The original executable and presets retain their defaults.
+The normal RT launch shows the certified glass dragon at native resolution with
+four samples per frame. That native route is the default. Select the
+experimental DLSS Quality K route with an SDK-enabled build and the fixed RT
+launcher mode.
+
+```sh
+rtk cmake --preset release -B build/dlss -DCUBEY_DLSS_SDK_DIR=/path/to/dlss-sdk
+rtk cmake --build build/dlss --target cubey_project_raytracing
+rtk proxy python3 projects/raytracing/tools/dragon_demo.py \
+  --binary build/dlss/projects/raytracing/raytracing --upscaler dlss-quality
+```
+
+Supply `--model /path/to/dragon-optical.glb` to use the certified model from
+another checkout. `--view whole|detail|front` selects a
+matched camera for any mode; `--mode rt --rt-samples 2` trades edge quality for
+cost. All three launch choices share the certified dragon, marble base, clear
+atmosphere, camera and disabled shadows. Forward uses hybrid screen/environment
+transmission. Sampled mode accumulates while stationary and restarts during
+camera movement; it is a diagnostic comparison, not an optical ground truth.
+The original executable and presets retain their defaults.
 
 The launcher works from any directory; additional native arguments follow `--`
 and resolve relative paths against the repository root. `--print-command` shows
@@ -44,7 +57,14 @@ viewport, and Save view retains that choice. See the
 motion, current costs, reproduction and accepted limits.
 
 The separate [fixed opaque dragon study](docs/fixed-opaque-taa.md) has matched
-Off and TAA presets for the bronze dragon and opaque marble support.
+Off and TAA presets for the bronze dragon and opaque marble support. Its opt-in
+spatial and DLSS Quality modes compare reduced-resolution tracing with the
+same primary samples per render pixel.
+
+The [experimental fixed-glass comparison](docs/fixed-glass-sr.md) uses the
+existing fixed demo transport on the certified glass dragon and a generated
+sphere against marble slats. It includes matched native, spatial and DLSS K
+commands with an orbit, stop, return and camera cut.
 
 The RT route requires a Vulkan 1.3 GPU with acceleration structures,
 ray-tracing pipelines and buffer device addresses. It reports missing

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gltf_viewer_app.h"
-#include "gltf_viewer_dlss.h"
 #include "gltf_viewer_landscape_depth.h"
 #include "gltf_viewer_loading_cage.h"
 #include "gltf_viewer_loading_metrics.h"
@@ -22,6 +21,7 @@
 #include <cubey/engine/staged_resource.h>
 #include <cubey/engine/terrain_backdrop_runtime.h>
 #include <cubey/engine/terrain_water_capture_runtime.h>
+#include <cubey/host/dlss_upscaler.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -262,7 +262,7 @@ class GltfViewerApp {
     const GltfViewerEnvironmentPolicy environment_policy_;
     cubey::Engine engine_;
     cubey::ForwardPbrRenderer3D* forward_pbr_renderer_ = nullptr;
-    std::unique_ptr<GltfViewerDlss> dlss_{};
+    std::unique_ptr<cubey::host::DlssUpscaler> dlss_{};
     cubey::vulkan::GpuRuntimeOwnerCleanup dlss_cleanup_{};
     VkExtent2D dlss_render_extent_{};
     VkExtent2D dlss_output_extent_{};

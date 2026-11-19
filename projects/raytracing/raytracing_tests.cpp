@@ -64,6 +64,17 @@ void check_trace_space() {
         require(glm::length(space.from_world(world_point) - trace_point) < 2e-7F,
                 "camera/ray points share the instance translation");
     }
+    for (const auto yaw : {-.4F, .24F}) {
+        const auto vp = cubey::math::perspective(.8F, 16.F / 9.F, .1F, 100.F) *
+                        glm::lookAt(Vec3(std::sin(yaw), .6F, std::cos(yaw)), Vec3(0, .3F, 0),
+                                    Vec3(0, 1, 0));
+        const auto clip_from_trace = space.clip_from_trace(vp);
+        const Vec3 local{.12F, -.07F, .05F};
+        require(glm::length(clip_from_trace * Vec4(local, 1) - vp * Vec4(space.to_world(local), 1)) < 3e-7F,
+                "translated optical hit projects to its physical depth and motion coordinates");
+        require(clip_from_trace * Vec4(local, 0) == vp * Vec4(local, 0),
+                "optical trace origin leaves sky directions unchanged");
+    }
     const TraceSpace unchanged;
     const auto same = unchanged.from_world(physical);
     require(std::memcmp(&physical, &same, sizeof(physical)) == 0,
@@ -225,6 +236,51 @@ int main() {
         require(fixed_opaque_json.contains("anti-aliasing") &&
                     !fixed_opaque_json.contains("anti_aliasing"),
                 "shared anti-aliasing schema preserves RT's existing JSON spelling");
+        for (const auto* upscaler : {"dlss-quality", "spatial-quality"}) {
+            auto upscaled = parse({"--scene", "dragon-materials", "--model", existing_file.c_str(),
+                                   "--transport-mode", "fixed-opaque", "--upscaler", upscaler});
+            Config roundtrip;
+            schema(roundtrip).apply_json(schema(upscaled).template_json());
+            require(upscaled.common.anti_aliasing == "auto" &&
+                        !fixed_opaque_taa_requested(upscaled) && roundtrip.upscaler == upscaler &&
+                        frame_sample_target(upscaled) == 4,
+                    "explicit upscaling uses the fixed lane count with native TAA bypassed");
+            rejects([&] { (void)parse({"--upscaler", upscaler}); });
+            rejects([&] {
+                (void)parse({"--scene", "dragon-materials", "--model", existing_file.c_str(),
+                             "--transport-mode", "fixed-opaque", "--upscaler", upscaler,
+                             "--anti-aliasing", "taa"});
+            });
+        }
+        for (const auto* upscaler : {"native", "spatial-quality", "dlss-quality"}) {
+            const auto glass = parse({"--scene", "dragon-optics", "--transport-mode", "demo",
+                                      "--experimental-glass", "sphere", "--no-shadows",
+                                      "--upscaler", upscaler, "--demo-samples", "2"});
+            require(demo_transport(glass) && frame_sample_target(glass) == 2 &&
+                        !fixed_opaque_taa_requested(glass) && glass.upscaler == upscaler,
+                    "glass reconstruction keeps demo transport and explicit lane count");
+        }
+        auto glass_fixture = parse({"--scene", "dragon-optics", "--transport-mode", "demo",
+                                    "--experimental-glass", "sphere", "--no-shadows", "--headless",
+                                    "--glass-sequence", "--frames", "24", "--headless-render-only"});
+        const auto sphere_scene = make_scene(glass_fixture);
+        require(sphere_scene.optical_dragon && sphere_scene.routes.front().name == "glass-sphere" &&
+                    sphere_scene.meshes.front().admission.closed && sphere_scene.instances.size() > 2 &&
+                    sphere_scene.support_recipe->id == "marble", "optical sphere uses a patterned marble backdrop");
+        require(glass_sequence_pose(2, 24).phase == "hold" && glass_sequence_pose(8, 24).yaw == .24F &&
+                    glass_sequence_pose(10, 24).phase == "stop" && glass_sequence_pose(16, 24).phase == "return" &&
+                    glass_sequence_pose(17, 24).yaw == 0 && !glass_sequence_pose(20, 24).cut &&
+                    glass_sequence_pose(21, 24).cut && !glass_sequence_pose(22, 24).cut,
+                "glass sequence returns to the original pose and explicitly resets on its later cut");
+        rejects([&] { (void)parse({"--scene", "dragon-optics", "--model", existing_file.c_str(),
+                                   "--transport-mode", "demo", "--upscaler", "dlss-quality"}); });
+        rejects([] { (void)parse({"--experimental-glass", "sphere"}); });
+        rejects([] { (void)parse({"--scene", "dragon-optics", "--transport-mode", "demo",
+                                  "--experimental-glass", "sphere", "--no-shadows", "--max-events", "64"}); });
+        rejects([] { (void)parse({"--scene", "dragon-optics", "--transport-mode", "demo",
+                                  "--experimental-glass", "sphere", "--no-shadows", "--anti-aliasing", "taa"}); });
+        rejects([] { (void)parse({"--scene", "dragon-optics", "--transport-mode", "demo",
+                                  "--experimental-glass", "sphere", "--no-shadows", "--view", "depth"}); });
         auto fixed_opaque_auto = parse({"--scene", "dragon-materials", "--model",
                                         existing_file.c_str(), "--transport-mode", "fixed-opaque"});
         require(fixed_opaque_auto.common.anti_aliasing == "auto" &&

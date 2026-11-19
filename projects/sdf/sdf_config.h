@@ -36,6 +36,7 @@ struct SdfConfig {
     std::string cached_quality = "ordinary";
     SdfRouteOverrides route_overrides;
     std::string render_mode = "auto", effective_render_mode = "custom";
+    std::string upscaler = "native";
     bool named_render_mode = false;
     std::string surface_trace = "sampled";
     std::string csg_evaluation = "full";
@@ -93,6 +94,11 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto render_mode = option("render-mode", "Rendering mode", config::ValueType::Enum);
     render_mode.enum_values = {"auto",     "cached",   "cached-refined",
                                "balanced", "analytic", "hybrid"};
+    auto upscaler =
+        option("upscaler", "Upscaler", config::ValueType::Enum);
+    upscaler.help = "Native rendering follows the anti-aliasing policy. Spatial Quality and DLSS "
+                    "Quality K are launch options for opaque analytic scenes with clouds disabled.";
+    upscaler.enum_values = {"native", "spatial-quality", "dlss-quality"};
     auto csg =
         option("csg-evaluation", "Authored geometry evaluation (study)", config::ValueType::Enum);
     csg.enum_values = {"full", "pruned"};
@@ -213,6 +219,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common, "anti-aliasing"))
         .bind(render_mode, c.render_mode)
+        .bind(upscaler, c.upscaler)
         .bind(surface_trace, c.route_overrides.surface_trace)
         .bind(csg, c.route_overrides.csg_evaluation)
         .bind(stage, c.comparison_stage)

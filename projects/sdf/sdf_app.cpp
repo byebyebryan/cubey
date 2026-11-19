@@ -9,6 +9,7 @@
 #include "sdf_workshop.h"
 
 #include <cubey/engine/project_runtime.h>
+#include <cubey/host/dlss_upscaler.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
@@ -29,6 +30,42 @@
 
 namespace cubey::projects::sdf {
 namespace {
+void validate_upscaler_request(const SdfConfig& config, const AuthoredScene* scene) {
+    if (config.upscaler == "native")
+        return;
+    if (config.common.anti_aliasing == "taa")
+        throw std::invalid_argument(
+            "--upscaler spatial-quality/dlss-quality suppress native TAA; use --anti-aliasing "
+            "auto or off");
+    if (config.supersample != 1)
+        throw std::invalid_argument("--upscaler spatial-quality/dlss-quality requires SS1");
+    if (!scene || config.surface_trace != "analytic")
+        throw std::invalid_argument(
+            "--upscaler spatial-quality/dlss-quality requires an authored analytic final scene; "
+            "select --render-mode analytic");
+    if (config.lighting != "atmosphere" || config.lighting_cycle != "frozen" || config.clouds ||
+        config.debug != 0 || config.occluder || config.timeline.motion == "construction" ||
+        config.timeline.motion == "presentation" || config.timeline.motion == "carve" ||
+        config.timeline.motion == "material-story")
+        throw std::invalid_argument(
+            "--upscaler spatial-quality/dlss-quality requires a static opaque final surface and "
+            "environment without clouds or diagnostics");
+    if (std::any_of(scene->optics.begin(), scene->optics.end(),
+                    [](const auto& optics) { return optics.settings.y > 0; }))
+        throw std::invalid_argument(
+            "--upscaler spatial-quality/dlss-quality does not support transparent materials");
+    if (config.comparison_stage != "off" || config.comparison_tight_root ||
+        config.comparison_residency != "host" || config.comparison_donor ||
+        !config.comparison_input.empty() ||
+        (!config.comparison_output.empty() && config.comparison_actions.empty()) ||
+        !config.query_workload_output.empty() || !config.quality_output.empty() ||
+        config.validate || config.validate_batches || config.validate_subtractions ||
+        config.validate_history || config.frame_profile != "off")
+        throw std::invalid_argument(
+            "--upscaler spatial-quality/dlss-quality is unavailable for tracing and quality "
+            "diagnostics");
+}
+
 class App {
   public:
     explicit App(SdfConfig config)
@@ -46,6 +83,7 @@ class App {
                   : std::optional<AuthoredScene>{load_authored_scene(config_.authored_path)}) {
         resolve_render_mode(config_, authored_.has_value());
         validate_source_optimization(config_);
+        validate_upscaler_request(config_, authored_ ? &*authored_ : nullptr);
         if (!config_.comparison_actions.empty()) {
             std::ifstream input(config_.comparison_actions);
             study_actions_ = nlohmann::json::parse(input);
@@ -214,7 +252,7 @@ class App {
                 renderer_->frame_discarded();
             };
             callbacks.create_resources = [&](host::HeadlessPngContext& ctx) {
-                initialize(ctx.device(), ctx.gpu(), ctx.render_target(),
+                initialize(ctx.device(), ctx.gpu(), ctx.instance().handle(), ctx.render_target(),
                            host::headless_capture_frame_slot_count(config_.common));
             };
             callbacks.record_frame = [&](host::HeadlessPngContext& ctx,
@@ -226,7 +264,8 @@ class App {
                 renderer_->record(ctx.device(), command, target, frame.frame_slot, false, view,
                                   config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
                                   orbit_.distance(), ctx.profile_recorder(), frame.index,
-                                  current_cutter(), timeline_.cutter_opacity, preview_cutters());
+                                  current_cutter(), timeline_.cutter_opacity, preview_cutters(),
+                                  static_cast<float>(frame.timing.delta_seconds * 1000.0));
                 if (!study_actions_.is_null() && study_actions_.value("capture_frames", false)) {
                     vulkan::transition_image_layout(
                         command,
@@ -273,7 +312,10 @@ class App {
             callbacks.shutdown = [&](host::HeadlessPngContext&) { shutdown(); };
             return host::HeadlessPngHost(
                        {.run_config = config_.common,
-                        .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
+                        .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
+                        .vulkan_requirements = config_.upscaler == "dlss-quality"
+                                                   ? host::DlssUpscaler::vulkan_requirements()
+                                                   : host::VulkanRequirements{}},
                        std::move(callbacks))
                 .run();
         }
@@ -287,13 +329,20 @@ class App {
             renderer_->frame_discarded();
         };
         callbacks.create_swapchain_resources = [&](host::WindowedAppContext& ctx) {
-            initialize(ctx.device(), ctx.gpu(),
+            initialize(ctx.device(), ctx.gpu(), ctx.instance().handle(),
                        render::ColorTargetView{.extent = ctx.swapchain().extent(),
                                                .format = ctx.swapchain().format()},
                        ctx.frame_slot_count());
         };
-        callbacks.destroy_swapchain_resources = [&](host::WindowedAppContext&) {
+        callbacks.destroy_swapchain_resources = [&](host::WindowedAppContext& ctx) {
             renderer_->destroy();
+            if (dlss_)
+                ctx.gpu()
+                    .submit("retire SDF DLSS target",
+                            [this](vulkan::GpuOwnerContext&) { dlss_->destroy_target(); })
+                    .get();
+            dlss_render_extent_ = {};
+            dlss_output_extent_ = {};
         };
         callbacks.update = [&](host::WindowedAppContext& ctx, const FrameTiming& timing) {
             orbit_.update_from_input(ctx.filtered_input(), timing.delta_seconds);
@@ -325,6 +374,7 @@ class App {
                                                    : *authored_;
                     static_cast<void>(authored_appearance_hash(next));
                     validate_authored_motion(next);
+                    validate_upscaler_request(config_, &next);
                     const auto before = field_ ? field_->stats().build_count : 0;
                     const auto regions_before = region_builds_;
                     auto previous = *authored_;
@@ -402,7 +452,8 @@ class App {
                               frame.frame_slot, true, view,
                               config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
                               orbit_.distance(), ctx.profile_recorder(), frame.timing.frame_index,
-                              current_cutter(), timeline_.cutter_opacity, preview_cutters());
+                              current_cutter(), timeline_.cutter_opacity, preview_cutters(),
+                              static_cast<float>(frame.timing.delta_seconds * 1000.0));
             recorder.end("sdf frame");
         };
         callbacks.shutdown = [&](host::WindowedAppContext&) { shutdown(); };
@@ -413,7 +464,10 @@ class App {
              .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
              .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
              .require_dynamic_rendering = true,
-             .close_on_escape = true},
+             .close_on_escape = true,
+             .vulkan_requirements = config_.upscaler == "dlss-quality"
+                                        ? host::DlssUpscaler::vulkan_requirements()
+                                        : host::VulkanRequirements{}},
             std::move(callbacks));
     }
 
@@ -469,13 +523,35 @@ class App {
             return nullptr;
         return &recipe_.edits[timeline_.cutter_index];
     }
-    void initialize(vulkan::Device& device, vulkan::GpuRuntime& gpu,
+    void initialize(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkInstance instance,
                     const render::ColorTargetView& target, std::uint32_t slots) {
         gpu_ = &gpu;
         target_extent_ = target.extent;
         target_format_ = target.format;
         frame_slots_ = slots;
         runtime_.attach_gpu_if_needed(gpu);
+        if (config_.upscaler == "dlss-quality") {
+            if (!dlss_) {
+                dlss_cleanup_ = gpu.register_owner_cleanup(
+                    "SDF DLSS shutdown", [this](vulkan::GpuOwnerContext&) { dlss_.reset(); });
+                gpu.submit("initialize SDF DLSS",
+                           [this, instance](vulkan::GpuOwnerContext& owner) {
+                               dlss_ =
+                                   std::make_unique<host::DlssUpscaler>(instance, owner.device());
+                           })
+                    .get();
+            }
+            dlss_render_extent_ =
+                gpu.submit("create SDF DLSS target",
+                           [this, extent = target.extent](vulkan::GpuOwnerContext& owner) {
+                               return dlss_->create_target(owner, extent);
+                           })
+                    .get();
+            dlss_output_extent_ = target.extent;
+        } else {
+            dlss_render_extent_ = {};
+            dlss_output_extent_ = {};
+        }
         if (!geometry_initialized_) {
             if (config_.surface_trace != "analytic")
                 field_ = std::make_unique<Field>(device, runtime_.gpu(), config_.atlas_axis);
@@ -588,7 +664,8 @@ class App {
                       << " field_bytes=" << (field_ ? field_->stats().allocation_bytes : 0) << '\n';
         }
         renderer_->create(device, gpu, target.extent, target.format, slots, field_.get(), config_,
-                          displayed_authored_ ? &*displayed_authored_ : nullptr, regions_.get());
+                          displayed_authored_ ? &*displayed_authored_ : nullptr, regions_.get(), {},
+                          nullptr, nullptr, dlss_.get(), dlss_render_extent_);
         log_render_mode();
     }
     void log_render_mode() const {
@@ -596,7 +673,8 @@ class App {
                   << " effective=" << config_.effective_render_mode
                   << " trace=" << config_.surface_trace << " cached=" << config_.cached_quality
                   << " axis=" << config_.region_axis << " ss=" << config_.supersample
-                  << " generation=" << mode_generation_ << " field_generation=" << field_generation_
+                  << " upscaler=" << config_.upscaler << " generation=" << mode_generation_
+                  << " field_generation=" << field_generation_
                   << " field_bytes=" << (field_ ? field_->stats().allocation_bytes : 0)
                   << " region_bytes=" << (regions_ ? regions_->allocation_bytes : 0) << '\n';
     }
@@ -610,6 +688,8 @@ class App {
         if (supersample)
             next_config.supersample = *supersample;
         validate_source_optimization(next_config);
+        validate_upscaler_request(next_config,
+                                  displayed_authored_ ? &*displayed_authored_ : nullptr);
         if (next_config.surface_trace != "sampled" && next_config.debug == 4)
             throw std::invalid_argument("brick debug requires a cached rendering mode");
         if ((mode.empty() || config_.named_render_mode) &&
@@ -655,7 +735,7 @@ class App {
                 needs_field ? (next_field ? next_field.get() : field_.get()) : nullptr, next_config,
                 displayed_authored_ ? &*displayed_authored_ : nullptr,
                 needs_regions ? (next_regions ? next_regions.get() : regions_.get()) : nullptr,
-                fault);
+                fault, nullptr, nullptr, dlss_.get(), dlss_render_extent_);
             runtime_.gpu().wait_queue_idle("sdf rendering mode activation");
             if (fault == "mode-activate")
                 throw CapacityExceeded("injected mode activation failure");
@@ -805,6 +885,7 @@ class App {
         const auto previous_debug = config_.debug;
         const auto previous_fast_path = config_.material_fast_path;
         const std::array previous_camera{config_.yaw, config_.pitch, config_.distance};
+        bool request_temporal_reset = false;
         const auto restore_camera = [&] {
             config_.yaw = previous_camera[0];
             config_.pitch = previous_camera[1];
@@ -822,8 +903,7 @@ class App {
                 config_.yaw = render.value("yaw", config_.yaw);
                 config_.pitch = render.value("pitch", config_.pitch);
                 config_.distance = render.value("distance", config_.distance);
-                if (render.value("reset_temporal", false))
-                    renderer_->reset_temporal();
+                request_temporal_reset = render.value("reset_temporal", false);
                 if (!std::isfinite(config_.yaw) || !std::isfinite(config_.pitch) ||
                     !std::isfinite(config_.distance) || config_.distance < .6F ||
                     config_.distance > 5.F || std::abs(config_.pitch) > 1.5F)
@@ -838,6 +918,7 @@ class App {
             if (action.contains("history_prefix"))
                 next = authored_history_scene(next, action.at("history_prefix").get<std::size_t>());
             validate_authored_motion(next);
+            validate_upscaler_request(config_, &next);
             study_fault_ = action.value("fault", std::string{});
             if (action.contains("render_mode")) {
                 if (authored_geometry_hash(next) != authored_geometry_hash(*displayed_authored_) ||
@@ -851,6 +932,8 @@ class App {
                 authored_ = std::move(next);
                 prepare_time(device, 0, true);
             }
+            if (request_temporal_reset)
+                renderer_->reset_temporal();
         } catch (const CapacityExceeded&) {
             authored_ = std::move(previous);
             config_.debug = previous_debug;
@@ -941,8 +1024,9 @@ class App {
                                           : render_mode_label("custom");
             if (ImGui::BeginCombo("Rendering", std::string(active_label).c_str())) {
                 for (const auto mode : render_modes) {
-                    const auto reason =
-                        render_mode_unavailable(config_, mode, authored_.has_value());
+                    auto reason = render_mode_unavailable(config_, mode, authored_.has_value());
+                    if (config_.upscaler != "native" && mode != "analytic")
+                        reason = "Quality upscaling requires the analytic final render mode";
                     ImGui::BeginDisabled(!reason.empty());
                     if (ImGui::Selectable(std::string(render_mode_label(mode)).c_str(),
                                           config_.named_render_mode && config_.render_mode == mode))
@@ -956,8 +1040,10 @@ class App {
             }
             const char* sample_choices[]{"1x", "2x"};
             int sample_index = static_cast<int>(config_.supersample) - 1;
+            ImGui::BeginDisabled(config_.upscaler != "native");
             if (ImGui::Combo("Supersampling", &sample_index, sample_choices, 2))
                 requested_supersample_ = static_cast<std::uint32_t>(sample_index + 1);
+            ImGui::EndDisabled();
             if (!config_.workshop.empty()) {
                 const char* specimens[]{"sphere", "block", "csg", "swatch", "cut-block"};
                 int shape = config_.workshop == "sphere"      ? 0
@@ -1064,14 +1150,15 @@ class App {
             }
             std::vector<const char*> motions{"Static", "Orbit"};
             std::vector<std::string> motion_names{"static", "orbit"};
-            if (!authored_ || !authored_->history.empty()) {
+            if (config_.upscaler == "native" && (!authored_ || !authored_->history.empty())) {
                 motions.insert(motions.end(), {"Construction", "Presentation"});
                 motion_names.insert(motion_names.end(), {"construction", "presentation"});
             }
-            if (!authored_) {
+            if (config_.upscaler == "native" && !authored_) {
                 motions.push_back("Carve");
                 motion_names.push_back("carve");
-            } else if (authored_->history.size() == 2 && authored_->history[0].cutters.empty() &&
+            } else if (config_.upscaler == "native" && authored_ &&
+                       authored_->history.size() == 2 && authored_->history[0].cutters.empty() &&
                        !authored_->history[1].cutters.empty()) {
                 motions.push_back("Material story");
                 motion_names.push_back("material-story");
@@ -1139,6 +1226,7 @@ class App {
                                          [](const auto& o) { return o.settings.y > 0; });
             const int view_count =
                 config_.lighting != "atmosphere" ? (glass ? 10 : 13) : (authored_ ? 9 : 5);
+            ImGui::BeginDisabled(config_.upscaler != "native");
             if (ImGui::BeginCombo("View", views[view])) {
                 for (int i = 0; i < view_count; ++i) {
                     const bool unavailable = i == 4 && config_.surface_trace != "sampled";
@@ -1151,6 +1239,7 @@ class App {
                 }
                 ImGui::EndCombo();
             }
+            ImGui::EndDisabled();
             if (glass) {
                 int budget =
                     config_.glass_crossings == 4 ? 0 : (config_.glass_crossings == 8 ? 1 : 2);
@@ -1407,10 +1496,35 @@ class App {
             const char* aa_values[]{"off", "auto", "taa"};
             auto& aa = config_.common.anti_aliasing;
             int aa_index = aa == "off" ? 0 : aa == "auto" ? 1 : 2;
+            ImGui::BeginDisabled(config_.upscaler != "native");
             if (ImGui::Combo("Anti-aliasing", &aa_index, aa_choices, 3))
                 aa = aa_values[aa_index];
-            if (host::native_taa_requested(config_.common))
+            ImGui::EndDisabled();
+            if (config_.upscaler != "native") {
+                const auto render_extent = renderer_->render_extent();
+                const auto display_extent = renderer_->display_extent();
+                ImGui::Text("Upscaler: %.*s -> %.*s", static_cast<int>(config_.upscaler.size()),
+                            config_.upscaler.data(),
+                            static_cast<int>(renderer_->effective_upscaler().size()),
+                            renderer_->effective_upscaler().data());
+                ImGui::Text("Render %ux%u -> display %ux%u", render_extent.width,
+                            render_extent.height, display_extent.width, display_extent.height);
+                if (config_.upscaler == "dlss-quality")
+                    ImGui::Text(
+                        "History age: %u; reset: %.*s", renderer_->upscaler_history_age(),
+                        static_cast<int>(
+                            render::temporal_reset_reason_name(renderer_->upscaler_reset_reason())
+                                .size()),
+                        render::temporal_reset_reason_name(renderer_->upscaler_reset_reason())
+                            .data());
+                ImGui::TextWrapped("Status: %.*s",
+                                   static_cast<int>(renderer_->upscaler_reason().size()),
+                                   renderer_->upscaler_reason().data());
+            }
+            if (config_.upscaler == "native" && host::native_taa_requested(config_.common))
                 ImGui::TextWrapped("TAA: %s", renderer_->anti_aliasing_status().data());
+            else if (config_.upscaler != "native")
+                ImGui::TextWrapped("Native TAA is suppressed by the selected upscaler.");
         }
         ImGui::End();
     }
@@ -1420,6 +1534,18 @@ class App {
             host::report_anti_aliasing(config_.common, renderer_->temporal_active(),
                                        renderer_->anti_aliasing_status());
             aa_reported_ = true;
+        }
+        if (config_.upscaler != "native" && !upscaler_reported_) {
+            const auto render_extent = renderer_->render_extent();
+            const auto display_extent = renderer_->display_extent();
+            std::cout << "upscaler: requested=" << config_.upscaler
+                      << " effective=" << renderer_->effective_upscaler()
+                      << " render=" << render_extent.width << 'x' << render_extent.height
+                      << " display=" << display_extent.width << 'x' << display_extent.height
+                      << " history_age=" << renderer_->upscaler_history_age() << " reset_reason="
+                      << render::temporal_reset_reason_name(renderer_->upscaler_reset_reason())
+                      << " reason=" << renderer_->upscaler_reason() << '\n';
+            upscaler_reported_ = true;
         }
     }
     void shutdown() {
@@ -1442,12 +1568,21 @@ class App {
                 << '\n';
         }
         renderer_->destroy();
+        if (dlss_ && gpu_) {
+            gpu_->submit("retire SDF DLSS target",
+                         [this](vulkan::GpuOwnerContext&) { dlss_->destroy_target(); })
+                .get();
+            gpu_->submit("shutdown SDF DLSS", [this](vulkan::GpuOwnerContext&) { dlss_.reset(); })
+                .get();
+            dlss_cleanup_.reset();
+        }
         field_.reset();
         regions_.reset();
         runtime_.detach_gpu_if_attached();
     }
     SdfConfig config_;
     bool aa_reported_ = false;
+    bool upscaler_reported_ = false;
     Recipe recipe_;
     std::optional<AuthoredScene> authored_;
     std::optional<AuthoredScene> displayed_authored_;
@@ -1464,6 +1599,10 @@ class App {
     bool geometry_initialized_ = false;
     std::unique_ptr<Renderer> renderer_ = std::make_unique<Renderer>();
     vulkan::GpuRuntime* gpu_ = nullptr;
+    vulkan::GpuRuntimeOwnerCleanup dlss_cleanup_{};
+    std::unique_ptr<host::DlssUpscaler> dlss_;
+    VkExtent2D dlss_render_extent_{};
+    VkExtent2D dlss_output_extent_{};
     VkExtent2D target_extent_{};
     VkFormat target_format_ = VK_FORMAT_UNDEFINED;
     std::uint32_t frame_slots_ = 0;

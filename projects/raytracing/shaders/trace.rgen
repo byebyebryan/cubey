@@ -25,7 +25,11 @@ struct Query { vec4 hit; vec4 geometric; vec4 shading; vec4 bary; };
 #include "optics.glsl"
 #include "nvidia_self_intersection.glsl"
 layout(std430,set=0,binding=18) readonly buffer EdgeNeighbors { uvec4 edgeNeighbors[]; };
-#ifdef CUBEY_RT_FIXED_OPAQUE_TAA
+#ifdef CUBEY_RT_PRIMARY_DEPTH
+layout(r32f,set=0,binding=22) uniform writeonly image2D temporalDepthImage;
+#include "fixed_opaque_depth.glsl"
+#endif
+#ifdef CUBEY_RT_PRIMARY_MOTION
 layout(rg16f,set=0,binding=20) uniform writeonly image2D temporalMotionImage;
 layout(std140,set=0,binding=21) uniform TemporalRayMotion {
  mat4 currentViewProjection;

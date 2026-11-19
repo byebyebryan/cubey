@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
+#include <cubey/host/dlss_upscaler.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
@@ -75,7 +76,9 @@ class App {
             if (scene_.workshop) {
                 data["workshop_recipes"] = scene_.workshop->identity();
                 data["geometry_conversion"] =
-                    scene_.optical_dragon
+                    config_.experimental_glass == "sphere"
+                        ? "closed workshop sphere before a slatted marble panel"
+                    : scene_.optical_dragon
                         ? "certified optical main-shell dragon; original corner attributes "
                           "retained; geometric glass interfaces; independent opaque marble slab"
                     : scene_.material_layout == Scene::MaterialLayout::Dragon
@@ -108,8 +111,10 @@ class App {
         auto c = sample_workshop_presentation(config_, presentation_seconds_);
         c.yaw += orbit_.yaw() + config_.orbit_speed * float(presentation_seconds_);
         if (config_.fixed_opaque_sequence)
-            c.yaw += fixed_opaque_sequence_yaw_offset(fixed_opaque_sequence_frame_,
+            c.yaw += fixed_opaque_sequence_yaw_offset(sequence_frame_,
                                                       config_.common.frames);
+        if (config_.glass_sequence)
+            c.yaw += glass_sequence_pose(sequence_frame_, config_.common.frames).yaw;
         c.sun_azimuth += config_.sun_speed * float(presentation_seconds_);
         c.pitch += orbit_.pitch();
         c.distance = orbit_.distance();
@@ -156,8 +161,34 @@ class App {
             recipe.surface.base_roughness.w = .05F + .9F * fraction;
         state.replace(state.selected, std::move(recipe));
     }
-    void create(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
-                VkExtent2D extent, VkFormat format) {
+    void create(VkInstance instance, vulkan::Device& device, vulkan::GpuRuntime& gpu,
+                std::uint32_t slots, VkExtent2D extent, VkFormat format) {
+        auto render_extent = extent;
+        if (config_.upscaler == "spatial-quality")
+            render_extent = render::quality_spatial_render_extent(extent);
+        if (config_.upscaler == "dlss-quality") {
+            if (!dlss_) {
+                dlss_cleanup_ = gpu.register_owner_cleanup(
+                    "RT DLSS shutdown", [this](vulkan::GpuOwnerContext&) { dlss_.reset(); });
+                gpu.submit("initialize RT DLSS",
+                           [this, instance](vulkan::GpuOwnerContext& owner) {
+                               dlss_ =
+                                   std::make_unique<host::DlssUpscaler>(instance, owner.device());
+                           })
+                    .get();
+            }
+            // Both hosts retire preceding submissions before replacing target resources.
+            if (dlss_output_extent_.width != extent.width ||
+                dlss_output_extent_.height != extent.height) {
+                dlss_render_extent_ = gpu.submit("create RT DLSS target",
+                                                 [this, extent](vulkan::GpuOwnerContext& owner) {
+                                                     return dlss_->create_target(owner, extent);
+                                                 })
+                                          .get();
+                dlss_output_extent_ = extent;
+            }
+            render_extent = dlss_render_extent_;
+        }
         if (!renderer_) {
             const auto initial = config_.presentation == "library" ? current() : config_;
             if (config_.exercise_retry && config_.fault != "target") {
@@ -177,12 +208,12 @@ class App {
             }
             renderer_ = std::make_unique<Renderer>(
                 device, gpu, scene_, slots, config_.exercise_retry ? "none" : config_.fault,
-                dump_mode(config_) != 0, !config_.metrics.empty(), &initial);
+                dump_mode(config_) != 0, !config_.metrics.empty(), &initial, dlss_.get());
         }
         if (config_.exercise_retry && config_.fault == "target" && !target_fault_used_) {
             bool failed = false;
             try {
-                renderer_->resize(extent, format, true);
+                renderer_->resize(render_extent, extent, format, true);
             } catch (const std::runtime_error& e) {
                 if (std::string_view(e.what()).find("owned RT creation fault:") ==
                     std::string_view::npos)
@@ -194,9 +225,10 @@ class App {
                 throw std::runtime_error("RT target fault was not observed");
             target_fault_used_ = true;
         }
-        renderer_->resize(extent, format, !config_.exercise_retry && config_.fault == "target");
+        renderer_->resize(render_extent, extent, format,
+                          !config_.exercise_retry && config_.fault == "target");
     }
-    void shutdown() {
+    void shutdown(vulkan::GpuRuntime& gpu) {
         // Keep cleanup inside the host's live-device shutdown callback even
         // when a diagnostic or metrics file cannot be written.
         auto completed_renderer = std::move(renderer_);
@@ -241,14 +273,26 @@ class App {
                       << " ms, pipeline=" << data["pipeline_setup_ms"] << " ms\n";
             completed_renderer.reset();
         }
+        if (dlss_) {
+            gpu.submit("shut down RT DLSS", [this](vulkan::GpuOwnerContext&) { dlss_.reset(); })
+                .get();
+            dlss_cleanup_.reset();
+        }
     }
     void workshop_ui() {
-        if (fixed_opaque_transport(config_)) {
+        if (config_.experimental_glass != "none" || fixed_opaque_transport(config_)) {
+            const bool glass = config_.experimental_glass != "none";
             ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
-            ImGui::Begin("RT fixed opaque");
-            ImGui::TextUnformatted("Bronze dragon with opaque marble support");
-            ImGui::Text("%u primary samples per frame", config_.fixed_opaque_samples);
-            ImGui::Text("Temporal AA: %s", config_.common.anti_aliasing.c_str());
+            ImGui::Begin(glass ? "Experimental fixed glass" : "RT fixed opaque");
+            if (glass)
+                ImGui::Text("Glass study: %s", config_.experimental_glass.c_str());
+            else
+                ImGui::TextUnformatted("Bronze dragon with opaque marble support");
+            ImGui::Text("%u primary samples per frame", frame_sample_target(config_));
+            if (!glass && config_.upscaler == "native")
+                ImGui::Text("Temporal AA: %s", config_.common.anti_aliasing.c_str());
+            else
+                ImGui::Text("Upscaler: %s", config_.upscaler.c_str());
             ImGui::TextUnformatted("Drag to orbit; R marks a camera cut");
             ImGui::End();
             return;
@@ -634,7 +678,9 @@ class App {
     }
     void save() {
         auto c = current();
-        if (scene_.material_layout == Scene::MaterialLayout::Dragon) {
+        // Fixed opaque always reloads the canonical bronze recipe.
+        if (scene_.material_layout == Scene::MaterialLayout::Dragon && !fixed_opaque_transport(c) &&
+            c.experimental_glass == "none") {
             // Save the effective subject recipe beside the view. The base keeps
             // its independent canonical record even when the subject is marble.
             c.recipe_input =
@@ -658,6 +704,7 @@ class App {
         c.scene_output.clear();
         c.optics_contract = c.bsdf_contract = c.material_contract = c.dielectric_contract = false;
         c.stress_edits = 0;
+        c.glass_sequence = false;
         c.presentation = "none";
         c.presentation_time = -1;
         c.lighting_cycle = "frozen";
@@ -711,15 +758,20 @@ class App {
         }
     }
     int run_backend() {
+        const auto requirements = config_.upscaler == "dlss-quality"
+                                      ? host::DlssUpscaler::vulkan_requirements()
+                                      : host::VulkanRequirements{};
         if (config_.common.headless) {
             host::HeadlessPngHostConfig h;
             h.run_config = config_.common;
             h.output_format = VK_FORMAT_R8G8B8A8_UNORM;
             h.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
             h.require_ray_tracing = config_.renderer == "rt";
+            h.vulkan_requirements = requirements;
             host::HeadlessPngHostCallbacks cb;
             cb.create_resources = [&](host::HeadlessPngContext& c) {
-                create(c.device(), c.gpu(), host::headless_capture_frame_slot_count(config_.common),
+                create(c.instance().handle(), c.device(), c.gpu(),
+                       host::headless_capture_frame_slot_count(config_.common),
                        c.render_target().extent, c.render_target().format);
             };
             cb.record_frame = [&](host::HeadlessPngContext& c, const host::HeadlessCaptureFrame& f,
@@ -729,12 +781,14 @@ class App {
                     config_.presentation == "library"
                         ? 8.0 * host::headless_capture_progress(f)
                         : double(f.index) / double(std::max(config_.common.fps, 1U));
-                fixed_opaque_sequence_frame_ = f.index;
+                sequence_frame_ = f.index;
                 stress_edit(f.index);
                 renderer_->render(command, target, f.frame_slot, current(), false,
                                   c.profile_recorder(), f.index,
-                                  config_.fixed_opaque_sequence &&
-                                      f.index == fixed_opaque_sequence_cut_frame(f.count));
+                                  (config_.fixed_opaque_sequence &&
+                                   f.index == fixed_opaque_sequence_cut_frame(f.count)) ||
+                                      (config_.glass_sequence && glass_sequence_pose(f.index, f.count).cut),
+                                  static_cast<float>(1000.0 * f.timing.delta_seconds));
             };
             cb.frame_submitted = [&](host::HeadlessPngContext&,
                                      const host::HeadlessCaptureFrame&,
@@ -746,10 +800,10 @@ class App {
                                      const host::HeadlessCaptureFrame&) {
                 renderer_->frame_discarded();
             };
-            cb.shutdown = [&](host::HeadlessPngContext&) {
+            cb.shutdown = [&](host::HeadlessPngContext& c) {
+                shutdown(c.gpu());
                 if (!config_.save_config.empty())
                     save();
-                shutdown();
             };
             host::HeadlessPngHost host(std::move(h), std::move(cb));
             return host.run();
@@ -761,11 +815,12 @@ class App {
                                                        : "rendering hardware ray-traced triangles";
         h.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         h.require_ray_tracing = config_.renderer == "rt";
+        h.vulkan_requirements = requirements;
         h.close_on_escape = true;
         host::WindowedAppCallbacks cb;
         cb.create_swapchain_resources = [&](host::WindowedAppContext& c) {
-            create(c.device(), c.gpu(), c.frame_slot_count(), c.swapchain().extent(),
-                   c.swapchain().format());
+            create(c.instance().handle(), c.device(), c.gpu(), c.frame_slot_count(),
+                   c.swapchain().extent(), c.swapchain().format());
         };
         cb.update = [&](host::WindowedAppContext& c, const FrameTiming& t) {
             presentation_seconds_ += t.delta_seconds;
@@ -794,7 +849,8 @@ class App {
             const auto begin = config_.metrics.empty() ? 0 : steady_ns();
             const auto view = current();
             renderer_->render(f.command_buffer, f.color_target, f.frame_slot, view, true,
-                              c.profile_recorder(), frame_, cut_requested_);
+                              c.profile_recorder(), frame_, cut_requested_,
+                              static_cast<float>(1000.0 * f.timing.delta_seconds));
             if (!config_.metrics.empty()) {
                 const auto end = steady_ns();
                 if (native_frames_.size() < 20000)
@@ -834,7 +890,7 @@ class App {
                                  const host::WindowedRenderFrame&) {
             renderer_->frame_discarded();
         };
-        cb.shutdown = [&](host::WindowedAppContext&) { shutdown(); };
+        cb.shutdown = [&](host::WindowedAppContext& c) { shutdown(c.gpu()); };
         return host::run_windowed_app(std::move(h), std::move(cb));
     }
 
@@ -847,6 +903,9 @@ class App {
     std::vector<WorkshopVolume> optical_volumes_;
     mutable std::optional<Config> last_valid_optical_view_;
     mutable std::uint64_t optical_camera_rejections_ = 0;
+    std::unique_ptr<host::DlssUpscaler> dlss_;
+    vulkan::GpuRuntimeOwnerCleanup dlss_cleanup_;
+    VkExtent2D dlss_render_extent_{}, dlss_output_extent_{};
     std::unique_ptr<Renderer> renderer_;
     std::uint64_t frame_ = 0;
     std::int64_t native_update_ns_ = 0;
@@ -857,7 +916,7 @@ class App {
     bool target_fault_used_ = false;
     bool anti_aliasing_reported_ = false;
     bool cut_requested_ = false;
-    std::uint64_t fixed_opaque_sequence_frame_ = 0;
+    std::uint64_t sequence_frame_ = 0;
     std::array<char, 512> recipe_path_{};
     std::string workshop_family_ = "all";
     std::string workshop_message_;

@@ -56,7 +56,8 @@ void test_defaults_named_flags_and_typed_runtime() {
         static_cast<int>(std::size(argv)), argv);
     require(config.common.width == 1280U && config.common.height == 720U,
             "glTF common defaults should remain stable");
-    require(config.upscaler == "native", "glTF should default to native rendering");
+    require(config.upscaler == "native" && config.common.anti_aliasing == "auto",
+            "glTF should default to native rendering with Auto anti-aliasing");
     require(config.debug_view == "metallic", "glTF debug view should bind");
     require(config.ocean.map_size == 128U && config.ocean.sea_state == "calm",
             "glTF ocean startup options should bind");
@@ -423,6 +424,17 @@ void test_dlss_quality_policy_is_explicit() {
     const auto config = parse({"--upscaler", "dlss-quality", "--pbr-environment-source", "static"});
     require(config.upscaler == "dlss-quality" && config.common.anti_aliasing == "auto",
             "the optional upscaler should select DLSS without changing the shared AA policy");
+    require(config.dlss_preset == "k", "DLSS Quality should default to preset K");
+    require(parse({"--upscaler", "dlss-quality", "--pbr-environment-source", "static",
+                   "--dlss-preset", "m"}).dlss_preset == "m",
+            "M should be available as an explicit DLSS preset");
+    require(parse({"--upscaler", "dlss-quality", "--pbr-environment-source", "static",
+                   "--set", "gltf.dlss_preset=l"}).dlss_preset == "l",
+            "L should be available through the shared config path");
+    require(parse({"--dlss-preset", "m"}).upscaler == "native",
+            "choosing a DLSS model should not enable upscaling on its own");
+    require_throws([&] { parse({"--dlss-preset", "other"}); },
+                   "DLSS preset must be one of the three available models");
     require_throws([&] { parse({"--upscaler", "dlss-quality"}); },
                    "DLSS requires a static environment");
     require_throws(

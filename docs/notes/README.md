@@ -39,6 +39,8 @@ the architecture and project guides remain current authority.
   policy, admission by project, and native launch and motion results.
 - [DLSS Super Resolution qualification](dlss-super-resolution-2026-11.md):
   native Vulkan NGX, opaque Viewer integration, and paired quality and costs.
+- [Opaque SDF and fixed RT DLSS](dlss-opaque-producers-2026-11.md): shared
+  reconstruction inputs, matching controls, and native validation.
 - [RT material workshop plan](raytracing-material-workshop-plan.md): proposed
   shared twelve-recipe forward/SDF/RT workshop under matched clear atmosphere,
   with rough specular transport, per-material optics and bounded sampling.

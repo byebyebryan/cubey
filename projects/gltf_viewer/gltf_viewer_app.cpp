@@ -480,7 +480,7 @@ int GltfViewerApp::run_windowed() {
             .profile_pacing = windowed_profile_pacing(config_.profile),
             .close_on_escape = true,
             .vulkan_requirements =
-                use_dlss ? GltfViewerDlss::vulkan_requirements() : cubey::host::VulkanRequirements{},
+                use_dlss ? cubey::host::DlssUpscaler::vulkan_requirements() : cubey::host::VulkanRequirements{},
         },
         std::move(callbacks));
 }
@@ -494,7 +494,7 @@ int GltfViewerApp::run_headless() {
     host_config.require_dynamic_rendering = true;
     host_config.staging_pool = cubey::vulkan::GpuStagingPoolConfig{};
     if (use_dlss) {
-        host_config.vulkan_requirements = GltfViewerDlss::vulkan_requirements();
+        host_config.vulkan_requirements = cubey::host::DlssUpscaler::vulkan_requirements();
     }
 
     cubey::host::HeadlessPngHostCallbacks callbacks;
