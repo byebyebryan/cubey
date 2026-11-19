@@ -24,8 +24,10 @@ The repository now uses one configuration path:
   `--set path=value` overrides;
 - JSON loading, template output, negative bool aliases, ranges, enum choices,
   unknown-key rejection, and assigned-path reporting come from the schema;
-- `cubey::host::CommonRunConfig` and `common_run_config_schema()` define only
-  the host-owned window, capture, validation, and profiling boundary;
+- `cubey::host::CommonRunConfig` and `common_run_config_schema()` define shared
+  window, capture, validation, profiling and AA request options. Each renderer
+  decides whether to admit the view for TAA. Upscaler selection belongs to the
+  project schema. [Temporal rendering policy](temporal-aa.md#application-policy)
 - every active executable owns a typed facade composed from the common host
   schema and its live project schema;
 - shared atmosphere, cloud, ocean, PBR, and fluid schema fragments live beside

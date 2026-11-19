@@ -10,7 +10,8 @@ this guide remains the native run and editing reference.
 
 ## Temporal anti-aliasing
 
-Native TAA is opt-in for opaque rigid specimens with frozen lighting:
+Interactive AA Auto uses native TAA for opaque rigid specimens with frozen
+lighting. Use the explicit `taa` setting when reproducing a comparison.
 
 ```sh
 build/release/projects/pbr_materials/pbr_materials --material woven-cloth --specimen swatch --anti-aliasing taa
@@ -20,7 +21,7 @@ build/release/projects/pbr_materials/pbr_materials --config projects/pbr_materia
 The moving fixture holds, crosses a patterned board and thin bronze bars, stops,
 then returns. Its camera starts fixed; R restarts the fixture and history.
 `--taa-fixture-time 3.5` freezes a reproducible pose while submitted frames still
-advance TAA. Use the matching `rigid-motion-off.json` for comparison. The new
+advance TAA. Use the matching `rigid-motion-off.json` for comparison. The
 preset directory also contains matched clay, cloth, wood and bronze controls.
 
 The Anti-aliasing selector is at the end of the workshop panel. Unsupported

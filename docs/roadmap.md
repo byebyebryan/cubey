@@ -20,9 +20,7 @@ fixed-quality RT and progressive sampled RT with matched launch views and
 motion/cost evidence. The certified dragon sits on a convex marble slab under
 shared clear atmosphere; primitive and floor scenes remain diagnostic controls.
 Forward shows local scene color through glass while RT follows repeated scene
-intersections. Fine motion shimmer remains an accepted demo limit. Shared
-temporal AA/reconstruction, Cornell/local-area-light GI, full cloud composition
-and mesh/SDF representation comparisons remain separate choices. The
+intersections. Fine motion shimmer remains an accepted demo limit. The
 [workshop guide](notes/raytracing-material-workshop-guide.md) and
 [progress record](notes/raytracing-material-workshop-progress.md) describe the
 implemented forward/SDF/RT material routes. Earlier
@@ -32,6 +30,25 @@ The [dragon showcase](https://dev.byebyebryan.com/cubey/demos/raytracing/) prese
 the three modes; deployment metadata below identifies the served revision. Native
 Xvfb evidence does not establish physical desktop interaction or cadence and
 does not renew qualification of other renderers.
+
+## Temporal rendering
+
+The [temporal foundation](architecture/temporal-aa.md) supplies a shared native
+TAA resolve and an optional upscaler interface. AA Auto enables TAA for eligible
+interactive Forward PBR, SDF and fixed opaque RT views. DLSS Quality K is an
+explicit launch choice for qualified Viewer, analytic SDF and fixed opaque RT
+scenes. The certified glass showcase uses native four-sample RT by default and
+offers experimental K in its fixed mode. Clouds retain their own history.
+The [project integration guide](architecture/temporal-aa.md#integrating-a-new-project)
+covers reuse and producer responsibilities.
+
+The [Auto rollout](notes/taa-auto-dogfood-2026-11.md) and
+[opaque DLSS comparisons](notes/dlss-opaque-producers-2026-11.md) record scoped
+native qualification. The public showcase keeps its existing captures.
+Reopen temporal admission for clouds, deforming surfaces or transmission
+when a producer can supply motion or coverage that represents the visible
+image. Cornell/local-area-light GI and mesh/SDF representation comparisons
+remain separate choices.
 
 ## Current Readiness Checkpoint
 
@@ -51,7 +68,7 @@ Reviewed against runtime source `86885a4d` on 2026-10-17:
 | Terrain Water | Dedicated live external SynxFlow and recorded terrain-water frontend, with explicit preparation and worker qualification. | An admitted producer, site or integration requirement changes. Builtin diagnostics are not an equivalent mountain-flow fallback. |
 | Planet | Paused since 2026-10-15; retained under `studies/planet` behind an opt-in build. | A separately selected product has a concrete visual goal. Earlier scoped closure is not visual acceptance. |
 
-The latest full runtime qualification belongs to `d713512b`: 252 dev groups,
+The October foundation qualification belongs to `d713512b`: 252 dev groups,
 six alternative Fluid domain groups, seven configure variants, focused
 sanitizers, 19 virtual-X11 windowed groups and six synchronization groups. The
 later Ocean owner-order correction at `86885a4d` has a separate focused

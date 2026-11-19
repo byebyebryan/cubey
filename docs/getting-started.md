@@ -256,16 +256,21 @@ recipes. The [docs index](README.md#project-docs) links the maintained guides.
 The paused [Planet study](../studies/planet/README.md#explicit-build-and-use)
 has its own opt-in build and is excluded from normal project builds.
 
-The native path uses AA Auto. Compatible interactive views apply TAA.
-The Viewer, SDF and ray tracing projects also offer an explicit DLSS Quality
-launch option for qualified scenes. The supported paths and launch recipes
-are listed in the [upscaler selection guide](architecture/temporal-aa.md#upscaler-selection).
+Maintained projects share `--anti-aliasing off|auto|taa`. Native Auto uses
+TAA for compatible interactive views. Use `off` for a direct comparison.
+Viewer, SDF and fixed RT also offer `--upscaler dlss-quality` for qualified
+scenes with the optional NVIDIA SDK. See the
+[upscaler selection guide](architecture/temporal-aa.md#upscaler-selection)
+for supported views and launch recipes.
 
 Windowed `--frames N` runs exit after the requested frame count and print a
 final `windowed_perf` summary. Add `--print-frame-stats` for periodic stdout
 samples while a window remains open.
 
 ## Headless capture
+
+Headless AA Auto uses the direct path. Request `--anti-aliasing taa` for a
+compatible beauty capture and allow multiple frames for history to settle.
 
 Every maintained visual project supports deterministic offscreen PNG output:
 
@@ -284,10 +289,11 @@ When Cubey is built with FFmpeg/libav, the same host can produce MP4 directly:
 ```
 
 The [public site](https://dev.byebyebryan.com/cubey/) presents the current demo
-collection; its [media ledger and attribution](../site/media/README.md) own the
-selected web captures. The [tracked-media guide](media/README.md) distinguishes
-current selections from archived publication packages. Exact recipes, hashes
-and poster timestamps for the earlier five-film README gallery remain in its
+collection. The [presentation capture defaults](../site/media/README.md#presentation-capture-defaults)
+describe the native master, web encode and matched comparison settings.
+The [tracked-media guide](media/README.md) distinguishes current selections
+from archived publication packages. Exact recipes, hashes and poster
+timestamps for the earlier five-film README gallery remain in its
 [retained showcase manifest](media/showcase/manifest.json).
 
 For bounded performance work without image readback or encoding, reuse the

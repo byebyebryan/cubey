@@ -56,10 +56,11 @@ viewport, and Save view retains that choice. See the
 [demo closeout](../../docs/notes/raytracing-dragon-demo-closeout.md) for matched
 motion, current costs, reproduction and accepted limits.
 
-The separate [fixed opaque dragon study](docs/fixed-opaque-taa.md) has matched
-Off and TAA presets for the bronze dragon and opaque marble support. Its opt-in
-spatial and DLSS Quality modes compare reduced-resolution tracing with the
-same primary samples per render pixel.
+The separate [fixed opaque dragon study](docs/fixed-opaque-taa.md) uses TAA
+under interactive Auto on the bronze dragon and opaque marble support.
+It has matched Off and TAA capture presets. Spatial Quality and DLSS Quality
+offer reduced-resolution comparisons with the same primary samples per render
+pixel.
 
 The [experimental fixed-glass comparison](docs/fixed-glass-sr.md) uses the
 existing fixed demo transport on the certified glass dragon and a generated

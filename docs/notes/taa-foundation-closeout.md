@@ -1,8 +1,9 @@
 # Native TAA foundation results
 
 Date: 2026-11-17 implementation, with qualification completed on 2026-11-18 UTC.
-This closes the [foundation plan](taa-foundation-plan.md) as an opt-in feature.
-No default, public media, deployment or RT sampling policy changes here.
+This records the opt-in checkpoint for the [foundation plan](taa-foundation-plan.md).
+The later Auto rollout and DLSS integration are described in the
+[current temporal policy](../architecture/temporal-aa.md#application-policy).
 
 `cubey::render::TemporalAntiAliasing` now owns one native HDR resolve and one
 submission-driven history implementation. `ForwardPbrRenderer3D` and the

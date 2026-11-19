@@ -70,6 +70,10 @@ independent of CPU slots. For matched captures use `--pause-time` to hold solar
 lighting, then compare `--cloud-wind-speed-mps 0` with a moving-weather run.
 This remains an experimental cloud-layer resolve.
 
+The shared AA policy uses this project's own cloud rendering path. The
+cloud layer's reconstruction is independent of
+[surface TAA and DLSS](../../docs/architecture/temporal-aa.md#upscaler-selection).
+
 Useful runs:
 
 ```sh

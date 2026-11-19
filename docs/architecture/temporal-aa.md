@@ -1,21 +1,21 @@
-# Native temporal anti-aliasing
+# Temporal anti-aliasing and upscaling
 
 The TAA foundation resolves scene-linear HDR before display exposure and
 tone mapping. `cubey::render::TemporalAntiAliasing` owns the common motion and
-resolve passes, history images, uniforms and descriptor slots. Producers supply
-a coherent view and either depth or their own motion field. Forward can overlay
-rigid-object motion before the resolve. SDF uses the same runtime independently
-of the forward renderer.
+resolve passes, history images, uniforms and descriptor slots. Forward PBR,
+SDF and fixed opaque RT use the shared resolve. Forward PBR can overlay
+rigid-object motion. The producers also share the temporal inputs used by
+the optional NGX backend.
 
 ## Application policy
 
 Projects share `--anti-aliasing off|auto|taa`. Auto is the application
-default and requests TAA for interactive views. An adapter admits the current frame before
-applying jitter or allocating history. Headless Auto uses the direct render
-path. A headless beauty capture can explicitly select TAA and define its
-history warm-up. Reference captures and raw diagnostics use direct output.
-The lower-level forward renderer defaults to Off for callers that supply
-their own settings.
+default and requests TAA for interactive views. Each producer checks whether
+the current view can supply valid temporal inputs before applying jitter or
+allocating history. Headless Auto uses the direct render path. A headless
+beauty capture can explicitly select TAA and define its history warm-up.
+Reference captures and raw diagnostics use direct output. The lower-level
+forward renderer defaults to Off for callers that supply their own settings.
 
 ### Upscaler selection
 
@@ -29,10 +29,12 @@ choices.
 | Path | Native Auto | Explicit DLSS Quality |
 | --- | --- | --- |
 | Eligible opaque Viewer | TAA in interactive views | K with static IBL and rigid opaque geometry |
-| Eligible opaque analytic SDF | TAA in interactive views | K at SS1 with frozen lighting and clouds disabled |
+| Opaque PBR Materials specimens | TAA in eligible interactive views with frozen lighting | — |
+| Eligible opaque SDF | TAA in interactive 1× views | K on the analytic path at 1× with frozen lighting and clouds disabled |
 | Fixed opaque RT | TAA in interactive views | K for the qualified bronze dragon |
 | Certified fixed glass | Four primary samples per render pixel in the showcase launcher | Experimental K through the glass launcher |
-| Cloud paths | Native rendering and the project's cloud history policy | Separate headless studies |
+| Cloud paths | Native rendering and the project's cloud history policy | Parked headless studies |
+| Projects without a compatible producer | Direct rendering | — |
 
 The compatible opaque launch examples and their measured limits are in the
 [Viewer guide](../../projects/gltf_viewer/README.md#dlss-quality-on-native-linux),
@@ -46,6 +48,76 @@ The CLI uses one flag across projects. Saved SDF and ray tracing configs keep
 Launch status reports the requested policy, effective mode, and bypass reason.
 Profiles that use the temporal adapter retain the resolved request and
 effective mode alongside history age, reset reason, and jitter.
+
+## Integrating a new project
+
+Compose `host::common_run_config_schema()` to inherit the AA option. Use
+`host::native_taa_requested()` to resolve the request and
+`host::report_anti_aliasing()` to report actual admission. Projects without
+temporal inputs can use the shared option and report why they render directly.
+Keep upscaler selection in the project schema.
+
+### Projects using Forward PBR
+
+1. Register the shader sources and dependencies with
+   `cubey_forward_pbr_shader_sources()` and `cubey_forward_pbr_shader_depends()`.
+   Load the generated files with
+   `forward_pbr_renderer_3d_config_from_shader_directory()`.
+2. Map the resolved AA request to `ForwardPbrRenderer3DSettings::anti_aliasing`.
+   Keep draw entity IDs stable. Identify the view with its camera entity or
+   `temporal_view_id`. Use `temporal_appearance_static` for the scene's
+   lighting and appearance policy, `temporal_reset` for explicit cuts, and
+   `temporal_content_generation` for discontinuous content changes. The
+   renderer checks admission and owns jitter, motion and resolve.
+3. Connect the windowed and headless host callbacks to the renderer's
+   `frame_submitted(ticket)` and `frame_discarded()`. Read
+   `temporal_status()` for the effective mode and bypass reason.
+
+Use the [PBR Materials workshop](../../projects/pbr_materials/pbr_materials_app.cpp)
+for native TAA wiring and the
+[glTF Viewer](../../projects/gltf_viewer/gltf_viewer_render.cpp) for an upscaling
+target in the same renderer.
+
+### Projects with their own render pass
+
+Use one `TemporalAntiAliasing` per view and the shared resolve shader. For
+camera-only motion over a static scene, compile the shared motion shader and
+use `declare_camera_motion()` with the producer's depth. If the renderer
+already emits motion, import its write state into the graph and use
+`declare_resolve_with_motion()`. Render with the candidate's jitter and feed
+the resulting HDR output to display post. SDF provides the
+[depth-derived example](../../projects/sdf/sdf_renderer.cpp), and fixed opaque
+RT provides the [ray-generated example](../../projects/raytracing/raytracing_renderer.cpp).
+Follow the [view contract](#view-and-motion-contract) and
+[submission lifecycle](#submission-and-resource-lifetime) below.
+
+### Adding optional DLSS
+
+Link `cubey::dlss` and reuse the SDK setup in the
+[Viewer build instructions](../../projects/gltf_viewer/README.md#dlss-quality-on-native-linux).
+For an explicit request, pass `host::DlssUpscaler::vulkan_requirements()` to the
+host before creating the Vulkan instance and device. Create the backend and
+its target on the GPU owner. `create_target()` returns the render extent for
+the requested display extent. Retire affected submissions before recreating
+the targets or destroying the backend. Reject explicit requests for scenes
+that cannot supply the required inputs. SDK-free builds keep the native
+path and report missing support on explicit DLSS requests.
+
+Forward PBR takes the backend and render extent in
+`ForwardPbrRenderer3DTargetResourcesInfo`. Other producers use
+`TemporalViewState` to prepare and publish accepted views. Supply scene-linear
+color, depth and motion at the render extent, the prepared view, the output
+extent and frame time in milliseconds through `TemporalUpscaleInputs`. Use the
+HDR output of `TemporalUpscaler::declare()` for display post.
+`TemporalCameraMotion` can supply motion from depth for static scenes. Both
+integrations use one reconstruction pass per view.
+
+Qualify a new consumer with matched Off and temporal captures through
+hold, orbit, stop, cut and resize. Check history resets and synchronization,
+and exercise a bypassed scene. For DLSS, also check the SDK-free path and
+compare timing and image quality with a spatial control at the same render
+extent. Cloud composition, deformation and transmission need
+producer-specific evidence before admission.
 
 ## View and motion contract
 
@@ -71,12 +143,6 @@ The projection therefore shifts geometry by `-j`, or `-2*j/extent` in clip
 space. The sequence is centered Halton(2,3), 16 phases. Ordinary camera motion,
 object motion and jitter do not invalidate history. Shadow rendering keeps the
 unjittered view.
-
-An upscaler can consume the same view and motion through `TemporalUpscaler`.
-The Forward PBR target owner supplies the render extent and keeps the upscaler
-alive until its submitted work retires. The upscaler declares a display-size
-HDR output before post. Forward PBR owns accepted view state, plus the shared
-camera and rigid motion passes at the render extent.
 
 ## Submission and resource lifetime
 

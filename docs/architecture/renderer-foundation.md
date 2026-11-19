@@ -24,8 +24,8 @@ stable across the repo:
   helpers for the descriptor/pipeline shapes already shared by examples;
 - explicit frame slots and per-frame uniform buffers for CPU-updated render
   data;
-- [native temporal anti-aliasing](temporal-aa.md), with shared resolve and
-  submission-owned view history independent of frame slots;
+- [temporal anti-aliasing and upscaling](temporal-aa.md), with a shared native
+  resolve, submission-owned view history and an interface for HDR reconstruction;
 - draw packet metadata for simple indexed draws;
 - opaque render resource handles that scene snapshots can carry, plus a small
   CPU-side registry for handle identity/liveness that does not own Vulkan
@@ -94,9 +94,10 @@ Examples and projects may use `cubey::vulkan::CommandRecorder` for repeated
 command-buffer calls, but the render sequence and synchronization decisions
 remain their responsibility.
 
-The host layer owns host flow: GLFW, input, timing, swapchain lifecycle, and
-headless output. It may pass `cubey::render` target views to callbacks, but it
-should not become a renderer.
+The host layer owns GLFW, input, timing, swapchain lifecycle and headless
+output. The optional `cubey::dlss` host backend owns NGX discovery and feature
+lifetime. The project selects the backend, and the renderer supplies temporal
+inputs through the shared upscaler interface.
 
 ## Resource Lifecycle Contracts
 
@@ -109,7 +110,7 @@ C++ lifetime does not establish that submitted work has finished using it.
 | Generated GPU products | Feature runtime; independent of target extent | Install on the GPU owner. Activate a complete generation and retire replaced resources after their last real submission ticket. |
 | Target resources | Renderer/feature runtime; extent, format and frame-slot count | Recreate only after affected work completes. Windowed and offscreen consumers share this contract. |
 | Per-frame resources | Host or renderer, indexed by frame slot | Reuse or replace a slot only after its submitted work completes. Swapchain image identity remains distinct from frame-slot identity. |
-| Temporal history | Feature runtime, imported into the current graph | Track validity per slot; invalidate on incompatible view/configuration or target recreation. Graph-local transient allocation does not own history. |
+| Temporal history | Feature runtime, exposed to the graph as needed | Native TAA and the upscaler's view state advance on accepted submissions per view. Frame slots own descriptor and uniform reuse. Incompatible views or targets invalidate history. |
 | Graph transients | Render-graph frame executor, per frame slot | Reuse compatible allocation signatures; replace only the completed slot. |
 | Presentation | Windowed host and swapchain | Acquire/present synchronization remains host-owned. Offscreen targets have no presentation lifecycle. |
 

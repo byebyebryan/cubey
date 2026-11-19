@@ -4,75 +4,74 @@
   "assets": [
     {
       "id": "atmosphere-light",
-      "file": "/media/atmosphere-light.webp",
+      "file": "/media/atmosphere-light-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "e911b4f9dcc168f677ce775ec31e1690477cc8f2c2a1fb3ca67d8a5df1adf593",
-      "bytes": 8564,
+      "sha256": "54bfbc97710242b907f4aba650cfa093a1abdd07c43b553d97bbfaa62b0f116b",
+      "bytes": 7038,
       "caption": "Low sun and direct atmospheric scattering.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/refinement-2026-10-24/captures/scattering-clear-sun/capture.png",
-        "sourceSha256": "33f9f6a81ffe30bc5ce3e37227a90f3ac3be36d7c32eab5fbe8835460b570b3e",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/scattering-clear-sun.json",
-        "note": "Selected native capture from the pinned existing renderer binary; no native source changes."
+        "source": "outputs/media/standard-capture-refresh-20261119/atmosphere-light/native.png",
+        "sourceSha256": "656dbb210f9d43cb6cb09a9cd3cd7df555b240ad1fac663e329eeb2dcfc3dd77",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/atmosphere-light-640.webp",
-      "thumbnailSha256": "20f7a77c4dfe649b94a7d553478b275fd8bbbfb50293fdab11a28f1d5f1d8f05",
-      "thumbnailBytes": 2574
+      "thumbnail": "/media/atmosphere-light-640-capture-20261119.webp",
+      "thumbnailSha256": "f54f1c918487a633275b97fa3294648a1912dc10c40c1050bcf052493c8f1b0e",
+      "thumbnailBytes": 2248
     },
     {
       "id": "clouds",
-      "file": "/media/clouds.webp",
+      "file": "/media/clouds-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "fede3d2ed0cf2023a7b78f5593bb599842e7a02fb2095f7447dcba4a5b55786f",
-      "bytes": 21056,
+      "sha256": "ef03b87b119e335b9896a6d4142df4af998c7b4b922ecf9e700b8716625f8acd",
+      "bytes": 16698,
       "caption": "Broken cumulus under afternoon light.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/refinement-2026-10-24/captures/clouds-drift-film/poster.png",
-        "sourceSha256": "625031f15d45ec71b1a7daf109358d9021e2797f2d5ecf29bd1d9ae551c60a00",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/clouds-drift-film.json",
-        "note": "Selected native capture from the pinned existing renderer binary; no native source changes. Poster extracted at one second from the identified native film. Wind parameter 800 m/s is an artistic acceleration for readable drift, not a physical weather-speed claim."
+        "source": "outputs/media/standard-capture-refresh-20261119/clouds/native.png",
+        "sourceSha256": "dc6d5fc22f3a1df60fcb6a7cc12f777c1224c5d9589d77d3339720cd8c0124bc",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/clouds-640.webp",
-      "thumbnailSha256": "22496e9dbeeb3cf02f079b37442f2cabd9deae400d6682755ecd097bc8fd7ddc",
-      "thumbnailBytes": 6584
+      "thumbnail": "/media/clouds-640-capture-20261119.webp",
+      "thumbnailSha256": "5ae31ef08d0bede4300d4e1506b8ce63135498d008b0a35660a8a3fd44fd92f2",
+      "thumbnailBytes": 5078
     },
     {
       "id": "clouds-film",
-      "file": "/media/clouds-film.mp4",
+      "file": "/media/clouds-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "be88fafa0ecb9c085911d5858db5b994940c597969f4fb32430fa2a9229a746d",
-      "bytes": 1502651,
+      "sha256": "43fd585c2f0183ac513e91d580fb9f17a5f2dbb452334d64779859ec55fb33ac",
+      "bytes": 738629,
       "caption": "Broken cumulus with accelerated cloud drift.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/refinement-2026-10-24/captures/clouds-drift-film/capture.mp4",
-        "sourceSha256": "6e7e2a2251608f4f27024a4babfe367cf9ebd16e1a1ba91d817d7f9fadf3eb46",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/clouds-drift-film.json",
-        "note": "Selected native capture from the pinned existing renderer binary; no native source changes. Wind parameter 800 m/s is an artistic acceleration for readable drift, not a physical weather-speed claim. Lossless fast-start MP4 remux; encoded video packets are unchanged.",
-        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
+        "source": "outputs/media/standard-capture-refresh-20261119/clouds-film/native.mp4",
+        "sourceSha256": "5ba33456b6c9ffb0674d9805a0e2f468f89c737e093339dd2dea0347e1da069e",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
@@ -85,7 +84,7 @@
       "bytes": 43586,
       "caption": "Native CSG render: Canal mill.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -111,7 +110,7 @@
       "bytes": 954290,
       "caption": "Native camera arc around the canal mill.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -134,7 +133,7 @@
       "bytes": 45316,
       "caption": "Native CSG render: Terraced courtyard.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -160,7 +159,7 @@
       "bytes": 951425,
       "caption": "Native camera arc around the terraced courtyard.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -183,7 +182,7 @@
       "bytes": 45130,
       "caption": "Native CSG render: Hill observatory.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -209,7 +208,7 @@
       "bytes": 955188,
       "caption": "Native camera arc around the hill observatory.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -232,7 +231,7 @@
       "bytes": 45554,
       "caption": "The intact observatory, captured with the same camera and light as its architectural section.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -258,7 +257,7 @@
       "bytes": 41908,
       "caption": "A saved architectural cut reveals the observatory telescope, mount and keeper room; camera and light match the intact view.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -284,7 +283,7 @@
       "bytes": 30960,
       "caption": "Native CSG render: Field-kit robot.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -310,7 +309,7 @@
       "bytes": 503074,
       "caption": "Saved native construction replay of the approved field-kit robot.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -333,7 +332,7 @@
       "bytes": 43016,
       "caption": "The committed cuts retain each body material, with the camera held still.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -359,7 +358,7 @@
       "bytes": 39200,
       "caption": "Four subtractors preview the same bore through each material.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -385,7 +384,7 @@
       "bytes": 35508,
       "caption": "Wood and marble above; rusted steel and clear glass below.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -403,183 +402,179 @@
     },
     {
       "id": "day-night",
-      "file": "/media/day-night.webp",
+      "file": "/media/day-night-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "50e4be601f63472b6a5899a86c062d0f3480951574c7403651ec0ca33beb6e23",
-      "bytes": 9508,
+      "sha256": "8f78147bb46ed825529a62fab46c9848df050cb74556904d13587ef0c07189da",
+      "bytes": 8040,
       "caption": "Sunset begins a complete solar cycle.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/refinement-2026-10-24/captures/solar-cycle-film/poster.png",
-        "sourceSha256": "d13ed905dbd95a9cdf8596cb78be4491f0aa0b23cd55c9c4a9b171dba268c44d",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/solar-cycle-film.json",
-        "note": "Selected native capture from the pinned existing renderer binary; no native source changes. Poster extracted at one second from the identified native film."
+        "source": "outputs/media/standard-capture-refresh-20261119/day-night/native.png",
+        "sourceSha256": "3edce50f3ee5bb77099125ea4ef0425c0880d9f48c35af3dbcd18a22f57a3e0b",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/day-night-640.webp",
-      "thumbnailSha256": "9276acaa8772431ce2f9052c92f018222d16ecb7ddab5ae404fe56ba387fecde",
-      "thumbnailBytes": 2836
+      "thumbnail": "/media/day-night-640-capture-20261119.webp",
+      "thumbnailSha256": "12fa213ee467b400d9ee6a8b1773adb754edc47334354b8fb93b574ae93ab35a",
+      "thumbnailBytes": 2300
     },
     {
       "id": "day-night-film",
-      "file": "/media/day-night-film.mp4",
+      "file": "/media/day-night-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "5521d2f32df1dc04bb46af4f14ea2d0d728caa1b4cfcfe1f134e0f849145e7c5",
-      "bytes": 1663828,
+      "sha256": "4b32caf204112b83b91ec91fd6cd81733e3fabbf889cc8addc4e61aebe8707bd",
+      "bytes": 1111940,
       "caption": "A complete accelerated solar day: afternoon, night and daylight again.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/refinement-2026-10-24/captures/solar-cycle-film/capture.mp4",
-        "sourceSha256": "fe0969199869c2cca54d76ebd71c43156be3e6f6d6486e9dfb6c1fcf79d5ac7e",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/solar-cycle-film.json",
-        "note": "Selected native capture from the pinned existing renderer binary; no native source changes. Lossless fast-start MP4 remux; encoded video packets are unchanged.",
-        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
+        "source": "outputs/media/standard-capture-refresh-20261119/day-night-film/native.mp4",
+        "sourceSha256": "45596e85380cb6598dc91ee179defc188e7b4af8ba6fd90303fbb3b5194055c3",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "explosion-3d",
-      "file": "/media/explosion-3d.webp",
+      "file": "/media/explosion-3d-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "a0358751980383c71bb8e16691b423a9dcf3f42b70ca33f51339ff5c1a23f048",
-      "bytes": 11500,
+      "sha256": "37a4d893d74150375f4a6a62c2b686dc929e2cff8400c4e8781f69db32920e16",
+      "bytes": 9408,
       "caption": "A repeated fireball impulse, shown during its early flash.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/poster-selection/explosion-early.png",
-        "sourceSha256": "c29cb511179748377a13573d0fadafc55a11526e7ba02e04ed7b719d996bfb1c",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/explosion-film.json",
-        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+        "source": "outputs/media/standard-capture-refresh-20261119/explosion-3d/native.png",
+        "sourceSha256": "f3ea6eafbbb32b26e48b8444068948ca402133d68005e8444906d97c1ad1cdc8",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/explosion-3d-640.webp",
-      "thumbnailSha256": "983b5050ac69e41900350d7bd2b18f45c246271e69103b97f712a4c95eaa44fc",
-      "thumbnailBytes": 3278
+      "thumbnail": "/media/explosion-3d-640-capture-20261119.webp",
+      "thumbnailSha256": "bb4fc9e7372a5e216e7e103411946abe4864a42c1ee4923ab6a7e75109ba6320",
+      "thumbnailBytes": 2704
     },
     {
       "id": "explosion-3d-film",
-      "file": "/media/explosion-3d-film.mp4",
+      "file": "/media/explosion-3d-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "659dc609f50e371573473cd0b136cda44579dec3bae376ec3cadcbc2ffe970be",
-      "bytes": 1038498,
+      "sha256": "396b8700f09e5214ef908923beaded3adb60287d597740af15700649fc330089",
+      "bytes": 662536,
       "caption": "A repeated fireball impulse, shown during its early flash.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/explosion-film/capture.mp4",
-        "sourceSha256": "e4d7a369e830a6b63a51d8506d23d889f0523be97582cfabe7f5d83fd3e3b38a",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/explosion-film.json",
-        "note": "Lossless fast-start MP4 remux; encoded video packets are unchanged.",
-        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
+        "source": "outputs/media/standard-capture-refresh-20261119/explosion-3d-film/native.mp4",
+        "sourceSha256": "5f44ec0230632060117a4114ea25aad2249864a9d2c21c1e7fc17b2c17534696",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "fire-3d",
-      "file": "/media/fire-3d.webp",
+      "file": "/media/fire-3d-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "8c227ccb5eb07a4c9c00045dfaaf32a95f3f388e1e3c70b329a3799d2685f49e",
-      "bytes": 10518,
+      "sha256": "cfbb1d188a4262dffd79557cbc7b1081b12f9e50f38dcddc6902d549c1d9fe34",
+      "bytes": 8292,
       "caption": "Flame and smoke evolve as daylight falls away.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/fire-3d.png",
-        "sourceSha256": "fbd8b576ade4de1efcb09cf221a4c64a3432b2ba242d94e3752fa193eed34e04",
-        "sourceRevision": null,
-        "recipe": "docs/media/showcase/fire-3d.png",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/media/standard-capture-refresh-20261119/fire-3d/native.png",
+        "sourceSha256": "aa7d188a47c08eb6da0a50d9f226573be209868c84e48ec8fd2b69a1196a2f96",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/fire-3d-640.webp",
-      "thumbnailSha256": "b828f333534ff938e5a29919a2e2ebe890223e583a0a52bad3e6128ddb3c98ff",
-      "thumbnailBytes": 3200
+      "thumbnail": "/media/fire-3d-640-capture-20261119.webp",
+      "thumbnailSha256": "be503091a161b2e5ac569177a9c84e4ef992f8c8a7ef7015fcfc80a6f23feec5",
+      "thumbnailBytes": 2644
     },
     {
       "id": "fire-3d-film",
-      "file": "/media/fire-3d-film.mp4",
+      "file": "/media/fire-3d-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348",
-      "bytes": 877564,
+      "sha256": "c2fbe3ac780ad83cdb2d470dc43749c6844cac958bae54a9d157eb02a783155a",
+      "bytes": 769850,
       "caption": "Flame and smoke evolve as daylight falls away.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/fire-3d.mp4",
-        "sourceSha256": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348",
-        "sourceRevision": null,
-        "recipe": "docs/media/showcase/fire-3d.mp4",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/media/standard-capture-refresh-20261119/fire-3d-film/native.mp4",
+        "sourceSha256": "656444f80d5834abe2c8994e04191b3e2e1824dbc84c34314cd6701f543e7530",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "gltf-layers",
-      "file": "/media/gltf-layers.webp",
+      "file": "/media/gltf-layers-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "43f49a6653abd9ecd930f32b15a9b3f2422c3f59bf1e9f1b538681738c1d3825",
-      "bytes": 33100,
+      "sha256": "65cb882c53f888ad41c6fd28f187bcf5e97fbeff0264bb2f39edc1c04505f271",
+      "bytes": 25466,
       "caption": "Anisotropy and clearcoat on the imported Barn Lamp.",
       "credit": {
         "label": "CC BY 4.0",
         "url": "https://creativecommons.org/licenses/by/4.0/",
-        "author": "\u00a9 2023 Wayfair, LLC; Eric Chadwick",
+        "author": "© 2023 Wayfair, LLC; Eric Chadwick",
         "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnisotropyBarnLamp/README.md"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-lamp-framed-safe/capture.png",
-        "sourceSha256": "4fb76cd00c9f9565ddee12bb4ae38f162b7ea1d99ac30e765f65117124b65e31",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/gltf-lamp-framed-safe.json",
-        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+        "source": "outputs/media/standard-capture-refresh-20261119/gltf-layers/native.png",
+        "sourceSha256": "b57688d844dccd65e2f2d36b1726e744e4df4339afd07cb414716862f8b002c1",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/gltf-layers-640.webp",
-      "thumbnailSha256": "34bfb8ea004b8b3d290be031cb18fc0137fee05289e086787a8ca6ef3b0ee585",
-      "thumbnailBytes": 7864
+      "thumbnail": "/media/gltf-layers-640-capture-20261119.webp",
+      "thumbnailSha256": "70db5651141bcdfb48336350778358465d64065e21b9ee266c42bcb4b5c01b9d",
+      "thumbnailBytes": 6340
     },
     {
       "id": "gltf-morph",
-      "file": "/media/gltf-morph.webp",
+      "file": "/media/gltf-morph-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "2ca92f63cedc05ed8ea4a2fe0c991a072d6ec50354d6ba12b43a63ef9b7852cc",
-      "bytes": 7438,
+      "sha256": "0c34e935c9a395dc7ee95db501eb77932be1289f645d531e1c7ae58dfaf0b8d6",
+      "bytes": 6192,
       "caption": "Animated Morph Cube: target deformation.",
       "credit": {
         "label": "CC0 1.0",
@@ -588,24 +583,24 @@
         "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnimatedMorphCube/README.md"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-morph-poster/capture.png",
-        "sourceSha256": "1125baa65a217ed19295790741f228d4b94ef931e6ba1831259adfd83fc584d0",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/gltf-morph-poster.json",
-        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+        "source": "outputs/media/standard-capture-refresh-20261119/gltf-morph/native.png",
+        "sourceSha256": "dbfab8f720d54d3e0411937a66916eb87a89490958255828f68b521e28bc1a5e",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/gltf-morph-640.webp",
-      "thumbnailSha256": "1fcde469f5ad57e10198bdfaf1b342801c8956bff2cf82c364e3b274d232b64a",
-      "thumbnailBytes": 2074
+      "thumbnail": "/media/gltf-morph-640-capture-20261119.webp",
+      "thumbnailSha256": "575ea100e6e68236ac213d0f44332915e75f1c4bd5b6f40fb1b30666f22ad73f",
+      "thumbnailBytes": 1830
     },
     {
       "id": "gltf-morph-film",
-      "file": "/media/gltf-morph-film.mp4",
+      "file": "/media/gltf-morph-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "17e35ffe42a034e49f19ccdbec7c8a96299619dbfa646f0f1d2d057ab422fe1d",
-      "bytes": 119282,
+      "sha256": "95db879e5c6f81d2f459ce5a4447ed13d89c6a769e8df17bfdde1764c96e12f1",
+      "bytes": 85351,
       "caption": "Animated Morph Cube: target deformation.",
       "credit": {
         "label": "CC0 1.0",
@@ -614,115 +609,113 @@
         "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnimatedMorphCube/README.md"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-morph-film/capture.mp4",
-        "sourceSha256": "d72e4efedb1e365a26c62fbedd0e529bc46e5819d8cc27a9a65a51420301f259",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/gltf-morph-film.json",
-        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence. Lossless fast-start MP4 remux; encoded video packets are unchanged.",
-        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
+        "source": "outputs/media/standard-capture-refresh-20261119/gltf-morph-film/native.mp4",
+        "sourceSha256": "59200b94bdb81ade001a31b608aa2d5c2ac3432da03935947d63a035bffe2899",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "gltf-motion",
-      "file": "/media/gltf-motion.webp",
+      "file": "/media/gltf-motion-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "613936814e560a2f4c3ad936c5f1b45c5ddbf0afae303f3afb94eb90e2a78945",
-      "bytes": 15432,
+      "sha256": "b6a0384a7daad7df3ff8d9b40ab2d0c247b5286e5676cacd8482772432820330",
+      "bytes": 12404,
       "caption": "Fox: the Walk animation and a skinned mesh.",
       "credit": {
-        "label": "CC0 model \u00b7 CC BY 4.0 animation/conversion",
+        "label": "CC0 model · CC BY 4.0 animation/conversion",
         "url": "https://creativecommons.org/licenses/by/4.0/",
-        "author": "PixelMannen (model, CC0); \u00a9 2014 tomkranis (rig/animation); \u00a9 2017 AsoboStudio and scurest (glTF conversion)",
+        "author": "PixelMannen (model, CC0); © 2014 tomkranis (rig/animation); © 2017 AsoboStudio and scurest (glTF conversion)",
         "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox/README.md"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-fox-framed-poster/capture.png",
-        "sourceSha256": "5d61c7f0deb5ae5f4a3bff2a06768b81c4791a7428e8d8f6bedc3d680a97fcb0",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/gltf-fox-framed-poster.json",
-        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+        "source": "outputs/media/standard-capture-refresh-20261119/gltf-motion/native.png",
+        "sourceSha256": "3a33d3dec356bd499c719969763730ef3e9f2bf3fa812515996bb69014796f92",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/gltf-motion-640.webp",
-      "thumbnailSha256": "0123227fa8bf0a42dda1ffd13f9add9d14d35d09623eb955554c26961f07a6c4",
-      "thumbnailBytes": 4564
+      "thumbnail": "/media/gltf-motion-640-capture-20261119.webp",
+      "thumbnailSha256": "08e6ec02b8858c3e26c354df688053333458022dc0cd049b80555261e3089016",
+      "thumbnailBytes": 3672
     },
     {
       "id": "gltf-motion-film",
-      "file": "/media/gltf-motion-film.mp4",
+      "file": "/media/gltf-motion-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "52d8e33b284556c0e79aae41ec705fc7e248647058cf40535f6d42cc17ece224",
-      "bytes": 1041748,
+      "sha256": "9636f9498e22d6439b1bcb2f928f59b52f2ebf8b66bc0122e2e31512f4d18794",
+      "bytes": 488237,
       "caption": "Fox: the Walk animation and a skinned mesh.",
       "credit": {
-        "label": "CC0 model \u00b7 CC BY 4.0 animation/conversion",
+        "label": "CC0 model · CC BY 4.0 animation/conversion",
         "url": "https://creativecommons.org/licenses/by/4.0/",
-        "author": "PixelMannen (model, CC0); \u00a9 2014 tomkranis (rig/animation); \u00a9 2017 AsoboStudio and scurest (glTF conversion)",
+        "author": "PixelMannen (model, CC0); © 2014 tomkranis (rig/animation); © 2017 AsoboStudio and scurest (glTF conversion)",
         "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox/README.md"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-fox-framed-film/capture.mp4",
-        "sourceSha256": "c5993e7b5b09f99aff340ec03d80cc44c161b000c015032c439d4f2e72b056cf",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/gltf-fox-framed-film.json",
-        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence. Lossless fast-start MP4 remux; encoded video packets are unchanged.",
-        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
+        "source": "outputs/media/standard-capture-refresh-20261119/gltf-motion-film/native.mp4",
+        "sourceSha256": "899967d5e99b09765297a9a6134a6aefb131aabed252766af27af0fc0d5734ff",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "gltf-optics",
-      "file": "/media/gltf-optics.webp",
+      "file": "/media/gltf-optics-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "519de06287b976224a3ab3c0c80ffec953ff666d0b60f03a9668b90305c18e5a",
-      "bytes": 36636,
+      "sha256": "9b6ca7455c89cb6c5f317e8a2c325972c0aa4e51d7bd59d53d1a8f521dd3db8a",
+      "bytes": 33012,
       "caption": "Dispersion Test: authored IOR and dispersion across a prism grid.",
       "credit": {
         "label": "CC BY 4.0",
         "url": "https://creativecommons.org/licenses/by/4.0/",
-        "author": "\u00a9 2023 AGI; Ed Mackey",
+        "author": "© 2023 AGI; Ed Mackey",
         "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/DispersionTest/README.md"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-optics-poster/capture.png",
-        "sourceSha256": "3394b3fc95b9212295cadf53ca2ad9671e08b612a3a642a238e6dbc1ddff88f9",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/gltf-optics-poster.json",
-        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+        "source": "outputs/media/standard-capture-refresh-20261119/gltf-optics/native.png",
+        "sourceSha256": "6dd731db4552ecccc297f1c5da122016b976d7a5f604a8e61cfb2ea882d52532",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/gltf-optics-640.webp",
-      "thumbnailSha256": "0848177219806217dd04f1ddbd502c1c6fdf82c290e0b10fbd27ec5ec7dcb1df",
-      "thumbnailBytes": 12644
+      "thumbnail": "/media/gltf-optics-640-capture-20261119.webp",
+      "thumbnailSha256": "0bf362cf7809798ca92119e77f9d9639ca133de65a45023aac523ed0131a9c12",
+      "thumbnailBytes": 9832
     },
     {
       "id": "gltf-textures",
-      "file": "/media/gltf-textures.webp",
+      "file": "/media/gltf-textures-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "4fe83a4842317d97211eb24d0cf0d283e00dd5dbaa930853280b64973ad17ee5",
-      "bytes": 22754,
+      "sha256": "55f289ed0cdd0281be8110724f15f9278e55cc57f48ee537aecd6f15979c2787",
+      "bytes": 19446,
       "caption": "Texture Transform Multi Test: UV transforms across material channels.",
       "credit": {
         "label": "CC BY 4.0",
         "url": "https://creativecommons.org/licenses/by/4.0/",
-        "author": "\u00a9 2020 Analytical Graphics, Inc.; Ed Mackey",
+        "author": "© 2020 Analytical Graphics, Inc.; Ed Mackey",
         "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/TextureTransformMultiTest/README.md"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-texture-framed/capture.png",
-        "sourceSha256": "cdb7cffaa7be668680490b014fa4ae55ab0c697244a1b50228d1ca33c2b9622a",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/gltf-texture-framed.json",
-        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+        "source": "outputs/media/standard-capture-refresh-20261119/gltf-textures/native.png",
+        "sourceSha256": "7c301e1d0f1fa1b0cbbd4b09157a2d25c41b610200a7fcc6a221520d7060e6aa",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/gltf-textures-640.webp",
-      "thumbnailSha256": "aaa13e498ef74660c76ce94f99017a94522c52faa63fc77ead66677c1eac276a",
-      "thumbnailBytes": 9222
+      "thumbnail": "/media/gltf-textures-640-capture-20261119.webp",
+      "thumbnailSha256": "c930fd0df1d0ac1096bf53a7b93f289f688e5f3257a23fbae0e3963f8ec6f23c",
+      "thumbnailBytes": 7840
     },
     {
       "id": "guardian",
@@ -734,7 +727,7 @@
       "bytes": 24474,
       "caption": "An authored Guardian in restrained marble, recaptured in native landscape.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -760,7 +753,7 @@
       "bytes": 26792,
       "caption": "The same Guardian form in limestone, recaptured in native landscape.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -784,9 +777,9 @@
       "height": 720,
       "sha256": "b1005f87cd18582a5d1ce79cafafa87cd5bef1226cf4e37d32489e2b0975e260",
       "bytes": 68300,
-      "caption": "Carved sphere \u00b7 historical native procedural prototype, 4,096 cuts.",
+      "caption": "Carved sphere · historical native procedural prototype, 4,096 cuts.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -809,9 +802,9 @@
       "height": 640,
       "sha256": "3d20794e46ab07f0444b0340dbb55b0a6f35fbced834bad04ab9bcdca05515ff",
       "bytes": 6024,
-      "caption": "Satin bronze \u00b7 Forward PBR mesh",
+      "caption": "Satin bronze · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -831,9 +824,9 @@
       "height": 640,
       "sha256": "9e55a93d8acc1f794f6e6784771b826eb1a82e16eac1c946e42b9703d869ea81",
       "bytes": 5208,
-      "caption": "Ivory ceramic \u00b7 Forward PBR mesh",
+      "caption": "Ivory ceramic · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -853,9 +846,9 @@
       "height": 640,
       "sha256": "0341e24747f702d74360a7fa0b052d9dc709e230c7f13cb4779dfad27d2baf13",
       "bytes": 9146,
-      "caption": "Dry terracotta \u00b7 Forward PBR mesh",
+      "caption": "Dry terracotta · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -877,7 +870,7 @@
       "bytes": 48582,
       "caption": "The twelve-sphere forward PBR lineup at dawn.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -903,7 +896,7 @@
       "bytes": 1314289,
       "caption": "Forward PBR: twelve spheres through dawn, with accelerated cloud drift.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -924,9 +917,9 @@
       "height": 640,
       "sha256": "43e56c7d5c01733893cb9ac05fe34c92752f89c86ed2591b1970a9bad0d3342f",
       "bytes": 4552,
-      "caption": "Frosted glass \u00b7 Forward PBR mesh",
+      "caption": "Frosted glass · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -946,9 +939,9 @@
       "height": 640,
       "sha256": "9d1b37f55cb0444d0ad3b1e1c6cc7aa079f23ca0614cee755a1e49752c0b0a43",
       "bytes": 3368,
-      "caption": "Tinted glass \u00b7 Forward PBR mesh",
+      "caption": "Tinted glass · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -968,9 +961,9 @@
       "height": 640,
       "sha256": "bcce2cbffe7765940596111aa9dc1304e7483b216e6fafb689ab420b259bc0e9",
       "bytes": 8248,
-      "caption": "Kraft cardboard \u00b7 Forward PBR mesh",
+      "caption": "Kraft cardboard · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -990,9 +983,9 @@
       "height": 640,
       "sha256": "590bca02137a7c8eeb2d364b8dd81674d48e90444e36120387195f9c84569de1",
       "bytes": 9962,
-      "caption": "Limestone \u00b7 Forward PBR mesh",
+      "caption": "Limestone · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1012,9 +1005,9 @@
       "height": 640,
       "sha256": "56f185ac9ae7b4bab686a79a2282e31faa0888859ca49090f2d853e17950b3fd",
       "bytes": 9208,
-      "caption": "Balanced marble \u00b7 Forward PBR mesh",
+      "caption": "Balanced marble · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1034,9 +1027,9 @@
       "height": 640,
       "sha256": "d19e9c6fa036630db888884fd5efbdb8955fdd2d3208127ed18c3c74a2453d1e",
       "bytes": 5746,
-      "caption": "Neutral gray \u00b7 Forward PBR mesh",
+      "caption": "Neutral gray · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1056,9 +1049,9 @@
       "height": 640,
       "sha256": "53084acac115039b4bf87e879bf1bd32b70713e8e1a2d9d527c97cc9d07661a7",
       "bytes": 13320,
-      "caption": "Rusted steel \u00b7 Forward PBR mesh",
+      "caption": "Rusted steel · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1078,9 +1071,9 @@
       "height": 640,
       "sha256": "0ca329397614b2e31a20beb78c0c66bd38f597c0e999cdfb6bb215b3a9dbcd43",
       "bytes": 10594,
-      "caption": "Unvarnished hardwood \u00b7 Forward PBR mesh",
+      "caption": "Unvarnished hardwood · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1100,9 +1093,9 @@
       "height": 640,
       "sha256": "d02ee3cc1f953b88a58a3d638fb9bb0507c282d8ff6169e78f3d7f48e295247b",
       "bytes": 14904,
-      "caption": "Plain-weave cloth \u00b7 Forward PBR mesh",
+      "caption": "Plain-weave cloth · Forward PBR mesh",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1122,9 +1115,9 @@
       "height": 640,
       "sha256": "c6bbcd71c8c89fad7315fa4efffb16fc91809467e4d3db87faeb3414adce24bc",
       "bytes": 6134,
-      "caption": "Satin bronze \u00b7 SDF ray marching",
+      "caption": "Satin bronze · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1144,9 +1137,9 @@
       "height": 640,
       "sha256": "04277538f26cee1143c1071e7f8b06a3e89701e7fb2118f4dcdadf3377315a02",
       "bytes": 5276,
-      "caption": "Ivory ceramic \u00b7 SDF ray marching",
+      "caption": "Ivory ceramic · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1166,9 +1159,9 @@
       "height": 640,
       "sha256": "c5500d1abb460d4fa441adbf2e3126b30167ab2cc7fbba6b51df8adb2d3a9002",
       "bytes": 8824,
-      "caption": "Dry terracotta \u00b7 SDF ray marching",
+      "caption": "Dry terracotta · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1190,7 +1183,7 @@
       "bytes": 52682,
       "caption": "The same twelve-sphere SDF lineup at dawn.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1216,7 +1209,7 @@
       "bytes": 1383681,
       "caption": "SDF ray marching: twelve spheres through dawn, with accelerated cloud drift.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1239,7 +1232,7 @@
       "bytes": 53518,
       "caption": "The same twelve-sphere lineup rendered as SDF solids at dusk.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1265,7 +1258,7 @@
       "bytes": 1393048,
       "caption": "SDF ray marching: twelve spheres through dusk, with accelerated cloud drift.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1286,9 +1279,9 @@
       "height": 640,
       "sha256": "b91cdd2bbfcde65492c06e6e16212bb9b010871cb62f2061e168f13ae5d51bd7",
       "bytes": 3668,
-      "caption": "Frosted glass \u00b7 SDF ray marching",
+      "caption": "Frosted glass · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1308,9 +1301,9 @@
       "height": 640,
       "sha256": "ca283c4efd68fb3d37240936df8a216eac45a63308caeeb082070edf9a5da8c3",
       "bytes": 4136,
-      "caption": "Tinted glass \u00b7 SDF ray marching",
+      "caption": "Tinted glass · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1330,9 +1323,9 @@
       "height": 640,
       "sha256": "6e5ecb75e38dc306565c05ec3201da9d0cf54b137bfdb6f6f93b6c57d5366b86",
       "bytes": 8038,
-      "caption": "Kraft cardboard \u00b7 SDF ray marching",
+      "caption": "Kraft cardboard · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1352,9 +1345,9 @@
       "height": 640,
       "sha256": "3b55a317ab625aef8c6e82eca7b404d6d3a459f2c382ecd743c473be3ff8a099",
       "bytes": 9494,
-      "caption": "Limestone \u00b7 SDF ray marching",
+      "caption": "Limestone · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1374,9 +1367,9 @@
       "height": 640,
       "sha256": "15eba9a7282c684a9d54937a98d16f5b903b1c51d227e973843e0778daac59df",
       "bytes": 8814,
-      "caption": "Balanced marble \u00b7 SDF ray marching",
+      "caption": "Balanced marble · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1396,9 +1389,9 @@
       "height": 640,
       "sha256": "f3bb61a8afdd2eca934dde05f208b753dd6840da6e573ca4925a3170a3df85da",
       "bytes": 5770,
-      "caption": "Neutral gray \u00b7 SDF ray marching",
+      "caption": "Neutral gray · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1418,9 +1411,9 @@
       "height": 640,
       "sha256": "5cd5218262eb52ad3558af321711fd6aa569d7fcb8573c0b39f7364c3fbcb622",
       "bytes": 13048,
-      "caption": "Rusted steel \u00b7 SDF ray marching",
+      "caption": "Rusted steel · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1440,9 +1433,9 @@
       "height": 640,
       "sha256": "34fc8988266815c94a5171595963e4afdba4b987fc18b1f0930efeda49a52caf",
       "bytes": 10330,
-      "caption": "Unvarnished hardwood \u00b7 SDF ray marching",
+      "caption": "Unvarnished hardwood · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1462,9 +1455,9 @@
       "height": 640,
       "sha256": "be3c73087eb221b5f8be56bb8b138543392467b474f5df81397d9568b772fdc1",
       "bytes": 14702,
-      "caption": "Plain-weave cloth \u00b7 SDF ray marching",
+      "caption": "Plain-weave cloth · SDF ray marching",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1484,9 +1477,9 @@
       "height": 540,
       "sha256": "9a17fdc80c789c639163a5a8ad570fb4d9a3c0fb47ff1a3c7be8a66e379a5b8b",
       "bytes": 7370,
-      "caption": "Satin bronze \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Satin bronze · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1495,7 +1488,7 @@
         "sourceSha256": "a262aeb9fc2516bd4159ac5637131a1ca6f20adb8e1915aeab5e14de3f72f66c",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1506,9 +1499,9 @@
       "height": 540,
       "sha256": "8addf6a69cb340b364cc42428ad45ffbafcd775ebbefcaa882f53e035b41bd59",
       "bytes": 6246,
-      "caption": "Ivory ceramic \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Ivory ceramic · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1517,7 +1510,7 @@
         "sourceSha256": "dbcb511f5df1d43870226997badbd48c78a4bf457a88a8b19df1ac51f9bb645c",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1528,9 +1521,9 @@
       "height": 540,
       "sha256": "5ea190b5a67588df888808f797a35929a231240ec7ca5d6355a2a465957ad2d4",
       "bytes": 7326,
-      "caption": "Dry terracotta \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Dry terracotta · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1539,7 +1532,7 @@
         "sourceSha256": "eb743d0b40f85bee45d5fd19c2f49eed0f01ba389090efba7535d9511b2a363e",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1550,9 +1543,9 @@
       "height": 540,
       "sha256": "dbff6ba3505b720cd471d7c7b4df891e6525b4e1c6f3e1739a3a89576fcf8d9b",
       "bytes": 18494,
-      "caption": "Twelve shared materials \u00b7 Forward PBR \u00b7 dawn under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · Forward PBR · dawn under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1561,7 +1554,7 @@
         "sourceSha256": "68caa959ac95179825329d3f38edb822ce3ac54e507f4b9f23b3c3c9745c7a9a",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1572,9 +1565,9 @@
       "height": 720,
       "sha256": "9048fbd26287d07e22c39e93da6b1e0336efa7fb7af264bc71e43267626f190a",
       "bytes": 626181,
-      "caption": "Twelve shared materials \u00b7 Forward PBR \u00b7 dawn under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · Forward PBR · dawn under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1583,7 +1576,7 @@
         "sourceSha256": "1f86c0f9abd08cd433dcf9b59eecb3d0f09d0ef7d3d26faeb49e16e95d7451de",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1594,9 +1587,9 @@
       "height": 540,
       "sha256": "48de13eccfaad8507b82fbe98b8dcd57ce278a3da2c0085a99ebae2fd20ffa65",
       "bytes": 18498,
-      "caption": "Twelve shared materials \u00b7 Forward PBR \u00b7 dusk under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · Forward PBR · dusk under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1605,7 +1598,7 @@
         "sourceSha256": "c0e239f9e27dfcceb104a234a6b021362dfcafe92b473e432f1c1135d896ca5c",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1616,9 +1609,9 @@
       "height": 720,
       "sha256": "d804ae62aa5ac0cca66387b4da0af3b4e6b0817beea2d1709216cbcea8668214",
       "bytes": 575906,
-      "caption": "Twelve shared materials \u00b7 Forward PBR \u00b7 dusk under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · Forward PBR · dusk under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1627,7 +1620,7 @@
         "sourceSha256": "ebd713cafa974bd030ee44ba3ef5715ab2429e315811e8c93182ff608042ae4a",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1638,9 +1631,9 @@
       "height": 540,
       "sha256": "dbf6a6d36ae7dc2d0cca2fb7eca28b72d57898bb16f8516748b00042dd5e91b1",
       "bytes": 7124,
-      "caption": "Frosted glass \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Frosted glass · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1649,7 +1642,7 @@
         "sourceSha256": "9521b2f504a88a115264c672855bd9b7336909f229f31e2c738a5990fdac7d05",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1660,9 +1653,9 @@
       "height": 540,
       "sha256": "50f961dc85a16c8df14a19eb740dec7d013caf57e5fb5f05a9a4fae43abc777c",
       "bytes": 7282,
-      "caption": "Tinted glass \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Tinted glass · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1671,7 +1664,7 @@
         "sourceSha256": "31a7d2bad51dc184c9c20f4da9df399062b932168486508f226959b302408dac",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1682,9 +1675,9 @@
       "height": 540,
       "sha256": "6ab327f9bc2f75cdabe73d035da36c7c57e6adf022644f66d43e606ae90ac8eb",
       "bytes": 7810,
-      "caption": "Kraft cardboard \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Kraft cardboard · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1693,7 +1686,7 @@
         "sourceSha256": "e0dc75c1789f075b84c6b669d3d68cd58c18e36e8d3eca06db2ab4b06ed03879",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1704,9 +1697,9 @@
       "height": 540,
       "sha256": "2fc920a0b1c5655de7c14f663c1b42e54877824c28cfdc22ee18b16cf4ec8c44",
       "bytes": 9248,
-      "caption": "Limestone \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Limestone · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1715,7 +1708,7 @@
         "sourceSha256": "ff224e7deaef454aae7e3010a996973b28db8690f51191c7d246a0047bf417a1",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1726,9 +1719,9 @@
       "height": 540,
       "sha256": "1bc9e1c02e114c1ba651d2204c5f71ec343a7b5b8db4b7261bb58a935b3bebd4",
       "bytes": 9046,
-      "caption": "Balanced marble \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Balanced marble · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1737,7 +1730,7 @@
         "sourceSha256": "5fd50357a341a0022cc6fd7b45b98cd1e35ce7b9f562624f1722fc480551b58f",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1748,9 +1741,9 @@
       "height": 540,
       "sha256": "25fb1b5c930892e4123ead1964f698f85533cdeaf643985ad422ba39e1e91910",
       "bytes": 6564,
-      "caption": "Neutral gray \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Neutral gray · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1759,7 +1752,7 @@
         "sourceSha256": "fd1c4fb8c553360beb50b0aff7aadac0b83c4fda446d28012425d37f0bcce8dc",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1770,9 +1763,9 @@
       "height": 540,
       "sha256": "c65868270666395813f2054f66811c1eaf4bdf834f181dadd795122f62f9a91c",
       "bytes": 11048,
-      "caption": "Rusted steel \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Rusted steel · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1781,7 +1774,7 @@
         "sourceSha256": "b21fa36496c3aeef93b1a9301ed2a211375d43f56e6a82991a8f836664347095",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1792,9 +1785,9 @@
       "height": 540,
       "sha256": "1d18cd880a4af38ecd9339bed57dd8edffc4c57f6aabd3d92385ff10a67b5235",
       "bytes": 9110,
-      "caption": "Unvarnished hardwood \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Unvarnished hardwood · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1803,7 +1796,7 @@
         "sourceSha256": "96a66abd9a7dd9686ca83043c4686ec7437288b873e1b3d5e3f122408e4d37dd",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1814,9 +1807,9 @@
       "height": 540,
       "sha256": "563cc5617caee2ec85ffbdad168d0b6f0d196f837226ece5f92d463c4ab30a64",
       "bytes": 10282,
-      "caption": "Plain-weave cloth \u00b7 Forward PBR \u00b7 shared clear atmosphere",
+      "caption": "Plain-weave cloth · Forward PBR · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1825,7 +1818,7 @@
         "sourceSha256": "c565f4087c6af0299ab61c04604455678a73b8c26d6483c51aa64c8fe3042849",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1836,9 +1829,9 @@
       "height": 540,
       "sha256": "6886f8152bdb99d193658f78a28f0ad0eaa86bdbdb2e0f4b1992ebe35385b8cf",
       "bytes": 7302,
-      "caption": "Satin bronze \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Satin bronze · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1847,7 +1840,7 @@
         "sourceSha256": "406f9ee032ec5ac8645cd6a536a344ba3bcc33824528bedf6c0dbf0664b0502b",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1858,9 +1851,9 @@
       "height": 540,
       "sha256": "8102bd7b76260cb2f47a996f04b704a4e30b728c776ce4287856913a1886724a",
       "bytes": 6354,
-      "caption": "Ivory ceramic \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Ivory ceramic · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1869,7 +1862,7 @@
         "sourceSha256": "8d07c2fe439ec5f58541bf2791467aad3779f0388a49581001d67fccb663ee31",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1880,9 +1873,9 @@
       "height": 540,
       "sha256": "c2022b243d5414a5a586279751526b46816b0a66428c469a296de0e087168744",
       "bytes": 7070,
-      "caption": "Dry terracotta \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Dry terracotta · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1891,7 +1884,7 @@
         "sourceSha256": "5a41f504120926502f77ac4fedf863eff0e340282ec28bd3a24536e2e0a17fba",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1902,9 +1895,9 @@
       "height": 540,
       "sha256": "657e98ba0d3c542ecf23790360095c4fa22ae5a5211fa101e3032280a02ea3ef",
       "bytes": 17732,
-      "caption": "Twelve shared materials \u00b7 Hardware RT \u00b7 dawn under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · Hardware RT · dawn under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1913,7 +1906,7 @@
         "sourceSha256": "072c6edc2401bbb6f37c34765c691ff01d279e809f26f5fc887d77bce7d6b6bf",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1924,9 +1917,9 @@
       "height": 720,
       "sha256": "3d4a63931464c4916ce516015445d4c3873a1c2615044202d82850eaa72c3f2d",
       "bytes": 624020,
-      "caption": "Twelve shared materials \u00b7 Hardware RT \u00b7 dawn under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · Hardware RT · dawn under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1935,7 +1928,7 @@
         "sourceSha256": "d595638f79067ec358a472a8d3395ddfa800a194a3518729b799e484c60d8d1b",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1946,9 +1939,9 @@
       "height": 540,
       "sha256": "870115b8b33cbd512592a24a9b87245a78517a3f2d4806b407c0dc935be6cf88",
       "bytes": 17818,
-      "caption": "Twelve shared materials \u00b7 Hardware RT \u00b7 dusk under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · Hardware RT · dusk under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1957,7 +1950,7 @@
         "sourceSha256": "e268d8317d357670dff59d9d6f06be9990dc3d8bf48c13ffdf233b3ed642b64d",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1968,9 +1961,9 @@
       "height": 720,
       "sha256": "31912e2893a07f6e91c8b201c4c015fc09c2d17418d58a757865a5361c0756da",
       "bytes": 575686,
-      "caption": "Twelve shared materials \u00b7 Hardware RT \u00b7 dusk under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · Hardware RT · dusk under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -1979,7 +1972,7 @@
         "sourceSha256": "e8492bcf8d22b3b17854f09e97f99edcc4ce58e0f7f1448e395c61037b0b3538",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -1990,9 +1983,9 @@
       "height": 540,
       "sha256": "244a2e214ed52394a154ea5cca2bbb5f77b2f1a77beded6d61fc71c7318501bc",
       "bytes": 7142,
-      "caption": "Frosted glass \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Frosted glass · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2001,7 +1994,7 @@
         "sourceSha256": "94dfc2e1be999c151f0ee0b87d9a82481adeaaab2cab1b06dcdd6a8661999252",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2012,9 +2005,9 @@
       "height": 540,
       "sha256": "c2eb5b8e04d26e097c8143040b3c46cf82abe4f3df43b13549b50fcccb5e3f00",
       "bytes": 7846,
-      "caption": "Tinted glass \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Tinted glass · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2023,7 +2016,7 @@
         "sourceSha256": "58d64f74d11e9bde4b21bd4a389198263309540ab19e8348ca002632d62a3208",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2034,9 +2027,9 @@
       "height": 540,
       "sha256": "580c346d62fde6253e9b03593f31bed9dba130406e4a0b862987f662aeccef08",
       "bytes": 7684,
-      "caption": "Kraft cardboard \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Kraft cardboard · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2045,7 +2038,7 @@
         "sourceSha256": "6fe2ee3a32207da014e2318f199b6f329235e94084a4e63a7be7316631d5915b",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2056,9 +2049,9 @@
       "height": 540,
       "sha256": "63ad94eb35a388b2fd8a3ab55878a3f11a767cd9afdf775aed587b566f49697d",
       "bytes": 8816,
-      "caption": "Limestone \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Limestone · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2067,7 +2060,7 @@
         "sourceSha256": "fdef44ad80708302e4495aa55db641fbd057df4061126bb0bbb391de98d6db0f",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2078,9 +2071,9 @@
       "height": 540,
       "sha256": "93c186b646ef476334f2f8be83ca12da25b88fe3d88a0d84b01e26efad02f17f",
       "bytes": 8992,
-      "caption": "Balanced marble \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Balanced marble · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2089,7 +2082,7 @@
         "sourceSha256": "be65602f795a85527e71821fcb648e70b7f47ffa9bd165ffa9e64238edad1ac5",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2100,9 +2093,9 @@
       "height": 540,
       "sha256": "7c4cf0fbf5f4ef5bc285e2a1745efdd28b599a8237685a2baece9cd50305cb5b",
       "bytes": 6470,
-      "caption": "Neutral gray \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Neutral gray · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2111,7 +2104,7 @@
         "sourceSha256": "8d9d28a45b58db5bb2cc409c35ba09d332acd9c209489b0e30f73491f994d600",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2122,9 +2115,9 @@
       "height": 540,
       "sha256": "9aaf5c05760ce67a0fcd63848827061ae77fb2104f9ddefb2cdd707ee3470871",
       "bytes": 10742,
-      "caption": "Rusted steel \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Rusted steel · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2133,7 +2126,7 @@
         "sourceSha256": "b5314182095b7a7f40d4eeb29ca3625d44021b04cc929fa6cf0243fa395446d1",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2144,9 +2137,9 @@
       "height": 540,
       "sha256": "a99f99bd3015fe40126c2df37eea8fc8bc09c4dec675dfddb2118871a7410610",
       "bytes": 8798,
-      "caption": "Unvarnished hardwood \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Unvarnished hardwood · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2155,7 +2148,7 @@
         "sourceSha256": "3d29ec21b23cf28f470d7e0e7d1471f61d7aa00c91b5918332dd8816810f8b94",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2166,9 +2159,9 @@
       "height": 540,
       "sha256": "2b9097a226738b3183389adf58afcfb8dda4bfb6cba42cc44137b4e579a2d77d",
       "bytes": 9730,
-      "caption": "Plain-weave cloth \u00b7 Hardware RT \u00b7 shared clear atmosphere",
+      "caption": "Plain-weave cloth · Hardware RT · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2177,7 +2170,7 @@
         "sourceSha256": "9ada06933c634fcf3c0b60321749b3b3bd7f48ba23d860a981ee659fcf8b1e58",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2188,9 +2181,9 @@
       "height": 540,
       "sha256": "b8220b600b1c09fe766c69cf81c940c2eb0648a10830c308be6d02d03823a2df",
       "bytes": 7324,
-      "caption": "Satin bronze \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Satin bronze · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2199,7 +2192,7 @@
         "sourceSha256": "9ca757b00bfb6071b31ca5be1dafb4d4e03ef9cad6e73d9751bc753dcd4dfe44",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2210,9 +2203,9 @@
       "height": 540,
       "sha256": "a3ae939f17ffd10e64fdbc6756a8cb78b0b93675e67f6e53f73a2d2dc4271acb",
       "bytes": 6228,
-      "caption": "Ivory ceramic \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Ivory ceramic · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2221,7 +2214,7 @@
         "sourceSha256": "69fef64ad1bf8af15462df67ac3178df5347e2eb4548729a233d343bf59f69b2",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2232,9 +2225,9 @@
       "height": 540,
       "sha256": "c3abf369e4575aa77392b95564046c31dcb9ac36426fb4cd02738ee7bf3a64c6",
       "bytes": 7236,
-      "caption": "Dry terracotta \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Dry terracotta · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2243,7 +2236,7 @@
         "sourceSha256": "ec927d2b3ecbed4ce59a13878e03e99c5b8437c0eeafe45ebd318d601cb84b27",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2254,9 +2247,9 @@
       "height": 540,
       "sha256": "5bbfda88e22e3b9bd7d3a14ff6400f477f955100660dacd943dd4c81da6aee12",
       "bytes": 17812,
-      "caption": "Twelve shared materials \u00b7 SDF ray marching \u00b7 dawn under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · SDF ray marching · dawn under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2265,7 +2258,7 @@
         "sourceSha256": "92053e0c5e10d8e6d2cf08772117d3b522f0f84b111b9cae373a6389c1d83f67",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2276,9 +2269,9 @@
       "height": 720,
       "sha256": "9663b7e47777180babe471616513dee0366ef2f36f86cf8b97fdb05928c3af90",
       "bytes": 615861,
-      "caption": "Twelve shared materials \u00b7 SDF ray marching \u00b7 dawn under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · SDF ray marching · dawn under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2287,7 +2280,7 @@
         "sourceSha256": "6a2adae24e0ada7c6fe1a6dbf0684f97ca5375eb9901d1692020770e09126746",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2298,9 +2291,9 @@
       "height": 540,
       "sha256": "f8409901c2fbbc8491a840c9eba80d4f8ed868189e15f0d018d16bb0ccc9f58e",
       "bytes": 17918,
-      "caption": "Twelve shared materials \u00b7 SDF ray marching \u00b7 dusk under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · SDF ray marching · dusk under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2309,7 +2302,7 @@
         "sourceSha256": "bc9d4a06eb3e5a2736a52e3c65d3d34931525779e2f9f1ff3796a6f0ea504391",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2320,9 +2313,9 @@
       "height": 720,
       "sha256": "3c97fe77c013398fa9a0bec414127c88341de31df6490896488fd5f9b742b602",
       "bytes": 569084,
-      "caption": "Twelve shared materials \u00b7 SDF ray marching \u00b7 dusk under the shared clear atmosphere.",
+      "caption": "Twelve shared materials · SDF ray marching · dusk under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2331,7 +2324,7 @@
         "sourceSha256": "bb65d69c67596ad37e06b411ac90da3b390ad98901b1249b67900dfef4e13650",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2342,9 +2335,9 @@
       "height": 540,
       "sha256": "de53e42dd2c1473f1c9d09b34136d252324d46f0723e90ea1ec1cbb1821d1203",
       "bytes": 6688,
-      "caption": "Frosted glass \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Frosted glass · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2353,7 +2346,7 @@
         "sourceSha256": "a3fe07f51fdd2058bc52b4c464c28955bb71602059b812a5126b6c7f8af0e961",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2364,9 +2357,9 @@
       "height": 540,
       "sha256": "9cbfe5138d0fa3845cb8d71f9aac3a351e6ac9759643f85e0951b0eeb58fdeda",
       "bytes": 7538,
-      "caption": "Tinted glass \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Tinted glass · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2375,7 +2368,7 @@
         "sourceSha256": "82fc5e69bc2783aad7b67bc207d64dbad904c4960bde99f5b1acdf571efa7afa",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2386,9 +2379,9 @@
       "height": 540,
       "sha256": "abaed5e88d2f0a7e5f6d225569874b38ea2914acf819d9f5003bb75d78f37ea9",
       "bytes": 7774,
-      "caption": "Kraft cardboard \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Kraft cardboard · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2397,7 +2390,7 @@
         "sourceSha256": "de96f5fcf66d6992b24ef29caa739daa3f7a5c37ea6c9e84168cdee5c64f3f5a",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2408,9 +2401,9 @@
       "height": 540,
       "sha256": "5b79ee8fd5cb01bdc6467a06f495635f4740875c67ecc2c7fd7f52bda8af75e5",
       "bytes": 9028,
-      "caption": "Limestone \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Limestone · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2419,7 +2412,7 @@
         "sourceSha256": "76cc52fc6f6db9b97a325d07ce3ca62231eedd9a2bad137472b19972cc4c9ea5",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2430,9 +2423,9 @@
       "height": 540,
       "sha256": "3287260870e27b5ddc5b1d390190f931af8473ef74fa48fae74593f9d97de509",
       "bytes": 9096,
-      "caption": "Balanced marble \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Balanced marble · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2441,7 +2434,7 @@
         "sourceSha256": "f713e23580046b4cc100a1a155f8cb1648f173ff1ba625f64a81a9c3dcd9dd01",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2452,9 +2445,9 @@
       "height": 540,
       "sha256": "db53015a2a66a981db03b6d7a6ddb7574b8db0f5829c553e536d541294d29119",
       "bytes": 6566,
-      "caption": "Neutral gray \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Neutral gray · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2463,7 +2456,7 @@
         "sourceSha256": "d85b87734b421bbbff95f476665e3dd71405112dbe9615ac1b4576c74ee77ed1",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2474,9 +2467,9 @@
       "height": 540,
       "sha256": "0f2b35fc8efc6a39a9be2ea3d92c18144626125043d6b9004a89b3fc700a6a35",
       "bytes": 11000,
-      "caption": "Rusted steel \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Rusted steel · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2485,7 +2478,7 @@
         "sourceSha256": "b50364dad8f34f555d000f398951b3fbddd09a04bc1bc7ae46a4692ee27173ac",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2496,9 +2489,9 @@
       "height": 540,
       "sha256": "d7c09638e1143dc1e35fcf11fded9a5639bf4f6bd28b46d7a34d35daf5c70389",
       "bytes": 9094,
-      "caption": "Unvarnished hardwood \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Unvarnished hardwood · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2507,7 +2500,7 @@
         "sourceSha256": "6bc5ae08cc65f24c04b56c7aedc5bfbaafc1f6008a3fe265d1218abc864f2ffc",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2518,9 +2511,9 @@
       "height": 540,
       "sha256": "2c012906575efe1920b085bec8d19f0e1ecbad9e90503ca53cfe7506ae665ca6",
       "bytes": 10248,
-      "caption": "Plain-weave cloth \u00b7 SDF ray marching \u00b7 shared clear atmosphere",
+      "caption": "Plain-weave cloth · SDF ray marching · shared clear atmosphere",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2529,7 +2522,7 @@
         "sourceSha256": "ca96432b8f8f20337e0a12b19849e3e0593de4015b8722575d1d14724c4b0ea2",
         "sourceRevision": "30bfad78360dbfee7807a749458d82ece7e28b65",
         "recipe": "site/media/receipts/raytracing-materials.json",
-        "note": "Web derivative of a qualified 1920\u00d71080 native capture. Renderer transport differs; shared recipes are unchanged."
+        "note": "Web derivative of a qualified 1920×1080 native capture. Renderer transport differs; shared recipes are unchanged."
       }
     },
     {
@@ -2542,7 +2535,7 @@
       "bytes": 48484,
       "caption": "All twelve shared materials on mesh spheres, under moving clouds and low sunlight.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2568,7 +2561,7 @@
       "bytes": 1329209,
       "caption": "Forward PBR: twelve spheres through dusk, with accelerated cloud drift.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2591,7 +2584,7 @@
       "bytes": 11816,
       "caption": "Procedural stars and the Milky Way in the native night sky.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2608,74 +2601,72 @@
     },
     {
       "id": "ocean-surface",
-      "file": "/media/ocean-surface.webp",
+      "file": "/media/ocean-surface-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "f6dd406ffa733cc3f1bebc5645d014d45f411212bdf9862fa01299635f42958e",
-      "bytes": 97502,
+      "sha256": "d3be1d9e3d83839980714c6ef0b7866b9732c01a1fd93943193be7140cb25f12",
+      "bytes": 89146,
       "caption": "Spectral waves carry changing light across an open-water surface.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/ocean-surface.png",
-        "sourceSha256": "184e261b7514818cfbe6e7ec096b55ea27873fdf8315e55d56d2fb0502f0085d",
-        "sourceRevision": null,
-        "recipe": "outputs/cubey-site/design-review-2026-10-24/frames/ocean-0.5.png",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/media/standard-capture-refresh-20261119/ocean-surface/native.png",
+        "sourceSha256": "3484042f784440b9c0193d6b74af95630d183accca22843bf97e46959420ea24",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/ocean-surface-640.webp",
-      "thumbnailSha256": "5d7d4eb20f88656f34bb2dfedd95370c059d204a059482366d5b270e7477ade6",
-      "thumbnailBytes": 28844
+      "thumbnail": "/media/ocean-surface-640-capture-20261119.webp",
+      "thumbnailSha256": "1b73c01e3e8cd40b5e653664f8168710f2f118b03df4730beff876abc834d546",
+      "thumbnailBytes": 25042
     },
     {
       "id": "ocean-surface-film",
-      "file": "/media/ocean-surface-film.mp4",
+      "file": "/media/ocean-surface-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b",
-      "bytes": 6718736,
+      "sha256": "df96158405e4cfedcdcd4b59ad2946f0821d7666553c1349c40b2c71463e3205",
+      "bytes": 7634327,
       "caption": "Spectral waves carry changing light across an open-water surface.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/ocean-surface.mp4",
-        "sourceSha256": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b",
-        "sourceRevision": null,
-        "recipe": "docs/media/showcase/ocean.mp4",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/media/standard-capture-refresh-20261119/ocean-surface-film/native.mp4",
+        "sourceSha256": "e0083c8db2d71915d9f3cb1fbfa4c4c6bd926e5af1d842c4582531825e72de71",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "preview-clouds",
-      "file": "/media/preview-clouds.mp4",
+      "file": "/media/preview-clouds-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "987d4fd3294195d201756917181e98aea1ce24772028518c589526d243d4f142",
-      "bytes": 67096,
+      "sha256": "b7d7c8bfae2a4433bdbd304d718903eea9d9dac7b4d0befbd4e007e562a5d025",
+      "bytes": 64250,
       "caption": "Short silent preview. Broken cumulus with accelerated cloud drift.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/clouds-film.mp4",
-        "sourceSha256": "be88fafa0ecb9c085911d5858db5b994940c597969f4fb32430fa2a9229a746d",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "source": "site/public/media/clouds-film-capture-20261119.mp4",
+        "sourceSha256": "43fd585c2f0183ac513e91d580fb9f17a5f2dbb452334d64779859ec55fb33ac",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "clouds-film",
         "recipe": "site/media/receipts/hover-previews.json",
-        "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
       }
     },
     {
@@ -2688,7 +2679,7 @@
       "bytes": 60087,
       "caption": "Short silent preview. Native camera arc around the canal mill.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2711,7 +2702,7 @@
       "bytes": 58111,
       "caption": "Short silent preview. Native camera arc around the terraced courtyard.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2734,7 +2725,7 @@
       "bytes": 62581,
       "caption": "Short silent preview. Native camera arc around the hill observatory.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2757,7 +2748,7 @@
       "bytes": 42964,
       "caption": "Short silent preview. Saved native construction replay of the approved field-kit robot.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2772,22 +2763,22 @@
     },
     {
       "id": "preview-day-night",
-      "file": "/media/preview-day-night.mp4",
+      "file": "/media/preview-day-night-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "e5ea81be43ea01e29244c36642ff4108aac44c993c29d9a78fb97a82ba297732",
-      "bytes": 64174,
+      "sha256": "cca90069cae92f63a6caf848f1fa794de8cbfcdef42c0285916a796e7d3a698f",
+      "bytes": 56895,
       "caption": "Short silent preview. A complete accelerated solar day: afternoon, night and daylight again.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/day-night-film.mp4",
-        "sourceSha256": "5521d2f32df1dc04bb46af4f14ea2d0d728caa1b4cfcfe1f134e0f849145e7c5",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "source": "site/public/media/day-night-film-capture-20261119.mp4",
+        "sourceSha256": "4b32caf204112b83b91ec91fd6cd81733e3fabbf889cc8addc4e61aebe8707bd",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "day-night-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "Silent video derivative of the selected web film; no native capture or render was made."
@@ -2795,22 +2786,22 @@
     },
     {
       "id": "preview-explosion-3d",
-      "file": "/media/preview-explosion-3d.mp4",
+      "file": "/media/preview-explosion-3d-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "bb6c72fc44a191359abc28faca095e2d33f1e69595658d00a3cac5bb2044ca7b",
-      "bytes": 51160,
+      "sha256": "6451a3ed15623855395c74785d785fd643325db73d44a4c02bc2198f8cdbef72",
+      "bytes": 52961,
       "caption": "Short silent preview. A repeated fireball impulse, shown during its early flash.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/explosion-3d-film.mp4",
-        "sourceSha256": "659dc609f50e371573473cd0b136cda44579dec3bae376ec3cadcbc2ffe970be",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "source": "site/public/media/explosion-3d-film-capture-20261119.mp4",
+        "sourceSha256": "396b8700f09e5214ef908923beaded3adb60287d597740af15700649fc330089",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "explosion-3d-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "Silent video derivative of the selected web film; no native capture or render was made."
@@ -2818,35 +2809,35 @@
     },
     {
       "id": "preview-fire-3d",
-      "file": "/media/preview-fire-3d.mp4",
+      "file": "/media/preview-fire-3d-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "759c24b8b6f2586b4c5b751b9801d619e7c6092783ee5c6af66c1d0cef416d3a",
-      "bytes": 56999,
+      "sha256": "d37807b8b5b21bd57e9b2c22685976c7d7f728a2b3e38cbf2888cba5aa4d3f73",
+      "bytes": 58240,
       "caption": "Short silent preview. Flame and smoke evolve as daylight falls away.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/fire-3d-film.mp4",
-        "sourceSha256": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348",
-        "sourceRevision": null,
+        "source": "site/public/media/fire-3d-film-capture-20261119.mp4",
+        "sourceSha256": "c2fbe3ac780ad83cdb2d470dc43749c6844cac958bae54a9d157eb02a783155a",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "fire-3d-film",
         "recipe": "site/media/receipts/hover-previews.json",
-        "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
       }
     },
     {
       "id": "preview-gltf-morph",
-      "file": "/media/preview-gltf-morph.mp4",
+      "file": "/media/preview-gltf-morph-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "cb02c3bb76ba26659b53c630b7f1834ea8d17ce9cf4633228914e4049a517444",
-      "bytes": 16643,
+      "sha256": "60cdd1e5cf95743231130579b9fc0132b7ab3faf161143a7a1b53c41e9cac9af",
+      "bytes": 17379,
       "caption": "Short silent preview. Animated Morph Cube: target deformation.",
       "credit": {
         "label": "CC0 1.0",
@@ -2855,9 +2846,9 @@
         "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnimatedMorphCube/README.md"
       },
       "provenance": {
-        "source": "site/public/media/gltf-morph-film.mp4",
-        "sourceSha256": "17e35ffe42a034e49f19ccdbec7c8a96299619dbfa646f0f1d2d057ab422fe1d",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "source": "site/public/media/gltf-morph-film-capture-20261119.mp4",
+        "sourceSha256": "95db879e5c6f81d2f459ce5a4447ed13d89c6a769e8df17bfdde1764c96e12f1",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "gltf-morph-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "Silent video derivative of the selected web film; no native capture or render was made."
@@ -2865,23 +2856,23 @@
     },
     {
       "id": "preview-gltf-motion",
-      "file": "/media/preview-gltf-motion.mp4",
+      "file": "/media/preview-gltf-motion-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "9eaea81de07f70a4019481549370cf5f2556c2a6254520be0ae60b1353e9ec77",
-      "bytes": 44858,
+      "sha256": "9cbf50d32faf3f20834b73dc715c63967eeff8b095c5b6b89608f86c4b308fdb",
+      "bytes": 45004,
       "caption": "Short silent preview. Fox: the Walk animation and a skinned mesh.",
       "credit": {
-        "label": "CC0 model \u00b7 CC BY 4.0 animation/conversion",
+        "label": "CC0 model · CC BY 4.0 animation/conversion",
         "url": "https://creativecommons.org/licenses/by/4.0/",
-        "author": "PixelMannen (model, CC0); \u00a9 2014 tomkranis (rig/animation); \u00a9 2017 AsoboStudio and scurest (glTF conversion)",
+        "author": "PixelMannen (model, CC0); © 2014 tomkranis (rig/animation); © 2017 AsoboStudio and scurest (glTF conversion)",
         "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox/README.md"
       },
       "provenance": {
-        "source": "site/public/media/gltf-motion-film.mp4",
-        "sourceSha256": "52d8e33b284556c0e79aae41ec705fc7e248647058cf40535f6d42cc17ece224",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "source": "site/public/media/gltf-motion-film-capture-20261119.mp4",
+        "sourceSha256": "9636f9498e22d6439b1bcb2f928f59b52f2ebf8b66bc0122e2e31512f4d18794",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "gltf-motion-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "Silent video derivative of the selected web film; no native capture or render was made."
@@ -2895,9 +2886,9 @@
       "height": 360,
       "sha256": "764762c14364be6a20553f8b8ad2b441ecef853c2d82eaf74a57b0daa45e41a1",
       "bytes": 51064,
-      "caption": "Short silent preview. Twelve shared materials \u00b7 Forward PBR \u00b7 dusk under the shared clear atmosphere.",
+      "caption": "Short silent preview. Twelve shared materials · Forward PBR · dusk under the shared clear atmosphere.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2920,7 +2911,7 @@
       "bytes": 77091,
       "caption": "Short silent preview. Forward PBR: twelve spheres through dusk, with accelerated cloud drift.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2935,25 +2926,25 @@
     },
     {
       "id": "preview-ocean-surface",
-      "file": "/media/preview-ocean-surface.mp4",
+      "file": "/media/preview-ocean-surface-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "712704a9487ac3df30b97af1accd88ccf2017ed91a0818b0862f0dc3b0d032cf",
-      "bytes": 325148,
+      "sha256": "e802b074fdc0fa70608593b98086cd65e101cd6799b6db1eec26af2bdfa1205b",
+      "bytes": 332137,
       "caption": "Short silent preview. Spectral waves carry changing light across an open-water surface.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/ocean-surface-film.mp4",
-        "sourceSha256": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b",
-        "sourceRevision": null,
+        "source": "site/public/media/ocean-surface-film-capture-20261119.mp4",
+        "sourceSha256": "df96158405e4cfedcdcd4b59ad2946f0821d7666553c1349c40b2c71463e3205",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "ocean-surface-film",
         "recipe": "site/media/receipts/hover-previews.json",
-        "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
       }
     },
     {
@@ -2966,7 +2957,7 @@
       "bytes": 22438,
       "caption": "Short silent preview. The fieldkit robot assembles through its saved native construction history.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -2989,7 +2980,7 @@
       "bytes": 47399,
       "caption": "Short silent preview. Four materials share a saved two-step cut sequence and a final camera arc.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -3004,22 +2995,22 @@
     },
     {
       "id": "preview-shallow-water",
-      "file": "/media/preview-shallow-water.mp4",
+      "file": "/media/preview-shallow-water-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "6f3111da4666b9f899fb63365d6eb96841fc1cb5e543402896dc68cedf18e8cd",
-      "bytes": 10866,
+      "sha256": "60c4207cc8abe3c888eb6aba97144f992081cbae8f3cfa8508a0c244be4680a6",
+      "bytes": 10835,
       "caption": "Short silent preview. Builtin finite-volume flow through the authored source/outlet valley.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/shallow-water-film.mp4",
-        "sourceSha256": "52bac5219a08a4b2446f2910ac612085a6afcfe83bd2f60b63363bd134c7ca25",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "source": "site/public/media/shallow-water-film-capture-20261119.mp4",
+        "sourceSha256": "da6cfd05d077c5b6fd0c4bae058a84684bde4760408a436c5bd0d2939b7b531b",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "shallow-water-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "Silent video derivative of the selected web film; no native capture or render was made."
@@ -3027,22 +3018,22 @@
     },
     {
       "id": "preview-smoke-2d",
-      "file": "/media/preview-smoke-2d.mp4",
+      "file": "/media/preview-smoke-2d-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "b2706157ea29cf8e4c62466bdb6b8e2bd2fd70f463d3704aecbb63b7a7356a5b",
-      "bytes": 25173,
+      "sha256": "e353ece3691f4a2f4d35f6bde2e0cb6a184b8e157ea50b8b80adc68b4d8cddd8",
+      "bytes": 24208,
       "caption": "Short silent preview. Five moving injectors stir coloured dye through a velocity field.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/smoke-2d-film.mp4",
-        "sourceSha256": "6a029ee1eb36a10138e051e1c77dad7117f50fe04c4b51b8302bc2c59ef93ea4",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "source": "site/public/media/smoke-2d-film-capture-20261119.mp4",
+        "sourceSha256": "93b00c0346020a07431eca29406298373895742f5d5a8ad33c28447a2990e058",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "smoke-2d-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "Silent video derivative of the selected web film; no native capture or render was made."
@@ -3056,7 +3047,7 @@
       "height": 360,
       "sha256": "8845baab216493df372d0d9cd8aac6e9edeac6c7b79477173d7507e44d39586e",
       "bytes": 91579,
-      "caption": "Short silent preview. Stanford dragon \u00b7 Fixed-quality RT \u00b7 four spatial samples per frame \u00b7 matched whole view.",
+      "caption": "Short silent preview. Stanford dragon · Fixed-quality RT · four spatial samples per frame · matched whole view.",
       "credit": {
         "label": "Stanford 3D Scanning Repository use terms",
         "url": "https://graphics.stanford.edu/data/3Dscanrep/",
@@ -3080,7 +3071,7 @@
       "height": 360,
       "sha256": "4c65240f4d94155742d188c502ea040a815892b76dddcbdd8c11f54b7df12082",
       "bytes": 69013,
-      "caption": "Short silent preview. Stanford dragon \u00b7 Forward hybrid transmission \u00b7 matched whole view.",
+      "caption": "Short silent preview. Stanford dragon · Forward hybrid transmission · matched whole view.",
       "credit": {
         "label": "Stanford 3D Scanning Repository use terms",
         "url": "https://graphics.stanford.edu/data/3Dscanrep/",
@@ -3104,7 +3095,7 @@
       "height": 360,
       "sha256": "03a56b6d19bf4cd5b8857a222308ccdc3d4ef61f21d6259cf943359b1c935011",
       "bytes": 123192,
-      "caption": "Short silent preview. Stanford dragon \u00b7 Sampled RT \u00b7 progressive diagnostic \u00b7 matched whole view.",
+      "caption": "Short silent preview. Stanford dragon · Sampled RT · progressive diagnostic · matched whole view.",
       "credit": {
         "label": "Stanford 3D Scanning Repository use terms",
         "url": "https://graphics.stanford.edu/data/3Dscanrep/",
@@ -3122,22 +3113,22 @@
     },
     {
       "id": "preview-terrain-water",
-      "file": "/media/preview-terrain-water.mp4",
+      "file": "/media/preview-terrain-water-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "458a0389b05c559d393e5b1e48dd9c09f0d8b37a6b30a232324bf48f3aaedbd9",
-      "bytes": 101768,
+      "sha256": "165f6b6399affd648950ec7f467e5ecb4a82fd2e4a3b69ff7d6d6b9db716fd79",
+      "bytes": 102506,
       "caption": "Short silent preview. Rain-fed streams join and collect in a mountain lake.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/terrain-water-film.mp4",
-        "sourceSha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
-        "sourceRevision": null,
+        "source": "site/public/media/terrain-water-film-capture-20261119.mp4",
+        "sourceSha256": "d50bfb3611b110e611bd3408e947ad5381c33fb9a02826f9cf18b78a310cf713",
+        "sourceRevision": "f63a4daf112e69b03f79f40e20a6fde3fd22a0f8",
         "parentAsset": "terrain-water-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "Silent video derivative of the selected web film; no native capture or render was made."
@@ -3145,22 +3136,22 @@
     },
     {
       "id": "preview-water-2d",
-      "file": "/media/preview-water-2d.mp4",
+      "file": "/media/preview-water-2d-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "be8795edfb401b50b70ddefc90bc39c249aa1b29397ddd0be64b86a833aaad5d",
-      "bytes": 76975,
+      "sha256": "29d3bfd8258c934c309243104dd71e5f9259a773825f035628f2fa154a9fc1b9",
+      "bytes": 86384,
       "caption": "Short silent preview. A two-dimensional dam break and reconstructed liquid surface.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/water-2d-film.mp4",
-        "sourceSha256": "0b2ee049f46a360094765946db7279cc9bbc623f433f0686cf5f92770ba6950a",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "source": "site/public/media/water-2d-film-capture-20261119.mp4",
+        "sourceSha256": "aff702ad0ded361ad017a991b615b2b2948330fb0681f8e9015186c59f0906a7",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "water-2d-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "Silent video derivative of the selected web film; no native capture or render was made."
@@ -3168,25 +3159,25 @@
     },
     {
       "id": "preview-water-3d",
-      "file": "/media/preview-water-3d.mp4",
+      "file": "/media/preview-water-3d-capture-20261119.mp4",
       "kind": "video",
       "width": 640,
       "height": 360,
-      "sha256": "a9e6a396956a01a7a6d3d530e6483240a5ba0520fb8b116b0d890a0fcf41ee2d",
-      "bytes": 94564,
+      "sha256": "6ff4a1f6263e51e8fc642c331f31fee369ccdc52878f77ceb84e55461ea48716",
+      "bytes": 95839,
       "caption": "Short silent preview. A dam break spreads through a long tank, rebounds and throws off whitewater.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "site/public/media/water-3d-film.mp4",
-        "sourceSha256": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece",
-        "sourceRevision": null,
+        "source": "site/public/media/water-3d-film-capture-20261119.mp4",
+        "sourceSha256": "60a22e401affc3904a23e79976849585b28c84599b8bf4b334d79585ed732b94",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "parentAsset": "water-3d-film",
         "recipe": "site/media/receipts/hover-previews.json",
-        "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
       }
     },
     {
@@ -3197,7 +3188,7 @@
       "height": 720,
       "sha256": "397518d612b642c0c6fa60cbd36b295ec90c4e4d841b36fe1f56c617eae9b119",
       "bytes": 23880,
-      "caption": "Stanford dragon \u00b7 Forward hybrid transmission \u00b7 matched whole view.",
+      "caption": "Stanford dragon · Forward hybrid transmission · matched whole view.",
       "credit": {
         "label": "Stanford 3D Scanning Repository use terms",
         "url": "https://graphics.stanford.edu/data/3Dscanrep/",
@@ -3221,7 +3212,7 @@
       "height": 720,
       "sha256": "1093a543bc108cd0c8dede3f3ea898d0f79fb4188b80a77ade9d40be049bc578",
       "bytes": 1117146,
-      "caption": "Stanford dragon \u00b7 Forward hybrid transmission \u00b7 matched whole view.",
+      "caption": "Stanford dragon · Forward hybrid transmission · matched whole view.",
       "credit": {
         "label": "Stanford 3D Scanning Repository use terms",
         "url": "https://graphics.stanford.edu/data/3Dscanrep/",
@@ -3245,7 +3236,7 @@
       "height": 720,
       "sha256": "3c1fc24ddf00a438d98e8f60e625fd4c62436cea87ec611f92f94b1ee3fa46e9",
       "bytes": 33208,
-      "caption": "Stanford dragon \u00b7 Fixed-quality RT \u00b7 four spatial samples per frame \u00b7 matched whole view.",
+      "caption": "Stanford dragon · Fixed-quality RT · four spatial samples per frame · matched whole view.",
       "credit": {
         "label": "Stanford 3D Scanning Repository use terms",
         "url": "https://graphics.stanford.edu/data/3Dscanrep/",
@@ -3269,7 +3260,7 @@
       "height": 720,
       "sha256": "aef31aa3544b4cd1730b0d62320b2a05ff1c0e668e134d9202383a4bbc944883",
       "bytes": 1755603,
-      "caption": "Stanford dragon \u00b7 Fixed-quality RT \u00b7 four spatial samples per frame \u00b7 matched whole view.",
+      "caption": "Stanford dragon · Fixed-quality RT · four spatial samples per frame · matched whole view.",
       "credit": {
         "label": "Stanford 3D Scanning Repository use terms",
         "url": "https://graphics.stanford.edu/data/3Dscanrep/",
@@ -3293,7 +3284,7 @@
       "height": 720,
       "sha256": "0278567d6620c5d2bdf8c601f0c5de8793a1fbb6d3c62f0b6ba52951a533eaf1",
       "bytes": 31964,
-      "caption": "Stanford dragon \u00b7 Sampled RT \u00b7 progressive diagnostic \u00b7 matched whole view.",
+      "caption": "Stanford dragon · Sampled RT · progressive diagnostic · matched whole view.",
       "credit": {
         "label": "Stanford 3D Scanning Repository use terms",
         "url": "https://graphics.stanford.edu/data/3Dscanrep/",
@@ -3317,7 +3308,7 @@
       "height": 720,
       "sha256": "5c3a231f08379fbb22cd0b1516d06ea474b79281aeeeb891e2b70332cae440b2",
       "bytes": 3314241,
-      "caption": "Stanford dragon \u00b7 Sampled RT \u00b7 progressive diagnostic \u00b7 matched whole view.",
+      "caption": "Stanford dragon · Sampled RT · progressive diagnostic · matched whole view.",
       "credit": {
         "label": "Stanford 3D Scanning Repository use terms",
         "url": "https://graphics.stanford.edu/data/3Dscanrep/",
@@ -3343,7 +3334,7 @@
       "bytes": 30886,
       "caption": "The complete fieldkit robot, recaptured in native landscape.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -3369,7 +3360,7 @@
       "bytes": 393542,
       "caption": "The fieldkit robot assembles through its saved native construction history.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -3384,53 +3375,53 @@
     },
     {
       "id": "scattering-daylight",
-      "file": "/media/scattering-daylight.webp",
+      "file": "/media/scattering-daylight-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "ac1bb4252d49a893ce0beda72bdcb1b6240eaa4c914dbdd8af2c30df87e840d4",
-      "bytes": 8090,
+      "sha256": "5998b1308dc60aa54872c64b130164c08c1ae1efba9e20f1fbeb2fe482a919d6",
+      "bytes": 6728,
       "caption": "Higher sun: blue daylight and the sun disk.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/refinement-2026-10-24/captures/scattering-daylight/capture.png",
-        "sourceSha256": "613946adedb2ac25137c9190a19779bc0c0b955827d8e20f3d35ec360099cfd6",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/scattering-daylight.json",
-        "note": "Selected native capture from the pinned existing renderer binary; no native source changes."
+        "source": "outputs/media/standard-capture-refresh-20261119/scattering-daylight/native.png",
+        "sourceSha256": "ab35eb71c0c1396b3951aff967cefc62e37684b5c3413c316bedc3517eb68180",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/scattering-daylight-640.webp",
-      "thumbnailSha256": "0b1db8093286b7f07bc93cc02e8ad5c26947c4306b5db520c5ea4f6c8571c4c8",
-      "thumbnailBytes": 2360
+      "thumbnail": "/media/scattering-daylight-640-capture-20261119.webp",
+      "thumbnailSha256": "09b3539f239a7c82d315b82ac6d6b1990f4934c9853b08ef0095f1b13e806560",
+      "thumbnailBytes": 2036
     },
     {
       "id": "scattering-haze",
-      "file": "/media/scattering-haze.webp",
+      "file": "/media/scattering-haze-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "bdf59226785fcf8b9de01eb30b861da05fa5f65652fc0496e03d30714e1258f7",
-      "bytes": 9114,
+      "sha256": "fb094d5a51976cd76b766890e053285d71696746597f1e5f888e9768c80ee4d3",
+      "bytes": 7482,
       "caption": "More aerosols broaden the low-sun glow.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/refinement-2026-10-24/captures/scattering-haze/capture.png",
-        "sourceSha256": "2ac9c4224e4c8c846edc9397c6bd2ed1a28bc83eaf282e9a1657c50af1c0aad4",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/scattering-haze.json",
-        "note": "Selected native capture from the pinned existing renderer binary; no native source changes."
+        "source": "outputs/media/standard-capture-refresh-20261119/scattering-haze/native.png",
+        "sourceSha256": "a9c7f593d90dee7bf18e68447ed05788161016b7233470f0a366a9ff0fa70da8",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/scattering-haze-640.webp",
-      "thumbnailSha256": "3b8441a557ecb5cfaadb67be0ac10674c99930534f78477d0890409b582d70a4",
-      "thumbnailBytes": 2620
+      "thumbnail": "/media/scattering-haze-640-capture-20261119.webp",
+      "thumbnailSha256": "f16bcb5b94b6421aa34ac02032885068e5185f5c4da768b6e2c4205530437eb2",
+      "thumbnailBytes": 2310
     },
     {
       "id": "sdf-materials",
@@ -3442,7 +3433,7 @@
       "bytes": 47684,
       "caption": "Saved cuts through wood, marble, rusted steel and clear glass.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -3468,7 +3459,7 @@
       "bytes": 520898,
       "caption": "Four materials share a saved two-step cut sequence and a final camera arc.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
@@ -3483,270 +3474,263 @@
     },
     {
       "id": "shallow-water",
-      "file": "/media/shallow-water.webp",
+      "file": "/media/shallow-water-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "56eef73523907ca6d6111db507181772f877dfb281252666fc1835fd97a295a1",
-      "bytes": 13252,
+      "sha256": "1938578a325d25c7da04c85d66f44335968efd4d8141e135c727fb60f4b6e177",
+      "bytes": 10312,
       "caption": "Builtin finite-volume flow through the authored source/outlet valley.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/poster-selection/builtin-valley.png",
-        "sourceSha256": "b4b40dd3f41307397e9fd656eb0e6250c72468bbb9100bc937a02856f9e6ba02",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/builtin-valley-film.json",
-        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+        "source": "outputs/media/standard-capture-refresh-20261119/shallow-water/native.png",
+        "sourceSha256": "fc273c1ad9c246bbe4dbe1cb5563085d4270251c28fbbb22b937818a51c66efe",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/shallow-water-640.webp",
-      "thumbnailSha256": "3eda6f33ce2abc2c291ffa425164a1ab83e018489ab2aedeced4913949f8d0aa",
-      "thumbnailBytes": 3936
+      "thumbnail": "/media/shallow-water-640-capture-20261119.webp",
+      "thumbnailSha256": "6140a429757287206c8c219586c6928b8f2b6647e5e1a1ef6bdad598e0dc0a57",
+      "thumbnailBytes": 3256
     },
     {
       "id": "shallow-water-film",
-      "file": "/media/shallow-water-film.mp4",
+      "file": "/media/shallow-water-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "52bac5219a08a4b2446f2910ac612085a6afcfe83bd2f60b63363bd134c7ca25",
-      "bytes": 119159,
+      "sha256": "da6cfd05d077c5b6fd0c4bae058a84684bde4760408a436c5bd0d2939b7b531b",
+      "bytes": 64503,
       "caption": "Builtin finite-volume flow through the authored source/outlet valley.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/builtin-valley-film/capture.mp4",
-        "sourceSha256": "e11ac55d561a128abaa04b075a06726480a222fede97002a6a251bc46dc9f1c0",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/builtin-valley-film.json",
-        "note": "Lossless fast-start MP4 remux; encoded video packets are unchanged.",
-        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
+        "source": "outputs/media/standard-capture-refresh-20261119/shallow-water-film/native.mp4",
+        "sourceSha256": "0df0f819a4997d885f6b63511055205ab67fdaeae85c2d3b507e542551c04071",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "smoke-2d",
-      "file": "/media/smoke-2d.webp",
+      "file": "/media/smoke-2d-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "ee6736ed65af34c8c3054169d782a7273bdda56e47e2051f7b345a380f8a57ea",
-      "bytes": 25686,
+      "sha256": "7a7bd7bda9e8d8044da6e611a135b1ddec3d3faf555ac78770b033cea48a2673",
+      "bytes": 20662,
       "caption": "Five moving injectors stir coloured dye through a velocity field.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/smoke-2d-poster/capture.png",
-        "sourceSha256": "e2efdd678ed6b13f765ce7d177a780be9d0336808e862ae13aa9e74d5e684d83",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/smoke-2d-poster.json",
-        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+        "source": "outputs/media/standard-capture-refresh-20261119/smoke-2d/native.png",
+        "sourceSha256": "3a811fb4404f2188c578c2eec50d5c8bc67ebe9180dd7ecce49e2f9f0da1d769",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/smoke-2d-640.webp",
-      "thumbnailSha256": "b21ec75c117e242c898b2d432ea1ed03870bbc32a5023cf13d029525a1d3bb74",
-      "thumbnailBytes": 7852
+      "thumbnail": "/media/smoke-2d-640-capture-20261119.webp",
+      "thumbnailSha256": "6562dae00f70cdb38e112cc8cce95383a7570b39f26439006eacd0ff99de0b95",
+      "thumbnailBytes": 6476
     },
     {
       "id": "smoke-2d-film",
-      "file": "/media/smoke-2d-film.mp4",
+      "file": "/media/smoke-2d-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "6a029ee1eb36a10138e051e1c77dad7117f50fe04c4b51b8302bc2c59ef93ea4",
-      "bytes": 1703949,
+      "sha256": "93b00c0346020a07431eca29406298373895742f5d5a8ad33c28447a2990e058",
+      "bytes": 661313,
       "caption": "Five moving injectors stir coloured dye through a velocity field.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/smoke-2d-film/capture.mp4",
-        "sourceSha256": "8012760546b0373108ab151b118c49f97255eb8abde8d50e1e04146fbf04f0fb",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/smoke-2d-film.json",
-        "note": "Lossless fast-start MP4 remux; encoded video packets are unchanged.",
-        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
+        "source": "outputs/media/standard-capture-refresh-20261119/smoke-2d-film/native.mp4",
+        "sourceSha256": "47bf121dbd1486a0cf84d5829fef2c80625f2cde19fab8bf783e7cd48cfbd845",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "terrain-rendering",
-      "file": "/media/terrain-rendering.webp",
+      "file": "/media/terrain-rendering-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "bb66431866e0a921014492bd18727e7835e86012055a5a7fcc5f06520161ace6",
-      "bytes": 82028,
+      "sha256": "95a7e51126ab40fe031c164da954376a3e05cb83f472ace114ec1f079dfbb2c2",
+      "bytes": 65580,
       "caption": "Dry mountain terrain, with generated elevation, material detail and shadows.",
       "credit": {
-        "label": "Cubey render \u00b7 MIT",
+        "label": "Cubey render · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan; elevation generated with Terrain Diffusion by Xander Gos",
         "source": "https://huggingface.co/xandergos/terrain-diffusion-30m"
       },
       "provenance": {
-        "source": "/home/bryan/.local/share/codex-plus/reports/public/ebb9d3fb17214c5a8d6e4a25e44f9fcc0b722c3e9fbf631ef067f1e5d8388df2/dry.png",
-        "sourceSha256": "fae0a06d70dba97b310e05f8b0dda3455889500dfff56bf6c7584eb957eb49bc",
-        "sourceRevision": null,
-        "recipe": "http://starship:8787/reports/ebb9d3fb17214c5a8d6e4a25e44f9fcc0b722c3e9fbf631ef067f1e5d8388df2/protocol.json",
-        "note": "Historical native capture; exact captured Git HEAD is unrecorded. Binary SHA256 6a00a2b79bdc92e66d55d3780f132034dc13776dc097a7291a601befcaa23b69. Terrain Diffusion producer 82a0431281f21a6ec3d691a12ee61525de5b0790, model revision 9ef8030cb805b433b98ec25c5dddefbac07a9e26. Generated elevation at 30m native spacing; not surveyed terrain."
+        "source": "outputs/media/standard-capture-refresh-20261119/terrain-rendering/native.png",
+        "sourceSha256": "34fdbf5c0627626d6e369c1417f77b3d8c7f0cb867089daf46c72eec498d2a88",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/terrain-rendering-640.webp",
-      "thumbnailSha256": "db6c6badd126b6e0e7a7f806259c4e91c043bfb32bac90cffa49c837a948e257",
-      "thumbnailBytes": 27376
+      "thumbnail": "/media/terrain-rendering-640-capture-20261119.webp",
+      "thumbnailSha256": "eec46a7b39c53bccaaa5b90efbd26f9e3c214c33ab29448542d92b7177791b4b",
+      "thumbnailBytes": 21782
     },
     {
       "id": "terrain-water",
-      "file": "/media/terrain-water.webp",
+      "file": "/media/terrain-water-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "013ac29a7ff17685551bc7e9c2a783bc32718e511db4ec830fb5d486baaeddcd",
-      "bytes": 67422,
+      "sha256": "f75744f73adf45ace627eff7175956b2802c3a34cece1ba4dd53df8f045c2733",
+      "bytes": 64338,
       "caption": "Rain-fed streams join and collect in a mountain lake.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/terrain-water.png",
-        "sourceSha256": "d7dd733c50f3eda0289915415071cbbb1e0588b1fa7d1eb312901701558b4953",
-        "sourceRevision": null,
-        "recipe": "docs/media/showcase/fluid-25d.png",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/media/standard-capture-refresh-20261119/terrain-water/native.png",
+        "sourceSha256": "b5897f09eea6c276f25e4362e1800ca25939e72a16cced0428e45da859aac54e",
+        "sourceRevision": "f63a4daf112e69b03f79f40e20a6fde3fd22a0f8",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/terrain-water-640.webp",
-      "thumbnailSha256": "129aace92b80808468b69110e42b1eedbd1b545758a68292d9df65fcc2ebf687",
-      "thumbnailBytes": 22360
+      "thumbnail": "/media/terrain-water-640-capture-20261119.webp",
+      "thumbnailSha256": "1db90a9181f305f908c60dfc143b6ac2fbe549cd4d0f10ed785e462e1a169c36",
+      "thumbnailBytes": 18648
     },
     {
       "id": "terrain-water-film",
-      "file": "/media/terrain-water-film.mp4",
+      "file": "/media/terrain-water-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
-      "bytes": 1429568,
+      "sha256": "d50bfb3611b110e611bd3408e947ad5381c33fb9a02826f9cf18b78a310cf713",
+      "bytes": 1704601,
       "caption": "Rain-fed streams join and collect in a mountain lake.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/terrain-water.mp4",
-        "sourceSha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
-        "sourceRevision": null,
-        "recipe": "docs/media/showcase/fluid-25d.mp4",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/media/standard-capture-refresh-20261119/terrain-water-film/native.mp4",
+        "sourceSha256": "72bf8e323f8e96a4d64f737d508e7426b078666996fe22bf5830bbfdea136895",
+        "sourceRevision": "f63a4daf112e69b03f79f40e20a6fde3fd22a0f8",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "water-2d",
-      "file": "/media/water-2d.webp",
+      "file": "/media/water-2d-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "855b27031c699c0aaf3832081066506db039884dc8d12e6075f945a73e0c517b",
-      "bytes": 33526,
+      "sha256": "11c0961347cea7185191678a01bcbd566f0793d65889057ef0c6f9d3ddb9673b",
+      "bytes": 27004,
       "caption": "A two-dimensional dam break and reconstructed liquid surface.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/water-2d-poster/capture.png",
-        "sourceSha256": "8750d34c08122456e9cfbabfa8d1deedb3625d45b487eaf442911ae56e991a2c",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/water-2d-poster.json",
-        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+        "source": "outputs/media/standard-capture-refresh-20261119/water-2d/native.png",
+        "sourceSha256": "68478b624108ec4188b3d1ad6fd108cf5fd268e01e27b60d01c342258c98164f",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/water-2d-640.webp",
-      "thumbnailSha256": "d84cbd11e90e40999997e6e8bfe68bbc02df9d791e0893c87d3a87451368e630",
-      "thumbnailBytes": 11580
+      "thumbnail": "/media/water-2d-640-capture-20261119.webp",
+      "thumbnailSha256": "2720a9db45af4b10c0b2b9c6007e1ef25a3b151fe47c11e223cad1806bac7930",
+      "thumbnailBytes": 10012
     },
     {
       "id": "water-2d-film",
-      "file": "/media/water-2d-film.mp4",
+      "file": "/media/water-2d-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "0b2ee049f46a360094765946db7279cc9bbc623f433f0686cf5f92770ba6950a",
-      "bytes": 2265016,
+      "sha256": "aff702ad0ded361ad017a991b615b2b2948330fb0681f8e9015186c59f0906a7",
+      "bytes": 1274129,
       "caption": "A two-dimensional dam break and reconstructed liquid surface.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/water-2d-film/capture.mp4",
-        "sourceSha256": "1eca13b867e1d64473c14f78edd35a9d6001ea51f928728feeebf79cd31a7f84",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/water-2d-film.json",
-        "note": "Lossless fast-start MP4 remux; encoded video packets are unchanged.",
-        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
+        "source": "outputs/media/standard-capture-refresh-20261119/water-2d-film/native.mp4",
+        "sourceSha256": "f823eb51129d3de38acee67a5edfd7776b2c7093aae72fd36758e2ca7ae4e022",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     },
     {
       "id": "water-3d",
-      "file": "/media/water-3d.webp",
+      "file": "/media/water-3d-capture-20261119.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "88e3f06f8526b040ac14ca392d703c74d5bfa09775da5078d80ddb39e6cfb080",
-      "bytes": 23874,
+      "sha256": "266bca2239312eea6cc52332c50952f15d1caa4b611e7e04ccfcd21b4427eb49",
+      "bytes": 21512,
       "caption": "A dam break spreads through a long tank, rebounds and throws off whitewater.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/water-3d.png",
-        "sourceSha256": "22688a05fcefec6abdee2706ac9f465a3cdef5fedfd904f56cfeaded86fc5376",
-        "sourceRevision": null,
-        "recipe": "docs/media/showcase/water-3d.png",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/media/standard-capture-refresh-20261119/water-3d/native.png",
+        "sourceSha256": "9a42fe09a119366feb6dcc723e48ad64e7d4a43f6f421aaa99165889656d0208",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       },
-      "thumbnail": "/media/water-3d-640.webp",
-      "thumbnailSha256": "2e49093f17c6bcaf942a6e6ffef0fc4b2763d2b7394ce2cc634839c4f6d4f5b1",
-      "thumbnailBytes": 7216
+      "thumbnail": "/media/water-3d-640-capture-20261119.webp",
+      "thumbnailSha256": "9dbc28eccad7b3ffd5e61948b1579f53dede33c9a4fd37e6b3c47fb0ecbef9f5",
+      "thumbnailBytes": 6208
     },
     {
       "id": "water-3d-film",
-      "file": "/media/water-3d-film.mp4",
+      "file": "/media/water-3d-film-capture-20261119.mp4",
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece",
-      "bytes": 1308520,
+      "sha256": "60a22e401affc3904a23e79976849585b28c84599b8bf4b334d79585ed732b94",
+      "bytes": 1231051,
       "caption": "A dam break spreads through a long tank, rebounds and throws off whitewater.",
       "credit": {
-        "label": "Cubey original media \u00b7 MIT",
+        "label": "Cubey original media · MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/water-3d.mp4",
-        "sourceSha256": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece",
-        "sourceRevision": null,
-        "recipe": "docs/media/showcase/water-3d.mp4",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/media/standard-capture-refresh-20261119/water-3d-film/native.mp4",
+        "sourceSha256": "2dd211ccb91ad9f7de9bb0167a7e9cc7376b8e3bc29dd18010c425e12c0ee43f",
+        "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
+        "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
+        "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
     }
   ],

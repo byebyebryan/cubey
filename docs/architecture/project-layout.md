@@ -49,3 +49,7 @@ files outside a frontend directory. Disabled studies do not enter this scan;
 there is no second app roster to maintain. Capture policy still scans relocated
 helpers. Static checks, numerical tests, GPU/headless runs and human/native GUI
 acceptance remain distinct gates.
+
+For a new renderer, follow the [temporal integration guide](temporal-aa.md#integrating-a-new-project)
+to inherit the shared AA option and connect it to Forward PBR or a custom
+producer.

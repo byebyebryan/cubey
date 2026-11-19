@@ -27,7 +27,8 @@ continuous freehand sculpting.
 ## Temporal anti-aliasing
 
 Native TAA uses the same shared resolve/history implementation as the forward
-PBR workshop and is selected independently of the SDF tracing mode:
+PBR workshop. Interactive AA Auto uses it on eligible 1× views. The explicit
+comparison below selects TAA on the approved observatory geometry.
 
 ```sh
 build/release/projects/sdf/sdf --config projects/sdf/presets/taa-foundation-2026-11/observatory-taa.json
@@ -36,8 +37,8 @@ build/release/projects/sdf/sdf --config projects/sdf/presets/taa-foundation-2026
 The comparison directory retains the approved Balanced model, A64 field,
 materials and lighting. `observatory-ss1.json` and `observatory-ss2.json` provide
 matched Off controls. `section-*` and `cutaway-intact-*` use the same camera to
-inspect occlusion around the interior. Existing presets and defaults remain
-unchanged.
+inspect occlusion around the interior. The standard observatory preset in
+`csg-showcase-2026-11` uses Balanced tracing at 2× supersampling.
 
 TAA requires supersampling 1x. The selector at the end of the SDF panel reports
 when diagnostics, transmission, clouds, dynamic lighting or edit/cutter previews
@@ -50,11 +51,11 @@ absent from the cache or accelerate the underlying SDF trace. See the
 ## Quality upscaling
 
 The analytic robot preset starts at native resolution and uses TAA in an
-eligible interactive view. Select DLSS Quality K at launch using the same
-scene, camera and lighting.
+eligible interactive view. The first command can use an SDK-free build.
+The second selects DLSS Quality K with the same scene, camera and lighting.
 
 ```sh
-build/dlss/projects/sdf/sdf \
+build/dev/projects/sdf/sdf \
   --config projects/sdf/presets/csg-showcase-2026-11/robot-analytic.json
 
 build/dlss/projects/sdf/sdf \

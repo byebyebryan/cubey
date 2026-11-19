@@ -10,6 +10,57 @@ Original Cubey media retains the repository's MIT policy. Imported models retain
 their own licenses and authors. Their notices are preserved below and displayed
 with the relevant captures on the site's Credits page.
 
+## Presentation capture defaults
+
+Use **1920×1080 at 30 fps** for new 16:9 native masters. Choose the frame count
+from the shot's duration. From the repository root, a ten-second observatory
+orbit uses:
+
+```sh
+build/dev/projects/sdf/sdf --config projects/sdf/presets/csg-showcase-2026-11/observatory-film.json \
+  --headless --capture video --width 1920 --height 1080 --fps 30 --frames 300 \
+  --require-validation --anti-aliasing off --output native.mp4
+```
+
+Start with native rendering and the project's approved sample settings. Record the internal
+render extent separately from the master dimensions, along with the effective
+AA or upscaler, supersampling and any RT sample count. An SDF 2× supersampled
+1080p master renders internally at 3840×2160. Fixed RT can trace several
+spatial samples per render pixel at the master extent. Headless AA Auto
+uses the direct path. Request `--anti-aliasing taa` explicitly on supported
+views and check the effective mode in the log.
+
+Deliver the full film at **1280×720 at 30 fps** as silent H.264/yuv420p MP4
+with fast-start. Use the project's importer where it has one. For a new
+encode, this is a starting point from a 1080p30 master:
+
+```sh
+ffmpeg -n -i native.mp4 -an -vf 'scale=1280:720:flags=lanczos' \
+  -c:v libx264 -preset slow -crf 22 -pix_fmt yuv420p -movflags +faststart film.mp4
+```
+
+Keep the master, film and hover preview as distinct assets. The site's
+[hover preview policy](../README.md#build-and-review) supplies the existing
+640×360 at 18 fps excerpts. Record shot-specific cadence and encoder choices
+in the capture receipt within the existing site media budgets.
+
+For an AA comparison, match scene, lighting, camera path, frame rate and web
+encode. Use direct 1× as a control when testing native TAA. Include the
+approved-quality or published clip when considering a replacement. For DLSS,
+include a spatial comparison at the same reduced render extent when judging
+the reconstruction. Review motion at normal playback speed and at the site's
+displayed size. Check the opening frames and any cuts for history artifacts.
+Choose a replacement when it visibly improves the delivered film.
+
+Keep the exact source and binary identities, scene and preset, commands, sample
+settings and file hashes in the capture receipt. Existing selections retain
+their original recipes and receipts.
+
+The [November capture refresh receipt](receipts/standard-capture-refresh-20261119.json)
+records the updated masters and web derivatives alongside the previous asset
+identities. Simulation footage rendered at 60 fps keeps that render cadence.
+The 30 fps derivative selects alternate frames and preserves playback duration.
+
 ## Imported model notices
 
 | Model | Preserved notice | Source/license scope |
