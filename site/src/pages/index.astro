@@ -1,17 +1,42 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Preview from '../components/Preview.astro';
+import Media from '../components/Media.astro';
 import Card from '../components/Card.astro';
 import ConnectionPair from '../components/ConnectionPair.astro';
-import {subjects,byId} from '../data/catalog';
+import {subjects,byId,entryPath} from '../data/catalog';
 import {url} from '../lib/urls';
 const path='/';
+const ocean = byId['ocean-surface'];
 ---
 <Layout title="A graphics workshop" path={path}>
   <section class="hero workshop-hero"><div><span class="eyebrow">A personal playground</span><h1>A graphics<br/> workshop.</h1><p class="intro">Rendering and simulation experiments, and the engine I build around them. I follow what catches my interest, with Codex helping me explore further.</p><a class="text-link" href={url('/demos/',path)}>Explore the demos ↗</a></div><div class="hero-media"><Preview entry="stanford-dragon" title="Ray tracing" path={path} eager hover={false}/><div class="media-caption"><a href={url('/demos/raytracing/',path)}>Explore ray tracing ↗</a><span>Glass, reflections and refraction</span></div></div></section>
   <nav class="subject-strip" aria-label="Explore subjects">{subjects.map(f=><a href={url(`/demos/${f.id}/`,path)}>{f.title}</a>)}</nav>
+  <section class="section ocean-study" aria-labelledby="ocean-title">
+    <h2 id="ocean-title">Light on open water.</h2>
+    <div class="ocean-film"><Media entry={ocean.id} title={ocean.title} path={path}/></div>
+    <div class="ocean-notes">
+      <p class="body-copy">Whitecaps trace the crests as the waves reflect the changing sky, from afternoon blue to the last light of sunset.</p>
+      <a class="text-link" href={url(entryPath(ocean), path)}>Explore the ocean ↗</a>
+    </div>
+  </section>
   <section class="section"><div class="section-head"><h2>Things in motion.</h2><a href={url('/demos/simulation/',path)}>All simulation demos ↗</a></div><div class="grid cards">{['water-3d','fire-3d','smoke-2d'].map(id=><Card entry={byId[id]} path={path}/>)}</div><p class="note">Also explore <a href={url('/demos/simulation/explosion-3d/',path)}>Explosion 3D</a>, <a href={url('/demos/simulation/water-2d/',path)}>Water 2D</a> and <a href={url('/demos/simulation/shallow-water/',path)}>shallow water</a>.</p></section>
   <section class="section"><div class="section-head"><h2>Surface and solid.</h2><a href={url('/demos/sdf/',path)}>Four scenes built from solids ↗</a></div><div class="surface-grid"><Card entry={byId['sdf-materials']} path={path}/><Card entry={byId.observatory} path={path}/></div></section>
   <section class="section" id="connections"><div class="section-head"><h2>One experiment opens another.</h2><p>Useful pieces find their way into other scenes.</p></div><div class="grid two connections-grid"><ConnectionPair id="water-to-terrain" from="shallow-water" to="terrain-water" path={path}/><ConnectionPair id="sky-to-materials" from="atmosphere-light" to="mesh-materials" path={path}/></div></section>
   <section class="section about"><h2>Following the next idea.</h2><div><p>The first Cubey was where I learned C++ and OpenGL by building an engine to experiment with. Today's project carries that spirit forward, with new tools, more experience and Codex helping me explore further.</p><a class="text-link" href={url('/about/',path)}>About Cubey ↗</a></div></section>
 </Layout>
+
+<style>
+  .ocean-study {
+    display: grid;
+    grid-template: "film title" 1fr "film notes" 1fr / minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 1rem clamp(2rem, 5vw, 5rem);
+  }
+  .ocean-study h2 { grid-area: title; align-self: end; }
+  .ocean-film { grid-area: film; align-self: center; }
+  .ocean-notes { grid-area: notes; max-width: 40ch; }
+
+  @media (max-width: 720px) {
+    .ocean-study { grid-template: "title" "film" "notes" / minmax(0, 1fr); }
+  }
+</style>
