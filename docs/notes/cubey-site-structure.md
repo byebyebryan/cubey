@@ -16,6 +16,16 @@ retains the release history; the [site guide](../../site/README.md) owns current
 routes, media policy and publication details. The mockups above remain design
 history, including the proposed eight-subject roster.
 
+## 2D fluid studies
+
+The November 2026 editorial revision gives Water 2D and Smoke & dye 2D a
+visible **2D Fluid Studies** section within Simulation. The earlier design gave
+all six simulation scenes equal prominence. The studies keep their playable
+cards in Simulation, individual scene URLs and native guides. The Demos
+directory links to the studies section after the four primary simulation cards.
+Home features Water 3D, Fire 3D and Explosion 3D in its simulation lineup, with
+a text link to builtin shallow water. Ocean keeps its homepage highlight.
+
 ## Structure decision
 
 Organise around **subjects → demos/features → scene variants**. Keep native
@@ -74,7 +84,7 @@ These are semantic production routes, not the static mockup filenames.
 | --- | --- |
 | `/` | Editorial visual opening, brief workshop identity, complete subject paths and selected work. |
 | `/demos/` | Visual subject directory with direct scene/chapter links; no internal registry counts or default filters. |
-| `/demos/simulation/` | Six visible peers with 2D/3D/Surface flow badges; no filter needed for six demos. |
+| `/demos/simulation/` | Four primary simulation cards followed by two playable cards under 2D Fluid Studies. |
 | `/demos/simulation/<scene>/` | Water 3D, Fire 3D, Explosion, Water 2D, dye/smoke 2D, builtin shallow water. |
 | `/demos/terrain/` | One ordered visual experience: dry terrain, then water, with named chapter anchors. |
 | `/demos/ocean/` | Direct ocean surface experience with saved sea-state/light views. |
@@ -95,7 +105,7 @@ an extra overview page repeating the same media. The mockup uses a generic
 
 | Subject | Required identity in the design |
 | --- | --- |
-| Simulation | Water, Fire and Explosion are peers; 2D is normal collection content, not history. Builtin shallow water remains distinct from external Terrain Water. |
+| Simulation | Water 3D, Fire 3D, Explosion 3D and builtin shallow water lead the collection. The 2D studies make velocity fields and free surfaces easy to inspect. Builtin shallow water has its own identity alongside external Terrain Water. |
 | Terrain | Terrain has a dry-rendering identity before water. Prepared sources, detail and shadows belong here; the terrain-water story adds its own flow/rendering boundary. |
 | Ocean | Horizon-scale surface, sea states, whitecaps and environment response. No unimplemented shoreline, wakes or underwater promises. |
 | Atmosphere & light | Standalone sky: solar time, scattering, surface clouds, stars, moon and Milky Way. It is more than scenery behind other demos. |
@@ -112,7 +122,7 @@ inventory, not a required twenty-one-page architecture.
 
 Home curates media with compact subject links; it does not repeat the directory.
 Explore owns the complete visual subject overview and direct scene access.
-Simulation shows all six scenes together. Terrain is one land/flow experience.
+Simulation shows all six scenes in two visible groups. Terrain is one land/flow experience.
 Atmosphere, Materials and glTF expose their content as visible chapters rather
 than hiding it behind feature tabs. SDF uses separate sculpture and construction
 scene pages; Ocean/Fractals are direct focused experiences.
@@ -191,7 +201,7 @@ remains available in repository evidence and closeout records.
 The design audit checks these observable paths:
 
 1. Home → Simulation → Explosion, as a peer to Fire/Water.
-2. Simulation shows all six peers without operating a filter: Water/Fire/Explosion 3D, both 2D demos and distinct builtin surface flow.
+2. Simulation shows four primary entries and two playable 2D study cards on the same page. The Demos directory links directly to the study section.
 3. Terrain presents base rendering before Terrain Water, with the right native owners.
 4. Atmosphere exposes day/night, clouds and celestial chapters without mode changes; deep links survive reload and placeholders remain labelled.
 5. glTF exposes material/optics/motion/texture groups, with all thirteen supported

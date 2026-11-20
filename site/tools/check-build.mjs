@@ -46,6 +46,36 @@ for(const [name,html] of pages){
   if(bound>600_000)errors.push(`${name}: HTML/styles/scripts/all maximum-size poster images exceed 600 KB budget`);
 }
 for(const name of ['index.html','demos/index.html','demos/simulation/index.html','demos/sdf/index.html'])if(!pages.get(name)?.includes('<video '))errors.push(`${name}: overview has no playable film`);
+
+function sectionMarkup(page, id) {
+  return pages.get(page)?.match(new RegExp(`<section\\b[^>]*\\bid="${id}"[^>]*>([\\s\\S]*?)<\\/section>`))?.[1] ?? '';
+}
+
+const homeSimulation = ['water-3d', 'fire-3d', 'explosion-3d'];
+const primarySimulation = [...homeSimulation, 'shallow-water'];
+const studyIds = ['water-2d', 'smoke-2d'];
+const simulationPage = 'demos/simulation/index.html';
+for (const [page, section, expected] of [
+  ['index.html', 'simulation-lineup', homeSimulation],
+  ['demos/index.html', 'simulation-lineup', primarySimulation],
+  [simulationPage, 'simulation-lineup', primarySimulation],
+  [simulationPage, 'fluid-studies', studyIds],
+]) {
+  const entries = [...sectionMarkup(page, section).matchAll(/\bdata-entry="([^"]+)"/g)].map(match => match[1]);
+  if (entries.join(',') !== expected.join(',')) {
+    errors.push(`${page} #${section}: expected ${expected.join(', ')}`);
+  }
+}
+const simulationHtml = pages.get(simulationPage) ?? '';
+if (simulationHtml.indexOf('id="fluid-studies"') <= simulationHtml.indexOf('id="simulation-lineup"')) {
+  errors.push(`${simulationPage}: 2D studies must follow the primary lineup`);
+}
+const directoryBase = new URL(`https://static.test${prefix}demos/`);
+const studyHref = new URL('simulation/#fluid-studies', directoryBase).href;
+const studyLinks = [...sectionMarkup('demos/index.html', 'simulation-lineup').matchAll(/\bhref="([^"]+)"/g)]
+  .filter(match => new URL(match[1], directoryBase).href === studyHref);
+if (studyLinks.length !== 1) errors.push('Demos directory needs one simulation studies link');
+
 const dragonPage=pages.get('demos/raytracing/index.html')||'';
 if(!dragonPage)errors.push('Ray tracing dragon page is missing');
 else{

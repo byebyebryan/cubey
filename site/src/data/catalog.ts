@@ -46,6 +46,8 @@ const publicScope: Record<string,string> = {
 };
 const summaries: Record<string,string> = {
   'shallow-water':'Water flows through a valley from source to outlet, using Cubey’s shallow-water solver.',
+  'water-2d':'A surface reconstructed from particles breaks into droplets as the water hits the tank wall.',
+  'smoke-2d':'Coloured dye traces the velocity field as moving injectors stir the fluid.',
   'terrain-rendering':'Ridges, valleys and fine surface detail take shape through light and self-shadowing.',
   'robot':'A robot takes shape as parts are added, joined and cut.',
   'gltf-layers':'Directional highlights and a clear coat reveal the authored surface of an imported barn lamp.',
@@ -63,6 +65,8 @@ export const entries = design.entries.map(e => ({...e, summary:summaries[e.id]||
 export type Entry = typeof entries[number];
 export const byId = Object.fromEntries(entries.map(e => [e.id,e]));
 export const familyEntries = (id: string) => entries.filter(e => e.family === id);
+export const primarySimulationEntries = familyEntries('simulation').filter(e => e.editorial_role !== 'study');
+export const simulationStudyEntries = familyEntries('simulation').filter(e => e.editorial_role === 'study');
 export const sourceURL = (e: Entry) => `https://github.com/byebyebryan/cubey/blob/main/${e.source}`;
 export function rendererLabel(e: Entry): string | undefined {
   if(e.family==='raytracing')return 'Hardware RT';

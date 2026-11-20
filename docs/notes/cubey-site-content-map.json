@@ -21,7 +21,7 @@
       "subtitle": "Water, smoke, fire and explosions.",
       "question": "What does motion look like when fields and particles interact?",
       "order": 2,
-      "page_model": "Collection of six visible scene links with dimension badges; no filter required for six demos",
+      "page_model": "Four primary simulation cards followed by two 2D fluid study cards, all with dimension badges.",
       "display_title": "Water. Smoke. Fire.",
       "prominence": "primary"
     },
@@ -227,6 +227,7 @@
         "smoke-2d"
       ],
       "kind": "demo",
+      "editorial_role": "study",
       "boundary": "Current foundation sandbox; viscosity, surface tension and adaptive storage remain deferred.",
       "extensions": [],
       "asset_status": "selected-native-web-media",
@@ -263,6 +264,7 @@
         "fire-3d"
       ],
       "kind": "demo",
+      "editorial_role": "study",
       "boundary": "A 2D incompressible dye/velocity demonstration, distinct from free-surface liquid.",
       "extensions": [],
       "asset_status": "selected-native-web-media",
