@@ -56,6 +56,10 @@ inline config::OptionSpec option(std::string path, std::string cli, std::string 
                .range = {},
                .enum_values = {}},
               config.debug_view)
+        .bind(option("smoke.scene", "--smoke-scene", "Scene",
+                     "Smoke scene: bowed-plumes or orbit.", ValueType::Enum, {},
+                     {"bowed-plumes", "orbit"}),
+              config.smoke.scene)
         .bind(option("smoke.injectors", "--smoke-injectors", "Injectors",
                      "Number of built-in smoke injectors.", ValueType::UInt32,
                      {.has_min = true, .min = 1.0}),

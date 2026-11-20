@@ -32,6 +32,8 @@ static_assert(sizeof(Smoke2DInjectorGpu) == sizeof(float) * 12U);
 [[nodiscard]] std::vector<Smoke2DInjectorState>
 create_smoke_2d_injectors(const Smoke2DConfig& config);
 [[nodiscard]] std::vector<Smoke2DInjectorGpu>
+create_bowed_plumes_injectors(float scene_time_seconds);
+[[nodiscard]] std::vector<Smoke2DInjectorGpu>
 smoke_2d_injectors_to_gpu(const std::vector<Smoke2DInjectorState>& injectors,
                           const Smoke2DConfig& config);
 [[nodiscard]] std::vector<Smoke2DInjectorGpu>

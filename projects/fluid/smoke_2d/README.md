@@ -24,7 +24,7 @@ Implemented:
 
 - Windowed mode plus deterministic headless PNG and optional MP4 capture modes.
 - Configurable GPU storage-buffer grid for dye and velocity.
-- Configurable moving procedural dye/force injectors.
+- A choreographed Bowed Plumes scene and configurable orbiting dye/force injectors.
 - MacCormack advection with local clamping and fade.
 - Curl, vorticity confinement, divergence, Jacobi or red-black Gauss-Seidel
   pressure solve, and pressure-gradient projection.
@@ -48,29 +48,40 @@ Deferred:
 ## Controls
 
 - Space: pause or resume simulation.
-- `R`: reset dye, velocity, divergence, and pressure buffers.
+- `R`: clear the simulation fields and restart the current scene.
 - `D`: cycle dye, velocity, divergence, pressure, speed, and vorticity views.
 - Escape: close the window.
 
 The windowed build also exposes a small debug UI for live demo tuning: pause,
 reset, debug view, pressure solver/iterations, advection and cleanup tuning,
-injector count/orbits, vorticity, decay, injection radius/force/propulsion,
-and GPU timings.
+vorticity, decay, and GPU timings. The orbit scene also exposes injector tuning.
 
 ## Runtime Shape
 
 The default solver grid is `1024x1024`. Override it with `--grid-width` and
-`--grid-height` when comparing quality or performance. The default procedural
-injector count is five; override it with `--smoke-injectors` from `1` to `16` to
-spread more sources around the hue wheel. Procedural sources use one orbit model
-with configurable radius, radius spread, signed angular speed, angular speed
-spread, and phase spread. Use `--smoke-injector-orbit-radius`,
+`--grid-height` when comparing quality or performance. The default scene,
+`--smoke-scene bowed-plumes`, sends an amber and a cyan wake toward each other.
+A short dye-free rotational impulse turns the flow at contact. The dye then
+coasts and fades. Replay with `R` or **Reset**. Pause holds the fields and scene
+clock, and resetting while paused clears them until you resume.
+
+The scene's choreography runs on simulated time. Its cues use the timing of
+the 30 fps capture, with each video frame integrating one 1/60-second solver
+step. The windowed scene advances with the time the solver integrates, so
+wall-clock timing depends on frame cadence.
+
+Choose `--smoke-scene orbit` to run the continuous procedural study. It starts
+with five injectors, and `--smoke-injectors` accepts `1` to `16` to spread
+sources around the hue wheel. Without an explicit scene, any injector tuning
+option selects orbit for compatibility with existing recipes. Orbit accepts
+configurable radius, radius spread, signed angular speed, angular speed spread,
+and phase spread. Use `--smoke-injector-orbit-radius`,
 `--smoke-injector-orbit-radius-spread`, `--smoke-injector-orbit-angular-speed`,
 `--smoke-injector-orbit-angular-speed-spread`, `--smoke-injector-orbit-phase-spread`,
-`--smoke-injector-force`, and `--smoke-injector-propulsion` to tune captures.
-Solver and source tuning can be reproduced with
+`--smoke-injector-force`, `--smoke-injector-propulsion`, and
+`--smoke-injector-radius` to tune that scene. Solver tuning for both scenes uses
 `--smoke-pressure-solver jacobi|rbgs`, `--smoke-pressure-iterations`, `--smoke-dye-decay`,
-`--smoke-velocity-decay`, `--smoke-injector-radius`, and `--smoke-vorticity`.
+`--smoke-velocity-decay`, and `--smoke-vorticity`.
 Use `--debug-view dye|velocity|divergence|pressure|speed|vorticity` to
 start windowed or headless runs in a diagnostic view.
 Use `--headless --profile-output NAME --profile-diagnostics` to add aggregate
@@ -161,6 +172,7 @@ Scaling guidance:
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --require-validation --frames 120 --width 640 --height 360 --output /tmp/cubey-smoke-2d.png
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --frames 120 --profile-output smoke-2d --profile-diagnostics --output /tmp/cubey-smoke-2d.png
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-smoke-2d.mp4
+./build/dev/projects/fluid/smoke_2d/smoke_2d --smoke-scene bowed-plumes --headless --capture video --frames 255 --fps 30 --width 1920 --height 1080 --require-validation --anti-aliasing off --output /tmp/cubey-bowed-plumes.mp4
 ```
 
 ## Next Slices

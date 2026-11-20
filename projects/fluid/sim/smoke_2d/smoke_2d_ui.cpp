@@ -38,6 +38,7 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
         ui.reset_requested = true;
         ui.reset_injectors_requested = true;
     }
+    ImGui::Text("Scene: %s", smoke_2d_scene_name(ui.config.scene));
 
     cubey::host::imgui_enum_combo("Debug view", ui.debug_view, kDebugViews,
                                   smoke_2d_debug_view_name);
@@ -71,38 +72,40 @@ void draw_smoke_2d_ui(Smoke2DUiContext ui) {
                                         "%.3f");
     }
 
-    if (const cubey::host::ScopedImGuiGroup group{
-            "Injectors",
-            {.default_open = false,
-             .help = "Procedural smoke source placement and force controls."}};
-        group) {
-        const cubey::host::ScopedImGuiId section_id("Injectors");
-        if (cubey::host::imgui_slider_uint32("Injector count",
-                                             &ui.config.procedural_injector_count, 1U,
-                                             kMaxProceduralInjectorCount)) {
-            ui.reset_injectors_requested = true;
+    if (ui.config.scene == Smoke2DScene::Orbit) {
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Injectors",
+                {.default_open = false,
+                 .help = "Procedural smoke source placement and force controls."}};
+            group) {
+            const cubey::host::ScopedImGuiId section_id("Injectors");
+            if (cubey::host::imgui_slider_uint32("Injector count",
+                                                 &ui.config.procedural_injector_count, 1U,
+                                                 kMaxProceduralInjectorCount)) {
+                ui.reset_injectors_requested = true;
+            }
+            cubey::host::imgui_slider_float("Injector radius", &ui.config.injector_injection_radius,
+                                            0.005F, 0.080F, "%.3f");
+            cubey::host::imgui_slider_float("Injection force",
+                                            &ui.config.injector_injection_strength, 0.0F, 20.0F,
+                                            "%.1f");
+            cubey::host::imgui_slider_float("Propulsion", &ui.config.injector_propulsion_strength,
+                                            0.0F, 3.0F, "%.2f");
+            cubey::host::imgui_slider_float("Orbit radius", &ui.config.injector_orbit_radius, 0.04F,
+                                            0.42F, "%.3f");
+            cubey::host::imgui_slider_float("Radius spread",
+                                            &ui.config.injector_orbit_radius_spread, 0.0F, 0.50F,
+                                            "%.3f");
+            cubey::host::imgui_slider_float("Angular speed",
+                                            &ui.config.injector_orbit_angular_speed, -2.0F, 2.0F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Speed spread",
+                                            &ui.config.injector_orbit_angular_speed_spread, 0.0F,
+                                            4.0F, "%.2f");
+            cubey::host::imgui_slider_float("Phase spread",
+                                            &ui.config.injector_orbit_phase_spread, 0.0F, 1.0F,
+                                            "%.2f");
         }
-        cubey::host::imgui_slider_float("Injector radius", &ui.config.injector_injection_radius,
-                                        0.005F, 0.080F, "%.3f");
-        cubey::host::imgui_slider_float("Injection force",
-                                        &ui.config.injector_injection_strength, 0.0F, 20.0F,
-                                        "%.1f");
-        cubey::host::imgui_slider_float("Propulsion", &ui.config.injector_propulsion_strength,
-                                        0.0F, 3.0F, "%.2f");
-        cubey::host::imgui_slider_float("Orbit radius", &ui.config.injector_orbit_radius, 0.04F,
-                                        0.42F, "%.3f");
-        cubey::host::imgui_slider_float("Radius spread",
-                                        &ui.config.injector_orbit_radius_spread, 0.0F, 0.50F,
-                                        "%.3f");
-        cubey::host::imgui_slider_float("Angular speed",
-                                        &ui.config.injector_orbit_angular_speed, -2.0F, 2.0F,
-                                        "%.2f");
-        cubey::host::imgui_slider_float("Speed spread",
-                                        &ui.config.injector_orbit_angular_speed_spread, 0.0F, 4.0F,
-                                        "%.2f");
-        cubey::host::imgui_slider_float("Phase spread",
-                                        &ui.config.injector_orbit_phase_spread, 0.0F, 1.0F,
-                                        "%.2f");
     }
 
     if (const cubey::host::ScopedImGuiGroup group{

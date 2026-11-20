@@ -5,6 +5,7 @@
 #include <cubey/core/frame_clock.h>
 #include <cubey/host/common_config.h>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -37,11 +38,20 @@ enum class Smoke2DPressureSolver : std::uint32_t {
     RedBlackGaussSeidel = 1,
 };
 
+enum class Smoke2DScene : std::uint32_t {
+    BowedPlumes = 0,
+    Orbit = 1,
+};
+
 inline constexpr std::uint32_t kMaxProceduralInjectorCount = 16;
+inline constexpr std::uint32_t kBowedPlumesInjectorCount = 10;
 inline constexpr std::uint32_t kSmoke2DComputeGroupSize = 8;
 inline constexpr std::uint32_t kSmoke2DSimulationPushConstantFloatCount = 16;
 
 struct Smoke2DConfig {
+    // Preserve the original low-level simulation defaults. Project config selects the
+    // preferred Bowed Plumes scene unless Orbit-specific startup options request Orbit.
+    Smoke2DScene scene = Smoke2DScene::Orbit;
     std::uint32_t grid_width = 1024;
     std::uint32_t grid_height = 1024;
     std::uint32_t procedural_injector_count = 5;
@@ -72,6 +82,7 @@ struct Smoke2DConfig {
 // product.  The former model "unset" with optional values; the latter keeps
 // the complete, validated runtime defaults used by shaders and UI.
 struct Smoke2DStartupOptions {
+    std::optional<std::string> scene{};
     std::optional<std::uint32_t> injectors{};
     std::optional<std::uint32_t> pressure_iterations{};
     std::optional<std::string> pressure_solver{};
@@ -87,6 +98,59 @@ struct Smoke2DStartupOptions {
     std::optional<float> injector_orbit_phase_spread{};
     std::optional<float> vorticity{};
 };
+
+[[nodiscard]] inline const char* smoke_2d_scene_name(Smoke2DScene scene) {
+    switch (scene) {
+    case Smoke2DScene::BowedPlumes:
+        return "Bowed Plumes";
+    case Smoke2DScene::Orbit:
+        return "Orbit";
+    }
+    return "Orbit";
+}
+
+[[nodiscard]] inline Smoke2DScene smoke_2d_scene_from_name(std::string_view name) {
+    if (name.empty() || name == "bowed-plumes") {
+        return Smoke2DScene::BowedPlumes;
+    }
+    if (name == "orbit") {
+        return Smoke2DScene::Orbit;
+    }
+    throw std::runtime_error("smoke scene must be bowed-plumes or orbit");
+}
+
+[[nodiscard]] inline bool has_smoke_2d_orbit_startup_options(
+    const Smoke2DStartupOptions& options) {
+    return options.injectors.has_value() || options.injector_radius.has_value() ||
+           options.injector_force.has_value() || options.injector_propulsion.has_value() ||
+           options.injector_orbit_radius.has_value() ||
+           options.injector_orbit_radius_spread.has_value() ||
+           options.injector_orbit_angular_speed.has_value() ||
+           options.injector_orbit_angular_speed_spread.has_value() ||
+           options.injector_orbit_phase_spread.has_value();
+}
+
+[[nodiscard]] inline float smoke_2d_clamped_step_seconds(const Smoke2DConfig& config,
+                                                          double frame_delta_seconds) {
+    return std::min(static_cast<float>(frame_delta_seconds), config.fixed_delta_seconds);
+}
+
+// The native capture timeline runs at 30 fps while the solver retains its 60 Hz
+// fixed step. Calculate the doubled float step once and accumulate that result in
+// double precision so windowed and headless paths evaluate identical choreography.
+[[nodiscard]] inline float advance_bowed_plumes_clock(double& elapsed_seconds,
+                                                       const Smoke2DConfig& config,
+                                                       double frame_delta_seconds, bool paused,
+                                                       bool reset_requested) {
+    if (reset_requested) {
+        elapsed_seconds = 0.0;
+    }
+    if (!paused) {
+        elapsed_seconds += static_cast<double>(
+            2.0F * smoke_2d_clamped_step_seconds(config, frame_delta_seconds));
+    }
+    return static_cast<float>(elapsed_seconds);
+}
 
 [[nodiscard]] inline Smoke2DDebugView next_debug_view(Smoke2DDebugView view) {
     switch (view) {
@@ -202,6 +266,21 @@ smoke_2d_config_from_options(const common::FluidGridOptions& grid,
                              const Smoke2DStartupOptions& options,
                              const host::CommonRunConfig& common_config) {
     Smoke2DConfig smoke_config;
+    const bool has_orbit_options = has_smoke_2d_orbit_startup_options(options);
+    if (options.scene.has_value()) {
+        smoke_config.scene = smoke_2d_scene_from_name(*options.scene);
+        if (smoke_config.scene == Smoke2DScene::BowedPlumes && has_orbit_options) {
+            throw std::runtime_error(
+                "--smoke-scene bowed-plumes cannot be combined with Orbit-only injector options");
+        }
+    } else {
+        smoke_config.scene = has_orbit_options ? Smoke2DScene::Orbit : Smoke2DScene::BowedPlumes;
+    }
+    if (smoke_config.scene == Smoke2DScene::BowedPlumes) {
+        smoke_config.procedural_injector_count = kBowedPlumesInjectorCount;
+        smoke_config.dye_decay_per_second = 0.996F;
+        smoke_config.vorticity_strength = 29.0F;
+    }
     if (grid.width) {
         smoke_config.grid_width = *grid.width;
     }

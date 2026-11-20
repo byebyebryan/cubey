@@ -44,9 +44,10 @@ using DispatchGroups = cubey::render::ComputeDispatchGroups;
 }
 
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Smoke2DConfig& config,
-                                                                const ProjectFrame& frame) {
+                                                                const ProjectFrame& frame,
+                                                                std::size_t source_count) {
     const float time = static_cast<float>(frame.elapsed_seconds);
-    const float dt = std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
+    const float dt = smoke_2d_clamped_step_seconds(config, frame.delta_seconds);
 
     return {
         .grid_dt_time =
@@ -68,7 +69,7 @@ using DispatchGroups = cubey::render::ComputeDispatchGroups;
                 config.vorticity_strength,
                 config.injector_injection_radius,
                 config.injector_injection_strength,
-                static_cast<float>(config.procedural_injector_count),
+                static_cast<float>(source_count),
             },
         .tuning_options =
             {
@@ -148,7 +149,8 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
 
     record_source_buffer_update(command_buffer, resources.injectors(), std::as_bytes(injectors));
 
-    SimulationPushConstants push_constants = simulation_push_constants(config, frame);
+    SimulationPushConstants push_constants =
+        simulation_push_constants(config, frame, injectors.size());
     const DispatchGroups groups = compute_dispatch_groups(config);
 
     const cubey::render::ComputePipelineResource& advect_pipeline =

@@ -4,6 +4,7 @@
 
 #include <cubey/core/frame_clock.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -147,6 +148,11 @@ int main() {
         require(cubey::projects::fluid::smoke_2d::smoke_2d_pressure_solver_from_name("rbgs") ==
                     cubey::projects::fluid::smoke_2d::Smoke2DPressureSolver::RedBlackGaussSeidel,
                 "pressure solver parser should accept rbgs");
+        require(cubey::projects::fluid::smoke_2d::smoke_2d_scene_from_name("bowed-plumes") ==
+                    cubey::projects::fluid::smoke_2d::Smoke2DScene::BowedPlumes &&
+                    cubey::projects::fluid::smoke_2d::smoke_2d_scene_from_name("orbit") ==
+                        cubey::projects::fluid::smoke_2d::Smoke2DScene::Orbit,
+                "smoke scene parser should accept both named scenes");
 
         const cubey::projects::fluid::smoke_2d::Smoke2DProjectConfig default_project;
         const cubey::projects::fluid::smoke_2d::Smoke2DConfig default_from_options =
@@ -156,9 +162,12 @@ int main() {
                 "default project config should preserve smoke grid width");
         require(default_from_options.grid_height == config.grid_height,
                 "default project config should preserve smoke grid height");
+        require(default_from_options.scene ==
+                    cubey::projects::fluid::smoke_2d::Smoke2DScene::BowedPlumes,
+                "default project config should select the Bowed Plumes scene");
         require(default_from_options.procedural_injector_count ==
-                    config.procedural_injector_count,
-                "default project config should preserve smoke injector count");
+                    cubey::projects::fluid::smoke_2d::kBowedPlumesInjectorCount,
+                "default Bowed Plumes config should match its fixed source count");
         require(default_from_options.injector_injection_strength ==
                     config.injector_injection_strength,
                 "default project config should preserve smoke injector strength");
@@ -166,8 +175,8 @@ int main() {
                 "default project config should preserve smoke pressure iterations");
         require(default_from_options.pressure_solver == config.pressure_solver,
                 "default project config should preserve smoke pressure solver");
-        require(default_from_options.dye_decay_per_second == config.dye_decay_per_second,
-                "default project config should preserve smoke dye decay");
+        require(default_from_options.dye_decay_per_second == 0.996F,
+                "default Bowed Plumes config should use the capture dye retention");
         require(default_from_options.velocity_decay_per_second ==
                     config.velocity_decay_per_second,
                 "default project config should preserve smoke velocity decay");
@@ -176,8 +185,8 @@ int main() {
                 "default project config should preserve smoke injector radius");
         require(default_from_options.injector_orbit_radius == config.injector_orbit_radius,
                 "default project config should preserve smoke orbit radius");
-        require(default_from_options.vorticity_strength == config.vorticity_strength,
-                "default project config should preserve smoke vorticity");
+        require(default_from_options.vorticity_strength == 29.0F,
+                "default Bowed Plumes config should use the capture vorticity strength");
         require(default_from_options.advection_strength == config.advection_strength,
                 "default project config should preserve smoke advection strength");
         require(default_from_options.low_energy_cleanup_strength ==
@@ -192,6 +201,99 @@ int main() {
             require(std::abs(injector.angular_speed) > 0.001F,
                     "default smoke injector speed spread should not leave an injector static");
         }
+
+        const auto default_cli = parse_project({"smoke_2d"});
+        require(default_cli.simulation.scene ==
+                    cubey::projects::fluid::smoke_2d::Smoke2DScene::BowedPlumes &&
+                    default_cli.simulation.procedural_injector_count ==
+                        cubey::projects::fluid::smoke_2d::kBowedPlumesInjectorCount &&
+                    default_cli.simulation.dye_decay_per_second == 0.996F &&
+                    default_cli.simulation.vorticity_strength == 29.0F &&
+                    default_cli.simulation.pressure_iterations == 40U &&
+                    default_cli.simulation.pressure_solver ==
+                        cubey::projects::fluid::smoke_2d::Smoke2DPressureSolver::Jacobi &&
+                    default_cli.simulation.velocity_decay_per_second == 0.996F,
+                "default CLI scene should use Bowed Plumes capture tuning and standard pressure defaults");
+        const auto explicit_orbit = parse_project({"smoke_2d", "--smoke-scene", "orbit"});
+        require(explicit_orbit.simulation.scene ==
+                    cubey::projects::fluid::smoke_2d::Smoke2DScene::Orbit &&
+                    explicit_orbit.simulation.procedural_injector_count == 5U &&
+                    explicit_orbit.simulation.dye_decay_per_second == 0.992F &&
+                    explicit_orbit.simulation.vorticity_strength == 22.0F,
+                "explicit Orbit scene should preserve legacy defaults");
+        const auto inferred_orbit = parse_project(
+            {"smoke_2d", "--smoke-injectors", "5", "--smoke-injector-orbit-radius", "0.3"});
+        require(inferred_orbit.simulation.scene ==
+                    cubey::projects::fluid::smoke_2d::Smoke2DScene::Orbit,
+                "Orbit-specific startup flags should infer the legacy Orbit scene");
+        bool rejected_bowed_orbit_options = false;
+        try {
+            static_cast<void>(parse_project({"smoke_2d", "--smoke-scene", "bowed-plumes",
+                                             "--smoke-injector-force", "8"}));
+        } catch (const std::runtime_error& error) {
+            rejected_bowed_orbit_options =
+                std::string(error.what()).find("Orbit-only injector options") != std::string::npos;
+        }
+        require(rejected_bowed_orbit_options,
+                "explicit Bowed Plumes scene should reject Orbit-only startup options clearly");
+
+        const double first_frame_delta = 1.0 / 60.0;
+        double scene_clock = 0.0;
+        float scene_time = cubey::projects::fluid::smoke_2d::advance_bowed_plumes_clock(
+            scene_clock, default_cli.simulation, first_frame_delta, false, false);
+        require_close(scene_time, 1.0F / 30.0F,
+                      "first 60 Hz solver step should evaluate the 30 fps scene at 1/30");
+        const double time_before_pause = scene_clock;
+        scene_time = cubey::projects::fluid::smoke_2d::advance_bowed_plumes_clock(
+            scene_clock, default_cli.simulation, first_frame_delta, true, false);
+        require_close(scene_time, static_cast<float>(time_before_pause),
+                      "paused UI frame should not advance Bowed Plumes time");
+        scene_time = cubey::projects::fluid::smoke_2d::advance_bowed_plumes_clock(
+            scene_clock, default_cli.simulation, first_frame_delta, true, true);
+        require_close(scene_time, 0.0F, "paused field reset should reset Bowed Plumes time");
+        scene_time = cubey::projects::fluid::smoke_2d::advance_bowed_plumes_clock(
+            scene_clock, default_cli.simulation, 1.0 / 30.0, false, true);
+        require_close(scene_time, 1.0F / 30.0F,
+                      "unpaused reset frame should restart at the first 30 fps scene time");
+
+        const std::vector<cubey::projects::fluid::smoke_2d::Smoke2DInjectorGpu> bowed_sources_at_zero =
+            cubey::projects::fluid::smoke_2d::create_bowed_plumes_injectors(0.0F);
+        require(bowed_sources_at_zero.size() ==
+                    cubey::projects::fluid::smoke_2d::kBowedPlumesInjectorCount,
+                "Bowed Plumes GPU sources should match the scene source count");
+        require(bowed_sources_at_zero[0].dye_active[0] == 1.0F &&
+                    bowed_sources_at_zero[0].dye_active[1] == 0.29F &&
+                    bowed_sources_at_zero[0].dye_active[2] == 0.09F &&
+                    bowed_sources_at_zero[0].dye_active[3] == 0.0F,
+                "Bowed Plumes first source should retain the amber color and begin inactive");
+        const auto warm_peak =
+            cubey::projects::fluid::smoke_2d::create_bowed_plumes_injectors(0.35F);
+        require_close(warm_peak[0].dye_active[3], 1.0F,
+                      "warm plume should reach full activity at its rise endpoint");
+        require_close(warm_peak[0].position_radius_strength[0], 0.242F,
+                      "warm plume should retain its starting position before bending");
+        const auto cool_peak =
+            cubey::projects::fluid::smoke_2d::create_bowed_plumes_injectors(0.89F);
+        require_close(cool_peak[1].dye_active[3], 1.0F,
+                      "cool plume should reach full activity at its rise endpoint");
+        const auto swirl_peak =
+            cubey::projects::fluid::smoke_2d::create_bowed_plumes_injectors(3.24F);
+        require_close(swirl_peak[2].dye_active[3], 1.0F,
+                      "late swirl sources should reach full activity at their rise endpoint");
+        require(swirl_peak[2].dye_active[0] == 0.0F &&
+                    swirl_peak[2].dye_active[1] == 0.0F &&
+                    swirl_peak[2].dye_active[2] == 0.0F,
+                "late swirl sources should inject force without dye");
+        require_close(swirl_peak[2].velocity_carry_propulsion[0], 0.0F,
+                      "first swirl source force should rotate clockwise tangent");
+        require_close(swirl_peak[2].velocity_carry_propulsion[1], 1.2F,
+                      "first swirl source force should preserve its tangent magnitude");
+        const auto after_pulses =
+            cubey::projects::fluid::smoke_2d::create_bowed_plumes_injectors(4.25F);
+        require(std::all_of(after_pulses.begin(), after_pulses.end(), [](const auto& source) {
+                    return source.dye_active[3] == 0.0F;
+                }),
+                "Bowed Plumes sources should stop after their pulses so dye can coast");
 
         cubey::projects::fluid::smoke_2d::Smoke2DProjectConfig project_config;
         project_config.grid.width = 1024U;
@@ -327,10 +429,15 @@ int main() {
                 "smoke grid.size should fan out to both dimensions");
         require(layered.smoke.injectors == 7U,
                 "smoke --set should override named flags and config files");
+        require(layered.simulation.scene ==
+                    cubey::projects::fluid::smoke_2d::Smoke2DScene::Orbit,
+                "legacy injector settings in TOML should continue to select Orbit");
         const auto named = parse_project({"smoke_2d", "--grid-width", "40", "--grid-height",
                                           "32", "--smoke-injectors", "6", "--no-validation"});
         require(named.grid.width == 40U && named.grid.height == 32U &&
-                    named.smoke.injectors == 6U,
+                    named.smoke.injectors == 6U &&
+                    named.simulation.scene ==
+                        cubey::projects::fluid::smoke_2d::Smoke2DScene::Orbit,
                 "smoke named flags should bind project-owned options");
         require(!named.common.validation && !named.common.require_validation,
                 "smoke negative validation alias should preserve host coupling");

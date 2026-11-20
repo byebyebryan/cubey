@@ -15,6 +15,8 @@ constexpr float kTau = 6.28318530718F;
 constexpr std::array<float, 2> kCenter{0.5F, 0.5F};
 constexpr float kOrbitMinRadius = 0.04F;
 constexpr float kOrbitMaxRadius = 0.42F;
+constexpr std::array<float, 3> kBowedPlumesAmber{1.0F, 0.29F, 0.09F};
+constexpr std::array<float, 3> kBowedPlumesCyan{0.12F, 0.66F, 0.74F};
 
 struct InjectorGpuTuning {
     float radius_scale = 1.0F;
@@ -82,6 +84,29 @@ void integrate_boundary(std::array<float, 2>& position, std::array<float, 2>& ve
     value *= 0x846ca68bU;
     value ^= value >> 16U;
     return static_cast<float>(value & 0x00ffffffU) / static_cast<float>(0x01000000U);
+}
+
+[[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
+    const float amount = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
+    return amount * amount * (3.0F - (2.0F * amount));
+}
+
+[[nodiscard]] float pulse(float rise_begin, float rise_end, float fall_begin, float fall_end,
+                          float time) {
+    return smoothstep(rise_begin, rise_end, time) *
+           (1.0F - smoothstep(fall_begin, fall_end, time));
+}
+
+[[nodiscard]] Smoke2DInjectorGpu make_bowed_plumes_source(float x, float y, float radius,
+                                                           float strength, float force_x,
+                                                           float force_y,
+                                                           std::array<float, 3> dye,
+                                                           float active) {
+    return {
+        .position_radius_strength = {x, y, radius, strength},
+        .velocity_carry_propulsion = {force_x, force_y, 1.0F, 0.0F},
+        .dye_active = {dye[0], dye[1], dye[2], active},
+    };
 }
 
 [[nodiscard]] std::array<float, 2> clamp_uv(std::array<float, 2> value) {
@@ -226,6 +251,36 @@ initial_velocity_for_injector(const Smoke2DConfig& config, const Smoke2DInjector
 
 } // namespace
 
+std::vector<Smoke2DInjectorGpu> create_bowed_plumes_injectors(float scene_time_seconds) {
+    const float warm = pulse(0.0F, 0.35F, 2.35F, 3.72F, scene_time_seconds);
+    const float cool = pulse(0.44F, 0.89F, 2.95F, 4.25F, scene_time_seconds);
+    const float warm_bend = smoothstep(0.42F, 2.90F, scene_time_seconds);
+    const float cool_bend = smoothstep(0.88F, 3.29F, scene_time_seconds);
+
+    std::vector<Smoke2DInjectorGpu> injectors;
+    injectors.reserve(kBowedPlumesInjectorCount);
+    injectors.push_back(make_bowed_plumes_source(
+        0.242F + (0.115F * warm_bend), 0.707F - (0.059F * warm_bend),
+        0.052F - (0.008F * warm_bend), 12.0F, 1.50F - (0.62F * warm_bend),
+        -0.54F - (0.81F * warm_bend), kBowedPlumesAmber, warm));
+    injectors.push_back(make_bowed_plumes_source(
+        0.746F - (0.090F * cool_bend), 0.259F + (0.085F * cool_bend),
+        0.036F + (0.010F * cool_bend), 12.0F, -1.08F - (0.36F * cool_bend),
+        1.36F - (0.81F * cool_bend), kBowedPlumesCyan, cool));
+
+    const float swirl = pulse(3.02F, 3.24F, 3.58F, 4.04F, scene_time_seconds);
+    const float swirl_source_count = static_cast<float>(kBowedPlumesInjectorCount - 2U);
+    for (std::uint32_t index = 0; index < kBowedPlumesInjectorCount - 2U; ++index) {
+        const float angle = static_cast<float>(index) * kTau / swirl_source_count;
+        const float x = std::cos(angle);
+        const float y = std::sin(angle);
+        injectors.push_back(make_bowed_plumes_source(
+            0.524F + (0.091F * x), 0.498F + (0.103F * y), 0.056F,
+            4.9F * (1.0F - (0.16F * x)), -1.2F * y, 1.2F * x, {}, swirl));
+    }
+    return injectors;
+}
+
 std::vector<Smoke2DInjectorState> create_smoke_2d_injectors(const Smoke2DConfig& config) {
     if (config.procedural_injector_count == 0 ||
         config.procedural_injector_count > kMaxProceduralInjectorCount) {
@@ -297,7 +352,7 @@ update_smoke_2d_injectors(std::vector<Smoke2DInjectorState>& injectors, const Sm
         injectors = create_smoke_2d_injectors(config);
     }
 
-    const float dt = std::min(static_cast<float>(timing.delta_seconds), config.fixed_delta_seconds);
+    const float dt = smoke_2d_clamped_step_seconds(config, timing.delta_seconds);
     const float time = static_cast<float>(timing.elapsed_seconds);
     for (std::size_t index = 0; index < injectors.size(); ++index) {
         sync_orbit_parameters(injectors[index], config, static_cast<std::uint32_t>(index));

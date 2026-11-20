@@ -40,8 +40,12 @@ class Smoke2DApp {
     explicit Smoke2DApp(Smoke2DProjectConfig config)
         : config_(std::move(config)), runtime_(1),
           smoke_config_(config_.simulation),
-          injector_states_(create_smoke_2d_injectors(smoke_config_)),
-          injector_gpu_(smoke_2d_injectors_to_gpu(injector_states_, smoke_config_)),
+          injector_states_(smoke_config_.scene == Smoke2DScene::Orbit
+                               ? create_smoke_2d_injectors(smoke_config_)
+                               : std::vector<Smoke2DInjectorState>{}),
+          injector_gpu_(smoke_config_.scene == Smoke2DScene::Orbit
+                            ? smoke_2d_injectors_to_gpu(injector_states_, smoke_config_)
+                            : create_bowed_plumes_injectors(0.0F)),
           debug_view_(smoke_2d_debug_view_from_name(config_.debug_view)) {}
 
     Smoke2DApp(const Smoke2DApp&) = delete;
@@ -68,9 +72,8 @@ class Smoke2DApp {
             destroy_swapchain_resources();
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
-                                  const FrameTiming& timing) {
-            const ProjectFrame& project_frame = runtime_.frame_for_timing(timing);
-            update_interaction(context, project_frame);
+                                  const FrameTiming&) {
+            update_interaction(context);
         };
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) { draw_ui(context); };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
@@ -103,8 +106,7 @@ class Smoke2DApp {
     }
 
   private:
-    void update_interaction(cubey::host::WindowedAppContext& context,
-                            const ProjectFrame& project_frame) {
+    void update_interaction(cubey::host::WindowedAppContext& context) {
         const auto input = context.filtered_input();
         if (input.key_pressed(cubey::input::Key::Space)) {
             paused_ = !paused_;
@@ -117,9 +119,6 @@ class Smoke2DApp {
             debug_view_ = next_debug_view(debug_view_);
         }
 
-        if (!paused_) {
-            update_injectors(project_frame);
-        }
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
@@ -164,6 +163,9 @@ class Smoke2DApp {
     }
 
     void reset_injectors() {
+        if (smoke_config_.scene == Smoke2DScene::BowedPlumes) {
+            return;
+        }
         injector_states_ = create_smoke_2d_injectors(smoke_config_);
         injector_gpu_ = smoke_2d_injectors_to_gpu(injector_states_, smoke_config_);
     }
@@ -175,6 +177,22 @@ class Smoke2DApp {
             .frame_index = frame.frame_index,
         };
         injector_gpu_ = update_smoke_2d_injectors(injector_states_, smoke_config_, timing);
+    }
+
+    void prepare_simulation_frame(const ProjectFrame& frame) {
+        if (smoke_config_.scene == Smoke2DScene::BowedPlumes) {
+            const float scene_time = advance_bowed_plumes_clock(
+                bowed_plumes_elapsed_seconds_, smoke_config_, frame.delta_seconds, paused_,
+                reset_requested_);
+            if (!paused_) {
+                injector_gpu_ = create_bowed_plumes_injectors(scene_time);
+            }
+            return;
+        }
+
+        if (!paused_) {
+            update_injectors(frame);
+        }
     }
 
     void destroy_swapchain_resources() {
@@ -210,6 +228,9 @@ class Smoke2DApp {
     void record_frame(cubey::host::WindowedAppContext& context,
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
+        // Input and UI updates have both completed, so a same-frame pause is
+        // reflected before the local choreography timeline advances.
+        prepare_simulation_frame(frame);
         cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
         if (profiler != nullptr) {
             profiler->collect(render_frame.frame_slot.index);
@@ -262,7 +283,7 @@ class Smoke2DApp {
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu, const ProjectFrame& frame,
                                           cubey::profiling::ProfileRecorder* profile_recorder) {
-        update_injectors(frame);
+        prepare_simulation_frame(frame);
         static_cast<void>(gpu.submit_and_wait({
             .label = "smoke_2d headless simulation frame",
             .work =
@@ -335,6 +356,7 @@ class Smoke2DApp {
     Smoke2DConfig smoke_config_;
     std::vector<Smoke2DInjectorState> injector_states_;
     std::vector<Smoke2DInjectorGpu> injector_gpu_;
+    double bowed_plumes_elapsed_seconds_ = 0.0;
     Smoke2DGpuResources resources_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::host::FrameStats ui_frame_stats_{0.25};
