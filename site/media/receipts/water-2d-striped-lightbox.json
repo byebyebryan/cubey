@@ -1,0 +1,315 @@
+{
+  "scene": "Dam break",
+  "appearance": "Striped Lightbox",
+  "sourceRevision": "496b0a14b303b5eb76dea1f3b318e1550be1994a",
+  "source": {
+    "baseRevision": "281a9863754621048f07cae59f77e5a840d73be3",
+    "state": "The captured working tree matches the Water 2D project files at sourceRevision.",
+    "patch": {
+      "path": "outputs/site/water-2d-lightbox/capture-source.patch",
+      "sha256": "10b16fe99a9659b327d9d4ca20d48e7fd302242baf442c784a8c2776b2a05512",
+      "bytes": 57608
+    },
+    "modifiedFiles": [
+      {
+        "path": "projects/fluid/sim/water_2d/shaders/water_2d_contract.glsl",
+        "sha256": "a69eacd8b7b577dfd323fbc240e968c4c40f251b1d35f48b2d2f3b3097e112c5",
+        "bytes": 4550
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/shaders/water_2d_surface_composite.frag",
+        "sha256": "04921ad493db3ef856cbf69e04a25333732cb02e6e7db608626080ff32593a93",
+        "bytes": 19321
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/shaders/water_2d_surface_density.frag",
+        "sha256": "d2122026b1e4b96c2a810009704159cde7060527834a4397b664f9fa1df982b0",
+        "bytes": 630
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/shaders/water_2d_surface_density.vert",
+        "sha256": "172b252f3dc93bd7c21cf7640f08a1a3c0d023dba458c2fa141b8413ac122fb6",
+        "bytes": 2064
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/shaders/water_2d_surface_smooth.frag",
+        "sha256": "a8bc3bf3e27050a1a74324d4412ca715abfa7f1d8f0c4604c8dfaff0a816bc48",
+        "bytes": 1304
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/water_2d_commands.cpp",
+        "sha256": "7636b4bd51b802adfd493bbe6b9e3b3a394cbc1a7e5d802b35162230da76a764",
+        "bytes": 44434
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/water_2d_config.h",
+        "sha256": "d1704f0bac46cb1d7f4f1e4b45f4cc83c58f97f3bda7388615de71a548d6f650",
+        "bytes": 25265
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/water_2d_config_tests.cpp",
+        "sha256": "7e7f01d51de723201a781ae92b515df06f6016d547ab4c450370fc550a686994",
+        "bytes": 54136
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/water_2d_gpu_resources.cpp",
+        "sha256": "2bf064ad12389a1c7f2e0ac3b0899af5c9a8a466c567d2a595bcfc458e69bc41",
+        "bytes": 40721
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/water_2d_gpu_resources.h",
+        "sha256": "8c92399599ff3c0cae17ac824d853235be87a7111fa4206f2d78b356941d910e",
+        "bytes": 10313
+      },
+      {
+        "path": "projects/fluid/sim/water_2d/water_2d_ui.cpp",
+        "sha256": "6d89103e26585354d47e68f01186528aae39308b8b76583af950b1864ac4b154",
+        "bytes": 15152
+      },
+      {
+        "path": "projects/fluid/water_2d/README.md",
+        "sha256": "6c78aa5108c4f929779d404d61b4f35007d9a456bc1ff6176b3ee6ab3f561ce6",
+        "bytes": 7345
+      },
+      {
+        "path": "projects/fluid/water_2d/water_2d_project_config.h",
+        "sha256": "ff27c8bbde580910cd419cd54ccd1437e6341aedcb9d83e8e2280386d94a3291",
+        "bytes": 4481
+      }
+    ]
+  },
+  "binary": {
+    "path": "build/dev/projects/fluid/water_2d/water_2d",
+    "sha256": "231bdf1c6ea9bdd12a74d9fbc58edc9f2a70e63036ed82294dd4b827974ed10f",
+    "bytes": 25774216
+  },
+  "shaders": [
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d.vert.spv",
+      "sha256": "26c234ac7ec90b56ba819dc766e667a128794169fbb3fbacfda77deb2b303570",
+      "bytes": 1276
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_advect_particles.comp.spv",
+      "sha256": "efaacf5d0323d3367a0b1f9b4d8908063523cab9798e576221e20cb854788004",
+      "bytes": 14636
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_build_bins.comp.spv",
+      "sha256": "285e3c7efb4f2fcf64ee7678f4ea9653b1ee5ba5c186056ff44565e57f685002",
+      "bytes": 5288
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_clear_bins.comp.spv",
+      "sha256": "d0e88d146cdc702a73764e1d220f1af2864fa1def921de64d3f12877a620d76e",
+      "bytes": 3064
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_clear_grid.comp.spv",
+      "sha256": "596acb59c883db5a14b197a83c5cc8c89aea16ea3f8af9c6ae281ab471fd0dd0",
+      "bytes": 6304
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_diagnostics.comp.spv",
+      "sha256": "4096b1eb58d4650ea9f7200087f63d26b8286f69f789cb475f0077aa9926d18a",
+      "bytes": 5292
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_divergence.comp.spv",
+      "sha256": "ea97ef42f8313e9e350f6e53a97b2b7143282c7bdbe9cd983bd45f3f94149803",
+      "bytes": 7636
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_emit_particles.comp.spv",
+      "sha256": "33af17b4ca491adc34dfef19368697e1da048297a4640def8e7d50c7ad8d05e4",
+      "bytes": 7444
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_force.comp.spv",
+      "sha256": "448c4b5bef7edc60238f185a239fb1085d0f30e91730a141be4340050aa3063c",
+      "bytes": 17240
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_grid_to_particle.comp.spv",
+      "sha256": "9627890067742c769c8093bab87b8e30e34e65aed36714e8b91637889dbff45e",
+      "bytes": 43100
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_particle_to_grid.comp.spv",
+      "sha256": "21548790d62511d096ac2690b4fe1bd0610420ccf769c3f42dae0e5d5961cc59",
+      "bytes": 17844
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_pressure.comp.spv",
+      "sha256": "5873e97407adced08d60da5d02739df6c5f1f65a802d6533a458f54e18cb15a1",
+      "bytes": 13072
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_projection.comp.spv",
+      "sha256": "f566cc35538adf9fec52658128dd0faa88c347d94b3430e596f2b8f72320a08a",
+      "bytes": 15060
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_render.frag.spv",
+      "sha256": "2708f0f0680ef5aa631d250218652069357c0893fe1430d516351a4e9985857c",
+      "bytes": 40068
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_reset.comp.spv",
+      "sha256": "ee2e6f953c25bcb8ac498a2bd0de5844f325a4f094301b8bcd5b5dae836207cf",
+      "bytes": 21532
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_surface_composite.frag.spv",
+      "sha256": "481ee033c17a3c9335a99f0985031b51335989977ee1e6f565042a295c851dbb",
+      "bytes": 50620
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_surface_density.frag.spv",
+      "sha256": "e24d6fe64eafb3adf00c450186896f2585625c5a41c26698303f87e9f7cb3bea",
+      "bytes": 1848
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_surface_density.vert.spv",
+      "sha256": "6a86be870f7924be2f8343f8830f1b16037f547e445f169b5bfbb260886d3c5f",
+      "bytes": 4924
+    },
+    {
+      "path": "build/dev/projects/fluid/water_2d/shaders/water_2d_surface_smooth.frag.spv",
+      "sha256": "f19be85c8dcf07da81d8150a59db416da3201a71311693fae97194847e77b917",
+      "bytes": 3740
+    }
+  ],
+  "nativeCapture": {
+    "command": [
+      "build/dev/projects/fluid/water_2d/water_2d",
+      "--headless",
+      "--capture",
+      "video",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--fps",
+      "30",
+      "--frames",
+      "240",
+      "--water2d-appearance",
+      "striped-lightbox",
+      "--require-validation",
+      "--anti-aliasing",
+      "off",
+      "--output",
+      "outputs/site/water-2d-lightbox/native.mp4"
+    ],
+    "environment": {
+      "VK_LAYER_VALIDATE_SYNC": "1"
+    },
+    "solver": {
+      "grid": [
+        256,
+        144
+      ],
+      "transfer": "APIC"
+    },
+    "internalRenderExtent": [
+      1920,
+      1080
+    ],
+    "validationLog": {
+      "path": "outputs/site/water-2d-lightbox/native.log",
+      "sha256": "b1a683d5f501e2e633a9fba70c645969064505ac73b02e58add31dfb9fa82d4e",
+      "bytes": 203
+    },
+    "file": {
+      "path": "outputs/site/water-2d-lightbox/native.mp4",
+      "sha256": "fb18ecd5426e73f197f1d735b55fab364c89bf77a546dc6c4774e1b5a99866f7",
+      "bytes": 2034837
+    }
+  },
+  "film": {
+    "sourceFrameRange": [
+      0,
+      239
+    ],
+    "command": [
+      "ffmpeg",
+      "-nostdin",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-n",
+      "-i",
+      "outputs/site/water-2d-lightbox/native.mp4",
+      "-an",
+      "-vf",
+      "scale=1280:720:flags=lanczos",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "slow",
+      "-crf",
+      "22",
+      "-pix_fmt",
+      "yuv420p",
+      "-movflags",
+      "+faststart",
+      "outputs/site/water-2d-lightbox/film.mp4"
+    ],
+    "file": {
+      "path": "outputs/site/water-2d-lightbox/film.mp4",
+      "sha256": "212984d7ea5e9909c12587e0318b856778dfd78afc23675a2d13a1af93875993",
+      "bytes": 758334
+    }
+  },
+  "poster": {
+    "sourceFrame": 135,
+    "timeSeconds": 4.5,
+    "command": [
+      "ffmpeg",
+      "-nostdin",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-n",
+      "-i",
+      "outputs/site/water-2d-lightbox/native.mp4",
+      "-vf",
+      "select=eq(n\\,135),scale=1280:720:flags=lanczos",
+      "-frames:v",
+      "1",
+      "outputs/site/water-2d-lightbox/poster.png"
+    ],
+    "file": {
+      "path": "outputs/site/water-2d-lightbox/poster.png",
+      "sha256": "b313174c200fe743b04ccbecad77b1e35843769f828bd4396ccc62de52f6f9e7",
+      "bytes": 256675
+    }
+  },
+  "hoverPreview": {
+    "parentAsset": "water-2d-striped-lightbox-film",
+    "startSeconds": 2.0,
+    "durationSeconds": 3.5,
+    "recipe": "site/media/receipts/hover-previews.json"
+  },
+  "webPoster": {
+    "path": "site/public/media/water-2d-striped-lightbox.webp",
+    "sha256": "ba347d2a17a2b4a703dd13fac048be8b6c70ec5b435b3abd9a2bc8e57a97690a",
+    "bytes": 22880
+  },
+  "thumbnail": {
+    "path": "site/public/media/water-2d-striped-lightbox-640.webp",
+    "sha256": "8de287ffd38a51a1f8170b4d789d886b9ff194df9abdee8cd07850c3d316dc51",
+    "bytes": 9398
+  },
+  "webFilm": {
+    "path": "site/public/media/water-2d-striped-lightbox-film.mp4",
+    "sha256": "212984d7ea5e9909c12587e0318b856778dfd78afc23675a2d13a1af93875993",
+    "bytes": 758334
+  },
+  "webPreview": {
+    "path": "site/public/media/preview-water-2d-striped-lightbox.mp4",
+    "sha256": "2674a6f08b0b3c5f7cad9d3a85cc9f8624c8bb214bf18f03497e031aa3062196",
+    "bytes": 112666
+  }
+}

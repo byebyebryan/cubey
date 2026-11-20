@@ -3181,6 +3181,29 @@
       }
     },
     {
+      "id": "preview-water-2d-striped-lightbox",
+      "file": "/media/preview-water-2d-striped-lightbox.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "2674a6f08b0b3c5f7cad9d3a85cc9f8624c8bb214bf18f03497e031aa3062196",
+      "bytes": 112666,
+      "caption": "Short silent preview. A dam-break wave bends ochre and cream stripes as it climbs the wall and rebounds.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/water-2d-striped-lightbox-film.mp4",
+        "sourceSha256": "212984d7ea5e9909c12587e0318b856778dfd78afc23675a2d13a1af93875993",
+        "sourceRevision": "496b0a14b303b5eb76dea1f3b318e1550be1994a",
+        "parentAsset": "water-2d-striped-lightbox-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
       "id": "preview-water-3d",
       "file": "/media/preview-water-3d-capture-20261119.mp4",
       "kind": "video",
@@ -3735,6 +3758,31 @@
       "thumbnailBytes": 10012
     },
     {
+      "id": "water-2d-striped-lightbox",
+      "file": "/media/water-2d-striped-lightbox.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "ba347d2a17a2b4a703dd13fac048be8b6c70ec5b435b3abd9a2bc8e57a97690a",
+      "bytes": 22880,
+      "caption": "The dam-break rebound bends the cream stripe through a translucent teal sheet.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/water-2d-lightbox/poster.png",
+        "sourceSha256": "b313174c200fe743b04ccbecad77b1e35843769f828bd4396ccc62de52f6f9e7",
+        "sourceRevision": "496b0a14b303b5eb76dea1f3b318e1550be1994a",
+        "recipe": "site/media/receipts/water-2d-striped-lightbox.json",
+        "note": "Decoded from native master frame 135 at 4.50 s."
+      },
+      "thumbnail": "/media/water-2d-striped-lightbox-640.webp",
+      "thumbnailSha256": "8de287ffd38a51a1f8170b4d789d886b9ff194df9abdee8cd07850c3d316dc51",
+      "thumbnailBytes": 9398
+    },
+    {
       "id": "water-2d-film",
       "file": "/media/water-2d-film-capture-20261119.mp4",
       "kind": "video",
@@ -3754,6 +3802,28 @@
         "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
         "note": "Standard capture refresh; reproduction data is in the linked receipt."
+      }
+    },
+    {
+      "id": "water-2d-striped-lightbox-film",
+      "file": "/media/water-2d-striped-lightbox-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "212984d7ea5e9909c12587e0318b856778dfd78afc23675a2d13a1af93875993",
+      "bytes": 758334,
+      "caption": "A dam-break wave bends ochre and cream stripes as it climbs the wall and rebounds.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/water-2d-lightbox/native.mp4",
+        "sourceSha256": "fb18ecd5426e73f197f1d735b55fab364c89bf77a546dc6c4774e1b5a99866f7",
+        "sourceRevision": "496b0a14b303b5eb76dea1f3b318e1550be1994a",
+        "recipe": "site/media/receipts/water-2d-striped-lightbox.json",
+        "note": "Full 8-second Striped Lightbox capture from the integrated Water 2D renderer."
       }
     },
     {
@@ -3849,9 +3919,9 @@
       "preview": "preview-explosion-3d"
     },
     "water-2d": {
-      "poster": "water-2d",
-      "film": "water-2d-film",
-      "preview": "preview-water-2d"
+      "poster": "water-2d-striped-lightbox",
+      "film": "water-2d-striped-lightbox-film",
+      "preview": "preview-water-2d-striped-lightbox"
     },
     "smoke-2d": {
       "poster": "smoke-2d-bowed-plumes",

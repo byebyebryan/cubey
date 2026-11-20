@@ -207,7 +207,7 @@
       "title": "Water 2D",
       "owner": "projects/fluid/water_2d",
       "dimension": "2D",
-      "summary": "A cross-section liquid sandbox with splashes, waves, hose and drain flow.",
+      "summary": "A dam-break wave bends diagonal stripes as it climbs and rebounds.",
       "cues": [
         "APIC transfer",
         "Free surface",
@@ -235,8 +235,8 @@
       "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
       "selected_media": {
         "manifest": "site/media/manifest.json",
-        "poster": "water-2d",
-        "film": "water-2d-film"
+        "poster": "water-2d-striped-lightbox",
+        "film": "water-2d-striped-lightbox-film"
       }
     },
     {

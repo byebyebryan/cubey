@@ -1,6 +1,10 @@
 {
   "scope": "Optional trim/quality settings for selected films. Unlisted selections use the shared preparation defaults.",
   "entries": {
+    "water-2d": {
+      "startSeconds": 2,
+      "durationSeconds": 3.5
+    },
     "water-3d": {
       "startSeconds": 0.8,
       "crf": 26
