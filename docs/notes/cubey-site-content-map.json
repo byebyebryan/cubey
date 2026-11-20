@@ -245,7 +245,7 @@
       "title": "Smoke & dye 2D",
       "owner": "projects/fluid/smoke_2d",
       "dimension": "2D",
-      "summary": "Moving injectors draw and stir coloured dye through a velocity field.",
+      "summary": "Amber and cyan plumes collide and curl apart in a two-dimensional flow.",
       "cues": [
         "Advection",
         "Vorticity",
@@ -272,8 +272,8 @@
       "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
       "selected_media": {
         "manifest": "site/media/manifest.json",
-        "poster": "smoke-2d",
-        "film": "smoke-2d-film"
+        "poster": "smoke-2d-bowed-plumes",
+        "film": "smoke-2d-bowed-plumes-film"
       }
     },
     {

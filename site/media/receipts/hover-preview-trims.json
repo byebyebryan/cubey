@@ -9,6 +9,10 @@
       "startSeconds": 2,
       "crf": 26
     },
+    "smoke-2d": {
+      "startSeconds": 0.8,
+      "crf": 26
+    },
     "clouds": {
       "startSeconds": 1,
       "crf": 26

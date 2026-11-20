@@ -26,7 +26,7 @@ const publicScope: Record<string,string> = {
   'fire-3d': 'Fire and smoke evolve on a 3D grid. This visual study has not been validated as a physical combustion model.',
   'explosion-3d': 'Uses the same fire and smoke solver as Fire 3D, with a short impulse that creates the expanding plume.',
   'water-2d': 'A two-dimensional liquid sandbox. Viscosity, surface tension and adaptive storage are outside this version.',
-  'smoke-2d': 'Colour is carried through a two-dimensional velocity field. The fluid fills the domain; it does not form a moving liquid surface.',
+  'smoke-2d': 'In Bowed Plumes, a brief rotational impulse at contact redirects the wakes. The two dyes trace how the resulting folds spread through the grid.',
   'shallow-water': 'The water here is simulated by Cubey’s shallow-water solver. Terrain Water plays a separate dataset prepared with SynxFlow.',
   'terrain-rendering': 'Prepared heightfields and surface detail form the terrain backdrop. This scene uses a fixed focus; it does not demonstrate continuous traversal or live terrain generation.',
   'terrain-water': 'Water motion is replayed from a saved SynxFlow dataset. The sun and lighting follow a separate timeline, so the film is not a real-time solver demonstration.',
@@ -47,7 +47,6 @@ const publicScope: Record<string,string> = {
 const summaries: Record<string,string> = {
   'shallow-water':'Water flows through a valley from source to outlet, using Cubey’s shallow-water solver.',
   'water-2d':'A surface reconstructed from particles breaks into droplets as the water hits the tank wall.',
-  'smoke-2d':'Coloured dye traces the velocity field as moving injectors stir the fluid.',
   'terrain-rendering':'Ridges, valleys and fine surface detail take shape through light and self-shadowing.',
   'robot':'A robot takes shape as parts are added, joined and cut.',
   'gltf-layers':'Directional highlights and a clear coat reveal the authored surface of an imported barn lamp.',

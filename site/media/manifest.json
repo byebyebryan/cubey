@@ -3040,6 +3040,29 @@
       }
     },
     {
+      "id": "preview-smoke-2d-bowed-plumes",
+      "file": "/media/preview-smoke-2d-bowed-plumes.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "9d46ae43932de59e1ea04ec53b4fa72ea897cb40ca844aaa768bf3fb9ca1cda1",
+      "bytes": 39512,
+      "caption": "Short silent preview. The Bowed Plumes wakes approach, turn at contact and spread.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/smoke-2d-bowed-plumes-film.mp4",
+        "sourceSha256": "6a687412a70f792e3b9b5b5d65c0efc6dc2d68c718c6696e32f3e1770737eb79",
+        "sourceRevision": "8489f9c0c8cd3702665e884675fd4adf3a02894e",
+        "parentAsset": "smoke-2d-bowed-plumes-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
       "id": "preview-stanford-dragon",
       "file": "/media/preview-stanford-dragon.mp4",
       "kind": "video",
@@ -3545,6 +3568,31 @@
       "thumbnailBytes": 6476
     },
     {
+      "id": "smoke-2d-bowed-plumes",
+      "file": "/media/smoke-2d-bowed-plumes.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "4e18e1577f2ccc2f23d80a75b3b82b100225dbfeb51cd2dc1483f0977a21278d",
+      "bytes": 16762,
+      "caption": "Amber and cyan dye fold around the meeting point in Bowed Plumes.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/bowed-plumes-release-YQU2F6/poster.png",
+        "sourceSha256": "e684e9086b0d36d67d9835396101b5ebfde50e28a9dbf985811bd8bfe43b5ef4",
+        "sourceRevision": "8489f9c0c8cd3702665e884675fd4adf3a02894e",
+        "recipe": "site/media/receipts/smoke-2d-bowed-plumes.json",
+        "note": "Decoded at frame 121 of the selected film (native frame 157)."
+      },
+      "thumbnail": "/media/smoke-2d-bowed-plumes-640.webp",
+      "thumbnailSha256": "68e235518604eeef081f137869f6fa72d1f4357a887c51462341636e0d5ff1e9",
+      "thumbnailBytes": 5490
+    },
+    {
       "id": "smoke-2d-film",
       "file": "/media/smoke-2d-film-capture-20261119.mp4",
       "kind": "video",
@@ -3564,6 +3612,28 @@
         "sourceRevision": "e37c4c8bac89a89feb0e7e9a095f80845baa365b",
         "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
         "note": "Standard capture refresh; reproduction data is in the linked receipt."
+      }
+    },
+    {
+      "id": "smoke-2d-bowed-plumes-film",
+      "file": "/media/smoke-2d-bowed-plumes-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "6a687412a70f792e3b9b5b5d65c0efc6dc2d68c718c6696e32f3e1770737eb79",
+      "bytes": 657422,
+      "caption": "The Bowed Plumes wakes approach, turn at contact and spread.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/bowed-plumes-release-YQU2F6/film.mp4",
+        "sourceSha256": "6a687412a70f792e3b9b5b5d65c0efc6dc2d68c718c6696e32f3e1770737eb79",
+        "sourceRevision": "8489f9c0c8cd3702665e884675fd4adf3a02894e",
+        "recipe": "site/media/receipts/smoke-2d-bowed-plumes.json",
+        "note": "Native recording edited to open after 36 frames at 30 fps."
       }
     },
     {
@@ -3784,9 +3854,9 @@
       "preview": "preview-water-2d"
     },
     "smoke-2d": {
-      "poster": "smoke-2d",
-      "film": "smoke-2d-film",
-      "preview": "preview-smoke-2d"
+      "poster": "smoke-2d-bowed-plumes",
+      "film": "smoke-2d-bowed-plumes-film",
+      "preview": "preview-smoke-2d-bowed-plumes"
     },
     "shallow-water": {
       "poster": "shallow-water",

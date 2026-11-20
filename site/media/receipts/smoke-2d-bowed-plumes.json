@@ -1,0 +1,213 @@
+{
+  "scene": "Bowed Plumes",
+  "scope": "Integrated Smoke 2D scene capture. No performance claim.",
+  "sourceRevision": "8489f9c0c8cd3702665e884675fd4adf3a02894e",
+  "startedUtc": "2026-11-20T09:15:29.446936+00:00",
+  "binary": {
+    "path": "build/dev/projects/fluid/smoke_2d/smoke_2d",
+    "sha256": "8d054573e6dc066eb28966ffd3c617e34e664d35b9ec58463b93c60c3c648d08",
+    "bytes": 25414320
+  },
+  "shaders": [
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d.vert.spv",
+      "sha256": "26c234ac7ec90b56ba819dc766e667a128794169fbb3fbacfda77deb2b303570",
+      "bytes": 1276
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_advect_correct.comp.spv",
+      "sha256": "68a0ffd5225e783cc683776bcd7a803ef8ef7bfc0ec5735c2273faf0a2d26c57",
+      "bytes": 17884
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_advect_predict.comp.spv",
+      "sha256": "5bd32d3be148ce09708c53b1765a6eef788fc309988994dee044dd985a10745f",
+      "bytes": 7836
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_curl.comp.spv",
+      "sha256": "c36d66555563aed252f1c769da0d9249f8cf5c32ded21a5fd3b9572ca780e99b",
+      "bytes": 4924
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_divergence.comp.spv",
+      "sha256": "b230359a321c527b168c2001c74bd1fc6252776c95e3cfacfc1ac8d1cb98b776",
+      "bytes": 6088
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_inject.comp.spv",
+      "sha256": "27cf6408947ae8406c2730ee25f62eb361a704cf3ecb0858bcebe9ce758814f1",
+      "bytes": 7612
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_pressure.comp.spv",
+      "sha256": "cd60cca2789c922138f38d028996b6aa940c9d81b4231fc6e500a9ad66a45771",
+      "bytes": 5464
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_pressure_rbgs.comp.spv",
+      "sha256": "c197bca3d37b356d0e17b5002baf4a28ed743b704bad2d922a2a8041242e08b0",
+      "bytes": 5512
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_projection.comp.spv",
+      "sha256": "d2e678aa814ba703ff7598ce98a011c8f8b036b8741f95e165bb6dfdac01d7a4",
+      "bytes": 6120
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_render.frag.spv",
+      "sha256": "d6af74f425173553886a1f1c6bca46e048d54074957c9475f7f2b658ced6dcd1",
+      "bytes": 25252
+    },
+    {
+      "path": "build/dev/projects/fluid/smoke_2d/shaders/smoke_2d_vorticity.comp.spv",
+      "sha256": "a0e34e903ad9f818e69b2f521495a6e6339718c2c7342f8063a0d90ea8dfd6f9",
+      "bytes": 7504
+    }
+  ],
+  "nativeCapture": {
+    "command": [
+      "build/dev/projects/fluid/smoke_2d/smoke_2d",
+      "--smoke-scene",
+      "bowed-plumes",
+      "--headless",
+      "--capture",
+      "video",
+      "--frames",
+      "255",
+      "--fps",
+      "30",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--require-validation",
+      "--anti-aliasing",
+      "off",
+      "--output",
+      "/home/bryan/code/cubey/outputs/site/bowed-plumes-release-YQU2F6/native.mp4"
+    ],
+    "validation": {
+      "required": true,
+      "VK_LAYER_VALIDATE_SYNC": "1"
+    },
+    "log": {
+      "path": "outputs/site/bowed-plumes-release-YQU2F6/native.log",
+      "sha256": "466bf6c5a200f6e8999d842f33214b3a74f648d75072ea30c32743dc5e7170ea",
+      "bytes": 236
+    },
+    "status": [
+      "anti_aliasing: requested=off effective=off reason=explicit-off",
+      "headless_video: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey/outputs/site/bowed-plumes-release-YQU2F6/native.mp4 at 1920x1080, 255 frames @ 30 fps via libav h264"
+    ],
+    "grid": {
+      "width": 1024,
+      "height": 1024
+    },
+    "view": "dye",
+    "antiAliasing": "off",
+    "file": {
+      "path": "outputs/site/bowed-plumes-release-YQU2F6/native.mp4",
+      "sha256": "a6a21b9f57fbe1d5d50c7a90978101d691aaf64b9927fee566755fcd67e29eb5",
+      "bytes": 2292697
+    },
+    "streams": [
+      {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "width": 1920,
+        "height": 1080,
+        "pix_fmt": "yuv420p",
+        "r_frame_rate": "30/1",
+        "duration": "8.500000",
+        "nb_frames": "255"
+      }
+    ]
+  },
+  "webFilm": {
+    "command": [
+      "ffmpeg",
+      "-n",
+      "-v",
+      "error",
+      "-i",
+      "/home/bryan/code/cubey/outputs/site/bowed-plumes-release-YQU2F6/native.mp4",
+      "-an",
+      "-vf",
+      "trim=start_frame=36,setpts=PTS-STARTPTS,scale=1280:720:flags=lanczos",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "slow",
+      "-crf",
+      "20",
+      "-pix_fmt",
+      "yuv420p",
+      "-movflags",
+      "+faststart",
+      "/home/bryan/code/cubey/outputs/site/bowed-plumes-release-YQU2F6/film.mp4"
+    ],
+    "trimmedOpeningFrames": 36,
+    "file": {
+      "path": "outputs/site/bowed-plumes-release-YQU2F6/film.mp4",
+      "sha256": "6a687412a70f792e3b9b5b5d65c0efc6dc2d68c718c6696e32f3e1770737eb79",
+      "bytes": 657422
+    },
+    "streams": [
+      {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720,
+        "pix_fmt": "yuv420p",
+        "r_frame_rate": "30/1",
+        "duration": "7.300000",
+        "nb_frames": "219"
+      }
+    ]
+  },
+  "poster": {
+    "command": [
+      "ffmpeg",
+      "-n",
+      "-v",
+      "error",
+      "-i",
+      "/home/bryan/code/cubey/outputs/site/bowed-plumes-release-YQU2F6/film.mp4",
+      "-vf",
+      "select=eq(n\\,121)",
+      "-frames:v",
+      "1",
+      "/home/bryan/code/cubey/outputs/site/bowed-plumes-release-YQU2F6/poster.png"
+    ],
+    "webFilmFrameIndex": 121,
+    "nativeFrameIndex": 157,
+    "file": {
+      "path": "outputs/site/bowed-plumes-release-YQU2F6/poster.png",
+      "sha256": "e684e9086b0d36d67d9835396101b5ebfde50e28a9dbf985811bd8bfe43b5ef4",
+      "bytes": 211932
+    }
+  },
+  "delivery": {
+    "smoke-2d-bowed-plumes": {
+      "path": "site/public/media/smoke-2d-bowed-plumes.webp",
+      "sha256": "4e18e1577f2ccc2f23d80a75b3b82b100225dbfeb51cd2dc1483f0977a21278d",
+      "bytes": 16762
+    },
+    "smoke-2d-bowed-plumes-film": {
+      "path": "site/public/media/smoke-2d-bowed-plumes-film.mp4",
+      "sha256": "6a687412a70f792e3b9b5b5d65c0efc6dc2d68c718c6696e32f3e1770737eb79",
+      "bytes": 657422
+    },
+    "preview-smoke-2d-bowed-plumes": {
+      "path": "site/public/media/preview-smoke-2d-bowed-plumes.mp4",
+      "sha256": "9d46ae43932de59e1ea04ec53b4fa72ea897cb40ca844aaa768bf3fb9ca1cda1",
+      "bytes": 39512
+    },
+    "thumbnail": {
+      "path": "site/public/media/smoke-2d-bowed-plumes-640.webp",
+      "sha256": "68e235518604eeef081f137869f6fa72d1f4357a887c51462341636e0d5ff1e9",
+      "bytes": 5490
+    }
+  }
+}
