@@ -228,7 +228,7 @@ void test_render_graph_derives_imported_texture_acquire_and_release_barriers() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle backbuffer =
         graph.import_texture(color_texture_desc("backbuffer"), image(0x601), view(0x602),
-                             cubey::render::render_graph_undefined_texture_state(),
+                             cubey::render::render_graph_acquired_color_texture_state(),
                              cubey::render::render_graph_present_texture_state());
 
     graph.add_pass("scene", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -246,6 +246,8 @@ void test_render_graph_derives_imported_texture_acquire_and_release_barriers() {
             "acquire barrier should target the first pass usage");
     require(acquire.source_state.layout == VK_IMAGE_LAYOUT_UNDEFINED,
             "acquire barrier should use imported initial layout");
+    require(acquire.source_state.stage_mask == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            "acquire barrier must chain to the swapchain semaphore wait");
     require(acquire.destination_state.layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             "acquire barrier should transition to color attachment layout");
 

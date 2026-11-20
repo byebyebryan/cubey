@@ -1,5 +1,6 @@
 #include <cubey/vulkan/image_transitions.h>
 
+#include <cubey/vulkan/swapchain.h>
 #include <cubey/vulkan/vk_check.h>
 
 namespace cubey::vulkan {
@@ -15,6 +16,12 @@ ImageLayoutTransition begin_color_attachment_transition(VkImage image) {
         .src_stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         .dst_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
+}
+
+ImageLayoutTransition begin_acquired_color_attachment_transition(VkImage image) {
+    auto transition = begin_color_attachment_transition(image);
+    transition.src_stage_mask = kSwapchainAcquireWaitStage;
+    return transition;
 }
 
 ImageLayoutTransition finish_color_attachment_for_present_transition(VkImage image) {
@@ -55,6 +62,16 @@ ImageLayoutTransition begin_depth_attachment_transition(VkImage image) {
         .src_stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         .dst_stage_mask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
     };
+}
+
+ImageLayoutTransition discard_reused_depth_attachment_transition(VkImage image) {
+    auto transition = begin_depth_attachment_transition(image);
+    // Discarding the contents still writes the layout of the previous frame's attachment.
+    transition.src_stage_mask =
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    transition.src_access_mask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    transition.dst_stage_mask = transition.src_stage_mask;
+    return transition;
 }
 
 ImageLayoutTransition begin_sampled_depth_attachment_transition(VkImage image) {

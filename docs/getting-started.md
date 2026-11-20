@@ -199,10 +199,13 @@ slots, temporal invalidation/toggling, admitted work at callback failures,
 transactional resource failure/retry, target recreation and full shutdown/re-enable.
 Video failure coverage also requires the libav encoding backend and exercises
 producer/recording exceptions with pending capture slots in both execution modes.
+With `xvfb-run` available at configure time, the preset also exercises eight
+windowed frames each in Smoke 2D, Fire 3D, PBR Furnace, and the Shadow Cube
+example. These cases cover swapchain acquisition, recurring simulation uploads,
+and depth attachment reuse.
 Missing capabilities, the probe's Python interpreter or an empty selection fail
-this gate rather than establishing coverage. The ordinary dev suite runs the same
-fixtures with standard validation; dedicated synchronization tests stay outside
-ordinary and sanitizer presets.
+this gate. The ordinary dev suite exercises the headless lifecycle fixtures with
+standard validation. The dedicated synchronization tests have their own preset.
 
 Run the GLFW/swapchain tests only when opening windows is intentional:
 
@@ -252,7 +255,9 @@ Applications open an interactive window unless `--headless` is supplied:
 ```
 
 Project-local READMEs document their scene-specific controls and useful
-recipes. The [docs index](README.md#project-docs) links the maintained guides.
+recipes. The [Viewer guide](../projects/gltf_viewer/README.md#run) includes a
+pinned animated asset you can download and run. The [docs index](README.md#project-docs)
+links the maintained guides.
 The paused [Planet study](../studies/planet/README.md#explicit-build-and-use)
 has its own opt-in build and is excluded from normal project builds.
 

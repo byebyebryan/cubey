@@ -1,5 +1,7 @@
 #include "pyro_3d_commands.h"
 
+#include "../common/fluid_source_buffer.h"
+
 #include <cubey/engine/terrain_backdrop_runtime.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
@@ -12,7 +14,6 @@
 #include <cmath>
 #include <cstdint>
 #include <optional>
-#include <stdexcept>
 
 namespace cubey::projects::fluid::pyro_3d {
 namespace {
@@ -103,22 +104,6 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
     transition_volume_to_general(command_buffer, resources.pressure_a());
     transition_volume_to_general(command_buffer, resources.pressure_b());
     transition_volume_to_general(command_buffer, resources.shadow_volume());
-}
-
-void record_source_buffer_update(VkCommandBuffer command_buffer,
-                                 const Pyro3DGpuResources& resources,
-                                 std::span<const Pyro3DSourceGpu> sources) {
-    if (sources.empty()) {
-        return;
-    }
-    const VkDeviceSize byte_size =
-        static_cast<VkDeviceSize>(sources.size() * sizeof(Pyro3DSourceGpu));
-    if (byte_size > resources.sources().size()) {
-        throw std::runtime_error("pyro 3D source update exceeds source buffer size");
-    }
-    vkCmdUpdateBuffer(command_buffer, resources.sources().handle(), 0, byte_size, sources.data());
-    cubey::vulkan::record_transfer_write_barrier(
-        command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT);
 }
 
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Pyro3DConfig& config,
@@ -311,7 +296,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
         return;
     }
 
-    record_source_buffer_update(command_buffer, resources, sources);
+    record_source_buffer_update(command_buffer, resources.sources(), std::as_bytes(sources));
 
     const cubey::render::ComputePipelineResource& advect_pipeline = resources.advect_pipeline();
     record_profiled_dispatch("advect_predict", advect_pipeline,
@@ -499,7 +484,7 @@ build_pyro_3d_render_graph(cubey::render::ColorTargetView color_target,
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureState initial_state =
         target_mode == Pyro3DRenderTargetMode::Present
-            ? cubey::render::render_graph_undefined_texture_state()
+            ? cubey::render::render_graph_acquired_color_texture_state()
             : cubey::render::render_graph_color_attachment_texture_state();
     const cubey::render::RenderGraphTextureState final_state =
         target_mode == Pyro3DRenderTargetMode::Present

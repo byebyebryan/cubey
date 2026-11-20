@@ -50,7 +50,31 @@ when a producer can supply motion or coverage that represents the visible
 image. Cornell/local-area-light GI and mesh/SDF representation comparisons
 remain separate choices.
 
-## Current Readiness Checkpoint
+## November refinement
+
+The 2026-11-19 refinement replay on the candidate based on `5727786a`
+completed 24 frames per launch across all 16 project executables in both Auto
+and Off on virtual X11. Synchronization
+validation was clean across the 32 launches. The changes link the first
+swapchain layout transition to acquisition, order recurring simulation source
+uploads, and synchronize depth attachment reuse. The dedicated
+[synchronization preset](getting-started.md#configure-build-and-test) exercises
+these paths on multi-frame windowed runs when `xvfb-run` is installed. Terrain
+Water used the frozen recording fixture in this matrix.
+
+On Wayland, Smoke 2D, Fire 3D, and PBR Furnace resized and closed with clean
+validation. Viewer, analytic SDF, and fixed opaque RT ran DLSS Quality K on
+the same device. In the matched 14-frame opaque RT sequence, TAA and DLSS
+both reset at frame 11 and resumed accumulating at frame 12.
+
+The project guides link directly to the featured launch paths, including the
+[animated Fox asset](../projects/gltf_viewer/README.md#run), the
+[glass dragon launcher](../projects/raytracing/README.md#build-and-run), and
+[Terrain preparation](../projects/terrain/README.md#generate-the-asset).
+
+<a id="current-readiness-checkpoint"></a>
+
+## October foundation qualification
 
 Reviewed against runtime source `86885a4d` on 2026-10-17:
 

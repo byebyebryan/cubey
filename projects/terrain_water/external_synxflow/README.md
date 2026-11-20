@@ -50,12 +50,12 @@ CUDA/toolchain combination. Provide Python with venv/pip support explicitly.
 From the repository root, choose a new output leaf:
 
 ```sh
-rtk proxy mkdir outputs/fluid/synxflow-setup-FRESH
-rtk proxy /path/to/python3.11 -m venv outputs/fluid/synxflow-setup-FRESH/env
-rtk proxy outputs/fluid/synxflow-setup-FRESH/env/bin/python -m pip --isolated install \
+mkdir outputs/fluid/synxflow-setup-FRESH
+/path/to/python3.11 -m venv outputs/fluid/synxflow-setup-FRESH/env
+outputs/fluid/synxflow-setup-FRESH/env/bin/python -m pip --isolated install \
   --index-url https://pypi.org/simple --only-binary=:all: --require-hashes --no-cache-dir \
   -r projects/terrain_water/external_synxflow/requirements-linux-cp311.lock
-rtk proxy outputs/fluid/synxflow-setup-FRESH/env/bin/python -m pip --isolated check
+outputs/fluid/synxflow-setup-FRESH/env/bin/python -m pip --isolated check
 ```
 
 This is an explicit network/package-install step, confined to that venv; never
@@ -96,10 +96,10 @@ must be checked separately. A source compiler and a runtime driver are distinct.
 Download the immutable source, then use the explicit build helper:
 
 ```sh
-rtk proxy curl --fail --location --max-time 120 \
+curl --fail --location --max-time 120 \
   https://codeload.github.com/SynxFlow/SynxFlow/tar.gz/8a9781504204a7b41217b483db4190c1f6f340bc \
   --output outputs/fluid/synxflow-setup-FRESH/synxflow-source.tar.gz
-rtk proxy python3 -B projects/terrain_water/external_synxflow/build_synxflow_service_v1.py \
+python3 -B projects/terrain_water/external_synxflow/build_synxflow_service_v1.py \
   --source-archive outputs/fluid/synxflow-setup-FRESH/synxflow-source.tar.gz \
   --cuda-root /path/to/cuda-11.7 \
   --python outputs/fluid/synxflow-setup-FRESH/env/bin/python \
@@ -123,7 +123,7 @@ to make setup pass. Path overrides retain the exact existing hash guard.
 Run the checker using the new venv, with library caches confined to your output:
 
 ```sh
-rtk proxy env MPLBACKEND=Agg \
+env MPLBACKEND=Agg \
   MPLCONFIGDIR="$PWD/outputs/fluid/synxflow-setup-FRESH/matplotlib" \
   XDG_CACHE_HOME="$PWD/outputs/fluid/synxflow-setup-FRESH/cache" \
   outputs/fluid/synxflow-setup-FRESH/env/bin/python -B \
@@ -184,9 +184,9 @@ terrain or an external process. They are explicit alternatives, not automatic
 fallbacks or equivalents of the featured mountain-rain results:
 
 ```sh
-rtk proxy build/release/projects/fluid/fluid_25d/fluid_25d \
+build/release/projects/fluid/fluid_25d/fluid_25d \
   --fluid25d-backend builtin --fluid25d-solver virtual-pipes
-rtk proxy build/release/projects/fluid/fluid_25d/fluid_25d \
+build/release/projects/fluid/fluid_25d/fluid_25d \
   --fluid25d-backend builtin --fluid25d-solver finite-volume
 ```
 

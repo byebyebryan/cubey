@@ -257,11 +257,10 @@ setup before swapchain setup, and callback forwarding.
   than relying on every project call site to pass `--headless`. Their launch
   environment removes display and desktop-session variables, and successful
   tests require both a valid artifact and the headless-host completion marker.
-- GLFW/swapchain smokes are labeled `windowed`, require the positive
-  `CUBEY_ALLOW_WINDOWED_TESTS=1` execution gate, and run through the explicit
-  `dev-windowed` test preset. The default presets exclude them. This preserves
-  interactive host coverage without opening windows during ordinary local or
-  SSH validation.
+- The `dev-windowed` preset enables GLFW/swapchain smokes through
+  `CUBEY_ALLOW_WINDOWED_TESTS=1`. The dedicated synchronization preset also
+  exercises multi-frame presentation through an owned virtual X11 display when
+  `xvfb-run` is available. Ordinary local and SSH builds can use the headless tests.
 - `cubey::Engine` is the first scoped root owner. It lives in the engine layer
   because it composes project runtime services, the render resource handle
   registry, renderer instance lifetime, and created `Scene` instances, but does

@@ -10,3 +10,9 @@ add_subdirectory(terrain_water)
 
 add_subdirectory(pbr_materials)
 add_subdirectory(raytracing)
+
+if (BUILD_TESTING)
+    foreach(app smoke_2d fire_3d pbr_furnace)
+        cubey_add_windowed_sync_test(${app}_windowed_sync cubey_project_${app})
+    endforeach()
+endif()

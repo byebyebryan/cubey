@@ -13,30 +13,36 @@ in the [progress record](../../docs/notes/raytracing-material-workshop-progress.
 
 ## Build and run
 
-For the current glass-dragon demo, build the project, explicitly prepare the
-optical model, then use the launcher from the repository root:
+The featured glass-dragon comparison uses the launcher and a prepared optical
+model. For the hardware modes, use an adapter with the Vulkan ray-tracing
+capabilities listed below. From the repository root, build the project and use
+`uv` to run the preparation scripts. Optical preparation uses Python 3.11 and
+installs its pinned NumPy and CGAL wheels in the script environment:
 
 ```sh
-rtk cmake --build --preset dev --target cubey_project_raytracing
-rtk proxy uv run projects/raytracing/tools/prepare_dragon.py
-rtk proxy uv run --no-project --no-build projects/raytracing/tools/prepare_optical_dragon.py --output cache/raytracing/stanford-dragon/optical-v1
-rtk proxy python3 projects/raytracing/tools/dragon_demo.py
-rtk proxy python3 projects/raytracing/tools/dragon_demo.py --mode forward
-rtk proxy python3 projects/raytracing/tools/dragon_demo.py --mode sampled
+cmake --preset dev
+cmake --build --preset dev --target cubey_project_raytracing
+uv run projects/raytracing/tools/prepare_dragon.py
+uv run --no-project --no-build projects/raytracing/tools/prepare_optical_dragon.py --output cache/raytracing/stanford-dragon/optical-v1
 ```
 
 Reuse the certified cache if it is already prepared. Optical preparation expects
 a new, empty output directory; it does not replace an existing model.
 
-The normal RT launch shows the certified glass dragon at native resolution with
-four samples per frame. That native route is the default. Select the
-experimental DLSS Quality K route with an SDK-enabled build and the fixed RT
-launcher mode.
+```sh
+python3 projects/raytracing/tools/dragon_demo.py
+python3 projects/raytracing/tools/dragon_demo.py --mode forward
+python3 projects/raytracing/tools/dragon_demo.py --mode sampled
+```
+
+The launcher's default shows the certified glass dragon at native resolution
+with four samples per frame. Select experimental DLSS Quality K with an
+SDK-enabled build and the fixed RT launcher mode.
 
 ```sh
-rtk cmake --preset release -B build/dlss -DCUBEY_DLSS_SDK_DIR=/path/to/dlss-sdk
-rtk cmake --build build/dlss --target cubey_project_raytracing
-rtk proxy python3 projects/raytracing/tools/dragon_demo.py \
+cmake --preset release -B build/dlss -DCUBEY_DLSS_SDK_DIR=/path/to/dlss-sdk
+cmake --build build/dlss --target cubey_project_raytracing
+python3 projects/raytracing/tools/dragon_demo.py \
   --binary build/dlss/projects/raytracing/raytracing --upscaler dlss-quality
 ```
 
@@ -75,10 +81,10 @@ dragon comparison below uses the shared raster renderer without requesting RT
 features; it is not an automatic fallback.
 
 ```sh
-rtk cmake --preset dev
-rtk cmake --build --preset dev --target cubey_project_raytracing
-rtk proxy build/dev/projects/raytracing/raytracing
-rtk proxy build/dev/projects/raytracing/raytracing --headless --width 1280 --height 720 --output outputs/raytracing/fixture.png
+cmake --preset dev
+cmake --build --preset dev --target cubey_project_raytracing
+build/dev/projects/raytracing/raytracing
+build/dev/projects/raytracing/raytracing --headless --width 1280 --height 720 --output outputs/raytracing/fixture.png
 ```
 
 The default generated fixture needs no downloaded data. `--scene triangle`
@@ -91,8 +97,8 @@ of general asset compatibility.
 Prepare the pinned source explicitly from the repository root:
 
 ```sh
-rtk proxy uv run projects/raytracing/tools/prepare_dragon.py
-rtk proxy build/dev/projects/raytracing/raytracing --scene dragon --model cache/raytracing/stanford-dragon/dragon.glb --distance 1.6 --yaw .7 --pitch .25
+uv run projects/raytracing/tools/prepare_dragon.py
+build/dev/projects/raytracing/raytracing --scene dragon --model cache/raytracing/stanford-dragon/dragon.glb --distance 1.6 --yaw .7 --pitch .25
 ```
 
 Preparation downloads only when needed, verifies archive/member checksums and
@@ -116,8 +122,8 @@ viewer. Missing dragon input reports the preparation command.
 Start with generated primitives; these views need no downloaded model:
 
 ```sh
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/proof-reflection.json
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/proof-refraction.json
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/proof-reflection.json
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/proof-refraction.json
 ```
 
 The first scene uses boxes and a mirror sphere; the second uses a closed glass
@@ -128,8 +134,8 @@ The existing slab and generated fixtures retain their numerical controls.
 Then prepare the pinned dragon and run the dedicated showcase:
 
 ```sh
-rtk proxy uv run projects/raytracing/tools/prepare_dragon.py
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/reflective-dragon.json
+uv run projects/raytracing/tools/prepare_dragon.py
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/reflective-dragon.json
 ```
 
 `reflection-dragon-solo` contains exactly the dragon and a small matte base.
@@ -145,7 +151,7 @@ An opt-in composition audition replaces the bevelled base with a small,
 irregular stone slab, starting with a clay dragon and matte base:
 
 ```sh
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-rock-footing.json
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-rock-footing.json
 ```
 
 `--dragon-support plinth|rock|none` selects the support at startup for
@@ -161,7 +167,7 @@ The marble variation uses the library's unmodified **Balanced marble** recipe
 on the base, with the dragon in clay:
 
 ```sh
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-marble.json
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-marble.json
 ```
 
 `--support-material matte|marble` and the native Base material selector switch
@@ -183,7 +189,7 @@ The first implementation slice is now available as an opt-in sampled opaque
 dragon scene:
 
 ```sh
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-sampled.json
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-sampled.json
 ```
 
 It starts with shared Satin bronze on the dragon and an independent Balanced
@@ -195,8 +201,8 @@ The original imported model stays opaque. A separate certified main-shell copy
 now supports the opt-in solid-glass scene:
 
 ```sh
-rtk proxy uv run --no-project --no-build projects/raytracing/tools/prepare_optical_dragon.py --output cache/raytracing/stanford-dragon/optical-v1
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-glass.json
+uv run --no-project --no-build projects/raytracing/tools/prepare_optical_dragon.py --output cache/raytracing/stanford-dragon/optical-v1
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-glass.json
 ```
 
 Prepare the original pinned dragon first using the instructions above. Preparation
@@ -264,9 +270,9 @@ Two opt-in presets reuse the certified dragon, its marble slab, shared clear
 atmosphere and material recipes:
 
 ```sh
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-demo.json
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-forward.json
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-demo.json --demo-samples 2
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-demo.json
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-forward.json
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/dragon-demo.json --demo-samples 2
 ```
 
 `--transport-mode demo` evaluates sharp glass branches deterministically. Each
@@ -320,7 +326,7 @@ opaque objects is not a final-scene source-radiance oracle.
 Run its GPU controls explicitly with the prepared model:
 
 ```sh
-rtk proxy uv run projects/raytracing/tools/qualify_dragon_demo.py --output outputs/raytracing/dragon-demo-check
+uv run projects/raytracing/tools/qualify_dragon_demo.py --output outputs/raytracing/dragon-demo-check
 ```
 
 The [current scene-visibility report](http://starship:8787/reports/b8c6f3111377c9a11eb1ac0b9a82dcd5d7dd4e68d8559f08025dc23f3a5aadfa/)
@@ -341,7 +347,7 @@ unchanged. Extra samples alone cannot remove path truncation. Run the asset-boun
 checks explicitly (no download):
 
 ```sh
-rtk proxy uv run --no-project --no-build projects/raytracing/tools/qualify_dragon_glass.py --output outputs/raytracing/dragon-glass-check
+uv run --no-project --no-build projects/raytracing/tools/qualify_dragon_glass.py --output outputs/raytracing/dragon-glass-check
 ```
 
 The qualification first renders the preset's actual transport budget. Accepted
@@ -364,7 +370,7 @@ Private numerical replay builds are opt-in and use their own executable and full
 shader directory; they never replace ordinary SPIR-V in place:
 
 ```sh
-rtk proxy python3 -B projects/raytracing/tools/build_ray_replay.py --journal --output outputs/raytracing/private-replay
+python3 -B projects/raytracing/tools/build_ray_replay.py --journal --output outputs/raytracing/private-replay
 ```
 
 The private executable adds `--ray-journal`, `--journal-x`, `--journal-y` and
@@ -460,8 +466,8 @@ buffers/images, build scratch, TLAS inputs and resize overlap; it excludes host
 targets, upload staging, allocation padding and opaque driver internals. Profiling through `--profile-output` also uses the normal host path.
 
 ```sh
-rtk proxy build/dev/projects/raytracing/raytracing --scene dragon --model cache/raytracing/stanford-dragon/dragon.glb --distance 1.6 --headless --frames 180 --headless-render-only --width 1920 --height 1080 --metrics outputs/raytracing/dragon-metrics.json
-rtk proxy uv run projects/raytracing/tools/qualify_geometry.py --output outputs/raytracing/geometry-check
+build/dev/projects/raytracing/raytracing --scene dragon --model cache/raytracing/stanford-dragon/dragon.glb --distance 1.6 --headless --frames 180 --headless-render-only --width 1920 --height 1080 --metrics outputs/raytracing/dragon-metrics.json
+uv run projects/raytracing/tools/qualify_geometry.py --output outputs/raytracing/geometry-check
 ```
 
 The geometry tool compares native GPU hit/depth/barycentric/normal/shadow
@@ -498,9 +504,9 @@ record actual runtime qualification, costs and remaining acceptance limits.
 Collect the serial 1080p timing/capture packet with an optimized binary:
 
 ```sh
-rtk cmake --preset release
-rtk cmake --build --preset release --target cubey_project_raytracing
-rtk proxy python3 -B projects/raytracing/tools/profile_first_pass.py --binary build/release/projects/raytracing/raytracing --output outputs/raytracing/review-packet
+cmake --preset release
+cmake --build --preset release --target cubey_project_raytracing
+python3 -B projects/raytracing/tools/profile_first_pass.py --binary build/release/projects/raytracing/raytracing --output outputs/raytracing/review-packet
 ```
 
 The dated evidence used a `build/dev` directory explicitly configured as
@@ -509,7 +515,7 @@ RelWithDebInfo (`-O2 -g -DNDEBUG`); an ordinary Debug build has different costs.
 Run the native control check only in an owned virtual display:
 
 ```sh
-rtk proxy xvfb-run -a -s '-screen 0 1280x960x24' env CUBEY_RT_PRIVATE_XVFB=1 python3 projects/raytracing/tools/check_window.py --output outputs/raytracing/window-check
+xvfb-run -a -s '-screen 0 1280x960x24' env CUBEY_RT_PRIVATE_XVFB=1 python3 projects/raytracing/tools/check_window.py --output outputs/raytracing/window-check
 ```
 
 ## Optical qualification
@@ -520,13 +526,13 @@ shared-sky integration, numerical/lifecycle checks, convergence and matched cost
 The [plan](../../docs/notes/raytracing-optics-plan.md) retains the fixed gates.
 
 ```sh
-rtk proxy uv run projects/raytracing/tools/qualify_optics.py --output outputs/raytracing/optics-check
-rtk proxy uv run projects/raytracing/tools/check_sky_lookup.py --output outputs/raytracing/sky-check
-rtk proxy uv run projects/raytracing/tools/inspect_optics.py --output outputs/raytracing/optics-residuals
-rtk proxy uv run projects/raytracing/tools/profile_optics.py --binary build/dev/projects/raytracing/raytracing --mode quality --output outputs/raytracing/quality
-rtk proxy uv run projects/raytracing/tools/profile_optics.py --binary build/dev/projects/raytracing/raytracing --mode timing --output outputs/raytracing/timing
-rtk proxy xvfb-run -a -s '-screen 0 1280x960x24' env CUBEY_RT_PRIVATE_XVFB=1 python3 projects/raytracing/tools/check_window.py --config projects/raytracing/presets/optics/refraction.json --optics --output outputs/raytracing/window-optics
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/reflection.json --headless --capture video --frames 120 --fps 30 --width 1280 --height 720 --orbit-speed .12 --output outputs/raytracing/reflection-orbit.mp4
+uv run projects/raytracing/tools/qualify_optics.py --output outputs/raytracing/optics-check
+uv run projects/raytracing/tools/check_sky_lookup.py --output outputs/raytracing/sky-check
+uv run projects/raytracing/tools/inspect_optics.py --output outputs/raytracing/optics-residuals
+uv run projects/raytracing/tools/profile_optics.py --binary build/dev/projects/raytracing/raytracing --mode quality --output outputs/raytracing/quality
+uv run projects/raytracing/tools/profile_optics.py --binary build/dev/projects/raytracing/raytracing --mode timing --output outputs/raytracing/timing
+xvfb-run -a -s '-screen 0 1280x960x24' env CUBEY_RT_PRIVATE_XVFB=1 python3 projects/raytracing/tools/check_window.py --config projects/raytracing/presets/optics/refraction.json --optics --output outputs/raytracing/window-optics
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/reflection.json --headless --capture video --frames 120 --fps 30 --width 1280 --height 720 --orbit-speed .12 --output outputs/raytracing/reflection-orbit.mp4
 ```
 
 Use an optimized build for timings. The timing tool runs serial repetitions,

@@ -355,7 +355,7 @@ void TerrainSurfacePatchScene::record(
                                      : render::render_graph_color_attachment_texture_state();
     const auto back =
         graph.import_color_target("scenic backbuffer", target,
-                                  present ? render::render_graph_undefined_texture_state()
+                                  present ? render::render_graph_acquired_color_texture_state()
                                           : render::render_graph_color_attachment_texture_state(),
                                   final_state);
     const auto shadow_depth = graph.create_texture(

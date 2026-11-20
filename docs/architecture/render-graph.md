@@ -170,7 +170,8 @@ resolved resources + explicit command recording through cubey::vulkan
 The eventual API should look like a setup/execute split:
 
 ```cpp
-auto backbuffer = graph.import_color_target("swapchain", frame.color_target);
+auto backbuffer = graph.import_color_target("swapchain", frame.color_target,
+    render_graph_acquired_color_texture_state(), render_graph_present_texture_state());
 auto depth = graph.import_depth_target("depth", depth_target);
 auto shadow_map = graph.import_depth_target("shadow map", shadow_target);
 auto scene_color = graph.create_texture(scene_color_desc);
@@ -207,6 +208,10 @@ graph_executor.record({
     .label = "vkEndCommandBuffer example",
 }, compiled_graph);
 ```
+
+The acquired color state discards the old image contents and chains the first
+layout transition to the host's acquire semaphore wait. Use the ordinary
+undefined state for a fresh offscreen texture.
 
 The important contract is that setup declares resource use before execution
 records commands. That matches the established pattern in Filament FrameGraph

@@ -32,6 +32,12 @@ void test_image_transitions_describe_layout_barriers() {
     require(begin_color.dst_stage_mask == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             "begin color transition should end at color output");
 
+    const auto acquired = cubey::vulkan::begin_acquired_color_attachment_transition(image);
+    require(acquired.old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+                acquired.src_stage_mask == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT &&
+                acquired.dst_stage_mask == VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            "discarding an acquired color attachment must chain to the semaphore wait");
+
     const cubey::vulkan::ImageLayoutTransition present =
         cubey::vulkan::finish_color_attachment_for_present_transition(image);
     require(present.old_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -68,6 +74,12 @@ void test_image_transitions_describe_layout_barriers() {
             "depth transition should allow depth writes");
     require(begin_depth.dst_stage_mask == VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
             "depth transition should end at early fragment tests");
+
+    const auto reused = cubey::vulkan::discard_reused_depth_attachment_transition(image);
+    require(reused.old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
+                (reused.src_stage_mask & VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT) != 0 &&
+                (reused.src_access_mask & VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT) != 0,
+            "discarding reused depth must order the previous store before the layout transition");
 
     const cubey::vulkan::ImageLayoutTransition depth_sampled =
         cubey::vulkan::finish_depth_attachment_for_sampling_transition(image);

@@ -1147,8 +1147,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     }
     const auto out = builder.import_color_target(
         "raytracing.output", output,
-        present ? render::RenderGraphTextureState{VK_IMAGE_LAYOUT_UNDEFINED, 0,
-                                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}
+        present ? render::render_graph_acquired_color_texture_state()
                 : render::render_graph_color_attachment_texture_state(),
         present ? render::render_graph_present_texture_state()
                 : render::render_graph_color_attachment_texture_state());

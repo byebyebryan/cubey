@@ -21,9 +21,9 @@ terrain cache is required for the default authored scene.
 ## Build and run
 
 ```sh
-rtk proxy cmake --preset release
-rtk proxy cmake --build --preset release --target cubey_project_fluid_25d -j 6
-rtk proxy build/release/projects/fluid/fluid_25d/fluid_25d
+cmake --preset release
+cmake --build --preset release --target cubey_project_fluid_25d -j 6
+build/release/projects/fluid/fluid_25d/fluid_25d
 ```
 
 Add `--fluid25d-solver finite-volume` for the retained numerical alternative.

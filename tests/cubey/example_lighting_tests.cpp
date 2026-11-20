@@ -68,8 +68,8 @@ void test_pbr_furnace_headless_path_transitions_depth_attachment() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string app = read_source_file(root / "projects/pbr_furnace/pbr_furnace_render.cpp");
 
-    require_contains(app, "begin_depth_attachment_transition",
-                     "pbr_furnace headless target path should transition its depth attachment");
+    require_contains(app, "discard_reused_depth_attachment_transition",
+                     "pbr_furnace headless target path should order its shared depth attachment");
 }
 
 void test_hostless_cmake_defaults_disable_host_dependent_targets() {

@@ -551,7 +551,7 @@ void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context
         metrics.emplace();
     }
     record_viewer_target(context.device(), frame.command_buffer, frame.color_target,
-                         frame.frame_slot, cubey::render::render_graph_undefined_texture_state(),
+                         frame.frame_slot, cubey::render::render_graph_acquired_color_texture_state(),
                          cubey::render::render_graph_present_texture_state(),
                          cubey::render::RenderGraphCommandBufferMode::BeginAndEnd,
                          metrics.has_value() ? &*metrics : nullptr);

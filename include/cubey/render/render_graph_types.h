@@ -94,6 +94,7 @@ struct RenderGraphBufferState {
 };
 
 [[nodiscard]] RenderGraphTextureState render_graph_undefined_texture_state() noexcept;
+[[nodiscard]] RenderGraphTextureState render_graph_acquired_color_texture_state() noexcept;
 [[nodiscard]] RenderGraphTextureState render_graph_present_texture_state() noexcept;
 [[nodiscard]] RenderGraphTextureState render_graph_color_attachment_texture_state() noexcept;
 [[nodiscard]] RenderGraphTextureState render_graph_sampled_depth_texture_state() noexcept;

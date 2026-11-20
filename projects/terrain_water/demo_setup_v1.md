@@ -52,8 +52,8 @@ placeholder below with that environment's interpreter. The output case must be
 fresh; this operation serializes inputs and does not run a hydraulic simulation.
 
 ```sh
-rtk proxy mkdir -p outputs/fluid/demo-local/cases
-rtk proxy /path/to/worker-env/bin/python -B \
+mkdir -p outputs/fluid/demo-local/cases
+/path/to/worker-env/bin/python -B \
   projects/terrain_water/tools/prepare_case.py \
   --site mountain --configuration patch-1024-16m --rain 512 \
   --out outputs/fluid/demo-local/cases/mountain-patch-1024-16m
@@ -75,7 +75,7 @@ built by normal Cubey targets. Current reference pins are declared in
 To inspect the explicit build inputs without building or installing anything:
 
 ```sh
-rtk proxy python3 projects/terrain_water/external_synxflow/build_synxflow_service_v1.py --help
+python3 projects/terrain_water/external_synxflow/build_synxflow_service_v1.py --help
 ```
 
 The helper accepts a SHA-pinned upstream archive, explicit private CUDA toolkit,
@@ -98,7 +98,7 @@ a separate correspondence/parity and lifecycle qualification pass.
 Replace the two runtime paths with existing qualified artifacts:
 
 ```sh
-rtk proxy python3 projects/terrain_water/run_terrain_rain_demo.py \
+python3 projects/terrain_water/run_terrain_rain_demo.py \
   --study outputs/fluid/demo-local \
   --native-python /path/to/worker-env/bin/python \
   --extension /path/to/qualified/flood.cpython-311-x86_64-linux-gnu.so \

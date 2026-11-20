@@ -698,7 +698,7 @@ void record_fluid_25d_catchment_draw(
         marker_buffer = import("fluid 2.5D motion markers", motion_markers->buffer());
     const cubey::render::RenderGraphTextureState initial_state =
         target_mode == Fluid25DRenderTargetMode::Present
-            ? cubey::render::render_graph_undefined_texture_state()
+            ? cubey::render::render_graph_acquired_color_texture_state()
             : cubey::render::render_graph_color_attachment_texture_state();
     const cubey::render::RenderGraphTextureState final_state =
         target_mode == Fluid25DRenderTargetMode::Present

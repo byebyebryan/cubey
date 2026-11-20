@@ -16,7 +16,7 @@ void MaterialCubesApp::record_cube_frame(cubey::host::WindowedAppContext& contex
                 .command_buffer = frame.command_buffer,
                 .color_target = frame.color_target,
                 .frame_slot = frame.frame_slot,
-                .color_initial_state = cubey::render::render_graph_undefined_texture_state(),
+                .color_initial_state = cubey::render::render_graph_acquired_color_texture_state(),
                 .color_final_state = cubey::render::render_graph_present_texture_state(),
                 .command_buffer_label = "vkEndCommandBuffer material_cubes",
             },

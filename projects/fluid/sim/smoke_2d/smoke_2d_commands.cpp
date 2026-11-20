@@ -1,5 +1,7 @@
 #include "smoke_2d_commands.h"
 
+#include "../common/fluid_source_buffer.h"
+
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -10,7 +12,6 @@
 #include <array>
 #include <cstdint>
 #include <span>
-#include <stdexcept>
 #include <vector>
 
 namespace cubey::projects::fluid::smoke_2d {
@@ -36,23 +37,6 @@ using DispatchGroups = cubey::render::ComputeDispatchGroups;
 [[nodiscard]] DispatchGroups compute_dispatch_groups(const Smoke2DConfig& config) {
     return cubey::render::ceil_dispatch_groups(config.grid_width, config.grid_height,
                                                kSmoke2DComputeGroupSize);
-}
-
-void record_injector_buffer_update(VkCommandBuffer command_buffer,
-                                   const Smoke2DGpuResources& resources,
-                                   std::span<const Smoke2DInjectorGpu> injectors) {
-    if (injectors.empty()) {
-        return;
-    }
-    const VkDeviceSize byte_size =
-        static_cast<VkDeviceSize>(injectors.size() * sizeof(Smoke2DInjectorGpu));
-    if (byte_size > resources.injectors().size()) {
-        throw std::runtime_error("smoke injector update exceeds injector buffer size");
-    }
-    vkCmdUpdateBuffer(command_buffer, resources.injectors().handle(), 0, byte_size,
-                      injectors.data());
-    cubey::vulkan::record_transfer_write_barrier(
-        command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT);
 }
 
 [[nodiscard]] float debug_view_push_value(Smoke2DDebugView view) {
@@ -162,7 +146,7 @@ void record_smoke_compute(VkCommandBuffer command_buffer, Smoke2DGpuResources& r
         return;
     }
 
-    record_injector_buffer_update(command_buffer, resources, injectors);
+    record_source_buffer_update(command_buffer, resources.injectors(), std::as_bytes(injectors));
 
     SimulationPushConstants push_constants = simulation_push_constants(config, frame);
     const DispatchGroups groups = compute_dispatch_groups(config);
@@ -323,7 +307,7 @@ void record_fullscreen_draw(VkCommandBuffer command_buffer, const Smoke2DGpuReso
         {.label = "fluid pressure B", .byte_size = resources.pressure_b().size()},
         resources.pressure_b().handle());
     const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
-        "backbuffer", color_target, cubey::render::render_graph_undefined_texture_state(),
+        "backbuffer", color_target, cubey::render::render_graph_acquired_color_texture_state(),
         cubey::render::render_graph_present_texture_state());
 
     graph.add_pass("fluid simulation", cubey::render::RenderGraphQueueDomain::Compute)

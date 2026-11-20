@@ -259,7 +259,7 @@ std::filesystem::path shader_path(const char* filename) {
 [[nodiscard]] cubey::render::RenderGraphTextureState
 cloud_ref_target_initial_state(CloudRefTargetMode mode) {
     return mode == CloudRefTargetMode::Present
-               ? cubey::render::render_graph_undefined_texture_state()
+               ? cubey::render::render_graph_acquired_color_texture_state()
                : cubey::render::render_graph_color_attachment_texture_state();
 }
 

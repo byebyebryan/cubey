@@ -28,9 +28,26 @@ same staged path and waits for completion before frame zero.
 
 ## Run
 
+From the repository root, build the viewer and download the single-file Fox
+sample at the same Khronos revision used by Cubey's conformance preset. The
+launch selects the animated Walk clip.
+
 ```sh
-./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/asset.glb
-./build/dev/projects/gltf_viewer/gltf_viewer --headless --input path/to/asset.glb \
+cmake --preset dev
+cmake --build --preset dev --target cubey_project_gltf_viewer
+mkdir -p cache/gltf-viewer
+curl --fail --location --output cache/gltf-viewer/Fox.glb \
+  https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox/glTF-Binary/Fox.glb
+./build/dev/projects/gltf_viewer/gltf_viewer --input cache/gltf-viewer/Fox.glb --animation-index 1
+```
+
+See the [Fox source and credits](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox).
+To capture the same sample or inspect your own asset, supply its path with
+`--input`:
+
+```sh
+./build/dev/projects/gltf_viewer/gltf_viewer --headless \
+  --input cache/gltf-viewer/Fox.glb --animation-index 1 \
   --frames 120 --width 1280 --height 720 --output /tmp/cubey-gltf.png
 ```
 

@@ -151,7 +151,7 @@ RenderContext::end_frame(const RenderFrame& frame,
                                 {
                                     QueueWait{
                                         .semaphore = frame_slot.image_available,
-                                        .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                        .stage_mask = kSwapchainAcquireWaitStage,
                                     },
                                 },
                             .command_buffers = command_buffers,

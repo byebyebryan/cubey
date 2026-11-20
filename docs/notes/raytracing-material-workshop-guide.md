@@ -9,9 +9,9 @@ differ; identical recipe identity does not imply identical glass images.
 From the repository root:
 
 ```sh
-rtk proxy build/dev/projects/raytracing/raytracing --scene materials --material bronze
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/material-workshop/gallery-clear.json
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/material-workshop/gallery-scene.json
+build/dev/projects/raytracing/raytracing --scene materials --material bronze
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/material-workshop/gallery-clear.json
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/material-workshop/gallery-scene.json
 ```
 
 The gallery presets select the opt-in dense sphere mesh. The ordinary workshop
@@ -24,8 +24,8 @@ or cached voxel field. Existing SDF, forward and RT defaults remain available.
 ## Compare the consumers
 
 ```sh
-rtk proxy build/dev/projects/pbr_materials/pbr_materials --config projects/pbr_materials/presets/rt-comparison/gallery-clear.json
-rtk proxy build/dev/projects/sdf/sdf --config projects/sdf/presets/rt-comparison/gallery-clear.json
+build/dev/projects/pbr_materials/pbr_materials --config projects/pbr_materials/presets/rt-comparison/gallery-clear.json
+build/dev/projects/sdf/sdf --config projects/sdf/presets/rt-comparison/gallery-clear.json
 ```
 
 The [common manifest](../../projects/raytracing/presets/material-workshop/manifest.json) records canonical
@@ -131,7 +131,7 @@ geometry, denoising and history reprojection remain outside this milestone.
 ## Clear films and evidence
 
 ```sh
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/material-workshop/gallery-dawn.json --headless --capture video --frames 240 --fps 30 --width 1920 --height 1080 --output outputs/raytracing/workshop-dawn.mp4
+build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/material-workshop/gallery-dawn.json --headless --capture video --frames 240 --fps 30 --width 1920 --height 1080 --output outputs/raytracing/workshop-dawn.mp4
 ```
 
 Orbit, dawn and dusk presets exist for all three consumers. The eight-second
@@ -145,10 +145,10 @@ offline convergence cost does not establish real-time converged motion.
 Use the qualification tools serially, without another owned GPU workload:
 
 ```sh
-rtk proxy uv run projects/raytracing/tools/qualify_material_gallery.py --mode quality --output outputs/raytracing/gallery-quality
-rtk proxy uv run projects/raytracing/tools/qualify_material_gallery.py --mode cost --output outputs/raytracing/gallery-cost
-rtk proxy uv run projects/raytracing/tools/qualify_material_gallery.py --preset projects/raytracing/presets/material-workshop/gallery-scene.json --mode cost --output outputs/raytracing/scene-gallery-cost
-rtk proxy python projects/raytracing/tools/qualify_material_presentation.py --stage films --output outputs/raytracing/workshop-films
+uv run projects/raytracing/tools/qualify_material_gallery.py --mode quality --output outputs/raytracing/gallery-quality
+uv run projects/raytracing/tools/qualify_material_gallery.py --mode cost --output outputs/raytracing/gallery-cost
+uv run projects/raytracing/tools/qualify_material_gallery.py --preset projects/raytracing/presets/material-workshop/gallery-scene.json --mode cost --output outputs/raytracing/scene-gallery-cost
+python projects/raytracing/tools/qualify_material_presentation.py --stage films --output outputs/raytracing/workshop-films
 ```
 
 Additional tools qualify recipe records, GGX/dielectric arithmetic and independent

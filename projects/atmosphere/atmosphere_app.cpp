@@ -1187,7 +1187,7 @@ class AtmosphereApp {
                                const cubey::host::WindowedRenderFrame& frame) {
         collect_gpu_timings(profile_recorder, frame.timing.frame_index, frame.frame_slot);
         record_atmosphere_graph(device, frame.command_buffer, frame.color_target, frame.frame_slot,
-                                cubey::render::render_graph_undefined_texture_state(),
+                                cubey::render::render_graph_acquired_color_texture_state(),
                                 cubey::render::render_graph_present_texture_state(),
                                 cubey::render::RenderGraphCommandBufferMode::BeginAndEnd,
                                 profile_recorder, frame.timing.frame_index);

@@ -1114,7 +1114,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     render::RenderGraphBuilder builder;
     const auto output = builder.import_color_target(
         "sdf.output", target,
-        present ? render::render_graph_undefined_texture_state()
+        present ? render::render_graph_acquired_color_texture_state()
                 : render::render_graph_color_attachment_texture_state(),
         present ? render::render_graph_present_texture_state()
                 : render::render_graph_color_attachment_texture_state());

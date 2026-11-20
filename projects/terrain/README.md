@@ -16,18 +16,22 @@ consumer of the shared saved-water foundation; Water 3D/Pyro adoption is deferre
 ## Build and run
 
 ```sh
-rtk proxy cmake --preset release
-rtk proxy cmake --build --preset release --target cubey_project_terrain -j 6
-rtk proxy build/release/projects/terrain/terrain
+cmake --preset release
+cmake --build --preset release --target cubey_project_terrain -j 6
 ```
 
-No-argument startup retains the canonical legacy backdrop and requires its
-prepared source. It does not silently select a wet landscape or generate assets.
-For an existing prepared catalogue, select a landscape explicitly:
+Prepare the [legacy backdrop source](#generate-the-asset) before the first
+no-argument launch. With the source in `cache/terrain/sources/v1/default`, run:
 
 ```sh
-rtk proxy build/release/projects/terrain/terrain --terrain-landscape mountain-local
-rtk proxy build/release/projects/terrain/terrain --terrain-landscape mountain-dry
+build/release/projects/terrain/terrain
+```
+
+If you have a prepared catalogue, select a landscape explicitly:
+
+```sh
+build/release/projects/terrain/terrain --terrain-landscape mountain-local
+build/release/projects/terrain/terrain --terrain-landscape mountain-dry
 ```
 
 Other named saved-water options are `mountain-wide`, `mountain-interior-wide`
@@ -62,8 +66,8 @@ Preparation is explicit and can require downloaded Terrain Diffusion code/models
 and an isolated environment. It never runs during ordinary build/startup.
 
 ```sh
-rtk proxy cmake --build --preset release --target cubey_terrain_generate_default_asset
-rtk proxy python3 projects/terrain/tools/prepare_terrain_landscapes.py --help
+cmake --build --preset release --target cubey_terrain_generate_default_asset
+python3 projects/terrain/tools/prepare_terrain_landscapes.py --help
 ```
 
 Current tools live in [tools](tools/README.md); source and landscape recipes are

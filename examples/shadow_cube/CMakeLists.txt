@@ -18,3 +18,7 @@ cubey_add_app_target(
         shaders/shadow_present.vert
         shaders/shadow_present.frag
 )
+
+if (BUILD_TESTING)
+    cubey_add_windowed_sync_test(shadow_cube_windowed_sync cubey_example_shadow_cube)
+endif()

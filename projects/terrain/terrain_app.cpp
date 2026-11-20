@@ -125,7 +125,7 @@ int TerrainApp::run_windowed() {
         collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index,
                             frame.frame_slot);
         record_target(context.device(), frame.command_buffer, frame.color_target,
-                      frame.frame_slot, cubey::render::render_graph_undefined_texture_state(),
+                      frame.frame_slot, cubey::render::render_graph_acquired_color_texture_state(),
                       cubey::render::render_graph_present_texture_state(),
                       cubey::render::RenderGraphCommandBufferMode::BeginAndEnd);
     };

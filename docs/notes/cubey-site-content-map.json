@@ -58,7 +58,7 @@
     {
       "id": "materials",
       "title": "Materials",
-      "subtitle": "Twelve shared recipes, in forward PBR and SDF ray marching.",
+      "subtitle": "Twelve shared recipes across forward PBR, SDF ray marching and hardware ray tracing.",
       "question": "What makes wood, metal, cloth and glass read differently?",
       "order": 6,
       "page_model": "Full twelve-material library with an explicit renderer choice, then two native lighting/cut stories",

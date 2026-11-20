@@ -17,7 +17,7 @@ ShadowCubeApp::ShadowRenderGraph ShadowCubeApp::current_render_graph(
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle backbuffer_handle =
         graph.import_color_target("backbuffer", frame.color_target,
-                                  cubey::render::render_graph_undefined_texture_state(),
+                                  cubey::render::render_graph_acquired_color_texture_state(),
                                   cubey::render::render_graph_present_texture_state());
     const cubey::render::RenderGraphTextureHandle scene_color_handle =
         graph.create_texture(cubey::render::RenderGraphTextureDesc{
@@ -26,10 +26,15 @@ ShadowCubeApp::ShadowRenderGraph ShadowCubeApp::current_render_graph(
             .format = frame.color_target.format,
             .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
         });
-    const cubey::render::RenderGraphTextureHandle scene_depth_handle =
-        graph.import_depth_target("scene depth",
-                                  cubey::render::depth_target_view(depth_attachment()),
-                                  cubey::render::render_graph_undefined_texture_state());
+    // Each clear discards the shared image's contents after the preceding frame's depth writes.
+    const cubey::render::RenderGraphTextureHandle scene_depth_handle = graph.import_depth_target(
+        "scene depth", cubey::render::depth_target_view(depth_attachment()),
+        cubey::render::RenderGraphTextureState{
+            .layout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .access_mask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .stage_mask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+        });
     const std::optional<cubey::render::RenderGraphTextureState> shadow_initial_state =
         shadow_depth_is_sampled_ ? cubey::render::render_graph_sampled_depth_texture_state()
                                  : cubey::render::render_graph_undefined_texture_state();

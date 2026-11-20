@@ -17,6 +17,19 @@ function(cubey_add_windowed_smoke_test name target success_pattern)
     set_property(TEST "${name}" APPEND PROPERTY LABELS "windowed;gpu;interactive")
 endfunction()
 
+function(cubey_add_windowed_sync_test name target)
+    find_program(CUBEY_XVFB_RUN xvfb-run)
+    if (CUBEY_XVFB_RUN)
+        add_test(NAME ${name}
+            COMMAND "${CMAKE_COMMAND}" "-DXVFB_RUN=${CUBEY_XVFB_RUN}"
+                "-DAPP=$<TARGET_FILE:${target}>" -DFRAMES=8
+                -P "${PROJECT_SOURCE_DIR}/tests/tools/check_windowed_sync.cmake")
+        set_tests_properties(${name} PROPERTIES LABELS "windowed;gpu;sync_validation"
+            ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1" TIMEOUT 90
+            FIXTURES_REQUIRED verified_sync_validation)
+    endif()
+endfunction()
+
 function(cubey_label_tests label)
     foreach(test_name ${ARGN})
         if (NOT TEST "${test_name}")

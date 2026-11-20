@@ -16,8 +16,8 @@ saves. The film, native master, recipe and receipt remain in the
 ## Build and explicit setup
 
 ```sh
-rtk proxy cmake --preset release
-rtk proxy cmake --build --preset release --target cubey_project_terrain_water -j 6
+cmake --preset release
+cmake --build --preset release --target cubey_project_terrain_water -j 6
 ```
 
 The live application runs SynxFlow in a separate CUDA worker. Cubey is a Vulkan
@@ -36,11 +36,11 @@ The native extension must retain its qualified hash, including with path overrid
 
 ```sh
 # Admission; no worker or GUI starts. Add --check-runtime for optional ABI/import checks.
-rtk proxy python3 projects/terrain_water/run_terrain_rain_demo.py \
+python3 projects/terrain_water/run_terrain_rain_demo.py \
   --study outputs/fluid/demo-local --print-command
 
 # Same prepared inputs, local GUI.
-rtk proxy python3 projects/terrain_water/run_terrain_rain_demo.py \
+python3 projects/terrain_water/run_terrain_rain_demo.py \
   --study outputs/fluid/demo-local
 ```
 
@@ -83,7 +83,7 @@ it starts, changes rain, pauses and resets, not a performance qualification.
 ## Replay and builtin alternatives
 
 ```sh
-rtk proxy python3 projects/terrain_water/run_terrain_rain_demo.py replay \
+python3 projects/terrain_water/run_terrain_rain_demo.py replay \
   --study outputs/fluid/demo-local --recording /path/to/recording.json
 ```
 
@@ -93,8 +93,8 @@ controls do not change recorded hydraulics. Native expert entry points retain
 the established `--fluid25d-*` flags:
 
 ```sh
-rtk proxy build/release/projects/terrain_water/terrain_water --help
-rtk proxy build/release/projects/terrain_water/terrain_water \
+build/release/projects/terrain_water/terrain_water --help
+build/release/projects/terrain_water/terrain_water \
   --fluid25d-backend recording --fluid25d-recording /path/to/recording.json
 ```
 

@@ -35,11 +35,11 @@ Build and prepare the model using the [project guide](../../projects/raytracing/
 The new launcher defaults to fixed RT and exposes three cameras across all modes:
 
 ```sh
-rtk proxy python3 projects/raytracing/tools/dragon_demo.py --mode rt --view whole
-rtk proxy python3 projects/raytracing/tools/dragon_demo.py --mode forward --view detail
-rtk proxy python3 projects/raytracing/tools/dragon_demo.py --mode sampled --view front
-rtk proxy python3 projects/raytracing/tools/dragon_demo.py --mode rt --rt-samples 2
-rtk proxy python3 projects/raytracing/tools/dragon_demo.py -- --no-controls
+python3 projects/raytracing/tools/dragon_demo.py --mode rt --view whole
+python3 projects/raytracing/tools/dragon_demo.py --mode forward --view detail
+python3 projects/raytracing/tools/dragon_demo.py --mode sampled --view front
+python3 projects/raytracing/tools/dragon_demo.py --mode rt --rt-samples 2
+python3 projects/raytracing/tools/dragon_demo.py -- --no-controls
 ```
 
 All choices use FOV 45°, pitch 0.35 and disabled shadows. Whole: yaw 0.45,
@@ -59,7 +59,7 @@ inspect a launch without starting the renderer.
 Timing is a separate serial, deterministic GPU sweep:
 
 ```sh
-rtk proxy python3 projects/raytracing/tools/benchmark_dragon_demo.py --output outputs/raytracing/dragon-demo-costs
+python3 projects/raytracing/tools/benchmark_dragon_demo.py --output outputs/raytracing/dragon-demo-costs
 ```
 
 It measures 151 matching moving poses after 30 warmup frames at 1920×1080,

@@ -10,6 +10,10 @@
 
 namespace cubey::vulkan {
 
+// The first transition of an acquired color image must chain to this semaphore wait.
+inline constexpr VkPipelineStageFlags kSwapchainAcquireWaitStage =
+    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
 struct SwapchainConfig {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkExtent2D desired_extent{1, 1};

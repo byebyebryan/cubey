@@ -110,7 +110,7 @@ void PbrFurnaceApp::record_furnace_frame(VkCommandBuffer command_buffer,
         forward_pass().record_to_present_target(recorder, color_target, record);
         recorder.end("vkEndCommandBuffer pbr_furnace");
     } else {
-        recorder.transition_image_layout(cubey::vulkan::begin_depth_attachment_transition(
+        recorder.transition_image_layout(cubey::vulkan::discard_reused_depth_attachment_transition(
             forward_pass().depth_attachment().handle()));
         forward_pass().record_to_prepared_target(recorder, color_target, record);
     }

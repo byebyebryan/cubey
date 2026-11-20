@@ -223,7 +223,7 @@ void ForwardComparison::render(VkCommandBuffer command, render::ColorTargetView 
                     .color_target = output,
                     .frame_slot = slot,
                     .color_initial_state =
-                        present ? render::render_graph_undefined_texture_state()
+                        present ? render::render_graph_acquired_color_texture_state()
                                 : render::render_graph_color_attachment_texture_state(),
                     .color_final_state =
                         present ? render::render_graph_present_texture_state()

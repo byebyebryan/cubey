@@ -110,7 +110,7 @@ surface_color_texture_desc(const char* label, VkExtent2D extent, VkFormat format
 [[nodiscard]] cubey::render::RenderGraphTextureState
 target_initial_state(Water2DRenderTargetMode target_mode) {
     return target_mode == Water2DRenderTargetMode::Present
-               ? cubey::render::render_graph_undefined_texture_state()
+               ? cubey::render::render_graph_acquired_color_texture_state()
                : cubey::render::render_graph_color_attachment_texture_state();
 }
 

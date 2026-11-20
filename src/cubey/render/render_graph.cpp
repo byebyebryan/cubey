@@ -1,5 +1,7 @@
 #include <cubey/render/render_graph.h>
 
+#include <cubey/vulkan/swapchain.h>
+
 namespace cubey::render {
 
 RenderGraphTextureState render_graph_undefined_texture_state() noexcept {
@@ -7,6 +9,14 @@ RenderGraphTextureState render_graph_undefined_texture_state() noexcept {
         .layout = VK_IMAGE_LAYOUT_UNDEFINED,
         .access_mask = 0,
         .stage_mask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+    };
+}
+
+RenderGraphTextureState render_graph_acquired_color_texture_state() noexcept {
+    return {
+        .layout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .access_mask = 0,
+        .stage_mask = cubey::vulkan::kSwapchainAcquireWaitStage,
     };
 }
 

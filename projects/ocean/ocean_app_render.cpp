@@ -93,7 +93,7 @@ void OceanApp::record_ocean_post(const cubey::vulkan::CommandRecorder& recorder,
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureState initial_state =
         target_mode == OceanRenderTargetMode::Present
-            ? cubey::render::render_graph_undefined_texture_state()
+            ? cubey::render::render_graph_acquired_color_texture_state()
             : cubey::render::render_graph_color_attachment_texture_state();
     const cubey::render::RenderGraphTextureState final_state =
         target_mode == OceanRenderTargetMode::Present

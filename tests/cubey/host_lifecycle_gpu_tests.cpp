@@ -155,7 +155,7 @@ void windowed(vulkan::GpuRuntimeExecutionMode mode, Failure failure, bool resize
         const vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         recorder.transition_image_layout(
-            vulkan::begin_color_attachment_transition(frame.color_target.image));
+            vulkan::begin_acquired_color_attachment_transition(frame.color_target.image));
         clear(frame.command_buffer, frame.color_target);
         recorder.transition_image_layout(
             vulkan::finish_color_attachment_for_present_transition(frame.color_target.image));
