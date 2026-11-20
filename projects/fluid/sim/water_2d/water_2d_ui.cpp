@@ -19,6 +19,13 @@ constexpr std::array<Water2DDebugView, 8> kDebugViews{
     Water2DDebugView::Solid,    Water2DDebugView::Foam,
 };
 
+constexpr std::array kSurfaceAppearances{
+    Water2DSurfaceAppearance::StripedLightbox,
+    Water2DSurfaceAppearance::ReliefPrint,
+    Water2DSurfaceAppearance::DyeRibbon,
+    Water2DSurfaceAppearance::Classic,
+};
+
 constexpr std::array<Water2DScenario, 4> kScenarios{
     Water2DScenario::DamBreak,
     Water2DScenario::ObstacleSplash,
@@ -59,6 +66,10 @@ void draw_water_2d_ui(Water2DUiContext ui) {
 
     cubey::host::imgui_enum_combo("Debug view", ui.debug_view, kDebugViews,
                                   water_2d_debug_view_name);
+    if (ui.debug_view == Water2DDebugView::Surface) {
+        cubey::host::imgui_enum_combo("Appearance", ui.config.surface_appearance,
+                                      kSurfaceAppearances, water_2d_surface_appearance_name);
+    }
 
     ImGui::Spacing();
     if (const cubey::host::ScopedImGuiGroup group{
@@ -224,14 +235,21 @@ void draw_water_2d_ui(Water2DUiContext ui) {
                                         0.0F, 18.0F, "%.1f px");
         cubey::host::imgui_slider_float("Surface threshold", &ui.config.surface_threshold, 0.20F,
                                         1.60F, "%.2f");
-        cubey::host::imgui_slider_float("Edge strength", &ui.config.edge_strength, 0.0F, 1.5F,
-                                        "%.2f");
-        cubey::host::imgui_slider_float("Refraction", &ui.config.surface_refraction_strength, 0.0F,
-                                        0.05F, "%.3f");
-        cubey::host::imgui_slider_float("Caustics", &ui.config.surface_caustic_strength, 0.0F,
-                                        0.8F, "%.2f");
-        cubey::host::imgui_slider_float("Specular", &ui.config.surface_specular_strength, 0.0F,
-                                        1.5F, "%.2f");
+        const bool classic = ui.config.surface_appearance == Water2DSurfaceAppearance::Classic;
+        const bool lightbox =
+            ui.config.surface_appearance == Water2DSurfaceAppearance::StripedLightbox;
+        if (classic || lightbox) {
+            cubey::host::imgui_slider_float("Edge strength", &ui.config.edge_strength, 0.0F, 1.5F,
+                                            "%.2f");
+            cubey::host::imgui_slider_float("Refraction", &ui.config.surface_refraction_strength,
+                                            0.0F, 0.05F, "%.3f");
+            cubey::host::imgui_slider_float("Specular", &ui.config.surface_specular_strength, 0.0F,
+                                            1.5F, "%.2f");
+        }
+        if (classic) {
+            cubey::host::imgui_slider_float("Caustics", &ui.config.surface_caustic_strength, 0.0F,
+                                            0.8F, "%.2f");
+        }
         cubey::host::imgui_slider_float("Foam strength", &ui.config.foam_strength, 0.0F, 1.5F,
                                         "%.2f");
         cubey::host::imgui_slider_float("Foam sharpness", &ui.config.foam_sharpness, 0.35F, 4.0F,

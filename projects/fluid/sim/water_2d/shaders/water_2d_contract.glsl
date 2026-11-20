@@ -20,6 +20,10 @@
 #define WATER2D_BINDING_DIAGNOSTICS 16
 
 #define WATER2D_EMPTY_PARTICLE 0xffffffffu
+#define WATER2D_APPEARANCE_CLASSIC 0u
+#define WATER2D_APPEARANCE_STRIPED_LIGHTBOX 1u
+#define WATER2D_APPEARANCE_RELIEF_PRINT 2u
+#define WATER2D_APPEARANCE_DYE_RIBBON 3u
 
 #define WATER2D_SIMULATION_PARAMS                                                              \
     layout(set = 0, binding = WATER2D_BINDING_SIM_PARAMS, std140) uniform SimulationParams {    \
@@ -65,6 +69,7 @@
         vec4 surface_options;                                                                   \
         vec4 foam_options;                                                                      \
         vec4 style_options;                                                                     \
+        uvec4 appearance_options;                                                               \
     } params
 
 #endif

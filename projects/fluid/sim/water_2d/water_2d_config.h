@@ -35,6 +35,13 @@ enum class Water2DScenario : std::uint32_t {
     HoseFill = 3,
 };
 
+enum class Water2DSurfaceAppearance : std::uint32_t {
+    Classic = 0,
+    StripedLightbox = 1,
+    ReliefPrint = 2,
+    DyeRibbon = 3,
+};
+
 enum class Water2DObstacleShape : std::uint32_t {
     None = 0,
     Circle = 1,
@@ -57,7 +64,7 @@ enum class Water2DDiagnosticSlot : std::uint32_t {
 inline constexpr std::uint32_t kWater2DComputeGroupSize = 8;
 inline constexpr std::uint32_t kWater2DSimulationPushConstantFloatCount = 8;
 inline constexpr std::uint32_t kWater2DSimulationUniformFloatCount = 56;
-inline constexpr std::uint32_t kWater2DRenderPushConstantFloatCount = 20;
+inline constexpr std::uint32_t kWater2DRenderPushConstantBytes = 96;
 inline constexpr std::uint32_t kWater2DDefaultGridWidth = 256;
 inline constexpr std::uint32_t kWater2DDefaultGridHeight = 144;
 inline constexpr std::uint32_t kWater2DWallCells = 2;
@@ -110,6 +117,7 @@ struct Water2DConfig {
     std::uint32_t particle_capacity = 386224;
     std::uint32_t substeps = 1;
     Water2DScenario scenario = Water2DScenario::DamBreak;
+    Water2DSurfaceAppearance surface_appearance = Water2DSurfaceAppearance::StripedLightbox;
     Water2DTransferMode transfer_mode = Water2DTransferMode::Apic;
     float fixed_delta_seconds = 1.0F / 60.0F;
     float gravity = -1.60F;
@@ -148,6 +156,7 @@ struct Water2DConfig {
 };
 
 struct Water2DStartupOptions {
+    std::optional<std::string> surface_appearance{};
     std::optional<std::string> transfer_mode{};
     std::optional<std::uint32_t> transfer_limit{};
     std::optional<bool> hose{};
@@ -230,6 +239,39 @@ static_assert(sizeof(Water2DDispatchPushConstants) ==
         return "Hose fill";
     }
     return "Dam break";
+}
+
+[[nodiscard]] inline const char*
+water_2d_surface_appearance_name(Water2DSurfaceAppearance appearance) {
+    switch (appearance) {
+    case Water2DSurfaceAppearance::Classic:
+        return "Classic";
+    case Water2DSurfaceAppearance::StripedLightbox:
+        return "Striped Lightbox";
+    case Water2DSurfaceAppearance::ReliefPrint:
+        return "Two-Ink Relief Print";
+    case Water2DSurfaceAppearance::DyeRibbon:
+        return "Dye Ribbon";
+    }
+    return "Striped Lightbox";
+}
+
+[[nodiscard]] inline Water2DSurfaceAppearance
+water_2d_surface_appearance_from_name(std::string_view name) {
+    if (name == "striped-lightbox") {
+        return Water2DSurfaceAppearance::StripedLightbox;
+    }
+    if (name == "relief-print") {
+        return Water2DSurfaceAppearance::ReliefPrint;
+    }
+    if (name == "dye-ribbon") {
+        return Water2DSurfaceAppearance::DyeRibbon;
+    }
+    if (name == "classic") {
+        return Water2DSurfaceAppearance::Classic;
+    }
+    throw std::runtime_error("water 2D appearance must be striped-lightbox, relief-print, "
+                             "dye-ribbon, or classic");
 }
 
 [[nodiscard]] inline const char* water_2d_obstacle_shape_name(Water2DObstacleShape shape) {
@@ -554,6 +596,10 @@ water_2d_config_from_options(const common::FluidGridOptions& grid,
     }
     water_config.profile_diagnostics = common_config.profile_diagnostics;
     water_config.profile_diagnostic_interval = common_config.profile_diagnostic_interval;
+    if (options.surface_appearance) {
+        water_config.surface_appearance =
+            water_2d_surface_appearance_from_name(*options.surface_appearance);
+    }
     if (grid.width) {
         water_config.grid_width = *grid.width;
     }

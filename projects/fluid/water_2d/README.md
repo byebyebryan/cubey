@@ -31,10 +31,20 @@ Controls:
 - Space pauses/resumes.
 - `R` resets the tank.
 - `D` cycles debug views.
+- **Appearance** switches between Striped Lightbox, Two-Ink Relief Print,
+  Dye Ribbon, and Classic during a run. It also works while paused.
 - The UI groups reset preset, transfer mode, fill volume, hose emission, drain
   pull/removal, optional wave forcing, obstacle shape, solver controls,
   particle separation, volume expansion, collision tuning, surface/foam shading,
   GPU timings, and live frame/memory diagnostics.
+
+Striped Lightbox is the default. It bends the tank's diagonal stripes through
+the moving sheet. Two-Ink Relief Print emphasizes the silhouette and spray.
+Dye Ribbon colors a band of the initial fill and follows those particles as
+they move through the tank. Hose particles enter undyed. Classic keeps the
+translucent cyan treatment. Select an appearance at startup with
+`--water2d-appearance striped-lightbox|relief-print|dye-ribbon|classic`, or
+set `water2d.appearance` in a config file.
 
 Debug views:
 
@@ -86,13 +96,12 @@ Main buffers:
   active particles, inactive scan particles, occupied cells, overpacked cells,
   truncation pressure, and max cell occupancy.
 
-The default renderer reconstructs an implicit screen-space surface from the
-particles. It splats active particles into an offscreen scalar density texture,
-runs configurable separable smoothing passes, then composites water inside a
-simple lab-tank backdrop from the smoothed threshold with density-gradient
-normals, density-based optical depth, cheap refraction, procedural caustics,
-contour specular, and heuristic foam. The Surface UI section exposes the
-surface reconstruction, refraction, caustics, specular, and foam controls. The
+The renderer reconstructs an implicit screen-space surface from the particles.
+It splats active particles into an offscreen density texture, smooths it with
+configurable separable passes, and composites from the smoothed threshold.
+Dye Ribbon uses a second density channel to reconstruct the concentration of
+tagged particles. The Surface UI section exposes reconstruction, foam, and
+the optical controls applicable to the selected appearance. The
 older direct particle-bin splat path is retained for debug views so particle
 layout, occupied cells, pressure, divergence, solids, and the foam mask are
 still inspectable without the surface reconstruction pass.

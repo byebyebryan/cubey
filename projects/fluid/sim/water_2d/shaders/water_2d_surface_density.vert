@@ -10,6 +10,7 @@ layout(set = 0, binding = WATER2D_BINDING_PARTICLE_POSITIONS, std430) readonly b
 } particle_positions;
 
 layout(location = 0) out vec2 frag_local;
+layout(location = 1) flat out float frag_dye;
 
 vec2 quad_corner(uint index) {
     vec2 corners[6] = vec2[](
@@ -26,6 +27,7 @@ vec2 quad_corner(uint index) {
 void main() {
     uint particle_id = uint(gl_InstanceIndex);
     uint particle_count = uint(params.particle_options.x + 0.5);
+    frag_dye = 0.0;
     if (particle_id >= particle_count || particle_positions.values[particle_id].w < 0.5) {
         frag_local = vec2(2.0);
         gl_Position = vec4(2.0, 2.0, 0.0, 1.0);
@@ -40,6 +42,16 @@ void main() {
     vec2 center = particle_positions.values[particle_id].xy;
     vec2 screen_uv = vec2(center.x + (corner.x * radius / aspect),
                           1.0 - (center.y + (corner.y * radius)));
+
+    uint reset_particle_count = params.appearance_options.y;
+    if (params.appearance_options.x == WATER2D_APPEARANCE_DYE_RIBBON &&
+        particle_id < reset_particle_count) {
+        // Reset allocates IDs in row order. The tag travels with each particle and
+        // never changes when the hose adds particles beyond the reset range.
+        float fill_order = float(particle_id) / float(reset_particle_count);
+        frag_dye = smoothstep(0.245, 0.275, fill_order) *
+                   (1.0 - smoothstep(0.409, 0.440, fill_order));
+    }
 
     frag_local = corner;
     gl_Position = vec4(screen_uv * 2.0 - 1.0, 0.0, 1.0);

@@ -55,8 +55,11 @@ inline config::OptionSpec option(std::string path, std::string cli, std::string 
         .type = ValueType::String,
         .range = {},
         .enum_values = {}};
-    builder
-        .bind(std::move(debug_view), config.debug_view)
+    builder.bind(std::move(debug_view), config.debug_view)
+        .bind(option("water2d.appearance", "--water2d-appearance", "Surface Appearance",
+                     "Render style for the reconstructed water surface.", ValueType::Enum, {},
+                     {"striped-lightbox", "relief-print", "dye-ribbon", "classic"}),
+              config.water.surface_appearance)
         .bind(option("water2d.transfer", "--water2d-transfer", "Transfer",
                      "Particle-grid transfer mode.", ValueType::Enum, {},
                      {"apic", "pic-flip", "picflip", "pic/flip"}),

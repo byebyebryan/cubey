@@ -19,9 +19,10 @@ struct RenderPushConstants {
     std::array<float, 4> surface_options{};
     std::array<float, 4> foam_options{};
     std::array<float, 4> style_options{};
+    std::array<std::uint32_t, 4> appearance_options{};
 };
 
-static_assert(sizeof(RenderPushConstants) == sizeof(float) * kWater2DRenderPushConstantFloatCount);
+static_assert(sizeof(RenderPushConstants) == kWater2DRenderPushConstantBytes);
 
 using DispatchGroups = cubey::render::ComputeDispatchGroups;
 
@@ -167,6 +168,13 @@ target_final_state(Water2DRenderTargetMode target_mode) {
                 config.surface_caustic_strength,
                 config.surface_specular_strength,
                 style_time,
+            },
+        .appearance_options =
+            {
+                static_cast<std::uint32_t>(config.surface_appearance),
+                config.active_particle_count,
+                0U,
+                0U,
             },
     };
 }
@@ -578,10 +586,10 @@ void record_surface_density_pass(const cubey::vulkan::CommandRecorder& recorder,
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 0.0F),
         },
-        [&resources, frame_slot, instance_count,
+        [&resources, frame_slot, instance_count, appearance = config.surface_appearance,
          push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
             const cubey::render::GraphicsPipelineResource& pipeline =
-                resources.surface_density_pipeline_resource();
+                resources.surface_density_pipeline_resource(appearance);
             pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
             pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(), 0,
                                               resources.field_descriptor_set(frame_slot));
@@ -604,12 +612,12 @@ void record_surface_smooth_pass(const cubey::vulkan::CommandRecorder& recorder,
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 0.0F),
         },
-        [&resources, frame_slot, source,
+        [&resources, frame_slot, source, appearance = config.surface_appearance,
          push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
             cubey::render::record_fullscreen_pipeline_draw(
                 pass_recorder,
                 {
-                    .pipeline = &resources.surface_smooth_pipeline_resource(),
+                    .pipeline = &resources.surface_smooth_pipeline_resource(appearance),
                     .descriptor_set = surface_source_descriptor_set(resources, frame_slot, source),
                 },
                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, push_constants);
@@ -744,18 +752,19 @@ build_water_2d_frame_graph(cubey::render::ColorTargetView color_target,
     if (debug_view == Water2DDebugView::Surface) {
         const std::uint32_t smoothing_iterations =
             std::min(config.surface_smoothing_iterations, std::uint32_t{8});
+        const VkFormat density_format = resources.surface_density_format(config.surface_appearance);
         const cubey::render::RenderGraphTextureHandle raw_density =
-            graph.create_texture(surface_color_texture_desc(
-                "water surface raw density", color_target.extent, VK_FORMAT_R32_SFLOAT));
+            graph.create_texture(surface_color_texture_desc("water surface raw density",
+                                                            color_target.extent, density_format));
         const cubey::render::RenderGraphTextureHandle surface_a =
             smoothing_iterations > 0
                 ? graph.create_texture(surface_color_texture_desc(
-                      "water surface density A", color_target.extent, VK_FORMAT_R32_SFLOAT))
+                      "water surface density A", color_target.extent, density_format))
                 : raw_density;
         const cubey::render::RenderGraphTextureHandle surface_b =
             smoothing_iterations > 0
                 ? graph.create_texture(surface_color_texture_desc(
-                      "water surface density B", color_target.extent, VK_FORMAT_R32_SFLOAT))
+                      "water surface density B", color_target.extent, density_format))
                 : raw_density;
 
         graph.add_pass("water surface density", cubey::render::RenderGraphQueueDomain::Graphics)

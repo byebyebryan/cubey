@@ -18,10 +18,17 @@
 
 #include <vulkan/vulkan.h>
 
+#include <array>
+#include <cstddef>
 #include <optional>
 #include <vector>
 
 namespace cubey::projects::fluid::water_2d {
+
+[[nodiscard]] constexpr std::size_t
+surface_density_format_index(Water2DSurfaceAppearance appearance) {
+    return appearance == Water2DSurfaceAppearance::DyeRibbon ? 1U : 0U;
+}
 
 namespace gpu_resource_detail {
 // Project-private simulation products and target-dependent presentation resources.
@@ -72,8 +79,10 @@ struct TargetResources {
     std::optional<cubey::render::MaterialInstance> surface_source_a_material_;
     std::optional<cubey::render::MaterialInstance> surface_source_b_material_;
     std::optional<cubey::render::MaterialInstance> surface_composite_material_;
-    std::optional<cubey::render::GraphicsPipelineResource> surface_density_pipeline_resource_;
-    std::optional<cubey::render::GraphicsPipelineResource> surface_smooth_pipeline_resource_;
+    std::array<VkFormat, 2> surface_density_formats_{};
+    std::array<std::optional<cubey::render::GraphicsPipelineResource>, 2>
+        surface_density_pipelines_;
+    std::array<std::optional<cubey::render::GraphicsPipelineResource>, 2> surface_smooth_pipelines_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_composite_pipeline_resource_;
 };
 } // namespace gpu_resource_detail
@@ -142,9 +151,10 @@ class Water2DGpuResources : private gpu_resource_detail::GlobalResources,
     diagnostics_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline_resource() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource&
-    surface_density_pipeline_resource() const;
+    surface_density_pipeline_resource(Water2DSurfaceAppearance appearance) const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource&
-    surface_smooth_pipeline_resource() const;
+    surface_smooth_pipeline_resource(Water2DSurfaceAppearance appearance) const;
+    [[nodiscard]] VkFormat surface_density_format(Water2DSurfaceAppearance appearance) const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource&
     surface_composite_pipeline_resource() const;
     [[nodiscard]] VkDescriptorSet

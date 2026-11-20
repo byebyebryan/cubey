@@ -21,10 +21,18 @@ namespace {
 static_assert(kWater2DComputeGroupSize == 8U);
 inline constexpr VkDeviceSize kWater2DSimulationPushConstantBytes =
     sizeof(float) * kWater2DSimulationPushConstantFloatCount;
-inline constexpr VkDeviceSize kWater2DRenderPushConstantBytes =
-    sizeof(float) * kWater2DRenderPushConstantFloatCount;
 inline constexpr std::uint32_t kWater2DGpuProfilerPassCapacity = 32;
-inline constexpr VkFormat kWater2DSurfaceScalarFormat = VK_FORMAT_R32_SFLOAT;
+
+[[nodiscard]] VkFormat water_surface_dye_format(const cubey::vulkan::Device& device) {
+    constexpr VkFormatFeatureFlags features =
+        VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT |
+        VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+    VkFormatProperties properties{};
+    vkGetPhysicalDeviceFormatProperties(device.physical_device(), VK_FORMAT_R32G32_SFLOAT,
+                                        &properties);
+    return (properties.optimalTilingFeatures & features) == features ? VK_FORMAT_R32G32_SFLOAT
+                                                                     : VK_FORMAT_R16G16_SFLOAT;
+}
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_WATER_2D_SHADER_DIR) / filename;
@@ -184,8 +192,12 @@ void Water2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
 
 void Water2DGpuResources::destroy_swapchain_resources() {
     surface_composite_pipeline_resource_.reset();
-    surface_smooth_pipeline_resource_.reset();
-    surface_density_pipeline_resource_.reset();
+    for (auto& pipeline : surface_smooth_pipelines_) {
+        pipeline.reset();
+    }
+    for (auto& pipeline : surface_density_pipelines_) {
+        pipeline.reset();
+    }
     surface_composite_material_.reset();
     surface_source_b_material_.reset();
     surface_source_a_material_.reset();
@@ -514,12 +526,16 @@ void Water2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
         create_graphics_pipeline_resource(device, extent, color_format, shader_stage_files,
                                           set_layouts, debug_material_pass,
                                           render_pipeline_resource_);
-        create_graphics_pipeline_resource(
-            device, extent, kWater2DSurfaceScalarFormat, surface_density_shaders, set_layouts,
-            surface_density_material_pass, surface_density_pipeline_resource_);
-        create_graphics_pipeline_resource(
-            device, extent, kWater2DSurfaceScalarFormat, surface_smooth_shaders, source_set_layouts,
-            surface_smooth_material_pass, surface_smooth_pipeline_resource_);
+        surface_density_formats_ = {VK_FORMAT_R32_SFLOAT, water_surface_dye_format(device)};
+        for (std::size_t index = 0; index < surface_density_formats_.size(); ++index) {
+            const VkFormat density_format = surface_density_formats_[index];
+            create_graphics_pipeline_resource(
+                device, extent, density_format, surface_density_shaders, set_layouts,
+                surface_density_material_pass, surface_density_pipelines_[index]);
+            create_graphics_pipeline_resource(
+                device, extent, density_format, surface_smooth_shaders, source_set_layouts,
+                surface_smooth_material_pass, surface_smooth_pipelines_[index]);
+        }
         create_graphics_pipeline_resource(device, extent, color_format, surface_composite_shaders,
                                           composite_set_layouts, surface_composite_material_pass,
                                           surface_composite_pipeline_resource_);
@@ -722,15 +738,19 @@ Water2DGpuResources::render_pipeline_resource() const {
 }
 
 const cubey::render::GraphicsPipelineResource&
-Water2DGpuResources::surface_density_pipeline_resource() const {
-    return require_initialized(surface_density_pipeline_resource_,
+Water2DGpuResources::surface_density_pipeline_resource(Water2DSurfaceAppearance appearance) const {
+    return require_initialized(surface_density_pipelines_[surface_density_format_index(appearance)],
                                "water surface density pipeline is not initialized");
 }
 
 const cubey::render::GraphicsPipelineResource&
-Water2DGpuResources::surface_smooth_pipeline_resource() const {
-    return require_initialized(surface_smooth_pipeline_resource_,
+Water2DGpuResources::surface_smooth_pipeline_resource(Water2DSurfaceAppearance appearance) const {
+    return require_initialized(surface_smooth_pipelines_[surface_density_format_index(appearance)],
                                "water surface smooth pipeline is not initialized");
+}
+
+VkFormat Water2DGpuResources::surface_density_format(Water2DSurfaceAppearance appearance) const {
+    return surface_density_formats_[surface_density_format_index(appearance)];
 }
 
 const cubey::render::GraphicsPipelineResource&

@@ -57,6 +57,7 @@ void require_not_contains(const std::string& haystack, const char* needle, const
 
 int main() {
     try {
+        using cubey::projects::fluid::water_2d::Water2DSurfaceAppearance;
         const cubey::projects::fluid::water_2d::Water2DConfig config;
         constexpr std::size_t kExpectedCellCount = std::size_t{256} * std::size_t{144};
         constexpr std::size_t kExpectedUFaceCount = std::size_t{257} * std::size_t{144};
@@ -96,6 +97,8 @@ int main() {
         require(config.substeps == 1, "water should default to one simulation substep");
         require(config.scenario == cubey::projects::fluid::water_2d::Water2DScenario::DamBreak,
                 "water should default to the dam-break scenario");
+        require(config.surface_appearance == Water2DSurfaceAppearance::StripedLightbox,
+                "water should default to Striped Lightbox");
         require(config.transfer_mode == cubey::projects::fluid::water_2d::Water2DTransferMode::Apic,
                 "water should default to APIC transfer");
         require(config.flip_ratio == 0.78F, "water should default to a stable PIC/FLIP blend");
@@ -150,7 +153,7 @@ int main() {
                     sizeof(float) *
                         cubey::projects::fluid::water_2d::kWater2DSimulationPushConstantFloatCount,
                 "water dispatch push constants should match the shader contract size");
-        require(cubey::projects::fluid::water_2d::kWater2DRenderPushConstantFloatCount == 20,
+        require(cubey::projects::fluid::water_2d::kWater2DRenderPushConstantBytes == 96,
                 "water render push constants should include style controls");
 
         require(cubey::projects::fluid::water_2d::cell_count(config) == kExpectedCellCount,
@@ -404,7 +407,8 @@ int main() {
             std::filesystem::temp_directory_path() / "cubey-water-2d-template-test.json";
         {
             std::ofstream file(layered_path);
-            file << R"({"grid":{"size":24},"water2d":{"transfer":"apic","hose":false}})";
+            file
+                << R"({"grid":{"size":24},"water2d":{"transfer":"apic","hose":false,"appearance":"relief-print"}})";
         }
         const auto layered = parse_project({"water_2d", "--config", layered_path.string(),
                                             "--water2d-transfer", "picflip", "--water2d-hose",
@@ -416,6 +420,20 @@ int main() {
                 "water --set and named flags should layer over config files");
         require(layered.water.hose && layered.simulation.hose.enabled,
                 "water positive bool alias should enable hose emission");
+        require(layered.simulation.surface_appearance == Water2DSurfaceAppearance::ReliefPrint,
+                "water should read its appearance from JSON");
+        auto appearance_override = parse_project(
+            {"water_2d", "--config", layered_path.string(), "--water2d-appearance", "dye-ribbon"});
+        require(appearance_override.simulation.surface_appearance ==
+                    Water2DSurfaceAppearance::DyeRibbon,
+                "water appearance CLI should override JSON");
+        appearance_override.simulation.scenario =
+            cubey::projects::fluid::water_2d::Water2DScenario::HoseFill;
+        cubey::projects::fluid::water_2d::apply_water_2d_scenario_defaults(
+            appearance_override.simulation);
+        require(appearance_override.simulation.surface_appearance ==
+                    Water2DSurfaceAppearance::DyeRibbon,
+                "water scenario changes should preserve the selected appearance");
         const auto negative = parse_project({"water_2d", "--no-water2d-hose",
                                              "--no-water2d-drain", "--water2d-wave"});
         require(negative.water.hose == false && negative.water.drain == false &&
@@ -761,12 +779,12 @@ int main() {
         require_contains(surface_density_vert, "gl_InstanceIndex",
                          "water surface density pass should draw instanced particle splats");
         require_contains(surface_density_frag, "out_density",
-                         "water surface density pass should output scalar density");
+                         "water surface density pass should output particle density");
         require_contains(surface_smooth_frag, "kMaxSmoothRadius",
                          "water surface smoothing should clamp its sample radius");
         require_contains(surface_smooth_frag, "params.foam_options.w < 0.5",
                          "water surface smoothing should switch between x/y passes");
-        require_contains(surface_composite_frag, "fwidth(density)",
+        require_contains(surface_composite_frag, "fwidth(state.density)",
                          "water surface composite should antialias the implicit threshold");
         require_contains(surface_composite_frag, "density_gradient",
                          "water surface composite should shade from smoothed density gradients");
