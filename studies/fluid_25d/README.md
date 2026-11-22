@@ -7,6 +7,9 @@ startup does not import these study harnesses.
 
 ## Read by question
 
+- [Narrows and Sweep](narrows_and_sweep/README.md) reproduces the Shallow Water
+  showcase film from the finite-volume solver, relief renderer and shared atmosphere.
+
 - [Decision/evidence map](notes/development_map.md): why authored rivers, generated
   terrain, external reuse and shared rendering evolved separately.
 - [Bank/shoreline studies](notes/shoreline_boundary_study_v1.md),

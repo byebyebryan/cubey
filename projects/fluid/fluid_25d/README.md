@@ -1,8 +1,8 @@
 # Fluid 2.5D — builtin shallow water
 
 The [shallow-water showcase](https://dev.byebyebryan.com/cubey/demos/simulation/shallow-water/)
-presents this builtin experiment; this guide covers native use and its boundary
-from the separate external Terrain Water project.
+shows Narrows and Sweep, an offline relief capture of Cubey’s finite-volume solver.
+This guide covers the interactive Vulkan experiments.
 
 A standalone demo of Cubey's own Vulkan shallow-water solvers. This is not the
 SynxFlow terrain-water showcase; that lives in [Terrain Water](../../terrain_water/README.md).
@@ -28,8 +28,13 @@ build/release/projects/fluid/fluid_25d/fluid_25d
 
 Add `--fluid25d-solver finite-volume` for the retained numerical alternative.
 For a capture, add `--headless --frames 120 --output outputs/fluid/FRESH.png`.
-The existing Original/legacy presentation is unchanged. A dedicated builtin
-presentation pass is still future work; the Terrain Water film is not its preview.
+The built-in app uses the Original presentation.
+
+## Narrows and Sweep capture
+
+The showcase film follows an inlet surge through 222 m of winding channel.
+The [Narrows and Sweep capture guide](../../../studies/fluid_25d/narrows_and_sweep/README.md)
+reproduces the solver trace, shared atmosphere, relief, poster and film.
 
 ## Ownership and retained history
 

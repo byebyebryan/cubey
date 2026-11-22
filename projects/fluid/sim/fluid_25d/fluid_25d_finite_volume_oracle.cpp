@@ -203,6 +203,36 @@ void validate_finite_volume_scenario(const Fluid25DConfig& config,
     }
 }
 
+void validate_step_forcing(const Fluid25DConfig& config,
+                           const Fluid25DFiniteVolumeStepForcing& forcing) {
+    const std::size_t cell_count = fluid_25d_cell_count(config);
+    if ((!forcing.source_velocity_m_per_s.empty() &&
+         forcing.source_velocity_m_per_s.size() != cell_count) ||
+        (!forcing.acceleration_m_per_s2.empty() &&
+         forcing.acceleration_m_per_s2.size() != cell_count) ||
+        (!forcing.outlet_retained_depth_m.empty() &&
+         forcing.outlet_retained_depth_m.size() != cell_count) ||
+        !std::isfinite(forcing.acceleration_minimum_depth_m) ||
+        forcing.acceleration_minimum_depth_m < 0.0F) {
+        throw std::runtime_error("fluid 2.5D finite-volume step forcing is invalid");
+    }
+    for (const Fluid25DVelocity& velocity : forcing.source_velocity_m_per_s) {
+        if (!std::isfinite(velocity.x_m_per_s) || !std::isfinite(velocity.y_m_per_s)) {
+            throw std::runtime_error("fluid 2.5D finite-volume source velocity is nonfinite");
+        }
+    }
+    for (const Fluid25DVectorAcceleration& acceleration : forcing.acceleration_m_per_s2) {
+        if (!std::isfinite(acceleration.x_m_per_s2) || !std::isfinite(acceleration.y_m_per_s2)) {
+            throw std::runtime_error("fluid 2.5D finite-volume acceleration is nonfinite");
+        }
+    }
+    for (const float retained_depth_m : forcing.outlet_retained_depth_m) {
+        if (!std::isfinite(retained_depth_m) || retained_depth_m < 0.0F) {
+            throw std::runtime_error("fluid 2.5D finite-volume outlet retained depth is invalid");
+        }
+    }
+}
+
 [[nodiscard]] float cfl_number(const Fluid25DConfig& config, const std::vector<float>& depth_m,
                                const std::vector<Fluid25DMomentum>& momentum_m2_per_s,
                                float delta_seconds) {
@@ -236,11 +266,26 @@ void validate_finite_volume_scenario(const Fluid25DConfig& config,
 
 } // namespace
 
-Fluid25DFiniteVolumeOracle::Fluid25DFiniteVolumeOracle(Fluid25DConfig config,
-                                                       Fluid25DScenarioData scenario)
-    : config_(std::move(config)), scenario_(std::move(scenario)) {
+Fluid25DFiniteVolumeOracle::Fluid25DFiniteVolumeOracle(
+    Fluid25DConfig config, Fluid25DScenarioData scenario,
+    Fluid25DFiniteVolumeInitialState initial_state)
+    : config_(std::move(config)), scenario_(std::move(scenario)),
+      initial_state_(std::move(initial_state)) {
     validate_finite_volume_scenario(config_, scenario_);
     const std::size_t cell_count = fluid_25d_cell_count(config_);
+    if (!initial_state_.momentum_m2_per_s.empty() &&
+        initial_state_.momentum_m2_per_s.size() != cell_count) {
+        throw std::runtime_error(
+            "fluid 2.5D finite-volume initial momentum field size does not match");
+    }
+    for (std::size_t index = 0; index < initial_state_.momentum_m2_per_s.size(); ++index) {
+        const Fluid25DMomentum& momentum = initial_state_.momentum_m2_per_s[index];
+        if (!std::isfinite(momentum.x_m2_per_s) || !std::isfinite(momentum.y_m2_per_s) ||
+            (scenario_.initial_water_depth_m[index] <= config_.minimum_wet_depth_m &&
+             (momentum.x_m2_per_s != 0.0F || momentum.y_m2_per_s != 0.0F))) {
+            throw std::runtime_error("fluid 2.5D finite-volume initial momentum is invalid");
+        }
+    }
     water_depth_m_.resize(cell_count);
     source_sink_depth_m_.resize(cell_count);
     next_water_depth_m_.resize(cell_count);
@@ -297,16 +342,24 @@ double Fluid25DFiniteVolumeOracle::total_tracer_amount_m3() const {
 }
 
 Fluid25DStepLedger Fluid25DFiniteVolumeOracle::step(float source_rate_scale) {
-    return step_impl(source_rate_scale, 0.0F).water;
+    return step_impl(source_rate_scale, 0.0F, {}).water;
+}
+
+Fluid25DStepLedger
+Fluid25DFiniteVolumeOracle::step(float source_rate_scale,
+                                 const Fluid25DFiniteVolumeStepForcing& forcing) {
+    validate_step_forcing(config_, forcing);
+    return step_impl(source_rate_scale, 0.0F, forcing).water;
 }
 
 Fluid25DTracerStepResult Fluid25DFiniteVolumeOracle::step_with_dye(float source_rate_scale) {
     const float dye_source_concentration = dye_source_schedule_.source_concentration(config_);
-    return step_impl(source_rate_scale, dye_source_concentration);
+    return step_impl(source_rate_scale, dye_source_concentration, {});
 }
 
-Fluid25DTracerStepResult Fluid25DFiniteVolumeOracle::step_impl(float source_rate_scale,
-                                                               float dye_source_concentration) {
+Fluid25DTracerStepResult
+Fluid25DFiniteVolumeOracle::step_impl(float source_rate_scale, float dye_source_concentration,
+                                      const Fluid25DFiniteVolumeStepForcing& forcing) {
     if (!std::isfinite(source_rate_scale) || source_rate_scale < 0.0F) {
         throw std::runtime_error("fluid 2.5D source rate scale must be finite and nonnegative");
     }
@@ -321,8 +374,8 @@ Fluid25DTracerStepResult Fluid25DFiniteVolumeOracle::step_impl(float source_rate
     const float substep_delta_seconds =
         config_.fixed_delta_seconds / static_cast<float>(config_.simulation_substeps);
     for (std::uint32_t substep = 0U; substep < config_.simulation_substeps; ++substep) {
-        const StepResult substep_result =
-            step_substep(substep_delta_seconds, source_rate_scale, dye_source_concentration);
+        const StepResult substep_result = step_substep(substep_delta_seconds, source_rate_scale,
+                                                       dye_source_concentration, forcing);
         result.water.source_volume_m3 += substep_result.water.source_volume_m3;
         result.water.sink_volume_m3 += substep_result.water.sink_volume_m3;
         result.water.boundary_outflow_volume_m3 += substep_result.water.boundary_outflow_volume_m3;
@@ -340,7 +393,8 @@ Fluid25DTracerStepResult Fluid25DFiniteVolumeOracle::step_impl(float source_rate
 
 Fluid25DFiniteVolumeOracle::StepResult
 Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_scale,
-                                         float dye_source_concentration) {
+                                         float dye_source_concentration,
+                                         const Fluid25DFiniteVolumeStepForcing& forcing) {
     const double cell_area_m2 =
         static_cast<double>(config_.cell_size_m) * static_cast<double>(config_.cell_size_m);
     StepResult result;
@@ -369,6 +423,19 @@ Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_
         }
         source_sink_depth_m_[index] = sourced_depth_m;
         source_sink_momentum_m2_per_s_[index] = momentum_m2_per_s_[index];
+        if (!forcing.source_velocity_m_per_s.empty()) {
+            source_sink_momentum_m2_per_s_[index].x_m2_per_s +=
+                source_delta_m * forcing.source_velocity_m_per_s[index].x_m_per_s;
+            source_sink_momentum_m2_per_s_[index].y_m2_per_s +=
+                source_delta_m * forcing.source_velocity_m_per_s[index].y_m_per_s;
+        }
+        if (!forcing.acceleration_m_per_s2.empty() &&
+            sourced_depth_m > forcing.acceleration_minimum_depth_m) {
+            source_sink_momentum_m2_per_s_[index].x_m2_per_s +=
+                forcing.acceleration_m_per_s2[index].x_m_per_s2 * sourced_depth_m * delta_seconds;
+            source_sink_momentum_m2_per_s_[index].y_m2_per_s +=
+                forcing.acceleration_m_per_s2[index].y_m_per_s2 * sourced_depth_m * delta_seconds;
+        }
         ledger.source_volume_m3 += static_cast<double>(source_delta_m) * cell_area_m2;
         const double source_q_m =
             static_cast<double>(source_delta_m) * static_cast<double>(dye_source_concentration);
@@ -381,8 +448,22 @@ Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_
         source_sink_tracer_q_m_[index] = static_cast<float>(sourced_q_m);
         tracer_ledger.source_amount_m3 += source_q_m * cell_area_m2;
 
-        const float requested_sink_delta_m =
-            scenario_.sink_depth_rate_m_per_s[index] * delta_seconds;
+        float requested_sink_delta_m = scenario_.sink_depth_rate_m_per_s[index] * delta_seconds;
+        if (!forcing.outlet_retained_depth_m.empty() &&
+            scenario_.sink_depth_rate_m_per_s[index] > 0.0F) {
+            const float retained_depth_m = forcing.outlet_retained_depth_m[index];
+            const float excess_depth_m = std::max(0.0F, sourced_depth_m - retained_depth_m);
+            const double depth_power = static_cast<double>(excess_depth_m) *
+                                       std::sqrt(static_cast<double>(excess_depth_m));
+            const double requested_depth =
+                static_cast<double>(scenario_.sink_depth_rate_m_per_s[index]) * depth_power *
+                static_cast<double>(delta_seconds);
+            if (!std::isfinite(depth_power) || !std::isfinite(requested_depth)) {
+                throw std::runtime_error(
+                    "fluid 2.5D finite-volume outlet rating curve is nonfinite");
+            }
+            requested_sink_delta_m = std::min(excess_depth_m, static_cast<float>(requested_depth));
+        }
         const double sink_depth_full_m =
             std::max(0.0, sourced_depth_full_m - static_cast<double>(requested_sink_delta_m));
         const float sink_depth_m = static_cast<float>(sink_depth_full_m);
@@ -676,7 +757,11 @@ void Fluid25DFiniteVolumeOracle::reset() {
     std::fill(water_depth_remainder_m_.begin(), water_depth_remainder_m_.end(), 0.0);
     std::fill(source_sink_depth_remainder_m_.begin(), source_sink_depth_remainder_m_.end(), 0.0);
     std::fill(next_water_depth_remainder_m_.begin(), next_water_depth_remainder_m_.end(), 0.0);
-    std::fill(momentum_m2_per_s_.begin(), momentum_m2_per_s_.end(), Fluid25DMomentum{});
+    if (initial_state_.momentum_m2_per_s.empty()) {
+        std::fill(momentum_m2_per_s_.begin(), momentum_m2_per_s_.end(), Fluid25DMomentum{});
+    } else {
+        momentum_m2_per_s_ = initial_state_.momentum_m2_per_s;
+    }
     std::fill(source_sink_momentum_m2_per_s_.begin(), source_sink_momentum_m2_per_s_.end(),
               Fluid25DMomentum{});
     std::fill(next_momentum_m2_per_s_.begin(), next_momentum_m2_per_s_.end(), Fluid25DMomentum{});

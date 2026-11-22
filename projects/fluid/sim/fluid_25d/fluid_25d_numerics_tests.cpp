@@ -668,6 +668,40 @@ void test_finite_volume_open_boundary_and_source_sink_ledgers() {
                   "finite-volume source and sink ledger should reconcile stored water");
     require_close(source_sink_ledger.conservation_error_m3(), 0.0, kLedgerToleranceM3,
                   "finite-volume source and sink ledger should remain conserved");
+
+    std::fill(source_sink.initial_water_depth_m.begin(), source_sink.initial_water_depth_m.end(),
+              0.50F);
+    Fluid25DFiniteVolumeInitialState initial{
+        std::vector<Fluid25DMomentum>(4, Fluid25DMomentum{0.10F, 0.0F})};
+    Fluid25DFiniteVolumeOracle forced(source_sink_config, source_sink, initial);
+    const std::array<Fluid25DVelocity, 4> inlet{{{0.0F, 0.30F}, {}, {}, {}}};
+    const std::array<Fluid25DVectorAcceleration, 4> acceleration{
+        {{0.0F, 0.40F}, {0.0F, 0.40F}, {0.0F, 0.40F}, {0.0F, 0.40F}}};
+    const std::array<float, 4> retained{0.53F, 0.0F, 0.0F, 0.0F};
+    Fluid25DFiniteVolumeStepForcing forcing{
+        .source_velocity_m_per_s = inlet,
+        .acceleration_m_per_s2 = acceleration,
+        .outlet_retained_depth_m = retained,
+    };
+
+    const auto forced_ledger = forced.step(1.0F, forcing);
+    require_close(forced_ledger.source_volume_m3, 0.05, kLedgerToleranceM3,
+                  "source momentum and acceleration must leave the added water volume unchanged");
+    require_close(forced_ledger.sink_volume_m3, 0.02 * std::pow(0.02, 1.5), 0.000001,
+                  "staged outlet should drain according to excess depth");
+    require_close(forced_ledger.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                  "forced finite-volume step should remain conserved");
+    require(forced.momentum_m2_per_s()[0].y_m2_per_s > 0.01F,
+            "the supplied inlet and acceleration should drive positive y momentum");
+
+    const auto ordinary_ledger = forced.step();
+    require_close(ordinary_ledger.sink_volume_m3, 0.02, kLedgerToleranceM3,
+                  "the staged outlet must apply only to the forced step");
+    forced.reset();
+    require_close(forced.momentum_m2_per_s()[0].x_m2_per_s, 0.10, kDepthToleranceM,
+                  "reset should restore the configured initial momentum");
+    require_close(forced.momentum_m2_per_s()[0].y_m2_per_s, 0.0, kDepthToleranceM,
+                  "reset should clear momentum applied by external forcing");
 }
 
 void test_finite_volume_sustained_headwaters_flow_control() {

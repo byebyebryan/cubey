@@ -6,9 +6,40 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
 namespace cubey::projects::fluid::fluid_25d {
+
+struct Fluid25DVectorAcceleration {
+    float x_m_per_s2 = 0.0F;
+    float y_m_per_s2 = 0.0F;
+};
+
+// Optional initial condition for the CPU-only oracle. An empty momentum field
+// preserves the historical zero-momentum start. A nonempty field is copied
+// into the persistent state on construction and every reset.
+struct Fluid25DFiniteVolumeInitialState {
+    std::vector<Fluid25DMomentum> momentum_m2_per_s{};
+};
+
+// Per-fixed-step hydraulic forcing. Cell fields are row-major and must either
+// be empty or match the oracle's cell count. These non-owning spans are read
+// only during the call and are never retained by the oracle.
+struct Fluid25DFiniteVolumeStepForcing {
+    // Water added by the scenario source field enters with this per-cell
+    // velocity. An empty field adds no source momentum.
+    std::span<const Fluid25DVelocity> source_velocity_m_per_s{};
+    // Vector acceleration is applied to the sourced water column for this
+    // fixed step. Callers can scale their spatial envelope before each call.
+    std::span<const Fluid25DVectorAcceleration> acceleration_m_per_s2{};
+    float acceleration_minimum_depth_m = 0.0F;
+
+    // A nonempty field opts into the study's 3/2 outlet rating curve:
+    //   rate * max(depth - retained_depth, 0)^(3/2).
+    // An empty field keeps the original constant sink-rate rule.
+    std::span<const float> outlet_retained_depth_m{};
+};
 
 // Isolated CPU-only reference for a first-order Saint-Venant finite-volume
 // comparison. It intentionally shares only immutable scenario/config fields
@@ -22,12 +53,17 @@ class Fluid25DFiniteVolumeOracle {
     inline static constexpr float kTargetCfl = 0.45F;
     inline static constexpr float kHardCflCeiling = 0.50F;
 
-    Fluid25DFiniteVolumeOracle(Fluid25DConfig config, Fluid25DScenarioData scenario);
+    Fluid25DFiniteVolumeOracle(Fluid25DConfig config, Fluid25DScenarioData scenario,
+                               Fluid25DFiniteVolumeInitialState initial_state = {});
 
     // `source_rate_scale` has the same public fixed-step meaning as the
     // virtual-pipes oracle: it multiplies sources only, not sinks or open
     // outflow faces.
     [[nodiscard]] Fluid25DStepLedger step(float source_rate_scale = 1.0F);
+    // Apply explicitly supplied, per-fixed-step source and vector-acceleration
+    // fields plus an optional outlet rating curve. No forcing is retained.
+    [[nodiscard]] Fluid25DStepLedger step(float source_rate_scale,
+                                          const Fluid25DFiniteVolumeStepForcing& forcing);
     // Opt-in conservative tracer update. Water follows the same source-scale
     // contract as step(); the configured dye pulse is sampled from the
     // completed fixed-step clock and does not alter hydraulic forcing.
@@ -93,15 +129,18 @@ class Fluid25DFiniteVolumeOracle {
     };
 
     [[nodiscard]] StepResult step_substep(float delta_seconds, float source_rate_scale,
-                                          float dye_source_concentration);
-    [[nodiscard]] Fluid25DTracerStepResult step_impl(float source_rate_scale,
-                                                     float dye_source_concentration);
+                                          float dye_source_concentration,
+                                          const Fluid25DFiniteVolumeStepForcing& forcing);
+    [[nodiscard]] Fluid25DTracerStepResult
+    step_impl(float source_rate_scale, float dye_source_concentration,
+              const Fluid25DFiniteVolumeStepForcing& forcing);
     void derive_velocity_and_wet_state();
     void derive_tracer_concentration();
     void record_tracer_ledger(const Fluid25DTracerStepLedger& ledger);
 
     Fluid25DConfig config_{};
     Fluid25DScenarioData scenario_{};
+    Fluid25DFiniteVolumeInitialState initial_state_{};
     std::vector<float> water_depth_m_{};
     std::vector<float> source_sink_depth_m_{};
     std::vector<float> next_water_depth_m_{};
