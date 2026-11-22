@@ -282,11 +282,11 @@
       "title": "Shallow water",
       "owner": "projects/fluid/fluid_25d",
       "dimension": "2.5D",
-      "summary": "Surface flow through an authored catchment, with depth and direction views.",
+      "summary": "A surge threads the narrows and spreads through a winding, shallow channel.",
       "cues": [
-        "Builtin Vulkan solvers",
-        "Virtual pipes",
-        "Finite volume"
+        "Finite volume",
+        "Inlet pulse",
+        "Height contours"
       ],
       "variants": [
         "River V0",
@@ -301,9 +301,9 @@
         "water-2d"
       ],
       "kind": "demo",
-      "boundary": "Retained builtin experiments; distinct from the SynxFlow terrain-water showcase.",
+      "boundary": "Narrows and Sweep is an offline CPU finite-volume capture, separate from the native River V0 launch. It starts at 2.00 m depth at the narrows; the pulse adds 0.94 m there and 0.70 m at the outlet. The solver uses 0.5 m cells over a 222 m reach. Contours mark 0.30, 0.60 and 0.90 m above idle. Terrain Water uses a separate dataset prepared with SynxFlow.",
       "extensions": [],
-      "asset_status": "selected-native-web-media",
+      "asset_status": "selected-offline-web-media",
       "planned_route": "/demos/simulation/shallow-water/",
       "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
       "connection_ids": [
@@ -315,8 +315,8 @@
       },
       "selected_media": {
         "manifest": "site/media/manifest.json",
-        "poster": "shallow-water",
-        "film": "shallow-water-film"
+        "poster": "shallow-water-narrows-and-sweep",
+        "film": "shallow-water-narrows-and-sweep-film"
       }
     },
     {

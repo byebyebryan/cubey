@@ -22,8 +22,7 @@ const ocean = byId['ocean-surface'];
   </section>
   <section class="section" id="simulation-lineup">
     <div class="section-head"><h2>Things in motion.</h2><a href={url('/demos/simulation/',path)}>All simulation demos ↗</a></div>
-    <div class="grid cards">{['water-3d','fire-3d','explosion-3d'].map(id=><Card entry={byId[id]} path={path}/>)}</div>
-    <p class="note">Also explore <a href={url('/demos/simulation/shallow-water/',path)}>shallow water</a>.</p>
+    <div class="grid cards">{['fire-3d','explosion-3d','water-3d','shallow-water'].map(id=><Card entry={byId[id]} path={path}/>)}</div>
   </section>
   <section class="section"><div class="section-head"><h2>Surface and solid.</h2><a href={url('/demos/sdf/',path)}>Four scenes built from solids ↗</a></div><div class="surface-grid"><Card entry={byId['sdf-materials']} path={path}/><Card entry={byId.observatory} path={path}/></div></section>
   <section class="section" id="connections"><div class="section-head"><h2>One experiment opens another.</h2><p>Useful pieces find their way into other scenes.</p></div><div class="grid two connections-grid"><ConnectionPair id="water-to-terrain" from="shallow-water" to="terrain-water" path={path}/><ConnectionPair id="sky-to-materials" from="atmosphere-light" to="mesh-materials" path={path}/></div></section>
@@ -39,6 +38,10 @@ const ocean = byId['ocean-surface'];
   .ocean-study h2 { grid-area: title; align-self: end; }
   .ocean-film { grid-area: film; align-self: center; }
   .ocean-notes { grid-area: notes; max-width: 40ch; }
+
+  @media (min-width: 1001px) {
+    #simulation-lineup .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
 
   @media (max-width: 720px) {
     .ocean-study { grid-template: "title" "film" "notes" / minmax(0, 1fr); }

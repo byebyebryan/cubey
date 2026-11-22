@@ -27,7 +27,7 @@ const publicScope: Record<string,string> = {
   'explosion-3d': 'Uses the same fire and smoke solver as Fire 3D, with a short impulse that creates the expanding plume.',
   'water-2d': 'The native demo can switch between Striped Lightbox, Two-Ink Relief Print, Dye Ribbon and Classic while the same water keeps moving.',
   'smoke-2d': 'In Bowed Plumes, a brief rotational impulse at contact redirects the wakes. The two dyes trace how the resulting folds spread through the grid.',
-  'shallow-water': 'The water here is simulated by Cubey’s shallow-water solver. Terrain Water plays a separate dataset prepared with SynxFlow.',
+  'shallow-water': 'A surge travels through 222 m of winding channel. It rises 94 cm at the narrows and 70 cm at the outlet. Thin contours mark 30, 60 and 90 cm of rise. The camera lowers as the afternoon sun crosses the relief.',
   'terrain-rendering': 'Prepared heightfields and surface detail form the terrain backdrop. This scene uses a fixed focus; it does not demonstrate continuous traversal or live terrain generation.',
   'terrain-water': 'Water motion is replayed from a saved SynxFlow dataset. The sun and lighting follow a separate timeline, so the film is not a real-time solver demonstration.',
   'ocean-surface': 'This capture uses the Windy sea state. The renderer focuses on an open-water surface; shorelines, wakes and underwater rendering are outside this demo.',
@@ -45,7 +45,7 @@ const publicScope: Record<string,string> = {
   'gltf-textures': 'This example shows authored UV placement. Cubey also supports PNG/JPEG and BasisU KTX2 textures. Draco/meshopt compression, arbitrary UV sets and material variants are outside the current renderer.',
 };
 const summaries: Record<string,string> = {
-  'shallow-water':'Water flows through a valley from source to outlet, using Cubey’s shallow-water solver.',
+  'shallow-water':'A surge threads the narrows and spreads through a winding, shallow channel.',
   'terrain-rendering':'Ridges, valleys and fine surface detail take shape through light and self-shadowing.',
   'robot':'A robot takes shape as parts are added, joined and cut.',
   'gltf-layers':'Directional highlights and a clear coat reveal the authored surface of an imported barn lamp.',
@@ -53,13 +53,19 @@ const summaries: Record<string,string> = {
   'gltf-motion':'A skinned Fox walks through its authored clip; a separate cube shows morph-target deformation.',
   'gltf-textures':'Authored UV transforms retain their placement across different material channels.',
 };
+const mediaCaptions: Record<string,string> = {
+  'shallow-water':'Narrows and Sweep · 12-second offline CPU finite-volume capture.',
+};
+const filmLabels: Record<string,string> = {
+  'shallow-water':'12-second offline CPU finite-volume capture, separate from native River V0',
+};
 const cueOverrides: Record<string,string[]> = {
-  'shallow-water':['In-engine solver','Finite volume','Source and outlet'],
+  'shallow-water':['Finite volume','Inlet pulse','Height contours'],
   'gltf-layers':['Anisotropy','Clearcoat','Imported materials'],
   'gltf-optics':['Transmission','Volume thickness','Dispersion'],
   'gltf-textures':['UV0 and UV1','Texture transforms','Material channels'],
 };
-export const entries = design.entries.map(e => ({...e, summary:summaries[e.id]||e.summary, cues:cueOverrides[e.id]||e.cues, scope: publicScope[e.id] || e.boundary}));
+export const entries = design.entries.map(e => ({...e, summary:summaries[e.id]||e.summary, cues:cueOverrides[e.id]||e.cues, scope: publicScope[e.id] || e.boundary, mediaCaption:mediaCaptions[e.id], filmLabel:filmLabels[e.id]}));
 export type Entry = typeof entries[number];
 export const byId = Object.fromEntries(entries.map(e => [e.id,e]));
 export const familyEntries = (id: string) => entries.filter(e => e.family === id);

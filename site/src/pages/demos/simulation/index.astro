@@ -4,17 +4,22 @@ import PageTitle from '../../../components/PageTitle.astro';
 import Card from '../../../components/Card.astro';
 import {primarySimulationEntries,simulationStudyEntries} from '../../../data/catalog';
 const path='/demos/simulation/';
+const waterDemos = new Set(['water-3d', 'shallow-water']);
+const lineup = [
+  ...primarySimulationEntries.filter(entry => !waterDemos.has(entry.id)),
+  ...primarySimulationEntries.filter(entry => waterDemos.has(entry.id)),
+];
 ---
 <Layout title="Simulation" description="Water, fire and expanding plumes, with 2D fluid studies in dye transport and free-surface flow." path={path}>
   <PageTitle subject="Simulation" title="Water. Smoke. Fire." intro="Splashes, flames and expanding plumes, with focused studies of dye transport and free-surface flow." path={path}/>
   <section class="section" id="simulation-lineup">
     <div class="grid cards two">
-      {primarySimulationEntries.map(e => <Card entry={e} path={path}/>)}
+      {lineup.map(e => <Card entry={e} path={path}/>)}
     </div>
   </section>
   <section class="section" id="fluid-studies">
     <div class="section-head"><h2>2D Fluid Studies</h2></div>
-    <div class="grid cards">
+    <div class="grid cards two">
       {simulationStudyEntries.map(e => <Card entry={e} path={path}/>)}
     </div>
   </section>

@@ -1,6 +1,10 @@
 {
   "scope": "Optional trim/quality settings for selected films. Unlisted selections use the shared preparation defaults.",
   "entries": {
+    "shallow-water": {
+      "startSeconds": 6.0,
+      "durationSeconds": 3.5
+    },
     "water-2d": {
       "startSeconds": 2,
       "durationSeconds": 3.5

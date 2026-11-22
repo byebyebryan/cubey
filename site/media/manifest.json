@@ -3017,6 +3017,29 @@
       }
     },
     {
+      "id": "preview-shallow-water-narrows-and-sweep",
+      "file": "/media/preview-shallow-water-narrows-and-sweep.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "439b6533450b605884295ef4917b558f374283ad3f551993cd02723b693496fd",
+      "bytes": 66680,
+      "caption": "Short silent preview. A surge sweeps through the narrows as the camera lowers in afternoon light.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/shallow-water-narrows-and-sweep-film.mp4",
+        "sourceSha256": "ea4345591ff4982f3c70529f69a3543348bbc705197a6fbcfde0380a7a57391c",
+        "sourceRevision": null,
+        "parentAsset": "shallow-water-narrows-and-sweep-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
       "id": "preview-smoke-2d",
       "file": "/media/preview-smoke-2d-capture-20261119.mp4",
       "kind": "video",
@@ -3566,6 +3589,53 @@
       }
     },
     {
+      "id": "shallow-water-narrows-and-sweep",
+      "file": "/media/shallow-water-narrows-and-sweep.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "338e55c5a5dc851855e619823fc720ba70eba5ac86c55dfea20a654760fc7abf",
+      "bytes": 33720,
+      "caption": "A late crest reaches the outlet of the winding channel.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/shallow-water-closeout/capture/poster.png",
+        "sourceSha256": "afbfbf41890947366a95b0a975c3f2e43430c34a97b0c9810f63ecec32e295dd",
+        "sourceRevision": null,
+        "recipe": "site/media/receipts/shallow-water-narrows-and-sweep.json",
+        "note": "Responsive WebP derivatives from frame 275 of the selected film."
+      },
+      "thumbnail": "/media/shallow-water-narrows-and-sweep-640.webp",
+      "thumbnailSha256": "a0f6ec7e0f7a13712653c9c76361324584e58ba305b92702164bc5247ba3110b",
+      "thumbnailBytes": 9680
+    },
+    {
+      "id": "shallow-water-narrows-and-sweep-film",
+      "file": "/media/shallow-water-narrows-and-sweep-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "ea4345591ff4982f3c70529f69a3543348bbc705197a6fbcfde0380a7a57391c",
+      "bytes": 2939540,
+      "caption": "A surge sweeps through the narrows as the camera lowers in afternoon light.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/shallow-water-closeout/capture/film.mp4",
+        "sourceSha256": "ea4345591ff4982f3c70529f69a3543348bbc705197a6fbcfde0380a7a57391c",
+        "sourceRevision": null,
+        "recipe": "site/media/receipts/shallow-water-narrows-and-sweep.json",
+        "note": "Offline CPU finite-volume relief with a 14:00–17:00 solar clock and a 39° finish. The web film is byte-identical to the 12-second capture."
+      }
+    },
+    {
       "id": "smoke-2d",
       "file": "/media/smoke-2d-capture-20261119.webp",
       "kind": "image",
@@ -3929,9 +3999,9 @@
       "preview": "preview-smoke-2d-bowed-plumes"
     },
     "shallow-water": {
-      "poster": "shallow-water",
-      "film": "shallow-water-film",
-      "preview": "preview-shallow-water"
+      "poster": "shallow-water-narrows-and-sweep",
+      "film": "shallow-water-narrows-and-sweep-film",
+      "preview": "preview-shallow-water-narrows-and-sweep"
     },
     "day-night": {
       "poster": "day-night",

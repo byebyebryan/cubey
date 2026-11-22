@@ -51,14 +51,14 @@ function sectionMarkup(page, id) {
   return pages.get(page)?.match(new RegExp(`<section\\b[^>]*\\bid="${id}"[^>]*>([\\s\\S]*?)<\\/section>`))?.[1] ?? '';
 }
 
-const homeSimulation = ['water-3d', 'fire-3d', 'explosion-3d'];
-const primarySimulation = [...homeSimulation, 'shallow-water'];
+const primarySimulation = ['water-3d', 'fire-3d', 'explosion-3d', 'shallow-water'];
+const pairedSimulation = ['fire-3d', 'explosion-3d', 'water-3d', 'shallow-water'];
 const studyIds = ['water-2d', 'smoke-2d'];
 const simulationPage = 'demos/simulation/index.html';
 for (const [page, section, expected] of [
-  ['index.html', 'simulation-lineup', homeSimulation],
+  ['index.html', 'simulation-lineup', pairedSimulation],
   ['demos/index.html', 'simulation-lineup', primarySimulation],
-  [simulationPage, 'simulation-lineup', primarySimulation],
+  [simulationPage, 'simulation-lineup', pairedSimulation],
   [simulationPage, 'fluid-studies', studyIds],
 ]) {
   const entries = [...sectionMarkup(page, section).matchAll(/\bdata-entry="([^"]+)"/g)].map(match => match[1]);

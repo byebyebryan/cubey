@@ -1,0 +1,629 @@
+{
+  "schema": "cubey.shallow-water-narrows-and-sweep.site-media.v1",
+  "scene": "Narrows and Sweep",
+  "scope": "Selected site media derives from an offline CPU finite-volume capture, separate from the native River V0 launch.",
+  "sourceRecipe": "studies/fluid_25d/narrows_and_sweep/capture.py",
+  "captureManifest": {
+    "path": "outputs/site/shallow-water-closeout/capture/capture.json",
+    "sha256": "f8d1382e37260d17d92251614fc1c5832c5ebb2b315a67827e731fcbf7e86516",
+    "bytes": 17378,
+    "sourceBaseRevision": "a7c16ce3b8de75275fe952aa854eaddf3931c3c4",
+    "identityNote": "The capture base revision is paired with the source file fingerprints below; it does not claim that local changed files match the base revision."
+  },
+  "capture": {
+    "scene": "Narrows and Sweep",
+    "sourceBaseRevision": "a7c16ce3b8de75275fe952aa854eaddf3931c3c4",
+    "simulation": "Cubey CPU finite-volume oracle",
+    "renderer": [
+      "MESA-EGL: warning: pci id for fd 3: 10de:2c05, driver (null)",
+      "llvmpipe (LLVM 23.1.5, 256 bits)",
+      "Rendered 360 frame(s)"
+    ],
+    "tools": {
+      "compiler": "c++ (GCC) 16.2.1 20260810",
+      "ffmpeg": "ffmpeg version n9.1 Copyright (c) 2000-2026 the FFmpeg developers"
+    },
+    "film": {
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "frames": 360,
+      "msaa": 4
+    },
+    "posterFrame": 275,
+    "simulationSecondsPerFrame": 0.18,
+    "camera": {
+      "yawDegrees": [
+        3,
+        22
+      ],
+      "pitchDownDegrees": [
+        57,
+        39
+      ],
+      "pitchSettledFrame": 275,
+      "distanceM": [
+        248,
+        251
+      ],
+      "targetYMetres": [
+        47.5,
+        43.5
+      ],
+      "verticalFovDegrees": 32,
+      "interpolation": "smoothstep"
+    },
+    "background": {
+      "source": "Cubey Atmosphere",
+      "mode": "sky-only-no-ground-occlusion",
+      "verticalFovDegrees": 65,
+      "solarHours": [
+        14.0,
+        15.5,
+        17.0
+      ],
+      "interpolation": "linear between display-light samples",
+      "binaries": {
+        "build/dev/projects/atmosphere/atmosphere": {
+          "bytes": 32549168,
+          "sha256": "52a3a108f50e75b433990e3e728332eff602b865f49f474e2c6bec3cd49fda43"
+        },
+        "build/dev/projects/atmosphere/shaders/atmosphere.vert.spv": {
+          "bytes": 1272,
+          "sha256": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87"
+        },
+        "build/dev/projects/atmosphere/shaders/atmosphere.frag.spv": {
+          "bytes": 113980,
+          "sha256": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b"
+        },
+        "build/dev/projects/atmosphere/shaders/forward_pbr_post.vert.spv": {
+          "bytes": 1344,
+          "sha256": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c"
+        },
+        "build/dev/projects/atmosphere/shaders/forward_pbr_post.frag.spv": {
+          "bytes": 4312,
+          "sha256": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526"
+        }
+      },
+      "device": [
+        "anti_aliasing: requested=auto effective=off reason=headless-auto",
+        "headless_png: llvmpipe (LLVM 23.1.5, 256 bits) wrote outputs/site/shallow-water-closeout/capture/sky-0.png at 1280x720",
+        "anti_aliasing: requested=auto effective=off reason=headless-auto",
+        "headless_png: llvmpipe (LLVM 23.1.5, 256 bits) wrote outputs/site/shallow-water-closeout/capture/sky-1.png at 1280x720",
+        "anti_aliasing: requested=auto effective=off reason=headless-auto",
+        "headless_png: llvmpipe (LLVM 23.1.5, 256 bits) wrote outputs/site/shallow-water-closeout/capture/sky-2.png at 1280x720"
+      ],
+      "vulkanIcd": "outputs/site/shallow-water-wrap/software-vulkan/usr/share/vulkan/icd.d/lvp_icd.json"
+    },
+    "observedHydraulics": {
+      "accepted": true,
+      "checks": {
+        "connected_outlet_at_least_11m_every_playback_frame": true,
+        "fields_finite": true,
+        "full_grid_area_over_10cm_is_zero": true,
+        "full_grid_fringe_rows_match_all_snapshots": true,
+        "full_grid_peak_bank_fringe_near_0_0839023m": true,
+        "ledger_mass_residual_below_0_0001_m3": true,
+        "max_cfl_below_0_45": true,
+        "narrows_x95_peak_near_0_937m": true,
+        "outlet_x218_peak_near_0_698m": true,
+        "water_depth_nonnegative": true
+      },
+      "display_bank_fringe": {
+        "max_area_over_10cm_m2": 0,
+        "peak_depth_m": 0.07854712277650837
+      },
+      "display_samples": 360,
+      "full_grid_bank_fringe": {
+        "max_area_over_10cm_m2": 0.0,
+        "peak_depth_m": 0.0839023,
+        "snapshots_checked": 361
+      },
+      "outlet_connectivity": {
+        "depth_threshold_m": 0.25,
+        "minimum_connected_width_m": 11,
+        "minimum_playback_frame_30fps": 0,
+        "playback_frames_checked": 360
+      },
+      "schema": "cubey-fluid25d-narrows-and-sweep-metrics-v1",
+      "snapshots": 361,
+      "stations": {
+        "123": {
+          "duration_above_30_cm_playback_s": 2.4,
+          "end_rise_m": 0.18816,
+          "peak_display_frame_30fps": 152,
+          "peak_playback_time_s": 5.067,
+          "peak_rise_m": 0.76816,
+          "peak_simulation_time_s": 27.36,
+          "rise_20_to_40_playback_s": 0.06666666666666667,
+          "x_m": 123
+        },
+        "168": {
+          "duration_above_30_cm_playback_s": 3.1666666666666665,
+          "end_rise_m": 0.11687,
+          "peak_display_frame_30fps": 222,
+          "peak_playback_time_s": 7.4,
+          "peak_rise_m": 0.82341,
+          "peak_simulation_time_s": 39.96,
+          "rise_20_to_40_playback_s": 0.06666666666666667,
+          "x_m": 168
+        },
+        "187": {
+          "duration_above_30_cm_playback_s": 2.7,
+          "end_rise_m": 0.09528,
+          "peak_display_frame_30fps": 237,
+          "peak_playback_time_s": 7.9,
+          "peak_rise_m": 0.75374,
+          "peak_simulation_time_s": 42.66,
+          "rise_20_to_40_playback_s": 0.16666666666666666,
+          "x_m": 187
+        },
+        "198": {
+          "duration_above_30_cm_playback_s": 2.7333333333333334,
+          "end_rise_m": 0.05003,
+          "peak_display_frame_30fps": 252,
+          "peak_playback_time_s": 8.4,
+          "peak_rise_m": 0.7393,
+          "peak_simulation_time_s": 45.36,
+          "rise_20_to_40_playback_s": 0.1,
+          "x_m": 198
+        },
+        "210": {
+          "duration_above_30_cm_playback_s": 2.2666666666666666,
+          "end_rise_m": -0.01217,
+          "peak_display_frame_30fps": 268,
+          "peak_playback_time_s": 8.933,
+          "peak_rise_m": 0.71732,
+          "peak_simulation_time_s": 48.24,
+          "rise_20_to_40_playback_s": 0.1,
+          "x_m": 210
+        },
+        "218": {
+          "duration_above_30_cm_playback_s": 1.6666666666666667,
+          "end_rise_m": -0.05279,
+          "peak_display_frame_30fps": 275,
+          "peak_playback_time_s": 9.167,
+          "peak_rise_m": 0.69813,
+          "peak_simulation_time_s": 49.5,
+          "rise_20_to_40_playback_s": 0.1,
+          "x_m": 218
+        },
+        "53": {
+          "duration_above_30_cm_playback_s": 4.766666666666667,
+          "end_rise_m": 0.02402,
+          "peak_display_frame_30fps": 96,
+          "peak_playback_time_s": 3.2,
+          "peak_rise_m": 0.96816,
+          "peak_simulation_time_s": 17.28,
+          "rise_20_to_40_playback_s": 0.13333333333333333,
+          "x_m": 53
+        },
+        "95": {
+          "duration_above_30_cm_playback_s": 2.7,
+          "end_rise_m": 0.07366,
+          "peak_display_frame_30fps": 131,
+          "peak_playback_time_s": 4.367,
+          "peak_rise_m": 0.93711,
+          "peak_simulation_time_s": 23.58,
+          "rise_20_to_40_playback_s": 0.06666666666666667,
+          "x_m": 95
+        }
+      },
+      "water_ledger": {
+        "max_absolute_residual_m3": 4.336000102966864e-06,
+        "max_cfl": 0.244477435946
+      }
+    },
+    "sourceFiles": {
+      "studies/fluid_25d/narrows_and_sweep/simulate.cpp": {
+        "bytes": 12898,
+        "sha256": "7e630b6381b0541a31aa5fdf224e486ff7f00f45c139e1b586a2362ab01a9249"
+      },
+      "projects/fluid/sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp": {
+        "bytes": 42630,
+        "sha256": "c6f6e4a49eb8e09dc28dd4a2d7ab909ce2505a50c4cdd4674bff67947a615377"
+      },
+      "studies/fluid_25d/narrows_and_sweep/render.cpp": {
+        "bytes": 21427,
+        "sha256": "63b622d02a2abd3f371949627ff56783112bc60bf4dc3d090aa0d95ea9d2a72e"
+      },
+      "studies/fluid_25d/narrows_and_sweep/relief.frag": {
+        "bytes": 7764,
+        "sha256": "a78f9548a02c05e51e62a0fef11278596f0e3da14adc0bb47d7bf3df6cf6fb65"
+      },
+      "studies/fluid_25d/narrows_and_sweep/relief.vert": {
+        "bytes": 747,
+        "sha256": "a1323daa5a23b88109579632831890cea714d3ab35a830b4d0aaa1fb5c8c02fd"
+      },
+      "studies/fluid_25d/narrows_and_sweep/sky.vert": {
+        "bytes": 193,
+        "sha256": "02d23a775c4cd58f371d38263dc3b838e75612e3b9542110923a1e79c0513aa8"
+      },
+      "studies/fluid_25d/narrows_and_sweep/sky.frag": {
+        "bytes": 809,
+        "sha256": "cd481b975dec03991e810c40238edf76174a61e670751edbaf4d2b71c6d88f15"
+      },
+      "studies/fluid_25d/narrows_and_sweep/solar_sky.py": {
+        "bytes": 3238,
+        "sha256": "966e902e0c2714802239e9bf779e2e6941894a992c32f13b910f4d2055733f5d"
+      },
+      "studies/fluid_25d/narrows_and_sweep/measure.py": {
+        "bytes": 10653,
+        "sha256": "4522d0fa7402b8a55e6725b1764c781425bc9ce906f7d794bda3ed4ceb8dda1f"
+      },
+      "src/cubey/render/atmosphere_environment.cpp": {
+        "bytes": 24830,
+        "sha256": "d641804535281172a535100df261b1762753d86aecf32be951830c515b2aaf97"
+      },
+      "include/cubey/render/atmosphere_environment.h": {
+        "bytes": 7613,
+        "sha256": "7affe7874896a0b3eac7b3fad9c7e5a8c25e6c46aacda5575385d91c0c67e9c7"
+      },
+      "studies/fluid_25d/narrows_and_sweep/capture.py": {
+        "bytes": 8115,
+        "sha256": "97d24ee59ae3b408505719bbb4f57279ba84cd94066483d15b82dc47d7cef54c"
+      },
+      "projects/fluid/sim/fluid_25d/fluid_25d_finite_volume_oracle.h": {
+        "bytes": 7451,
+        "sha256": "c0da29442035e8012ca682aae73bb583a6ef685d56d44f51f178c2f04a80cc09"
+      },
+      "projects/fluid/sim/fluid_25d/fluid_25d_scenarios.h": {
+        "bytes": 76254,
+        "sha256": "bfaea11411e58759ca1334cefa3d0dbc56de3666228a2d149b624e942183ea4b"
+      }
+    },
+    "outputs": {
+      "simulate": {
+        "bytes": 84320,
+        "sha256": "5c59a1e7c1b25ece256971b81a6c7488524298e8808959f27edd7c3e97dff521"
+      },
+      "render": {
+        "bytes": 74760,
+        "sha256": "523450d2352617335e1c9d14b7f3fb1537abf7d6ca1ef8e0f88bcb6b1bf929af"
+      },
+      "film.mp4": {
+        "bytes": 2939540,
+        "sha256": "ea4345591ff4982f3c70529f69a3543348bbc705197a6fbcfde0380a7a57391c"
+      },
+      "poster.png": {
+        "bytes": 297080,
+        "sha256": "afbfbf41890947366a95b0a975c3f2e43430c34a97b0c9810f63ecec32e295dd"
+      },
+      "sky-0.rgb": {
+        "bytes": 2764800,
+        "sha256": "ae4a38489a4ef42e4aedbe4aeba5bc6bc6e168c7ddbb19ee68215901a5b6eb65"
+      },
+      "sky-1.rgb": {
+        "bytes": 2764800,
+        "sha256": "9b114f6005eae8f0b02454be8c72ed44d074105b9cfbb5a6484aae9126a1e08e"
+      },
+      "sky-2.rgb": {
+        "bytes": 2764800,
+        "sha256": "9a4d02b610cb3a3b9b0ef3acfb9a78df59ac13bcffa206ddc31f1c9ec887a95b"
+      },
+      "sky-0.png": {
+        "bytes": 207168,
+        "sha256": "23680fc3981e44204d38dc209e3ccd72b07db5833fe4d0decf2ffc40cdbfc4cb"
+      },
+      "sky-1.png": {
+        "bytes": 240991,
+        "sha256": "6e081fe3391880ebf282bb16270f0adf073d601a13b008afd682b982aba4567a"
+      },
+      "sky-2.png": {
+        "bytes": 248863,
+        "sha256": "093352820fb411d8654adf2dc75b8f5f24120c1f4605ed7961018385e0f52393"
+      },
+      "trace/fields.f32": {
+        "bytes": 106463232,
+        "sha256": "6462fd2b0826bdc6cbf2280606af0e753bd7c2d04f46554c8c049499a4b89a1b"
+      },
+      "trace/ledger.csv": {
+        "bytes": 22207,
+        "sha256": "79c2379a9bb3d90c8786fa823b7afbe9f289019ca21f448deb24fdb3d4f78ccc"
+      },
+      "trace/sections.csv": {
+        "bytes": 22431,
+        "sha256": "ae2c2fbd2f66ec2516a2f1874428d0552a7429676dac1b1c276deb9af21f170c"
+      },
+      "trace/full-grid-fringe.csv": {
+        "bytes": 5768,
+        "sha256": "3741e55a633d688c69a00be6bb4ec2e1160e99d371d6421ed3ec0a5d1fff8964"
+      },
+      "hydraulics.json": {
+        "bytes": 3642,
+        "sha256": "b4739d83f55bb94e9d1d0d88322d498a709874cf9adece84f2e86d5c831a95ca"
+      }
+    },
+    "commands": [
+      [
+        "c++",
+        "-std=c++20",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-I",
+        "include",
+        "-I",
+        "projects/fluid/sim/fluid_25d",
+        "studies/fluid_25d/narrows_and_sweep/simulate.cpp",
+        "projects/fluid/sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp",
+        "-o",
+        "outputs/site/shallow-water-closeout/capture/simulate"
+      ],
+      [
+        "c++",
+        "-std=c++20",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-I",
+        "include",
+        "studies/fluid_25d/narrows_and_sweep/render.cpp",
+        "src/cubey/render/atmosphere_environment.cpp",
+        "-o",
+        "outputs/site/shallow-water-closeout/capture/render",
+        "-lEGL",
+        "-lGL"
+      ],
+      [
+        "build/dev/projects/atmosphere/atmosphere",
+        "--headless",
+        "--frames",
+        "1",
+        "--width",
+        "1280",
+        "--height",
+        "720",
+        "--time-of-day-mode",
+        "solar",
+        "--time-hours",
+        "14.0",
+        "--camera-altitude-km",
+        "0.18",
+        "--camera-yaw-offset-deg",
+        "54.463104",
+        "--camera-pitch-offset-deg",
+        "-46.124506",
+        "--no-reference-geometry",
+        "--no-clouds",
+        "--atmosphere-ground-mode",
+        "sky-only-no-ground-occlusion",
+        "--output",
+        "outputs/site/shallow-water-closeout/capture/sky-0.png"
+      ],
+      [
+        "ffmpeg",
+        "-hide_banner",
+        "-nostdin",
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        "outputs/site/shallow-water-closeout/capture/sky-0.png",
+        "-frames:v",
+        "1",
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        "rgb24",
+        "outputs/site/shallow-water-closeout/capture/sky-0.rgb"
+      ],
+      [
+        "build/dev/projects/atmosphere/atmosphere",
+        "--headless",
+        "--frames",
+        "1",
+        "--width",
+        "1280",
+        "--height",
+        "720",
+        "--time-of-day-mode",
+        "solar",
+        "--time-hours",
+        "15.5",
+        "--camera-altitude-km",
+        "0.18",
+        "--camera-yaw-offset-deg",
+        "54.463104",
+        "--camera-pitch-offset-deg",
+        "-46.124506",
+        "--no-reference-geometry",
+        "--no-clouds",
+        "--atmosphere-ground-mode",
+        "sky-only-no-ground-occlusion",
+        "--output",
+        "outputs/site/shallow-water-closeout/capture/sky-1.png"
+      ],
+      [
+        "ffmpeg",
+        "-hide_banner",
+        "-nostdin",
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        "outputs/site/shallow-water-closeout/capture/sky-1.png",
+        "-frames:v",
+        "1",
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        "rgb24",
+        "outputs/site/shallow-water-closeout/capture/sky-1.rgb"
+      ],
+      [
+        "build/dev/projects/atmosphere/atmosphere",
+        "--headless",
+        "--frames",
+        "1",
+        "--width",
+        "1280",
+        "--height",
+        "720",
+        "--time-of-day-mode",
+        "solar",
+        "--time-hours",
+        "17.0",
+        "--camera-altitude-km",
+        "0.18",
+        "--camera-yaw-offset-deg",
+        "54.463104",
+        "--camera-pitch-offset-deg",
+        "-46.124506",
+        "--no-reference-geometry",
+        "--no-clouds",
+        "--atmosphere-ground-mode",
+        "sky-only-no-ground-occlusion",
+        "--output",
+        "outputs/site/shallow-water-closeout/capture/sky-2.png"
+      ],
+      [
+        "ffmpeg",
+        "-hide_banner",
+        "-nostdin",
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        "outputs/site/shallow-water-closeout/capture/sky-2.png",
+        "-frames:v",
+        "1",
+        "-f",
+        "rawvideo",
+        "-pix_fmt",
+        "rgb24",
+        "outputs/site/shallow-water-closeout/capture/sky-2.rgb"
+      ],
+      [
+        "outputs/site/shallow-water-closeout/capture/simulate",
+        "outputs/site/shallow-water-closeout/capture/trace"
+      ],
+      [
+        "/usr/bin/python3",
+        "studies/fluid_25d/narrows_and_sweep/measure.py",
+        "outputs/site/shallow-water-closeout/capture/trace"
+      ],
+      [
+        "outputs/site/shallow-water-closeout/capture/render",
+        "studies/fluid_25d/narrows_and_sweep",
+        "outputs/site/shallow-water-closeout/capture/trace/fields.f32",
+        "1280",
+        "720",
+        "outputs/site/shallow-water-closeout/capture/sky-0.rgb",
+        "outputs/site/shallow-water-closeout/capture/sky-1.rgb",
+        "outputs/site/shallow-water-closeout/capture/sky-2.rgb"
+      ],
+      [
+        "ffmpeg",
+        "-hide_banner",
+        "-nostdin",
+        "-v",
+        "error",
+        "-n",
+        "-f",
+        "rawvideo",
+        "-pixel_format",
+        "rgba",
+        "-video_size",
+        "1280x720",
+        "-framerate",
+        "30",
+        "-i",
+        "pipe:0",
+        "-vf",
+        "vflip",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-threads",
+        "4",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "-preset",
+        "medium",
+        "-crf",
+        "17",
+        "outputs/site/shallow-water-closeout/capture/film.mp4"
+      ],
+      [
+        "ffmpeg",
+        "-hide_banner",
+        "-nostdin",
+        "-v",
+        "error",
+        "-n",
+        "-i",
+        "outputs/site/shallow-water-closeout/capture/film.mp4",
+        "-vf",
+        "select=eq(n\\,275)",
+        "-frames:v",
+        "1",
+        "outputs/site/shallow-water-closeout/capture/poster.png"
+      ]
+    ]
+  },
+  "posterSelection": {
+    "frame": 275,
+    "timeSeconds": 9.166666666666666,
+    "reason": "First crest reaches the visible outlet.",
+    "capturePosterSha256": "afbfbf41890947366a95b0a975c3f2e43430c34a97b0c9810f63ecec32e295dd"
+  },
+  "siteSelection": {
+    "entry": "shallow-water",
+    "poster": "shallow-water-narrows-and-sweep",
+    "film": "shallow-water-narrows-and-sweep-film",
+    "preview": "preview-shallow-water-narrows-and-sweep"
+  },
+  "webDelivery": {
+    "poster": {
+      "assetId": "shallow-water-narrows-and-sweep",
+      "source": "outputs/site/shallow-water-closeout/capture/poster.png",
+      "sourceSha256": "afbfbf41890947366a95b0a975c3f2e43430c34a97b0c9810f63ecec32e295dd",
+      "file": "/media/shallow-water-narrows-and-sweep.webp",
+      "width": 1280,
+      "height": 720,
+      "sha256": "338e55c5a5dc851855e619823fc720ba70eba5ac86c55dfea20a654760fc7abf",
+      "bytes": 33720
+    },
+    "thumbnail": {
+      "file": "/media/shallow-water-narrows-and-sweep-640.webp",
+      "sourcePoster": "/media/shallow-water-narrows-and-sweep.webp",
+      "sha256": "a0f6ec7e0f7a13712653c9c76361324584e58ba305b92702164bc5247ba3110b",
+      "bytes": 9680
+    },
+    "film": {
+      "assetId": "shallow-water-narrows-and-sweep-film",
+      "source": "outputs/site/shallow-water-closeout/capture/film.mp4",
+      "sourceSha256": "ea4345591ff4982f3c70529f69a3543348bbc705197a6fbcfde0380a7a57391c",
+      "file": "/media/shallow-water-narrows-and-sweep-film.mp4",
+      "width": 1280,
+      "height": 720,
+      "durationSeconds": 12.0,
+      "fps": 30,
+      "frames": 360,
+      "sha256": "ea4345591ff4982f3c70529f69a3543348bbc705197a6fbcfde0380a7a57391c",
+      "bytes": 2939540
+    },
+    "hoverPreview": {
+      "assetId": "preview-shallow-water-narrows-and-sweep",
+      "file": "/media/preview-shallow-water-narrows-and-sweep.mp4",
+      "parentAsset": "shallow-water-narrows-and-sweep-film",
+      "startSeconds": 6.0,
+      "durationSeconds": 3.5,
+      "codec": "h264",
+      "pixelFormat": "yuv420p",
+      "width": 640,
+      "height": 360,
+      "frameRate": "18/1",
+      "audioStreams": 0,
+      "fastStart": true,
+      "sha256": "439b6533450b605884295ef4917b558f374283ad3f551993cd02723b693496fd",
+      "bytes": 66680
+    }
+  },
+  "captureCopyNote": "Own-repository absolute paths in the nested capture copy are normalized to repository-relative paths. captureManifest.sha256 identifies the untouched original capture.json."
+}
