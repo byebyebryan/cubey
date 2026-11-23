@@ -3250,6 +3250,29 @@
       }
     },
     {
+      "id": "preview-water-3d-daylight",
+      "file": "/media/preview-water-3d-daylight.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "85c6c2d49095f39507e66ff4984df400be43bcca19f503718edff4e76ad92ddf",
+      "bytes": 80187,
+      "caption": "Short silent preview. A dam break spreads through a long tank, rebounds and throws off whitewater.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/water-3d-daylight-film.mp4",
+        "sourceSha256": "14e59a8c1e55674845e88c9eb72884431e649ae39b0d3cd92bec645b95c7fb1a",
+        "sourceRevision": "9195412f8520ecbe8d55edd8509bb6a328d3f114",
+        "parentAsset": "water-3d-daylight-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
       "id": "raytracing-dragon-forward",
       "file": "/media/raytracing-dragon-forward.webp",
       "kind": "image",
@@ -3922,6 +3945,31 @@
       "thumbnailBytes": 6208
     },
     {
+      "id": "water-3d-daylight",
+      "file": "/media/water-3d-daylight.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "14343d234bb61f212ba380a119d3678f16ce6dce24c5fa326000ebdd015068a8",
+      "bytes": 20892,
+      "caption": "A dam break spreads through a long tank, rebounds and throws off whitewater.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/water3d-daylight/daylight/poster-native.png",
+        "sourceSha256": "b9b7e13c26226fbed0edd74d11a5739b0a72e3192ef809809881f644df1c52fd",
+        "sourceRevision": "9195412f8520ecbe8d55edd8509bb6a328d3f114",
+        "recipe": "site/media/receipts/water-3d-daylight.json",
+        "note": "Extracted at two seconds from the afternoon capture master."
+      },
+      "thumbnail": "/media/water-3d-daylight-640.webp",
+      "thumbnailSha256": "4e18a2a0041a9db8804cff65a1286b72f6840af562870c45fd1f33f689643587",
+      "thumbnailBytes": 7708
+    },
+    {
       "id": "water-3d-film",
       "file": "/media/water-3d-film-capture-20261119.mp4",
       "kind": "video",
@@ -3942,13 +3990,35 @@
         "recipe": "site/media/receipts/standard-capture-refresh-20261119.json",
         "note": "Standard capture refresh; reproduction data is in the linked receipt."
       }
+    },
+    {
+      "id": "water-3d-daylight-film",
+      "file": "/media/water-3d-daylight-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "14e59a8c1e55674845e88c9eb72884431e649ae39b0d3cd92bec645b95c7fb1a",
+      "bytes": 1109153,
+      "caption": "A dam break spreads through a long tank, rebounds and throws off whitewater.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/water3d-daylight/daylight/native-30fps.mp4",
+        "sourceSha256": "262d3482177732a8f656dbfe7bdb67fecb420b1663aa6cb22691fdebd9bbb63d",
+        "sourceRevision": "9195412f8520ecbe8d55edd8509bb6a328d3f114",
+        "recipe": "site/media/receipts/water-3d-daylight.json",
+        "note": "Native eight-second dam-break capture with continuous afternoon lighting."
+      }
     }
   ],
   "selections": {
     "water-3d": {
-      "poster": "water-3d",
-      "film": "water-3d-film",
-      "preview": "preview-water-3d"
+      "poster": "water-3d-daylight",
+      "film": "water-3d-daylight-film",
+      "preview": "preview-water-3d-daylight"
     },
     "fire-3d": {
       "poster": "fire-3d",

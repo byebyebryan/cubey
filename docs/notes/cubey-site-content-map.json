@@ -125,8 +125,8 @@
       "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
       "selected_media": {
         "manifest": "site/media/manifest.json",
-        "poster": "water-3d",
-        "film": "water-3d-film"
+        "poster": "water-3d-daylight",
+        "film": "water-3d-daylight-film"
       }
     },
     {

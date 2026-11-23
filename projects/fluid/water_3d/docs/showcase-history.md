@@ -1,9 +1,20 @@
-# Water 3D dam-break capture record
+# Water 3D dam-break capture history
 
-This page retains the source command for the earlier dam-break clip. The
-current native solver and renderer are documented in the
-[Water 3D guide](../README.md); the poster, film, trim, hash and provenance remain
-in the [showcase archive package](../../../../docs/media/showcase/README.md).
+The [Water 3D guide](../README.md) covers the native solver and renderer.
+
+## Afternoon capture
+
+The site capture keeps the dam-break fill, disabled wave forcing, whitewater,
+half-second pre-roll and eased 30-degree orbit. It starts the solar clock at
+13.8125 hours and advances it at 0.375 hours per captured second. The retained
+eight seconds run from about 14:00 to 17:00 in clear sky. The
+[capture receipt](../../../../site/media/receipts/water-3d-daylight.json) records
+the command, matched control and selected web derivatives.
+
+## Earlier day-to-night capture
+
+The [showcase archive package](../../../../docs/media/showcase/README.md)
+retains the earlier film, poster, trim and provenance.
 
 The capture disables wave forcing so the motion comes from the initial volume.
 It uses a `0.60/0.75/0.75` fill, whitewater intensity `1.35`, speed threshold

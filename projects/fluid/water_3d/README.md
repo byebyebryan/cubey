@@ -78,10 +78,11 @@ Common runs:
 
 ## Showcase highlight
 
-The current site page above presents the recorded dam-break highlight. Its
-trim, hash and poster timestamp remain in the [showcase archive package](../../../docs/media/showcase/README.md)
-and [media manifest](../../../docs/media/showcase/manifest.json); the exact
-source command is retained in the [capture history](docs/showcase-history.md).
+The site page presents the recorded dam-break highlight in clear afternoon
+light. The [capture receipt](../../../site/media/receipts/water-3d-daylight.json)
+records the native command, film trim, poster frame and web hashes. The
+[capture history](docs/showcase-history.md) also retains the earlier
+day-to-night recipe.
 
 Interactive controls include fill size/placement, render-domain scale, hose,
 drain, wave, rain, solver settings, surface reconstruction, whitewater, and
