@@ -39,6 +39,14 @@ set(CUBEY_PYRO_3D_SOURCES
 cubey_terrain_backdrop_shader_sources(CUBEY_PYRO_3D_TERRAIN_SHADERS)
 cubey_terrain_backdrop_shader_depends(CUBEY_PYRO_3D_TERRAIN_SHADER_DEPENDS)
 
+set(CUBEY_PYRO_3D_SHADER_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim/pyro_3d/shaders/pyro_3d_brick_traversal.glsl"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim/pyro_3d/shaders/pyro_3d_domain.glsl"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim/pyro_3d/shaders/pyro_3d_flow_stencil.glsl"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim/pyro_3d/shaders/pyro_3d_simulation.glsl"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim/pyro_3d/shaders/pyro_3d_transport.glsl"
+)
+
 set(CUBEY_PYRO_3D_SHADERS
     ../sim/pyro_3d/shaders/pyro_3d.vert
     ../sim/pyro_3d/shaders/pyro_3d_raymarch.frag
@@ -47,6 +55,9 @@ set(CUBEY_PYRO_3D_SHADERS
     ../../../shaders/cubey/sky/celestial_body.vert
     ../../../shaders/cubey/sky/celestial_body.frag
     ${CUBEY_PYRO_3D_TERRAIN_SHADERS}
+    ../sim/pyro_3d/shaders/pyro_3d_occupancy.comp
+    ../sim/pyro_3d/shaders/pyro_3d_advect_coarse.comp
+    ../sim/pyro_3d/shaders/pyro_3d_advect_correct_coarse.comp
     ../sim/pyro_3d/shaders/pyro_3d_reset.comp
     ../sim/pyro_3d/shaders/pyro_3d_advect.comp
     ../sim/pyro_3d/shaders/pyro_3d_advect_correct.comp

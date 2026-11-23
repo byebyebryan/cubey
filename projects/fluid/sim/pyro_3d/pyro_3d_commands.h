@@ -26,6 +26,7 @@ struct Pyro3DFrameState {
     bool velocity_a_current = true;
     bool volumes_initialized = false;
     bool shadow_initialized = false;
+    bool occupancy_current = false;
     std::uint32_t frames_since_shadow_update = 0;
 };
 

@@ -1,16 +1,9 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
-layout(push_constant) uniform SimulationParams {
-    vec4 grid_dt_time;
-    vec4 decay_force;
-    vec4 options;
-    vec4 shadow_options;
-    vec4 fire_options;
-    vec4 shaping_options;
-    vec4 obstacle_options;
-} params;
+#include "pyro_3d_simulation.glsl"
 
 struct VolumeBounds {
     vec4 density_min;
@@ -21,10 +14,12 @@ struct VolumeBounds {
 
 layout(rgba16f, set = 0, binding = 0) uniform readonly image3D density_source;
 layout(rgba16f, set = 0, binding = 1) uniform readonly image3D velocity_source;
-layout(rgba16f, set = 0, binding = 2) uniform readonly image3D density_predicted;
+layout(rgba16f, set = 0, binding = 2) uniform readonly image3D material_to_sample;
 layout(rgba16f, set = 0, binding = 3) uniform readonly image3D velocity_predicted;
 layout(rgba16f, set = 0, binding = 4) uniform writeonly image3D density_out;
 layout(rgba16f, set = 0, binding = 5) uniform writeonly image3D velocity_out;
+
+#include "pyro_3d_transport.glsl"
 
 vec4 load_density_source(ivec3 coord) {
     ivec3 max_coord = imageSize(density_source) - ivec3(1);
@@ -36,32 +31,9 @@ vec4 load_velocity_source(ivec3 coord) {
     return imageLoad(velocity_source, clamp(coord, ivec3(0), max_coord));
 }
 
-vec4 load_density_predicted(ivec3 coord) {
-    ivec3 max_coord = imageSize(density_predicted) - ivec3(1);
-    return imageLoad(density_predicted, clamp(coord, ivec3(0), max_coord));
-}
-
 vec4 load_velocity_predicted(ivec3 coord) {
     ivec3 max_coord = imageSize(velocity_predicted) - ivec3(1);
     return imageLoad(velocity_predicted, clamp(coord, ivec3(0), max_coord));
-}
-
-vec4 trilinear_density_predicted(vec3 uv) {
-    vec3 size = vec3(imageSize(density_predicted));
-    vec3 position = clamp(uv, vec3(0.0), vec3(1.0)) * size - vec3(0.5);
-    ivec3 base = ivec3(floor(position));
-    vec3 fraction = fract(position);
-    vec4 c000 = load_density_predicted(base);
-    vec4 c100 = load_density_predicted(base + ivec3(1, 0, 0));
-    vec4 c010 = load_density_predicted(base + ivec3(0, 1, 0));
-    vec4 c110 = load_density_predicted(base + ivec3(1, 1, 0));
-    vec4 c001 = load_density_predicted(base + ivec3(0, 0, 1));
-    vec4 c101 = load_density_predicted(base + ivec3(1, 0, 1));
-    vec4 c011 = load_density_predicted(base + ivec3(0, 1, 1));
-    vec4 c111 = load_density_predicted(base + ivec3(1, 1, 1));
-    vec4 z0 = mix(mix(c000, c100, fraction.x), mix(c010, c110, fraction.x), fraction.y);
-    vec4 z1 = mix(mix(c001, c101, fraction.x), mix(c011, c111, fraction.x), fraction.y);
-    return mix(z0, z1, fraction.z);
 }
 
 vec4 trilinear_velocity_predicted(vec3 uv) {
@@ -141,15 +113,6 @@ vec3 source_velocity_average(ivec3 coord) {
     return result / 27.0;
 }
 
-bool inside_obstacle(vec3 uv) {
-    float radius = max(params.obstacle_options.y, 0.0);
-    if (radius <= 0.0) {
-        return false;
-    }
-    vec3 center = vec3(0.5, params.obstacle_options.x, 0.5);
-    return length(uv - center) <= radius;
-}
-
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
     ivec3 size = ivec3(params.grid_dt_time.xyz);
@@ -159,13 +122,14 @@ void main() {
 
     float dt = params.grid_dt_time.w;
     vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(size);
+    uv *= pyro_domain_size();
     vec4 original_density = imageLoad(density_source, coord);
     vec3 original_velocity = imageLoad(velocity_source, coord).xyz;
-    vec4 predicted_density = imageLoad(density_predicted, coord);
+    vec4 predicted_density = imageLoad(material_to_sample, coord);
     vec3 predicted_velocity = imageLoad(velocity_predicted, coord).xyz;
-    vec3 previous_uv = clamp(uv - original_velocity * dt, vec3(0.0), vec3(1.0));
-    vec3 next_uv = clamp(uv + predicted_velocity * dt, vec3(0.0), vec3(1.0));
-    vec4 reversed_density = trilinear_density_predicted(next_uv);
+    vec3 previous_uv = clamp((uv - original_velocity * dt) / pyro_domain_size(), vec3(0.0), vec3(1.0));
+    vec3 next_uv = clamp((uv + predicted_velocity * dt) / pyro_domain_size(), vec3(0.0), vec3(1.0));
+    vec4 reversed_density = sample_density(next_uv);
     vec3 reversed_velocity = trilinear_velocity_predicted(next_uv).xyz;
 
     vec4 density = predicted_density + ((original_density - reversed_density) * 0.5);
@@ -193,7 +157,7 @@ void main() {
     density = mix(density, average_density, cleanup);
     velocity = mix(velocity, average_velocity, cleanup);
 
-    float edge_distance = min(min(uv.x, 1.0 - uv.x), min(min(uv.y, 1.0 - uv.y), min(uv.z, 1.0 - uv.z)));
+    float edge_distance = min(min(uv.x, 1.0 - uv.x), min(pyro_wall_y(uv.y), min(uv.z, 1.0 - uv.z)));
     float wall = smoothstep(0.0, 0.040, edge_distance);
     density *= wall;
     velocity *= wall;

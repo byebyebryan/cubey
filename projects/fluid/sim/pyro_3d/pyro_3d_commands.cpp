@@ -104,6 +104,9 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
     transition_volume_to_general(command_buffer, resources.pressure_a());
     transition_volume_to_general(command_buffer, resources.pressure_b());
     transition_volume_to_general(command_buffer, resources.shadow_volume());
+    if (resources.has_occupancy()) {
+        transition_volume_to_general(command_buffer, resources.occupancy());
+    }
 }
 
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Pyro3DConfig& config,
@@ -157,8 +160,8 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
             {
                 config.obstacle_center_height,
                 config.obstacle_radius,
-                static_cast<float>(static_cast<std::uint32_t>(config.mode)),
-                0.0F,
+                config.ray_skipping ? 1.0F : 0.0F,
+                config.tall_domain ? 2.0F : 1.0F,
             },
     };
 }
@@ -204,7 +207,7 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
             {
                 config.absorption,
                 config.emission,
-                config.shadow_absorption,
+                config.tall_domain ? 2.0F : 1.0F,
                 config.ambient_light,
             },
         .obstacle_options =
@@ -226,7 +229,8 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
                 config.render_smoke_warmth,
                 config.render_flame_intensity,
                 config.render_flame_core_strength,
-                atmosphere_background_enabled ? 1.0F : 0.0F,
+                static_cast<float>((atmosphere_background_enabled ? 1U : 0U) |
+                                   (config.ray_skipping ? 2U : 0U)),
             },
     };
 }
@@ -266,6 +270,8 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
     const SimulationPushConstants push_constants = simulation_push_constants(config, frame);
     const DispatchGroups groups =
         compute_dispatch_groups(solver_extent(config), kPyro3DComputeGroupSize);
+    const DispatchGroups flow_groups =
+        compute_dispatch_groups(resources.velocity_a().extent(), kPyro3DComputeGroupSize);
     const DispatchGroups shadow_groups =
         compute_dispatch_groups(shadow_extent(config), kPyro3DComputeGroupSize);
     const DispatchGroups reset_groups = compute_dispatch_groups(
@@ -280,12 +286,27 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
                 VK_SHADER_STAGE_COMPUTE_BIT, push_constants, profiler, frame_slot_index, label);
         };
 
+    auto build_occupancy = [&]() {
+        cubey::vulkan::record_memory_barrier(
+            command_buffer, {.src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                             .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                             .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT});
+        const auto extent = resources.occupancy().extent();
+        record_profiled_dispatch("occupancy", resources.occupancy_pipeline(),
+                                 resources.occupancy_set(frame_state.density_a_current),
+                                 {extent.width, extent.height, extent.depth});
+        record_render_visibility_barrier(command_buffer);
+        frame_state.occupancy_current = true;
+    };
     if (reset_requested) {
         const cubey::render::ComputePipelineResource& reset_pipeline = resources.reset_pipeline();
         record_profiled_dispatch("reset", reset_pipeline, resources.reset_descriptor_set(),
                                  reset_groups);
         frame_state.density_a_current = true;
         frame_state.velocity_a_current = true;
+        frame_state.occupancy_current = false;
         frame_state.shadow_initialized = false;
         frame_state.frames_since_shadow_update = 0;
         reset_requested = false;
@@ -293,6 +314,9 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
     }
 
     if (paused) {
+        if (config.ray_skipping && !frame_state.occupancy_current) {
+            build_occupancy();
+        }
         return;
     }
 
@@ -330,7 +354,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
     record_profiled_dispatch("divergence", divergence_pipeline,
                              resources.divergence_descriptor_set(frame_state.density_a_current,
                                                                  frame_state.velocity_a_current),
-                             groups);
+                             flow_groups);
     record_compute_barrier(command_buffer);
 
     const cubey::render::ComputePipelineResource& pressure_pipeline = resources.pressure_pipeline();
@@ -340,7 +364,7 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
         const VkDescriptorSet descriptor_set = (iteration % 2U == 0)
                                                    ? resources.pressure_a_to_b_descriptor_set()
                                                    : resources.pressure_b_to_a_descriptor_set();
-        record_dispatch(recorder, pressure_pipeline, descriptor_set, groups, push_constants);
+        record_dispatch(recorder, pressure_pipeline, descriptor_set, flow_groups, push_constants);
         record_compute_barrier(command_buffer);
     }
     pressure_scope.end();
@@ -351,9 +375,13 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
     record_profiled_dispatch(
         "projection", projection_pipeline,
         resources.projection_descriptor_set(frame_state.velocity_a_current, pressure_a_current),
-        groups);
+        flow_groups);
     frame_state.velocity_a_current = !frame_state.velocity_a_current;
 
+    frame_state.occupancy_current = false;
+    if (config.ray_skipping) {
+        build_occupancy();
+    }
     const std::uint32_t shadow_interval = std::max(config.shadow_update_interval, 1U);
     const bool update_shadow = !frame_state.shadow_initialized ||
                                frame_state.frames_since_shadow_update >= shadow_interval - 1U;

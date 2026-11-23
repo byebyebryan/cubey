@@ -46,6 +46,9 @@ inline constexpr float kMaxPyro3DObstacleRadius = 0.5F;
 // Startup-only values preserve omission explicitly.  The runtime product
 // below keeps concrete defaults for simulation, shaders, and UI code.
 struct Pyro3DStartupOptions {
+    bool coarse_flow = false;
+    bool ray_skipping = false;
+    bool tall_domain = false;
     std::optional<std::uint32_t> shadow_grid_width{};
     std::optional<std::uint32_t> shadow_grid_height{};
     std::optional<std::uint32_t> shadow_grid_depth{};
@@ -75,6 +78,9 @@ struct Pyro3DStartupOptions {
 };
 
 struct Pyro3DConfig {
+    bool coarse_flow = false;
+    bool ray_skipping = false;
+    bool tall_domain = false;
     std::uint32_t grid_width = 128;
     std::uint32_t grid_height = 128;
     std::uint32_t grid_depth = 128;
@@ -237,6 +243,14 @@ struct Pyro3DConfig {
     result.profile_diagnostic_interval = common_config.profile_diagnostic_interval;
     result.headless = common_config.headless;
 
+    result.coarse_flow = options.coarse_flow;
+    result.ray_skipping = options.ray_skipping;
+    result.tall_domain = options.tall_domain;
+    if (result.tall_domain) {
+        result.grid_height *= 2;
+        result.shadow_grid_height *= 2;
+    }
+
     if (grid.width) {
         result.grid_width = *grid.width;
     }
@@ -245,6 +259,10 @@ struct Pyro3DConfig {
     }
     if (grid.depth) {
         result.grid_depth = *grid.depth;
+    }
+    if (result.coarse_flow &&
+        ((result.grid_width | result.grid_height | result.grid_depth) & 1U) != 0U) {
+        throw std::runtime_error("coarse pyro flow requires even material grid dimensions");
     }
     if (options.shadow_grid_width) {
         result.shadow_grid_width = *options.shadow_grid_width;

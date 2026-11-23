@@ -1,48 +1,20 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
-layout(push_constant) uniform SimulationParams {
-    vec4 grid_dt_time;
-    vec4 decay_force;
-    vec4 options;
-    vec4 shadow_options;
-    vec4 fire_options;
-    vec4 shaping_options;
-    vec4 obstacle_options;
-} params;
+#include "pyro_3d_simulation.glsl"
 
-layout(rgba16f, set = 0, binding = 0) uniform readonly image3D density_in;
+layout(rgba16f, set = 0, binding = 0) uniform readonly image3D material_to_sample;
 layout(rgba16f, set = 0, binding = 1) uniform readonly image3D velocity_in;
 layout(rgba16f, set = 0, binding = 2) uniform writeonly image3D density_out;
 layout(rgba16f, set = 0, binding = 3) uniform writeonly image3D velocity_out;
 
-vec4 load_density(ivec3 coord) {
-    ivec3 max_coord = imageSize(density_in) - ivec3(1);
-    return imageLoad(density_in, clamp(coord, ivec3(0), max_coord));
-}
+#include "pyro_3d_transport.glsl"
 
 vec4 load_velocity(ivec3 coord) {
     ivec3 max_coord = imageSize(velocity_in) - ivec3(1);
     return imageLoad(velocity_in, clamp(coord, ivec3(0), max_coord));
-}
-
-vec4 sample_density(vec3 uv) {
-    vec3 size = vec3(imageSize(density_in));
-    vec3 position = clamp(uv, vec3(0.0), vec3(1.0)) * size - vec3(0.5);
-    ivec3 base = ivec3(floor(position));
-    vec3 fraction = fract(position);
-    vec4 c000 = load_density(base);
-    vec4 c100 = load_density(base + ivec3(1, 0, 0));
-    vec4 c010 = load_density(base + ivec3(0, 1, 0));
-    vec4 c110 = load_density(base + ivec3(1, 1, 0));
-    vec4 c001 = load_density(base + ivec3(0, 0, 1));
-    vec4 c101 = load_density(base + ivec3(1, 0, 1));
-    vec4 c011 = load_density(base + ivec3(0, 1, 1));
-    vec4 c111 = load_density(base + ivec3(1, 1, 1));
-    vec4 z0 = mix(mix(c000, c100, fraction.x), mix(c010, c110, fraction.x), fraction.y);
-    vec4 z1 = mix(mix(c001, c101, fraction.x), mix(c011, c111, fraction.x), fraction.y);
-    return mix(z0, z1, fraction.z);
 }
 
 vec4 sample_velocity(vec3 uv) {
@@ -63,15 +35,6 @@ vec4 sample_velocity(vec3 uv) {
     return mix(z0, z1, fraction.z);
 }
 
-bool inside_obstacle(vec3 uv) {
-    float radius = max(params.obstacle_options.y, 0.0);
-    if (radius <= 0.0) {
-        return false;
-    }
-    vec3 center = vec3(0.5, params.obstacle_options.x, 0.5);
-    return length(uv - center) <= radius;
-}
-
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
     ivec3 size = ivec3(params.grid_dt_time.xyz);
@@ -81,8 +44,9 @@ void main() {
 
     float dt = params.grid_dt_time.w;
     vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(size);
+    uv *= pyro_domain_size();
     vec3 velocity = imageLoad(velocity_in, coord).xyz;
-    vec3 previous_uv = clamp(uv - velocity * dt, vec3(0.0), vec3(1.0));
+    vec3 previous_uv = clamp((uv - velocity * dt) / pyro_domain_size(), vec3(0.0), vec3(1.0));
     vec4 density = sample_density(previous_uv);
     vec3 advected_velocity = sample_velocity(previous_uv).xyz;
     if (inside_obstacle(uv)) {
@@ -90,7 +54,7 @@ void main() {
         advected_velocity = vec3(0.0);
     }
 
-    float edge_distance = min(min(uv.x, 1.0 - uv.x), min(min(uv.y, 1.0 - uv.y), min(uv.z, 1.0 - uv.z)));
+    float edge_distance = min(min(uv.x, 1.0 - uv.x), min(pyro_wall_y(uv.y), min(uv.z, 1.0 - uv.z)));
     float wall = smoothstep(0.0, 0.035, edge_distance);
     imageStore(density_out, coord, vec4(clamp(density.rgb, vec3(0.0), vec3(8.0)),
                                         clamp(density.a, 0.0, 8.0)));

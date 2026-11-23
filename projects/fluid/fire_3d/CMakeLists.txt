@@ -13,6 +13,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        ${CUBEY_PYRO_3D_SHADER_DEPENDS}
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders/fluid_ray_box.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
@@ -36,6 +37,14 @@ if (BUILD_TESTING)
         --grid-width 32
         --grid-height 32
         --grid-depth 32
+    )
+    cubey_add_png_smoke_test(
+        fire_3d_coarse_flow_ray_skipping
+        cubey_project_fire_3d
+        "${CMAKE_CURRENT_BINARY_DIR}/fire-3d-coarse-skipping-smoke.png"
+        --frames 8
+        --grid-width 34 --grid-height 68 --grid-depth 34
+        --pyro-tall-domain --pyro-coarse-flow --pyro-ray-skipping
     )
     set(CUBEY_FIRE_3D_TERRAIN_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/fire-3d-terrain-headless-smoke.png"

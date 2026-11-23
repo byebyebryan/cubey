@@ -1,0 +1,58 @@
+#version 450
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(rgba16f, set = 0, binding = 0) uniform readonly image3D density_volume;
+layout(r32f, set = 0, binding = 1) uniform writeonly image3D occupancy_volume;
+
+shared uint material_flags[64];
+
+bool can_affect_optics(vec4 material) {
+    // Soot above the shadow cutoff can affect a later smoke sample. Heat and
+    // flame also affect transfer and absorption, even when below their glow
+    // thresholds, so retain every positive value in those channels.
+    return material.r > 0.002 || material.g > 0.0 || material.b > 0.0;
+}
+
+void main() {
+    ivec3 block = ivec3(gl_WorkGroupID.xyz);
+    ivec3 mask_size = imageSize(occupancy_volume);
+    if (any(greaterThanEqual(block, mask_size))) {
+        return;
+    }
+
+    ivec3 density_size = imageSize(density_volume);
+    ivec3 first = max(block * 8 - ivec3(1), ivec3(0));
+    // The 8-wide brick is [block*8, block*8 + 8); include one texel on its
+    // far side as well, with an exclusive upper bound.
+    ivec3 end = min((block + ivec3(1)) * 8 + ivec3(1), density_size);
+    ivec3 support_size = end - first;
+    uint support_count = uint(support_size.x * support_size.y * support_size.z);
+    uint lane = gl_LocalInvocationIndex;
+    uint found = 0u;
+
+    // Cooperatively scan the at-most 10^3 support voxels. A lane stops as soon
+    // as its own portion proves the brick occupied.
+    for (uint linear = lane; linear < support_count; linear += 64u) {
+        uint x = linear % uint(support_size.x);
+        uint y = (linear / uint(support_size.x)) % uint(support_size.y);
+        uint z = linear / uint(support_size.x * support_size.y);
+        ivec3 coord = first + ivec3(int(x), int(y), int(z));
+        if (can_affect_optics(imageLoad(density_volume, coord))) {
+            found = 1u;
+            break;
+        }
+    }
+
+    material_flags[lane] = found;
+    barrier();
+    for (uint stride = 32u; stride > 0u; stride >>= 1u) {
+        if (lane < stride) {
+            material_flags[lane] |= material_flags[lane + stride];
+        }
+        barrier();
+    }
+    if (lane == 0u) {
+        imageStore(occupancy_volume, block, vec4(float(material_flags[0])));
+    }
+}

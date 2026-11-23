@@ -67,7 +67,7 @@ std::filesystem::path shader_path(const char* filename) {
 }
 
 void validate_volume_format_features(const cubey::vulkan::Device& device, VkFormat format,
-                                     const char* label) {
+                                     const char* label, bool linear_filter = false) {
     if (format == kFluidVectorVolumeFormat &&
         !device.supports_shader_storage_image_extended_formats()) {
         throw std::runtime_error(
@@ -75,9 +75,12 @@ void validate_volume_format_features(const cubey::vulkan::Device& device, VkForm
     }
     VkFormatProperties properties{};
     vkGetPhysicalDeviceFormatProperties(device.physical_device(), format, &properties);
-    constexpr VkFormatFeatureFlags kRequired =
+    VkFormatFeatureFlags required =
         VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-    if ((properties.optimalTilingFeatures & kRequired) != kRequired) {
+
+    if (linear_filter)
+        required |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+    if ((properties.optimalTilingFeatures & required) != required) {
         throw std::runtime_error(std::string("pyro 3D ") + label +
                                  " format does not support sampled storage images");
     }
@@ -151,10 +154,12 @@ void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device
     if (frame_slot_count == 0)
         throw std::runtime_error("simulation resources require at least one frame slot");
     static_cast<void>(volume_cell_count(config));
-    const std::array<std::uint64_t, 8> shape{frame_slot_count,         config.grid_width,
-                                             config.grid_height,       config.grid_depth,
-                                             config.shadow_grid_width, config.shadow_grid_height,
-                                             config.shadow_grid_depth, config.source_count};
+    const std::array<std::uint64_t, 10> shape{
+        frame_slot_count,         config.grid_width,
+        config.grid_height,       config.grid_depth,
+        config.shadow_grid_width, config.shadow_grid_height,
+        config.shadow_grid_depth, config.source_count,
+        config.coarse_flow,       !config.headless || config.ray_skipping};
     if (global_resources_created_) {
         if (resource_shape_ != shape)
             throw std::runtime_error("simulation resource shape changes require full teardown");
@@ -162,6 +167,7 @@ void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device
     }
     try {
         frame_slot_count_ = frame_slot_count;
+        coarse_flow_ = config.coarse_flow;
 
         create_volume_resources(device, gpu, config);
         create_moon_mesh_if_needed(mesh_gpu);
@@ -191,29 +197,39 @@ void Pyro3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device
 void Pyro3DGpuResources::create_volume_resources(cubey::vulkan::Device& device,
                                                  cubey::ProjectGpuServices& gpu,
                                                  const Pyro3DConfig& config) {
-    validate_volume_format_features(device, kFluidVectorVolumeFormat, "RGBA16F volume");
+    validate_volume_format_features(device, kFluidVectorVolumeFormat, "RGBA16F volume",
+                                    coarse_flow_);
     validate_volume_format_features(device, kFluidScalarVolumeFormat, "R32F volume");
     const VkExtent3D solver_extent = solver_volume_extent(config);
+    const unsigned divisor = config.coarse_flow ? 2U : 1U;
+    const VkExtent3D flow_extent{solver_extent.width / divisor, solver_extent.height / divisor,
+                                 solver_extent.depth / divisor};
     density_a_.emplace(device,
                        volume_texture_config(solver_extent, kFluidVectorVolumeFormat, true));
     density_b_.emplace(device,
                        volume_texture_config(solver_extent, kFluidVectorVolumeFormat, true));
-    velocity_a_.emplace(device,
-                        volume_texture_config(solver_extent, kFluidVectorVolumeFormat, true));
-    velocity_b_.emplace(device,
-                        volume_texture_config(solver_extent, kFluidVectorVolumeFormat, true));
+    velocity_a_.emplace(device, volume_texture_config(flow_extent, kFluidVectorVolumeFormat, true));
+    velocity_b_.emplace(device, volume_texture_config(flow_extent, kFluidVectorVolumeFormat, true));
     density_prediction_.emplace(
         device, volume_texture_config(solver_extent, kFluidVectorVolumeFormat, false));
     velocity_prediction_.emplace(
-        device, volume_texture_config(solver_extent, kFluidVectorVolumeFormat, false));
+        device, volume_texture_config(flow_extent, kFluidVectorVolumeFormat, coarse_flow_));
     divergence_.emplace(device,
-                        volume_texture_config(solver_extent, kFluidScalarVolumeFormat, false));
+                        volume_texture_config(flow_extent, kFluidScalarVolumeFormat, false));
     pressure_a_.emplace(device,
-                        volume_texture_config(solver_extent, kFluidScalarVolumeFormat, false));
+                        volume_texture_config(flow_extent, kFluidScalarVolumeFormat, false));
     pressure_b_.emplace(device,
-                        volume_texture_config(solver_extent, kFluidScalarVolumeFormat, false));
+                        volume_texture_config(flow_extent, kFluidScalarVolumeFormat, false));
     shadow_volume_.emplace(device, shadow_volume_texture_config(config));
-
+    if (!config.headless || config.ray_skipping) {
+        auto mask_config =
+            volume_texture_config({(config.grid_width + 7U) / 8U, (config.grid_height + 7U) / 8U,
+                                   (config.grid_depth + 7U) / 8U},
+                                  VK_FORMAT_R32_SFLOAT, true);
+        mask_config.sampler.min_filter = VK_FILTER_NEAREST;
+        mask_config.sampler.mag_filter = VK_FILTER_NEAREST;
+        occupancy_.emplace(device, mask_config);
+    }
     const std::vector<Pyro3DSourceGpu> empty(kMaxPyro3DSourceCount);
     sources_.emplace(gpu.upload_device_buffer(
         empty.data(), static_cast<VkDeviceSize>(pyro_3d_source_capacity_byte_size()),
@@ -250,6 +266,7 @@ void Pyro3DGpuResources::destroy_all_resources() {
     atmosphere_background_.destroy();
     moon_mesh_.reset();
     profiler_.reset();
+    occupancy_pipeline_.reset();
     shadow_pipeline_.reset();
     projection_pipeline_.reset();
     pressure_pipeline_.reset();
@@ -258,6 +275,7 @@ void Pyro3DGpuResources::destroy_all_resources() {
     advect_correct_pipeline_.reset();
     advect_pipeline_.reset();
     reset_pipeline_.reset();
+    occupancy_sets_.reset();
     shadow_descriptor_pool_.reset();
     shadow_descriptor_layout_.reset();
     render_descriptors_.reset();
@@ -284,6 +302,7 @@ void Pyro3DGpuResources::destroy_all_resources() {
     sources_.reset();
     pressure_b_.reset();
     pressure_a_.reset();
+    occupancy_.reset();
     shadow_volume_.reset();
     divergence_.reset();
     velocity_prediction_.reset();
@@ -335,13 +354,13 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
     reset_descriptor_pool_.emplace(device, reset_info.pool_info());
     reset_descriptor_set_ = reset_descriptor_pool().allocate(reset_descriptor_layout());
 
+    const auto flow_read_type =
+        coarse_flow_ ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER : VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     const std::array<cubey::vulkan::DescriptorSetBindingConfig, 4> transport_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
-        {.binding = 1,
-         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 1, .type = flow_read_type, .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
         {.binding = 2,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
@@ -360,15 +379,11 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
-        {.binding = 1,
-         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 1, .type = flow_read_type, .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
         {.binding = 2,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
-        {.binding = 3,
-         .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 3, .type = flow_read_type, .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
         {.binding = 4,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
@@ -451,14 +466,28 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
         set = projection_descriptor_pool().allocate(projection_descriptor_layout());
     }
 
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 2> shadow_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> shadow_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
         {.binding = 1,
          .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        {.binding = 2,
+         .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+         .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
     }};
+    if (has_occupancy()) {
+        const std::array<cubey::vulkan::DescriptorSetBindingConfig, 2> mask_bindings{{
+            {.binding = 0,
+             .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+             .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+            {.binding = 1,
+             .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+             .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+        }};
+        occupancy_sets_.emplace(device, cubey::vulkan::DescriptorSetInfo(mask_bindings, 2));
+    }
     const cubey::vulkan::DescriptorSetInfo shadow_info(shadow_bindings, 2);
     shadow_descriptor_layout_.emplace(device, shadow_info.layout_info());
     shadow_descriptor_pool_.emplace(device, shadow_info.pool_info());
@@ -466,7 +495,7 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
         set = shadow_descriptor_pool().allocate(shadow_descriptor_layout());
     }
 
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> render_bindings{{
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 4> render_bindings{{
         {.binding = 0,
          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT},
@@ -474,6 +503,9 @@ void Pyro3DGpuResources::create_descriptor_resources(cubey::vulkan::Device& devi
          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT},
         {.binding = 2,
+         .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+         .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT},
+        {.binding = 3,
          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
          .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT},
     }};
@@ -515,29 +547,48 @@ void Pyro3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
         .storage_image(reset_descriptor_set_, 7, velocity_prediction().view());
 
     const std::array<const cubey::render::Texture3D*, 2> densities{&density_a(), &density_b()};
+    // Bind a valid read-only fallback on the dense path. Its shaders never sample this binding.
+    const auto& mask = has_occupancy() ? occupancy() : density_a();
+    for (unsigned index = 0; index < 2; ++index) {
+        if (has_occupancy()) {
+            writes.storage_image(occupancy_sets_->set(index), 0, densities[index]->view())
+                .storage_image(occupancy_sets_->set(index), 1, occupancy().view());
+        }
+        writes.combined_image_sampler(shadow_descriptor_set(index == 0), 2, mask.sampler().handle(),
+                                      mask.view(), VK_IMAGE_LAYOUT_GENERAL);
+    }
     const std::array<const cubey::render::Texture3D*, 2> velocities{&velocity_a(), &velocity_b()};
     for (std::uint32_t slot_index = 0; slot_index < frame_slot_count_; ++slot_index) {
         const cubey::vulkan::Buffer& buffer = environment_lighting_uniform_buffer(slot_index);
         writes.uniform_buffer(environment_descriptor_set(slot_index), 0, buffer.handle(),
                               buffer.size());
     }
+    auto bind_flow_input = [&](VkDescriptorSet set, unsigned binding,
+                               const cubey::render::Texture3D& texture) {
+        if (coarse_flow_) {
+            writes.combined_image_sampler(set, binding, texture.sampler().handle(), texture.view(),
+                                          VK_IMAGE_LAYOUT_GENERAL);
+        } else {
+            writes.storage_image(set, binding, texture.view());
+        }
+    };
     for (std::uint32_t density_index = 0; density_index < 2; ++density_index) {
         for (std::uint32_t velocity_index = 0; velocity_index < 2; ++velocity_index) {
             const bool density_a_current = density_index == 0U;
             const bool velocity_a_current = velocity_index == 0U;
             const VkDescriptorSet set =
                 advect_descriptor_set(density_a_current, velocity_a_current);
+            bind_flow_input(set, 1, *velocities[velocity_index]);
             writes.storage_image(set, 0, densities[density_index]->view())
-                .storage_image(set, 1, velocities[velocity_index]->view())
                 .storage_image(set, 2, density_prediction().view())
                 .storage_image(set, 3, velocity_prediction().view());
 
             const VkDescriptorSet correct_set =
                 advect_correct_descriptor_set(density_a_current, velocity_a_current);
+            bind_flow_input(correct_set, 1, *velocities[velocity_index]);
+            bind_flow_input(correct_set, 3, velocity_prediction());
             writes.storage_image(correct_set, 0, densities[density_index]->view())
-                .storage_image(correct_set, 1, velocities[velocity_index]->view())
                 .storage_image(correct_set, 2, density_prediction().view())
-                .storage_image(correct_set, 3, velocity_prediction().view())
                 .storage_image(correct_set, 4, densities[1U - density_index]->view())
                 .storage_image(correct_set, 5, velocities[1U - velocity_index]->view());
 
@@ -557,6 +608,8 @@ void Pyro3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
                 .combined_image_sampler(render_set, 1,
                                         velocities[velocity_index]->sampler().handle(),
                                         velocities[velocity_index]->view(), VK_IMAGE_LAYOUT_GENERAL)
+                .combined_image_sampler(render_set, 3, mask.sampler().handle(), mask.view(),
+                                        VK_IMAGE_LAYOUT_GENERAL)
                 .combined_image_sampler(render_set, 2, shadow_volume().sampler().handle(),
                                         shadow_volume().view(), VK_IMAGE_LAYOUT_GENERAL);
         }
@@ -608,11 +661,13 @@ void Pyro3DGpuResources::update_descriptors(cubey::vulkan::Device& device) {
 void Pyro3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {
     emplace_simulation_compute_pipeline(device, "pyro_3d_reset.comp.spv", reset_descriptor_layout(),
                                         reset_pipeline_);
-    emplace_simulation_compute_pipeline(device, "pyro_3d_advect.comp.spv",
-                                        advect_descriptor_layout(), advect_pipeline_);
-    emplace_simulation_compute_pipeline(device, "pyro_3d_advect_correct.comp.spv",
-                                        advect_correct_descriptor_layout(),
-                                        advect_correct_pipeline_);
+    emplace_simulation_compute_pipeline(
+        device, coarse_flow_ ? "pyro_3d_advect_coarse.comp.spv" : "pyro_3d_advect.comp.spv",
+        advect_descriptor_layout(), advect_pipeline_);
+    emplace_simulation_compute_pipeline(
+        device,
+        coarse_flow_ ? "pyro_3d_advect_correct_coarse.comp.spv" : "pyro_3d_advect_correct.comp.spv",
+        advect_correct_descriptor_layout(), advect_correct_pipeline_);
     emplace_simulation_compute_pipeline(device, "pyro_3d_combust.comp.spv",
                                         combustion_descriptor_layout(), combustion_pipeline_);
     emplace_simulation_compute_pipeline(device, "pyro_3d_divergence.comp.spv",
@@ -621,6 +676,10 @@ void Pyro3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device)
                                         pressure_descriptor_layout(), pressure_pipeline_);
     emplace_simulation_compute_pipeline(device, "pyro_3d_projection.comp.spv",
                                         projection_descriptor_layout(), projection_pipeline_);
+    if (has_occupancy()) {
+        emplace_simulation_compute_pipeline(device, "pyro_3d_occupancy.comp.spv",
+                                            occupancy_sets_->layout(), occupancy_pipeline_);
+    }
     emplace_shadow_compute_pipeline(device, shadow_descriptor_layout(),
                                     environment_descriptor_layout(), shadow_pipeline_);
 }

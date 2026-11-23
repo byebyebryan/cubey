@@ -1,16 +1,10 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
-layout(push_constant) uniform SimulationParams {
-    vec4 grid_dt_time;
-    vec4 decay_force;
-    vec4 options;
-    vec4 shadow_options;
-    vec4 fire_options;
-    vec4 shaping_options;
-    vec4 obstacle_options;
-} params;
+#include "pyro_3d_simulation.glsl"
+#include "pyro_3d_flow_stencil.glsl"
 
 layout(r32f, set = 0, binding = 0) uniform readonly image3D divergence_volume;
 layout(r32f, set = 0, binding = 1) uniform readonly image3D pressure_in;
@@ -25,11 +19,12 @@ bool inside_obstacle_coord(ivec3 coord) {
     vec3 uv = (vec3(clamp(coord, ivec3(0), imageSize(pressure_in) - ivec3(1))) + vec3(0.5)) /
               size;
     vec3 center = vec3(0.5, params.obstacle_options.x, 0.5);
-    return length(uv - center) <= radius;
+    return length(uv * pyro_domain_size() - center) <= radius;
 }
 
 float pressure_at(ivec3 coord) {
     ivec3 max_coord = imageSize(pressure_in) - ivec3(1);
+    if (PYRO_DOMAIN_HEIGHT > 1.0 && coord.y > max_coord.y) return 0.0;
     return imageLoad(pressure_in, clamp(coord, ivec3(0), max_coord)).x;
 }
 
@@ -42,7 +37,7 @@ float pressure_neighbor_or_center(ivec3 coord, float center) {
 
 void main() {
     ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
-    ivec3 size = ivec3(params.grid_dt_time.xyz);
+    ivec3 size = imageSize(pressure_out);
     if (any(greaterThanEqual(coord, size))) {
         return;
     }
@@ -60,6 +55,8 @@ void main() {
         pressure_neighbor_or_center(coord - ivec3(0, 1, 0), center) +
         pressure_neighbor_or_center(coord + ivec3(0, 0, 1), center) +
         pressure_neighbor_or_center(coord - ivec3(0, 0, 1), center);
-    float pressure = (neighbor_sum - divergence) / 6.0;
+    // Pressure is normalized so h_f * grad(p) corrects a world-space velocity.
+    float spacing_ratio = pyro_stencil_scale(size);
+    float pressure = (neighbor_sum - divergence / (spacing_ratio * spacing_ratio)) / 6.0;
     imageStore(pressure_out, coord, vec4(pressure, 0.0, 0.0, 0.0));
 }

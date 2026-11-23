@@ -570,6 +570,34 @@ int main() {
         require(rejected_capture_distance,
                 "pyro capture camera should reject distances above the controller maximum");
 
+        const auto detailed = parse_project({"fire_3d", "--pyro-coarse-flow", "--pyro-tall-domain",
+                                             "--pyro-ray-skipping", "--grid-width", "256",
+                                             "--grid-height", "512", "--grid-depth", "256"},
+                                            pyro::Pyro3DMode::Fire)
+                                  .simulation;
+        require(detailed.coarse_flow && detailed.ray_skipping && detailed.tall_domain &&
+                    detailed.grid_width == 256 && detailed.grid_height == 512 &&
+                    detailed.grid_depth == 256 && detailed.shadow_grid_height == 128,
+                "high detail should keep independent material, flow and shadow settings");
+        const auto tall =
+            parse_project({"fire_3d", "--pyro-tall-domain"}, pyro::Pyro3DMode::Fire).simulation;
+        require(tall.grid_height == 256 && !tall.ray_skipping && !tall.coarse_flow,
+                "the tall domain should also support dense rendering and flow");
+        const auto skipping =
+            parse_project({"fire_3d", "--pyro-ray-skipping", "--grid-width", "35"},
+                          pyro::Pyro3DMode::Fire)
+                .simulation;
+        require(skipping.ray_skipping && !skipping.coarse_flow && !skipping.tall_domain,
+                "ray skipping should support partial edge bricks on the original grid");
+        bool rejected_odd_flow = false;
+        try {
+            static_cast<void>(parse_project({"fire_3d", "--pyro-coarse-flow", "--grid-depth", "35"},
+                                            pyro::Pyro3DMode::Fire));
+        } catch (const std::runtime_error&) {
+            rejected_odd_flow = true;
+        }
+        require(rejected_odd_flow, "half-resolution flow requires pairs of material voxels");
+
         pyro::Pyro3DProjectConfig parity_fire;
         pyro::Pyro3DProjectConfig parity_explosion;
         const cubey::config::Schema fire_schema = pyro::pyro_3d_project_config_schema(parity_fire);

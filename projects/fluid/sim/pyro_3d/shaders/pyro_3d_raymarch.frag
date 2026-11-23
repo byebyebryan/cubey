@@ -16,9 +16,14 @@ layout(push_constant) uniform RenderParams {
     vec4 color_options;
 } params;
 
+#define PYRO_DOMAIN_HEIGHT params.render_options.z
+#include "pyro_3d_domain.glsl"
+
 layout(set = 0, binding = 0) uniform sampler3D density_volume;
 layout(set = 0, binding = 1) uniform sampler3D velocity_volume;
 layout(set = 0, binding = 2) uniform sampler3D shadow_volume;
+layout(set = 0, binding = 3) uniform sampler3D occupancy_volume;
+
 layout(set = 1, binding = 0) uniform EnvironmentLightingBlock {
     CubeyEnvironmentLighting environment_lighting;
 };
@@ -58,7 +63,7 @@ bool explosion_render_mode() {
 }
 
 bool external_background_enabled() {
-    return params.color_options.w > 0.5 && int(params.ray_forward_debug.w + 0.5) == 0;
+    return (int(params.color_options.w) & 1) != 0 && int(params.ray_forward_debug.w + 0.5) == 0;
 }
 
 bool ray_sphere_intersection(vec3 origin, vec3 direction, out float hit_t) {
@@ -81,7 +86,7 @@ bool ray_sphere_intersection(vec3 origin, vec3 direction, out float hit_t) {
 
 float volume_edge_distance(vec3 position) {
     float edge_distance = min(min(position.x, 1.0 - position.x),
-                              min(min(position.y, 1.0 - position.y),
+                              min(min(position.y, pyro_domain_size().y - position.y),
                                   min(position.z, 1.0 - position.z)));
     return edge_distance;
 }
@@ -106,7 +111,7 @@ float smoke_density(vec4 density, vec3 position) {
 }
 
 float smoke_density_at(vec3 uv) {
-    return smoke_density(density_at(uv), uv);
+    return smoke_density(density_at(uv / pyro_domain_size()), uv);
 }
 
 vec3 background_color(vec2 uv) {
@@ -203,6 +208,9 @@ vec3 display_transform(vec3 color) {
     return vec3(1.0) - exp(-max(color, vec3(0.0)) * exposure);
 }
 
+
+#include "pyro_3d_brick_traversal.glsl"
+
 float scene_ray_distance(vec3 direction) {
     float depth = texture(scene_depth_texture, frag_uv).r;
     if (depth >= 0.999999) {
@@ -252,7 +260,7 @@ void main() {
     bool external_background = external_background_enabled();
     vec3 background =
         external_background ? texture(scene_color_texture, frag_uv).rgb : background_color(screen_uv);
-    if (!ray_box_intersection(origin, direction, near_t, far_t)) {
+    if (!ray_box_intersection(origin / pyro_domain_size(), direction / pyro_domain_size(), near_t, far_t)) {
         out_color = vec4(clamp(display_transform(background), vec3(0.0), vec3(1.0)), 1.0);
         return;
     }
@@ -270,7 +278,8 @@ void main() {
     float step_length = path_length / float(steps);
     vec3 accumulated = vec3(0.0);
     float transmittance = 1.0;
-    for (int i = 0; i < steps; ++i) {
+    bool occupancy_skip_enabled = (int(params.color_options.w) & 2) != 0 && external_background;
+    for (int i = 0; i < steps;) {
         float t = near_t + (float(i) + 0.5) * step_length;
         if (obstacle_hit && obstacle_t >= near_t && obstacle_t <= far_t && t >= obstacle_t) {
             vec3 hit_position = origin + direction * obstacle_t;
@@ -286,14 +295,24 @@ void main() {
             break;
         }
         vec3 position = origin + direction * t;
-        vec4 density = density_at(position);
+        if (occupancy_skip_enabled) {
+            ivec3 cell;
+            ivec3 cell_count;
+            if (occupancy_is_empty(position, cell, cell_count)) {
+                i += samples_to_next_occupancy_cell(
+                    origin, direction, near_t, step_length, i, steps,
+                    position, cell, cell_count);
+                continue;
+            }
+        }
+        vec4 density = density_at(position / pyro_domain_size());
         float smoke_density_value = smoke_density(density, position);
         float smoke_extinction = smoke_density_value * params.render_options.x;
         float base_extinction =
             external_background ? 0.0 : base_volume_extinction(position);
         float smoke_alpha = 1.0 - exp(-smoke_extinction * step_length);
         float base_alpha = 1.0 - exp(-base_extinction * step_length);
-        float shadow = texture(shadow_volume, clamp(position, vec3(0.0), vec3(1.0))).r;
+        float shadow = texture(shadow_volume, clamp(position / pyro_domain_size(), vec3(0.0), vec3(1.0))).r;
         float shadowed_light = pow(clamp(shadow, 0.0, 1.0), 1.35);
         float ambient_shadow = mix(0.24, 1.0, shadowed_light);
         float view_light = clamp(dot(-direction, light_direction), 0.0, 1.0);
@@ -312,6 +331,7 @@ void main() {
         if (transmittance < 0.01) {
             break;
         }
+        ++i;
     }
 
     vec3 color = accumulated + background * transmittance;

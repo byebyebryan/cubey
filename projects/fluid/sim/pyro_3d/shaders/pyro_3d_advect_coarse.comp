@@ -1,0 +1,43 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+#include "pyro_3d_simulation.glsl"
+
+layout(rgba16f, set = 0, binding = 0) uniform readonly image3D material_to_sample;
+layout(set = 0, binding = 1) uniform sampler3D velocity_in;
+layout(rgba16f, set = 0, binding = 2) uniform writeonly image3D density_out;
+layout(rgba16f, set = 0, binding = 3) uniform writeonly image3D velocity_out;
+
+#include "pyro_3d_transport.glsl"
+
+void main() {
+    ivec3 coord = ivec3(gl_GlobalInvocationID.xyz);
+    ivec3 fine_size = imageSize(density_out);
+    ivec3 flow_size = imageSize(velocity_out);
+    float dt = params.grid_dt_time.w;
+    if (all(lessThan(coord, fine_size))) {
+        vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(fine_size);
+        vec3 velocity = textureLod(velocity_in, uv, 0.0).xyz;
+        vec4 density = sample_density(uv - velocity * dt / pyro_domain_size());
+        if (inside_obstacle(uv * pyro_domain_size())) {
+            density = vec4(0.0);
+        }
+        imageStore(density_out, coord, clamp(density, vec4(0.0), vec4(8.0)));
+    }
+
+    // A rectangular subset of workgroups independently advances the coarse velocity.
+    if (all(lessThan(coord, flow_size))) {
+        vec3 uv = (vec3(coord) + vec3(0.5)) / vec3(flow_size);
+        vec3 velocity = texelFetch(velocity_in, coord, 0).xyz;
+        vec3 advected_velocity = textureLod(velocity_in, uv - velocity * dt / pyro_domain_size(), 0.0).xyz;
+        if (inside_obstacle(uv * pyro_domain_size())) {
+            advected_velocity = vec3(0.0);
+        }
+        float edge_distance = min(min(uv.x, 1.0 - uv.x),
+                                  min(pyro_wall_y(uv.y * pyro_domain_size().y), min(uv.z, 1.0 - uv.z)));
+        float wall = smoothstep(0.0, 0.035, edge_distance);
+        imageStore(velocity_out, coord, vec4(advected_velocity * wall, 0.0));
+    }
+}

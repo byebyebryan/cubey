@@ -30,6 +30,39 @@ Useful controls:
   local presentation style: exposure bias, backdrop, rim/scatter, smoke warmth,
   and flame shaping.
 
+The Simulation panel offers two independent options. **Half-resolution flow**
+restarts the plume with velocity, divergence and pressure at half the material
+resolution along each axis. Material dimensions must be even. **Skip empty ray
+segments** updates an 8³-voxel brick mask and skips empty space along camera
+and shadow rays. It can be toggled while the plume is paused or moving.
+The original cube, full flow and dense rays are the startup defaults.
+
+Material stores soot, heat, flame and fuel in RGBA16F. Velocity uses XYZ in
+another RGBA16F texture. Divergence, pressure, shadow transmittance and the brick
+mask use R32F. Shader arithmetic uses 32-bit floats.
+
+For the tall, open-top torch with 256 × 512 × 256 material, 128 × 256 × 128
+flow and 64 × 128 × 64 shadows, run:
+
+```bash
+./build/dev/projects/fluid/fire_3d/fire_3d --pyro-tall-domain --pyro-coarse-flow --pyro-ray-skipping \
+    --grid-width 256 --grid-height 512 --grid-depth 256 --pyro-obstacle-radius 0
+```
+
+To reproduce the seven-second high-detail comparison, use the Balanced torch
+settings and a fixed sunset camera:
+
+```bash
+./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 420 --fps 60 \
+    --width 1280 --height 720 --anti-aliasing off --capture-video-orbit-degrees 0 \
+    --capture-camera-distance 2.75 --time-of-day-mode solar --time-hours 17.72 \
+    --time-speed-hours-per-second 0 --pyro-tall-domain --pyro-coarse-flow --pyro-ray-skipping \
+    --grid-width 256 --grid-height 512 --grid-depth 256 --shadow-grid-height 128 \
+    --pyro-sources 1 --pyro-obstacle-radius 0 --pyro-source-radius 0.11 --pyro-soot 13 \
+    --pyro-soot-yield 0.35 --pyro-expansion 1.10 --pyro-flame-cooling 3.4 --pyro-shredding 4.2 \
+    --pyro-turbulence 1.2 --pyro-buoyancy 2.1 --pyro-source-force 8.0 --output /tmp/fire-3d-tall.mp4
+```
+
 Useful commands:
 
 ```bash

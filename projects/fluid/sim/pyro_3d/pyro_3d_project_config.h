@@ -108,6 +108,19 @@ inline OptionSpec option(std::string path, std::string cli, std::string label, s
     constexpr config::Range positive_float{.has_min = true, .min = 0.000001};
 
     builder
+        .bind(option("pyro.coarse_flow", "--pyro-coarse-flow", "Coarse flow", "Pyro 3D",
+                     "Use half-resolution velocity, pressure and divergence on even material grid "
+                     "dimensions.",
+                     ValueType::Bool),
+              config.pyro.coarse_flow)
+        .bind(option("pyro.ray_skipping", "--pyro-ray-skipping", "Ray skipping", "Pyro 3D",
+                     "Skip optically empty volume bricks on camera and shadow rays.",
+                     ValueType::Bool),
+              config.pyro.ray_skipping)
+        .bind(option("pyro.tall_domain", "--pyro-tall-domain", "Tall open domain", "Pyro 3D",
+                     "Double the physical domain height and open its upper boundary.",
+                     ValueType::Bool),
+              config.pyro.tall_domain)
         .bind(option("pyro.shadow_grid.width", "--shadow-grid-width", "Shadow Width", "Pyro 3D",
                      "Shadow-volume grid width.", ValueType::UInt32, positive),
               config.pyro.shadow_grid_width)

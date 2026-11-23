@@ -45,6 +45,7 @@
 #include <numbers>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -264,6 +265,22 @@ class Pyro3DApp {
                  .help = "Pressure projection, decay, buoyancy, and vorticity controls."}};
             group) {
             const cubey::host::ScopedImGuiId section_id("Simulation");
+            const bool even_grid =
+                ((pyro_config_.grid_width | pyro_config_.grid_height | pyro_config_.grid_depth) &
+                 1U) == 0U;
+            ImGui::BeginDisabled(!even_grid);
+            bool coarse_flow = pyro_config_.coarse_flow;
+            if (cubey::host::imgui_checkbox("Half-resolution flow", &coarse_flow,
+                                            "Reallocate the flow grid and restart the plume. "
+                                            "Requires even grid dimensions.")) {
+                rebuild_flow_grid(context, coarse_flow);
+            }
+            ImGui::EndDisabled();
+            if (!flow_grid_error_.empty()) {
+                ImGui::TextWrapped("Previous flow resolution restored: %s", flow_grid_error_.c_str());
+            }
+            cubey::host::imgui_checkbox("Skip empty ray segments", &pyro_config_.ray_skipping,
+                                        "Skip empty bricks along camera and shadow rays.");
             cubey::host::imgui_slider_uint32("Pressure iterations",
                                              &pyro_config_.pressure_iterations, 1U, 48U);
             cubey::host::imgui_slider_float("Density decay", &pyro_config_.density_decay_per_second,
@@ -462,6 +479,10 @@ class Pyro3DApp {
             const cubey::host::ScopedImGuiId section_id("Diagnostics");
             ImGui::Text("Grid: %u x %u x %u", pyro_config_.grid_width, pyro_config_.grid_height,
                         pyro_config_.grid_depth);
+            const unsigned divisor = pyro_config_.coarse_flow ? 2U : 1U;
+            ImGui::Text("Flow grid: %u x %u x %u", pyro_config_.grid_width / divisor,
+                        pyro_config_.grid_height / divisor, pyro_config_.grid_depth / divisor);
+            ImGui::Text("Ray skipping: %s", pyro_config_.ray_skipping ? "on" : "off");
             ImGui::Text("Shadow grid: %u x %u x %u", pyro_config_.shadow_grid_width,
                         pyro_config_.shadow_grid_height, pyro_config_.shadow_grid_depth);
         }
@@ -677,6 +698,33 @@ class Pyro3DApp {
             {
                 .camera_render_position_m = transform.translation,
             });
+    }
+
+    void rebuild_flow_grid(cubey::host::WindowedAppContext& context, bool coarse_flow) {
+        const bool previous = pyro_config_.coarse_flow;
+        context.device().wait_idle();
+        render_graph_executor_.clear();
+        // Release the previous grid first. Both grids together can exhaust the device heap.
+        auto allocate_grid = [&](bool half_resolution) {
+            resources_.destroy_all_resources();
+            pyro_config_.coarse_flow = half_resolution;
+            resources_.create_global_resources_if_needed(context.device(), context.gpu(),
+                                                         runtime_.gpu(), pyro_config_,
+                                                         context.frame_slot_count());
+            resources_.create_render_pipeline(context.device(), context.swapchain().format(),
+                                              context.swapchain().extent(),
+                                              atmosphere_background_bindings());
+        };
+        try {
+            allocate_grid(coarse_flow);
+            flow_grid_error_.clear();
+        } catch (const std::runtime_error& error) {
+            flow_grid_error_ = error.what();
+            allocate_grid(previous);
+        }
+        render_graph_executor_.resize(context.frame_slot_count());
+        frame_state_ = {};
+        reset_simulation();
     }
 
     void destroy_swapchain_resources() {
@@ -997,6 +1045,7 @@ class Pyro3DApp {
         cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
     bool paused_ = false;
     bool reset_requested_ = true;
+    std::string flow_grid_error_;
 };
 
 } // namespace

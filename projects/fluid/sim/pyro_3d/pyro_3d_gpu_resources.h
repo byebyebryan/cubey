@@ -32,6 +32,9 @@ inline constexpr VkFormat kPyro3DSceneDepthFormat = VK_FORMAT_D32_SFLOAT;
 namespace gpu_resource_detail {
 // Project-private simulation products and target-dependent presentation resources.
 struct GlobalResources {
+    std::optional<cubey::render::Texture3D> occupancy_;
+    std::optional<cubey::vulkan::DescriptorSetArray> occupancy_sets_;
+    std::optional<cubey::render::ComputePipelineResource> occupancy_pipeline_;
     std::optional<cubey::render::Texture3D> density_a_;
     std::optional<cubey::render::Texture3D> density_b_;
     std::optional<cubey::render::Texture3D> velocity_a_;
@@ -88,7 +91,8 @@ struct GlobalResources {
     std::optional<cubey::render::ComputePipelineResource> projection_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> shadow_pipeline_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
-    std::array<std::uint64_t, 8> resource_shape_{};
+    bool coarse_flow_ = false;
+    std::array<std::uint64_t, 10> resource_shape_{};
     bool global_resources_created_ = false;
 };
 struct TargetResources {
@@ -99,6 +103,18 @@ struct TargetResources {
 class Pyro3DGpuResources : private gpu_resource_detail::GlobalResources,
                            private gpu_resource_detail::TargetResources {
   public:
+    [[nodiscard]] bool has_occupancy() const {
+        return occupancy_.has_value();
+    }
+    const auto& occupancy() const {
+        return occupancy_.value();
+    }
+    const auto& occupancy_pipeline() const {
+        return occupancy_pipeline_.value();
+    }
+    VkDescriptorSet occupancy_set(bool density_a) const {
+        return occupancy_sets_->set(density_a ? 0U : 1U);
+    }
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& mesh_gpu,
                                            cubey::ProjectGpuServices& gpu,
