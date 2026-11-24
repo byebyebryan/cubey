@@ -94,6 +94,34 @@ bool inside_obstacle(vec3 uv) {
     return length(uv - center) <= radius;
 }
 
+// Values match FireBurner in pyro_3d_config.h. Classic also serves Explosion.
+const uint CLASSIC = 0u;
+const uint COMPACT_DRAFT = 2u;
+
+void shape_burner(vec3 offset, float strength, inout float falloff, inout vec3 velocity) {
+    bool compact = params.fire_burner == COMPACT_DRAFT;
+    vec2 axis = compact ? normalize(vec2(0.65, 0.76)) : normalize(vec2(0.47, 0.88));
+    float across = dot(offset.xz, axis);
+    float along = dot(offset.xz, vec2(-axis.y, axis.x));
+    float time = params.options.w;
+    float width = compact ? 0.68 : 0.59;
+    float swing = sin(3.7 * time + 0.8 * sin(1.6 * time));
+    float left_weight = compact ? 0.53 + 0.23 * swing : 0.51 + 0.19 * swing;
+    float left_motion = compact ? 0.25 * sin(2.1 * time)
+                                : 0.36 * sin(2.8 * time + 0.5 * sin(1.3 * time));
+    float right_motion = compact ? 0.24 * sin(2.9 * time + 1.7)
+                                 : 0.31 * sin(2.45 * time + 1.7);
+    float left_distance = (across + (compact ? 0.71 : 0.82) + left_motion) / width;
+    float right_distance = (across - (compact ? 0.62 : 0.77) + right_motion) / width;
+    float vertical = (offset.y + 0.16) / 0.68;
+    // Normalize the two elliptical feeds before blending with the central source.
+    float envelope = exp(-vertical * vertical - along * along / 0.88) / (width * 0.68 * sqrt(0.88));
+    float left = left_weight * exp(-left_distance * left_distance);
+    float right = (1.0 - left_weight) * exp(-right_distance * right_distance);
+    falloff = mix(falloff, envelope * (left + right), compact ? 0.63 : 0.75);
+    velocity.xz += axis * (right - left) * envelope * strength * params.grid_dt_time.w * (compact ? 0.10 : 0.20);
+}
+
 void apply_sources(vec3 uv, float dt, bool fire_mode, inout vec4 material,
                    inout vec3 velocity) {
     int source_count = int(params.options.x + 0.5);
@@ -114,6 +142,9 @@ void apply_sources(vec3 uv, float dt, bool fire_mode, inout vec4 material,
             source_warp_weight;
         vec3 delta = (uv + warp) - source.position_radius.xyz;
         float falloff = exp(-dot(delta, delta) / (radius * radius));
+        if (params.fire_burner != CLASSIC && dot(delta, delta) < 16.0 * radius * radius) {
+            shape_burner(delta / radius, velocity_strength, falloff, velocity);
+        }
         float breakup = mix(
             1.0,
             0.86 +
@@ -144,7 +175,14 @@ void apply_combustion(float dt, inout vec4 material) {
         smoothstep(ignition_temperature * 0.70, ignition_temperature * 1.35, temperature);
     float fuel_mask = smoothstep(0.010, 0.16, fuel);
     float burn_fraction = 1.0 - exp(-burn_rate * dt);
-    float burned = min(fuel, fuel * burn_fraction * ignition_mask * fuel_mask);
+    float mixing_rate = 1.0;
+    if (params.fire_burner != CLASSIC) {
+        // Fuel-rich packets burn more slowly until advection dilutes them.
+        float mixed = 1.0 - smoothstep(0.14, 0.52, fuel);
+        mixing_rate = params.fire_burner == COMPACT_DRAFT ? mix(0.23, 1.32, mixed)
+                                                         : mix(0.28, 1.39, mixed);
+    }
+    float burned = min(fuel, fuel * burn_fraction * ignition_mask * fuel_mask * mixing_rate);
     material.a = fuel - burned;
     material.g += burned * heat_output;
     material.b += burned * 4.8;
@@ -161,7 +199,7 @@ void apply_fire_dissipation(float dt, inout vec4 material) {
     float fuel_signal = smoothstep(0.010, 0.12, material.a);
     float active_fire = max(flame_signal, fuel_signal);
 
-    material.a *= exp(-4.8 * dt);
+    material.a *= exp(-(params.fire_burner == CLASSIC ? 4.8 : 2.7) * dt);
     material.g *= exp(-mix(3.8, 1.0, active_fire) * dt);
     material.r *= exp(-mix(1.5, 0.28, active_fire) * dt);
     material.b = material.b < 0.003 ? 0.0 : material.b;
@@ -177,6 +215,18 @@ void apply_explosion_dissipation(float dt, inout vec4 material) {
     material.r += spent_flame * 0.075;
     material.a = 0.0;
     material.b = material.b < 0.002 ? 0.0 : material.b;
+}
+
+vec2 apply_passing_draft(vec2 lateral, float height, float wall) {
+    if (params.fire_burner != COMPACT_DRAFT) {
+        return lateral;
+    }
+    float time = params.options.w;
+    float gust = smoothstep(4.0, 4.65, time) * (1.0 - smoothstep(5.4, 6.1, time));
+    float band = smoothstep(0.33, 0.57, height) * (1.0 - smoothstep(0.82, 0.98, height));
+    vec2 direction = normalize(vec2(0.40, 0.916));
+    float response = 1.0 - exp(-2.5 * gust * band * params.grid_dt_time.w);
+    return lateral + direction * (0.52 * wall - dot(lateral, direction)) * response;
 }
 
 vec4 combust_cell(ivec3 coord, ivec3 size, vec3 velocity) {
@@ -239,7 +289,10 @@ void main() {
     // In full-resolution mode the material cell owns its velocity directly.
     if (all(equal(fine_size, imageSize(velocity_out)))) {
         if (all(lessThan(coord, fine_size))) {
-            vec3 velocity = combust_cell(coord, fine_size, imageLoad(velocity_in, coord).xyz).xyz;
+            vec4 effect = combust_cell(coord, fine_size, imageLoad(velocity_in, coord).xyz);
+            vec3 velocity = effect.xyz;
+            float height = (float(coord.y) + 0.5) * pyro_domain_size().y / float(fine_size.y);
+            velocity.xz = apply_passing_draft(velocity.xz, height, effect.w);
             imageStore(velocity_out, coord, vec4(clamp(velocity, vec3(-6.0), vec3(6.0)), 0.0));
         }
         return;
@@ -277,5 +330,6 @@ void main() {
     }
     effect *= 0.125;
     vec3 velocity = imageLoad(velocity_in, flow_coord).xyz * effect.w + effect.xyz;
+    velocity.xz = apply_passing_draft(velocity.xz, flow_pos.y, effect.w);
     imageStore(velocity_out, flow_coord, vec4(clamp(velocity, vec3(-6.0), vec3(6.0)), 0.0));
 }

@@ -177,6 +177,28 @@ vec3 flame_color(float heat, float core) {
     return mix(warm, hot, smoothstep(0.28, 1.0, heat + core * 0.45));
 }
 
+vec3 amber_flame_emission(float flame, float heat, float soot, float fuel, float height) {
+    float flame_layer = smoothstep(0.040, 0.59, flame) * smoothstep(0.045, 0.88, heat);
+    float open_flame = 1.0 - smoothstep(0.36, 1.25, soot);
+    float height_weight = mix(0.085, 1.0, 1.0 - smoothstep(0.28, 0.86, height));
+    float shoulder = smoothstep(0.018, 0.32, flame) * smoothstep(0.095, 0.85, heat);
+    float core = smoothstep(0.30, 1.10, flame) * smoothstep(0.42, 1.85, heat);
+    float amber = smoothstep(0.12, 0.82, flame) * smoothstep(0.22, 1.40, heat);
+    vec3 sheet_color = mix(vec3(1.0, 0.048, 0.004), vec3(1.0, 0.16, 0.006), amber);
+    float core_weight = clamp(core * params.color_options.z, 0.0, 1.0);
+    sheet_color = mix(sheet_color, vec3(1.0, 0.65, 0.23), core_weight);
+    float ridge = smoothstep(0.035, 0.19, flame) * (1.0 - smoothstep(0.19, 0.61, flame));
+    float rich = smoothstep(0.15, 0.48, fuel);
+    vec3 sheets = mix(vec3(1.0, 0.06, 0.001), sheet_color, 1.0 - 0.82 * rich) *
+                  pow(flame_layer, 1.23) * open_flame * height_weight;
+    vec3 edge = vec3(1.0, 0.26, 0.018) * ridge * smoothstep(0.08, 0.70, heat) *
+                height_weight * open_flame;
+    vec3 outer = vec3(1.0, 0.065, 0.006) * shoulder *
+                 (1.0 - smoothstep(0.36, 1.15, soot)) * height_weight;
+    return (sheets * (0.79 - 0.55 * rich) + edge * 0.22 + outer * 0.075) *
+           params.render_options.y * params.color_options.y * 14.0;
+}
+
 vec3 flame_emission(vec4 density, vec3 position) {
     if (inside_obstacle(position)) {
         return vec3(0.0);
@@ -184,6 +206,9 @@ vec3 flame_emission(vec4 density, vec3 position) {
     float flame = max(density.b, 0.0);
     float heat = max(density.g, 0.0);
     float soot = max(density.r, 0.0);
+    if ((int(params.color_options.w) & 4) != 0) {
+        return amber_flame_emission(flame, heat, soot, max(density.a, 0.0), position.y);
+    }
     float flame_value = flame_transfer(flame, heat, soot, position);
     float flame_height =
         fire_render_mode() ? 1.0 - smoothstep(0.28, 0.70, position.y) : 1.0;
@@ -201,6 +226,42 @@ vec3 flame_emission(vec4 density, vec3 position) {
     return (flame_color(clamp(heat * 0.34, 0.0, 1.4), core) * flame_value + halo_color +
             heat_color) *
            params.render_options.y * params.color_options.y * 14.0;
+}
+
+// Gather incident flame radiance from the lower hemisphere. The short rays
+// follow the simulated flame tongues and lose light as they cross soot.
+vec3 incident_firelight(vec3 position) {
+    const vec3 directions[] = vec3[](
+        vec3(0.0, -1.0, 0.0), vec3(0.6, -0.8, 0.0), vec3(-0.6, -0.8, 0.0),
+        vec3(0.0, -0.8, 0.6), vec3(0.0, -0.8, -0.6));
+    const float spacing = 0.15;
+    const float scatter_gain = 6.0;
+    vec3 incident = vec3(0.0);
+    for (int ray = 0; ray < directions.length(); ++ray) {
+        vec3 direction = directions[ray];
+        float hit;
+        float limit = ray_sphere_intersection(position, direction, hit) ? hit : 0.45;
+        float transmission = 1.0;
+        for (int tap = 0; tap < 3; ++tap) {
+            float travel = (float(tap) + 0.5) * spacing;
+            vec3 source = position + direction * travel;
+            vec3 uv = source / pyro_domain_size();
+            if (travel >= limit || any(lessThan(uv, vec3(0.0))) ||
+                any(greaterThan(uv, vec3(1.0)))) {
+                break;
+            }
+            vec4 cell = max(textureLod(density_volume, uv, 0.0), vec4(0.0));
+            float half_step = exp(-0.5 * spacing * params.render_options.x * cell.r);
+            transmission *= half_step;
+            // The amber transfer is zero outside these flame, heat and soot thresholds.
+            if (cell.b > 0.018 && cell.g > 0.045 && cell.r < 1.25) {
+                incident += transmission *
+                            amber_flame_emission(cell.b, cell.g, cell.r, cell.a, source.y);
+            }
+            transmission *= half_step;
+        }
+    }
+    return incident * (scatter_gain * spacing / float(directions.length()));
 }
 
 vec3 display_transform(vec3 color) {
@@ -322,6 +383,9 @@ void main() {
                         light_color * shadowed_light * params.render_options.y *
                             forward_scatter +
                         light_color * shadowed_light * rim * 0.38 * params.style_options.z;
+        if ((int(params.color_options.w) & 8) != 0 && smoke_density_value > 0.0) {
+            lighting += incident_firelight(position);
+        }
         vec3 base_color = (sky_color * 0.58 + light_color * 0.16) * ambient_shadow;
         accumulated += transmittance * base_color * base_alpha;
         accumulated += transmittance * smoke_albedo(density) * lighting * smoke_alpha;

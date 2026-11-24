@@ -28,6 +28,7 @@ struct SimulationPushConstants {
     std::array<float, 4> fire_options{};
     std::array<float, 4> shaping_options{};
     std::array<float, 4> obstacle_options{};
+    std::uint32_t fire_burner{};
 };
 
 struct RenderPushConstants {
@@ -112,7 +113,7 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Pyro3DConfig& config,
                                                                 const ProjectFrame& frame) {
     const float time = static_cast<float>(frame.elapsed_seconds);
-    const float dt = std::min(static_cast<float>(frame.delta_seconds), config.fixed_delta_seconds);
+    const float dt = static_cast<float>(std::min(frame.delta_seconds, config.fixed_delta_seconds));
     return {
         .grid_dt_time =
             {
@@ -163,6 +164,7 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
                 config.ray_skipping ? 1.0F : 0.0F,
                 config.tall_domain ? 2.0F : 1.0F,
             },
+        .fire_burner = static_cast<std::uint32_t>(config.fire_burner),
     };
 }
 
@@ -174,6 +176,10 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
     const float aspect = extent.height == 0
                              ? 1.0F
                              : static_cast<float>(extent.width) / static_cast<float>(extent.height);
+    const bool amber_burner = config.fire_burner != FireBurner::Classic;
+    const auto render_flags = (atmosphere_background_enabled ? 1U : 0U) |
+                              (config.ray_skipping ? 2U : 0U) | (amber_burner ? 4U : 0U) |
+                              (amber_burner && config.firelight ? 8U : 0U);
     return {
         .camera_position_steps =
             {
@@ -229,8 +235,7 @@ void record_initial_volume_layouts(VkCommandBuffer command_buffer,
                 config.render_smoke_warmth,
                 config.render_flame_intensity,
                 config.render_flame_core_strength,
-                static_cast<float>((atmosphere_background_enabled ? 1U : 0U) |
-                                   (config.ray_skipping ? 2U : 0U)),
+                static_cast<float>(render_flags),
             },
     };
 }

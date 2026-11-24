@@ -71,10 +71,10 @@ constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseV
 constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
-[[nodiscard]] float default_camera_distance(Pyro3DMode mode) {
-    switch (mode) {
+[[nodiscard]] float default_camera_distance(const Pyro3DConfig& config) {
+    switch (config.mode) {
     case Pyro3DMode::Fire:
-        return kFireCameraDistance;
+        return config.tall_domain ? 2.75F : kFireCameraDistance;
     case Pyro3DMode::Explosion:
         return kExplosionCameraDistance;
     }
@@ -138,6 +138,18 @@ pyro_3d_static_environment_lighting(float exposure) {
     };
 }
 
+[[nodiscard]] const char* fire_burner_label(FireBurner burner) {
+    switch (burner) {
+    case FireBurner::Rolling:
+        return "Rolling burner";
+    case FireBurner::CompactDraft:
+        return "Compact + passing draft";
+    case FireBurner::Classic:
+        return "Classic";
+    }
+    return "";
+}
+
 constexpr std::array<Pyro3DDebugView, 3> kDebugViews{
     Pyro3DDebugView::Smoke,
     Pyro3DDebugView::DensitySlice,
@@ -158,7 +170,7 @@ class Pyro3DApp {
         camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane,
                                terrain_backdrop_enabled() ? kTerrainCameraFarPlane
                                                           : kCameraFarPlane);
-        orbit_controller_.set_home_distance(default_camera_distance(pyro_config_.mode));
+        orbit_controller_.set_home_distance(default_camera_distance(pyro_config_));
         orbit_controller_.set_auto_rotation_speed(0.12F);
     }
 
@@ -234,9 +246,6 @@ class Pyro3DApp {
 
         update_camera_input(context, project_frame.delta_seconds);
         update_atmosphere_time(project_frame.delta_seconds);
-        if (!paused_) {
-            update_sources(project_frame);
-        }
     }
 
     void update_camera_input(cubey::host::WindowedAppContext& context, double delta_seconds) {
@@ -257,7 +266,18 @@ class Pyro3DApp {
 
         cubey::host::imgui_enum_combo("Debug view", debug_view_, kDebugViews, debug_view_name);
 
-        ImGui::Text("Mode: %s", pyro_3d_mode_name(pyro_config_.mode));
+        if (pyro_config_.mode == Pyro3DMode::Fire) {
+            constexpr std::array burners{FireBurner::Rolling, FireBurner::CompactDraft,
+                                         FireBurner::Classic};
+            auto burner = pyro_config_.fire_burner;
+            if (cubey::host::imgui_enum_combo("Burner", burner, burners, fire_burner_label,
+                                              "Restart the plume with the selected burner.")) {
+                apply_fire_burner(pyro_config_, burner);
+                reset_simulation();
+            }
+        } else {
+            ImGui::Text("Mode: %s", pyro_3d_mode_name(pyro_config_.mode));
+        }
 
         if (const cubey::host::ScopedImGuiGroup group{
                 "Simulation",
@@ -277,7 +297,8 @@ class Pyro3DApp {
             }
             ImGui::EndDisabled();
             if (!flow_grid_error_.empty()) {
-                ImGui::TextWrapped("Previous flow resolution restored: %s", flow_grid_error_.c_str());
+                ImGui::TextWrapped("Previous flow resolution restored: %s",
+                                   flow_grid_error_.c_str());
             }
             cubey::host::imgui_checkbox("Skip empty ray segments", &pyro_config_.ray_skipping,
                                         "Skip empty bricks along camera and shadow rays.");
@@ -391,6 +412,10 @@ class Pyro3DApp {
                                             3.0F, "%.2f");
             cubey::host::imgui_slider_float("Smoke warmth", &pyro_config_.render_smoke_warmth, 0.0F,
                                             1.0F, "%.2f");
+            if (pyro_config_.fire_burner != FireBurner::Classic) {
+                cubey::host::imgui_checkbox("Flame lights smoke", &pyro_config_.firelight,
+                                            "Scatter light from nearby flames into the smoke.");
+            }
             cubey::host::imgui_slider_float("Flame intensity", &pyro_config_.render_flame_intensity,
                                             0.0F, 3.0F, "%.2f");
             cubey::host::imgui_slider_float("Flame core", &pyro_config_.render_flame_core_strength,
@@ -514,6 +539,7 @@ class Pyro3DApp {
     }
 
     void reset_simulation() {
+        burner_elapsed_seconds_ = 0.0;
         reset_sources();
         reset_requested_ = true;
         frame_state_.density_a_current = true;
@@ -597,9 +623,25 @@ class Pyro3DApp {
         source_gpu_ = update_pyro_3d_sources(source_states_, pyro_config_, timing);
     }
 
+    void apply_simulation_clock(ProjectFrame& frame, bool advance) {
+        const FrameTiming timing =
+            pyro_3d_solver_clock_timing(pyro_config_,
+                                        {
+                                            .delta_seconds = frame.delta_seconds,
+                                            .elapsed_seconds = frame.elapsed_seconds,
+                                            .frame_index = frame.frame_index,
+                                        },
+                                        burner_elapsed_seconds_, advance);
+        frame.elapsed_seconds = timing.elapsed_seconds;
+    }
+
     [[nodiscard]] cubey::Transform3D render_camera_transform() const {
+        auto target = kVolumeCenter;
+        if (config_.common.headless && config_.capture.target_height) {
+            target.y = *config_.capture.target_height;
+        }
         return cubey::orbit_camera_transform(cubey::OrbitCameraState{
-            .target = kVolumeCenter,
+            .target = target,
             .distance = orbit_controller_.distance(),
             .yaw = kCameraBaseYaw + orbit_controller_.yaw() + capture_orbit_offset_radians_,
             .pitch = kCameraBasePitch + orbit_controller_.pitch(),
@@ -885,9 +927,14 @@ class Pyro3DApp {
                     moon_body_frame_uniforms(render_frame.color_target.extent));
             }
         }
+        ProjectFrame simulation_frame = frame;
+        apply_simulation_clock(simulation_frame, !paused_);
+        if (!paused_) {
+            update_sources(simulation_frame);
+        }
         record_pyro_3d_compute(render_frame.command_buffer, resources_, draw_config, paused_,
-                               reset_requested_, frame, source_gpu_, frame_state_, true, profiler,
-                               render_frame.frame_slot.index);
+                               reset_requested_, simulation_frame, source_gpu_, frame_state_, true,
+                               profiler, render_frame.frame_slot.index);
         record_pyro_3d_draw(render_frame.command_buffer, context.device(), render_graph_executor_,
                             resources_, draw_config, debug_view_, camera, render_frame.color_target,
                             Pyro3DRenderTargetMode::Present, frame_state_,
@@ -920,16 +967,21 @@ class Pyro3DApp {
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
                                           const ProjectFrame& frame) {
         update_atmosphere_time(frame.delta_seconds);
-        update_sources(frame);
+        ProjectFrame simulation_frame = frame;
+        if (config_.common.headless_render_only ||
+            config_.common.capture_mode == CaptureMode::Video) {
+            apply_simulation_clock(simulation_frame, !paused_);
+        }
+        update_sources(simulation_frame);
         static_cast<void>(gpu.submit_and_wait({
             .label = "pyro_3d headless simulation frame",
             .work =
-                [this, frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                [this, simulation_frame](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     const Pyro3DConfig draw_config = render_config();
                     resources_.upload_environment_lighting(0, environment_lighting_uniforms());
                     record_pyro_3d_compute(commands.command_buffer(), resources_, draw_config,
-                                           paused_, reset_requested_, frame, source_gpu_,
+                                           paused_, reset_requested_, simulation_frame, source_gpu_,
                                            frame_state_);
                     commands.submit_and_wait();
                 },
@@ -1043,6 +1095,7 @@ class Pyro3DApp {
     bool terrain_shadows_ = true;
     cubey::render::TerrainBackdropMaterialMode terrain_material_ =
         cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
+    double burner_elapsed_seconds_ = 0.0;
     bool paused_ = false;
     bool reset_requested_ = true;
     std::string flow_grid_error_;

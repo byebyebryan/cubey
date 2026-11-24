@@ -25,6 +25,7 @@ inline constexpr float kPyro3DMaximumCaptureOrbitDegrees = 180.0F;
 
 struct Pyro3DCaptureOptions {
     std::optional<float> camera_distance{};
+    std::optional<float> target_height{};
     std::optional<float> video_orbit_degrees{};
 };
 
@@ -72,7 +73,8 @@ inline OptionSpec option(std::string path, std::string cli, std::string label, s
 
 } // namespace pyro_3d_project_config_detail
 
-[[nodiscard]] inline config::Schema pyro_3d_project_config_schema(Pyro3DProjectConfig& config) {
+[[nodiscard]] inline config::Schema
+pyro_3d_project_config_schema(Pyro3DProjectConfig& config, Pyro3DMode mode = Pyro3DMode::Fire) {
     using config::ValueType;
     using pyro_3d_project_config_detail::option;
 
@@ -91,6 +93,11 @@ inline OptionSpec option(std::string path, std::string cli, std::string label, s
                       .min = kPyro3DMinimumCaptureCameraDistance,
                       .max = kPyro3DMaximumCaptureCameraDistance}),
               config.capture.camera_distance)
+        .bind(option("pyro.capture.target_height", "--capture-target-height", "Target Height",
+                     "Capture",
+                     "Headless orbit target height in world units above the volume floor.",
+                     ValueType::Float),
+              config.capture.target_height)
         .bind(option("pyro.capture.video_orbit_degrees", "--capture-video-orbit-degrees",
                      "Video Orbit", "Capture",
                      "Optional eased video orbit in total degrees; zero keeps the camera fixed.",
@@ -106,6 +113,18 @@ inline OptionSpec option(std::string path, std::string cli, std::string label, s
     constexpr config::Range unit{.has_min = true, .has_max = true, .min = 0.0, .max = 1.0};
     constexpr config::Range radius{.has_min = true, .has_max = true, .min = 0.0, .max = 0.5};
     constexpr config::Range positive_float{.has_min = true, .min = 0.000001};
+
+    if (mode == Pyro3DMode::Fire) {
+        builder.bind(option("pyro.fire_burner", "--fire-burner", "Burner", "Fire 3D",
+                            "Choose the rolling burner (default), compact burner with a passing "
+                            "draft, or the classic single feed.",
+                            ValueType::Enum, {}, {"classic", "rolling", "compact-draft"}),
+                     config.pyro.fire_burner);
+        builder.bind(option("pyro.firelight", "--pyro-firelight", "Flame lights smoke", "Fire 3D",
+                            "Scatter nearby flame light into smoke for Rolling and Compact.",
+                            ValueType::Bool),
+                     config.pyro.firelight);
+    }
 
     builder
         .bind(option("pyro.coarse_flow", "--pyro-coarse-flow", "Coarse flow", "Pyro 3D",
@@ -232,7 +251,11 @@ inline OptionSpec option(std::string path, std::string cli, std::string label, s
 parse_pyro_3d_project_config(int argc, char** argv, Pyro3DMode mode,
                              config::ParseResult* result = nullptr) {
     Pyro3DProjectConfig config = host::parse_configured_app<Pyro3DProjectConfig>(
-        argc, argv, pyro_3d_project_config_schema, result);
+        argc, argv,
+        [mode](Pyro3DProjectConfig& options) {
+            return pyro_3d_project_config_schema(options, mode);
+        },
+        result);
     validate_atmosphere_environment_options(config.atmosphere);
     validate_cloud_environment_options(config.clouds);
     config.simulation = pyro_3d_config_from_options(config.grid, config.pyro, mode, config.common);

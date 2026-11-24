@@ -5,6 +5,7 @@
 #include <cubey/core/frame_clock.h>
 #include <cubey/host/common_config.h>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -25,9 +26,15 @@ enum class Pyro3DMode : std::uint32_t {
     Explosion = 1,
 };
 
+enum class FireBurner : std::uint32_t {
+    Classic = 0,
+    Rolling = 1,
+    CompactDraft = 2,
+};
+
 inline constexpr std::uint32_t kMaxPyro3DSourceCount = 16;
 inline constexpr std::uint32_t kPyro3DComputeGroupSize = 4;
-inline constexpr std::uint32_t kPyro3DSimulationPushConstantFloatCount = 28;
+inline constexpr std::uint32_t kPyro3DSimulationPushConstantFloatCount = 29;
 inline constexpr std::uint32_t kPyro3DRenderPushConstantFloatCount = 32;
 inline constexpr float kDefaultPyro3DSourceRadius = 0.05F;
 inline constexpr float kDefaultFire3DSourceHeight = 0.10F;
@@ -46,9 +53,11 @@ inline constexpr float kMaxPyro3DObstacleRadius = 0.5F;
 // Startup-only values preserve omission explicitly.  The runtime product
 // below keeps concrete defaults for simulation, shaders, and UI code.
 struct Pyro3DStartupOptions {
+    FireBurner fire_burner = FireBurner::Rolling;
+    bool firelight = false;
     bool coarse_flow = false;
     bool ray_skipping = false;
-    bool tall_domain = false;
+    std::optional<bool> tall_domain{};
     std::optional<std::uint32_t> shadow_grid_width{};
     std::optional<std::uint32_t> shadow_grid_height{};
     std::optional<std::uint32_t> shadow_grid_depth{};
@@ -78,6 +87,8 @@ struct Pyro3DStartupOptions {
 };
 
 struct Pyro3DConfig {
+    FireBurner fire_burner = FireBurner::Classic;
+    bool firelight = false;
     bool coarse_flow = false;
     bool ray_skipping = false;
     bool tall_domain = false;
@@ -92,7 +103,7 @@ struct Pyro3DConfig {
     std::uint32_t shadow_steps = 64;
     std::uint32_t shadow_update_interval = 1;
     std::uint32_t source_count = 1;
-    float fixed_delta_seconds = 1.0F / 60.0F;
+    double fixed_delta_seconds = 1.0 / 60.0;
     float density_decay_per_second = 0.99F;
     float velocity_decay_per_second = 0.99F;
     Pyro3DMode mode = Pyro3DMode::Fire;
@@ -132,6 +143,23 @@ struct Pyro3DConfig {
     bool profile_diagnostics = false;
     bool headless = false;
 };
+
+// Only burner-authored controls are recalled. Grid, lighting and camera are independent.
+inline void apply_fire_burner(Pyro3DConfig& config, FireBurner burner) {
+    const Pyro3DConfig classic;
+    const bool original = burner == FireBurner::Classic;
+    config.fire_burner = burner;
+    config.source_radius = original ? classic.source_radius : 0.11F;
+    config.source_velocity_strength = original ? classic.source_velocity_strength : 8.0F;
+    config.source_smoke_amount = original ? classic.source_smoke_amount : 13.0F;
+    config.buoyancy_strength = original ? classic.buoyancy_strength : 2.1F;
+    config.fire_soot_yield = original ? classic.fire_soot_yield : 0.35F;
+    config.fire_expansion = original ? classic.fire_expansion : 1.10F;
+    config.fire_flame_cooling = original ? classic.fire_flame_cooling : 3.4F;
+    config.fire_shredding = original ? classic.fire_shredding : 4.2F;
+    config.fire_turbulence = original ? classic.fire_turbulence : 1.2F;
+    config.obstacle_radius = original ? classic.obstacle_radius : 0.0F;
+}
 
 [[nodiscard]] inline Pyro3DDebugView next_debug_view(Pyro3DDebugView view) {
     switch (view) {
@@ -202,15 +230,19 @@ struct Pyro3DConfig {
     return slice * depth;
 }
 
-[[nodiscard]] inline Pyro3DConfig pyro_3d_config_from_options(
-    const common::FluidGridOptions& grid, const Pyro3DStartupOptions& options, Pyro3DMode mode,
-    const host::CommonRunConfig& common_config = {}) {
+[[nodiscard]] inline Pyro3DConfig
+pyro_3d_config_from_options(const common::FluidGridOptions& grid,
+                            const Pyro3DStartupOptions& options, Pyro3DMode mode,
+                            const host::CommonRunConfig& common_config = {}) {
     Pyro3DConfig result;
     result.mode = mode;
     result.source_count = mode == Pyro3DMode::Fire ? 1U : kDefaultExplosion3DSourceCount;
     result.source_radius =
         mode == Pyro3DMode::Fire ? kDefaultFireSourceRadius : kDefaultExplosion3DSourceRadius;
-    if (mode == Pyro3DMode::Explosion) {
+    if (mode == Pyro3DMode::Fire) {
+        apply_fire_burner(result, options.fire_burner);
+        result.firelight = options.firelight;
+    } else {
         result.density_decay_per_second = 0.97F;
         result.source_center_height = kDefaultExplosion3DSourceHeight;
         result.source_velocity_strength = 8.5F;
@@ -245,7 +277,7 @@ struct Pyro3DConfig {
 
     result.coarse_flow = options.coarse_flow;
     result.ray_skipping = options.ray_skipping;
-    result.tall_domain = options.tall_domain;
+    result.tall_domain = options.tall_domain.value_or(result.fire_burner != FireBurner::Classic);
     if (result.tall_domain) {
         result.grid_height *= 2;
         result.shadow_grid_height *= 2;
@@ -387,15 +419,34 @@ struct Pyro3DConfig {
     return result;
 }
 
-[[nodiscard]] inline Pyro3DConfig pyro_3d_config_from_options(
-    const common::FluidGridOptions& grid, const Pyro3DStartupOptions& options,
-    const host::CommonRunConfig& common_config, Pyro3DMode mode) {
+[[nodiscard]] inline Pyro3DConfig
+pyro_3d_config_from_options(const common::FluidGridOptions& grid,
+                            const Pyro3DStartupOptions& options,
+                            const host::CommonRunConfig& common_config, Pyro3DMode mode) {
     return pyro_3d_config_from_options(grid, options, mode, common_config);
 }
 
-[[nodiscard]] inline std::uint32_t pyro_3d_headless_frame_count(
-    const host::CommonRunConfig& config) {
+[[nodiscard]] inline std::uint32_t
+pyro_3d_headless_frame_count(const host::CommonRunConfig& config) {
     return config.frames == 0 ? 120U : config.frames;
+}
+
+[[nodiscard]] inline bool pyro_3d_uses_solver_time_clock(const Pyro3DConfig& config) {
+    return config.mode == Pyro3DMode::Fire && config.fire_burner != FireBurner::Classic;
+}
+
+[[nodiscard]] inline FrameTiming pyro_3d_solver_clock_timing(const Pyro3DConfig& config,
+                                                             FrameTiming timing,
+                                                             double& elapsed_seconds,
+                                                             bool advance) {
+    if (!pyro_3d_uses_solver_time_clock(config)) {
+        return timing;
+    }
+    if (advance) {
+        elapsed_seconds += std::min(timing.delta_seconds, config.fixed_delta_seconds);
+    }
+    timing.elapsed_seconds = elapsed_seconds;
+    return timing;
 }
 
 [[nodiscard]] inline FrameTiming fixed_pyro_3d_headless_timing(const Pyro3DConfig& config,
@@ -403,10 +454,11 @@ struct Pyro3DConfig {
     if (frame_index == 0) {
         throw std::runtime_error("fixed pyro 3D frame index must be positive");
     }
+    // Keep PNG timestamps on the legacy float step while the solver clock uses double precision.
+    const double legacy_delta_seconds = static_cast<float>(config.fixed_delta_seconds);
     return {
-        .delta_seconds = config.fixed_delta_seconds,
-        .elapsed_seconds =
-            static_cast<double>(config.fixed_delta_seconds) * static_cast<double>(frame_index),
+        .delta_seconds = legacy_delta_seconds,
+        .elapsed_seconds = legacy_delta_seconds * static_cast<double>(frame_index),
         .frame_index = frame_index,
     };
 }

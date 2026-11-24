@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdio>
 #include <exception>
@@ -182,17 +183,19 @@ int main() {
             default_project_config.common);
         require(default_fire_config.source_count == config.source_count,
                 "default run config should preserve fire source count");
-        require(default_fire_config.source_radius == config.source_radius,
-                "default run config should preserve fire source radius");
+        require(default_fire_config.fire_burner == pyro::FireBurner::Rolling &&
+                    default_fire_config.source_radius == 0.11F &&
+                    default_fire_config.obstacle_radius == 0.0F,
+                "Fire should launch the single unobstructed rolling burner");
         require(default_fire_config.source_center_height == config.source_center_height,
                 "default run config should preserve fire source height");
         require(default_fire_config.fire_burn_rate == config.fire_burn_rate,
                 "default run config should preserve fire burn rate");
         require(default_fire_config.fire_heat_output == config.fire_heat_output,
                 "default run config should preserve fire heat output");
-        require(default_fire_config.fire_expansion == config.fire_expansion,
+        require(default_fire_config.fire_expansion == 1.10F,
                 "default run config should preserve fire expansion");
-        require(default_fire_config.fire_turbulence == config.fire_turbulence,
+        require(default_fire_config.fire_turbulence == 1.2F,
                 "default run config should preserve fire turbulence");
         require(default_fire_config.render_exposure == config.render_exposure,
                 "default run config should preserve fire render exposure");
@@ -520,8 +523,97 @@ int main() {
         const cubey::FrameTiming fixed_timing = pyro::fixed_pyro_3d_headless_timing(fire_config, 5);
         require(fixed_timing.frame_index == 5,
                 "pyro 3D fixed headless timing should preserve frame index");
-        require(fixed_timing.delta_seconds == fire_config.fixed_delta_seconds,
+        require(fixed_timing.delta_seconds ==
+                    static_cast<double>(static_cast<float>(fire_config.fixed_delta_seconds)),
                 "pyro 3D fixed headless timing should use fixed dt");
+
+        pyro::Pyro3DConfig rolling_clock_config = default_fire_config;
+        require(pyro::pyro_3d_uses_solver_time_clock(rolling_clock_config),
+                "modern Fire burners should use the solver clock");
+        double thirty_fps_solver_time = 0.0;
+        double sixty_fps_solver_time = 0.0;
+        bool mismatched_capture_rates_match = true;
+        for (std::uint32_t frame = 0; frame < 384U; ++frame) {
+            const std::uint64_t simulation_frame = static_cast<std::uint64_t>(frame) + 1U;
+            const cubey::FrameTiming thirty_fps_timing = pyro::pyro_3d_solver_clock_timing(
+                rolling_clock_config,
+                {
+                    .delta_seconds = 1.0 / 30.0,
+                    .elapsed_seconds = static_cast<double>(simulation_frame) / 30.0,
+                    .frame_index = simulation_frame,
+                },
+                thirty_fps_solver_time, true);
+            const cubey::FrameTiming sixty_fps_timing = pyro::pyro_3d_solver_clock_timing(
+                rolling_clock_config,
+                {
+                    .delta_seconds = 1.0 / 60.0,
+                    .elapsed_seconds = static_cast<double>(simulation_frame) / 60.0,
+                    .frame_index = simulation_frame,
+                },
+                sixty_fps_solver_time, true);
+            mismatched_capture_rates_match =
+                mismatched_capture_rates_match &&
+                thirty_fps_timing.elapsed_seconds == sixty_fps_timing.elapsed_seconds;
+        }
+        require(mismatched_capture_rates_match && std::abs(thirty_fps_solver_time - 6.4) < 1.0e-12,
+                "30 and 60 fps modern Fire captures should share the exact double solver clock");
+
+        double sixty_frame_solver_time = 0.0;
+        for (std::uint32_t frame = 0; frame < 60U; ++frame) {
+            static_cast<void>(pyro::pyro_3d_solver_clock_timing(
+                rolling_clock_config,
+                {
+                    .delta_seconds = 1.0 / 60.0,
+                    .elapsed_seconds = static_cast<double>(frame + 1U) / 60.0,
+                    .frame_index = static_cast<std::uint64_t>(frame) + 1U,
+                },
+                sixty_frame_solver_time, true));
+        }
+        const cubey::FrameTiming sixty_frame_png_timing =
+            pyro::fixed_pyro_3d_headless_timing(rolling_clock_config, 60U);
+        require(std::abs(sixty_frame_solver_time - 1.0) < 1.0e-12 &&
+                    sixty_frame_png_timing.elapsed_seconds ==
+                        static_cast<double>(
+                            static_cast<float>(rolling_clock_config.fixed_delta_seconds)) *
+                            60.0 &&
+                    std::abs(sixty_frame_solver_time - sixty_frame_png_timing.elapsed_seconds) <
+                        1.0e-6,
+                "60 fps modern Fire video should remain continuous with fixed-step PNG timing");
+        const cubey::FrameTiming paused_timing = pyro::pyro_3d_solver_clock_timing(
+            rolling_clock_config,
+            {.delta_seconds = 1.0 / 30.0, .elapsed_seconds = 99.0, .frame_index = 61U},
+            sixty_frame_solver_time, false);
+        require(paused_timing.elapsed_seconds == sixty_frame_solver_time,
+                "paused modern Fire should hold its solver clock");
+        double reset_solver_time = 0.0;
+        const cubey::FrameTiming restarted_timing = pyro::pyro_3d_solver_clock_timing(
+            rolling_clock_config,
+            {.delta_seconds = 1.0 / 30.0, .elapsed_seconds = 99.0, .frame_index = 1U},
+            reset_solver_time, true);
+        require(restarted_timing.elapsed_seconds == rolling_clock_config.fixed_delta_seconds,
+                "reset modern Fire should restart on its first solver step");
+        rolling_clock_config.fire_burner = pyro::FireBurner::CompactDraft;
+        require(pyro::pyro_3d_uses_solver_time_clock(rolling_clock_config),
+                "Compact Draft should use the same solver clock as Rolling");
+        rolling_clock_config.fire_burner = pyro::FireBurner::Classic;
+        require(!pyro::pyro_3d_uses_solver_time_clock(rolling_clock_config),
+                "Classic Fire should preserve its existing elapsed-time clock");
+        double classic_elapsed_seconds = 0.0;
+        const cubey::FrameTiming classic_wall_timing = pyro::pyro_3d_solver_clock_timing(
+            rolling_clock_config,
+            {.delta_seconds = 1.0 / 30.0, .elapsed_seconds = 4.0, .frame_index = 120U},
+            classic_elapsed_seconds, true);
+        require(classic_wall_timing.elapsed_seconds == 4.0 && classic_elapsed_seconds == 0.0,
+                "Classic Fire should retain the incoming elapsed-time clock");
+        require(!pyro::pyro_3d_uses_solver_time_clock(explosion_config),
+                "Explosion should preserve its existing elapsed-time clock");
+        double explosion_elapsed_seconds = 0.0;
+        const cubey::FrameTiming explosion_wall_timing = pyro::pyro_3d_solver_clock_timing(
+            explosion_config,
+            {.delta_seconds = 1.0 / 30.0, .elapsed_seconds = 8.0, .frame_index = 240U},
+            explosion_elapsed_seconds, true);
+        require(explosion_wall_timing.elapsed_seconds == 8.0 && explosion_elapsed_seconds == 0.0,
+                "Explosion should retain the incoming elapsed-time clock");
 
         const pyro::Pyro3DProjectConfig parsed_fire_defaults =
             parse_project({"fire_3d"}, pyro::Pyro3DMode::Fire);
@@ -536,18 +628,22 @@ int main() {
                         pyro::kDefaultExplosion3DSourceCount,
                 "shared parser should preserve distinct fire and explosion defaults");
         require(!parsed_fire_defaults.capture.camera_distance.has_value() &&
+                    !parsed_fire_defaults.capture.target_height.has_value() &&
                     !parsed_fire_defaults.capture.video_orbit_degrees.has_value() &&
                     !parsed_explosion_defaults.capture.camera_distance.has_value() &&
+                    !parsed_explosion_defaults.capture.target_height.has_value() &&
                     !parsed_explosion_defaults.capture.video_orbit_degrees.has_value(),
                 "shared pyro capture controls should remain omitted by default");
-        const pyro::Pyro3DProjectConfig fixed_fire_capture = parse_project(
-            {"fire_3d", "--capture-video-orbit-degrees", "0", "--capture-camera-distance", "2.10"},
-            pyro::Pyro3DMode::Fire);
+        const pyro::Pyro3DProjectConfig fixed_fire_capture =
+            parse_project({"fire_3d", "--capture-video-orbit-degrees", "0",
+                           "--capture-camera-distance", "2.10", "--capture-target-height", "0.9"},
+                          pyro::Pyro3DMode::Fire);
         const pyro::Pyro3DProjectConfig fixed_explosion_capture =
             parse_project({"explosion_3d", "--set", "pyro.capture.video_orbit_degrees=0", "--set",
                            "pyro.capture.camera_distance=2.10"},
                           pyro::Pyro3DMode::Explosion);
         require(fixed_fire_capture.capture.video_orbit_degrees == 0.0F &&
+                    fixed_fire_capture.capture.target_height == 0.9F &&
                     fixed_fire_capture.capture.camera_distance == 2.10F &&
                     fixed_explosion_capture.capture.video_orbit_degrees == 0.0F &&
                     fixed_explosion_capture.capture.camera_distance == 2.10F,
@@ -583,10 +679,10 @@ int main() {
             parse_project({"fire_3d", "--pyro-tall-domain"}, pyro::Pyro3DMode::Fire).simulation;
         require(tall.grid_height == 256 && !tall.ray_skipping && !tall.coarse_flow,
                 "the tall domain should also support dense rendering and flow");
-        const auto skipping =
-            parse_project({"fire_3d", "--pyro-ray-skipping", "--grid-width", "35"},
-                          pyro::Pyro3DMode::Fire)
-                .simulation;
+        const auto skipping = parse_project({"fire_3d", "--fire-burner", "classic",
+                                             "--pyro-ray-skipping", "--grid-width", "35"},
+                                            pyro::Pyro3DMode::Fire)
+                                  .simulation;
         require(skipping.ray_skipping && !skipping.coarse_flow && !skipping.tall_domain,
                 "ray skipping should support partial edge bricks on the original grid");
         bool rejected_odd_flow = false;
@@ -602,19 +698,35 @@ int main() {
         pyro::Pyro3DProjectConfig parity_explosion;
         const cubey::config::Schema fire_schema = pyro::pyro_3d_project_config_schema(parity_fire);
         const cubey::config::Schema explosion_schema =
-            pyro::pyro_3d_project_config_schema(parity_explosion);
-        require(fire_schema.options().size() == explosion_schema.options().size(),
-                "fire and explosion should expose one shared schema inventory");
-        for (std::size_t index = 0; index < fire_schema.options().size(); ++index) {
-            const cubey::config::OptionSpec& fire_option = fire_schema.options()[index];
-            const cubey::config::OptionSpec& explosion_option = explosion_schema.options()[index];
-            require(fire_option.path == explosion_option.path &&
-                        fire_option.cli_name == explosion_option.cli_name &&
-                        fire_option.negative_cli_name == explosion_option.negative_cli_name &&
-                        fire_option.type == explosion_option.type &&
-                        fire_option.enum_values == explosion_option.enum_values,
-                    "fire and explosion schema metadata should remain identical");
+            pyro::pyro_3d_project_config_schema(parity_explosion, pyro::Pyro3DMode::Explosion);
+        require(fire_schema.find("pyro.fire_burner") && !explosion_schema.find("pyro.fire_burner"),
+                "only Fire should advertise burner presets");
+        require(fire_schema.find("pyro.firelight") && !explosion_schema.find("pyro.firelight") &&
+                    !default_fire_config.firelight && !default_explosion_config.firelight,
+                "local firelight should be opt-in and available only in Fire");
+        require(fire_schema.options().size() == explosion_schema.options().size() + 2U,
+                "the burner and firelight should be the only Fire-specific options");
+        for (const auto& explosion_option : explosion_schema.options()) {
+            const auto* fire_option = fire_schema.find(explosion_option.path);
+            require(fire_option && fire_option->cli_name == explosion_option.cli_name &&
+                        fire_option->negative_cli_name == explosion_option.negative_cli_name &&
+                        fire_option->type == explosion_option.type &&
+                        fire_option->enum_values == explosion_option.enum_values,
+                    "shared pyro schema metadata should remain identical");
         }
+        const auto compact =
+            parse_project({"fire_3d", "--fire-burner", "compact-draft", "--pyro-firelight",
+                           "--pyro-soot", "8", "--set", "pyro.tall_domain=false"},
+                          pyro::Pyro3DMode::Fire)
+                .simulation;
+        require(compact.fire_burner == pyro::FireBurner::CompactDraft && compact.firelight &&
+                    !compact.tall_domain && compact.source_smoke_amount == 8.0F &&
+                    compact.source_radius == 0.11F,
+                "explicit options must override the compact burner defaults");
+        require(skipping.fire_burner == pyro::FireBurner::Classic &&
+                    skipping.obstacle_radius == pyro::kDefaultFire3DObstacleRadius &&
+                    default_fire_config.tall_domain && !default_explosion_config.tall_domain,
+                "classic should recall the original cube and sphere");
 
         const std::filesystem::path layered_path =
             std::filesystem::temp_directory_path() / "cubey-pyro-3d-config-layering.json";
