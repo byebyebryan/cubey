@@ -135,16 +135,16 @@
       "title": "Fire 3D",
       "owner": "projects/fluid/fire_3d",
       "dimension": "3D",
-      "summary": "Flame and smoke evolve as daylight falls away.",
+      "summary": "Two flame tongues trade height at dusk, lighting the curling smoke from below.",
       "cues": [
         "Dense-grid combustion",
         "Volumetric rendering",
         "Shared sky light"
       ],
       "variants": [
-        "Plume",
-        "Obstacle",
-        "Day to night"
+        "Rolling burner",
+        "Compact + passing draft",
+        "Classic"
       ],
       "source": "projects/fluid/fire_3d/README.md",
       "media": "docs/media/showcase/fire-3d.mp4",
@@ -161,8 +161,8 @@
       "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
       "selected_media": {
         "manifest": "site/media/manifest.json",
-        "poster": "fire-3d",
-        "film": "fire-3d-film"
+        "poster": "fire-3d-rolling",
+        "film": "fire-3d-rolling-film"
       }
     },
     {

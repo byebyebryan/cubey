@@ -3,8 +3,8 @@
 `fire_3d` is the default presentation of the shared dense 3D pyro solver. The
 app fixes the solver mode to fire, while `projects/fluid/sim/pyro_3d` owns the
 volume resources, source model, combustion pass, shadow volume, and raymarch
-renderer shared with `explosion_3d`. A configurable ball obstacle is embedded in
-the volume so the plume has a solid object to flow around and shadow against.
+renderer shared with `explosion_3d`. The Rolling burner is the default Fire 3D
+scene. Its two overlapping fuel feeds take turns rising into a common smoke plume.
 The current visual overview is the
 [Fire 3D page](https://dev.byebyebryan.com/cubey/demos/simulation/fire-3d/);
 this guide owns the native simulation and renderer behavior.
@@ -30,12 +30,39 @@ Useful controls:
   local presentation style: exposure bias, backdrop, rim/scatter, smoke warmth,
   and flame shaping.
 
+The **Burner** menu restarts the plume with the selected source, combustion
+and emission treatment. Reset replays the selected burner. The same choice is
+available as `--fire-burner` or `pyro.fire_burner` in a config file.
+
+| Burner | Native behavior |
+| --- | --- |
+| `rolling` (default) | Two overlapping feeds trade height. Fuel-rich pockets survive longer and the amber raymarch brings out their edges. |
+| `compact-draft` | A tighter burner feeds a passing draft above the flame from 4.0 to 6.1 seconds of simulation time. Pausing holds the draft. |
+| `classic` | The original single feed, emission curve and ball obstacle. |
+
+The burner menu keeps the current grid and camera. At startup, Rolling and
+Compact use an open-top 128 × 256 × 128 domain. Classic starts in the original
+128³ cube. Individual startup options override the preset. For example,
+`--set pyro.tall_domain=false` runs Rolling in the cube.
+
+Rolling and Compact follow solver time. A headless video takes one simulation
+step per output frame, capped at 1/60 second. At 30 fps, four seconds of
+simulation therefore span eight seconds of video. The showcase records at
+60 fps and keeps alternate frames to deliver the motion at its original speed.
+The solar clock follows video time independently.
+
+For Rolling and Compact, enable **Rendering → Flame lights smoke** or launch
+with `--pyro-firelight` to see the underside of the plume catch light from the
+flame. The renderer samples nearby emissive cells below each smoke sample and
+attenuates their light through intervening soot. The checkbox also works while
+paused. Firelight starts off by default.
+
 The Simulation panel offers two independent options. **Half-resolution flow**
 restarts the plume with velocity, divergence and pressure at half the material
 resolution along each axis. Material dimensions must be even. **Skip empty ray
 segments** updates an 8³-voxel brick mask and skips empty space along camera
 and shadow rays. It can be toggled while the plume is paused or moving.
-The original cube, full flow and dense rays are the startup defaults.
+The interactive defaults use full-resolution flow and dense rays.
 
 Material stores soot, heat, flame and fuel in RGBA16F. Velocity uses XYZ in
 another RGBA16F texture. Divergence, pressure, shadow transmittance and the brick
@@ -49,19 +76,10 @@ flow and 64 × 128 × 64 shadows, run:
     --grid-width 256 --grid-height 512 --grid-depth 256 --pyro-obstacle-radius 0
 ```
 
-To reproduce the seven-second high-detail comparison, use the Balanced torch
-settings and a fixed sunset camera:
-
-```bash
-./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 420 --fps 60 \
-    --width 1280 --height 720 --anti-aliasing off --capture-video-orbit-degrees 0 \
-    --capture-camera-distance 2.75 --time-of-day-mode solar --time-hours 17.72 \
-    --time-speed-hours-per-second 0 --pyro-tall-domain --pyro-coarse-flow --pyro-ray-skipping \
-    --grid-width 256 --grid-height 512 --grid-depth 256 --shadow-grid-height 128 \
-    --pyro-sources 1 --pyro-obstacle-radius 0 --pyro-source-radius 0.11 --pyro-soot 13 \
-    --pyro-soot-yield 0.35 --pyro-expansion 1.10 --pyro-flame-cooling 3.4 --pyro-shredding 4.2 \
-    --pyro-turbulence 1.2 --pyro-buoyancy 2.1 --pyro-source-force 8.0 --output /tmp/fire-3d-tall.mp4
-```
+The site capture uses the Rolling burner at 256 × 512 × 256 with half-resolution
+flow, empty-space skipping and local firelight. The sun holds at 18:00 while
+the camera moves closer to the flame. The [capture record](docs/showcase-history.md)
+includes the native command, camera edit and poster selection.
 
 Useful commands:
 
@@ -77,13 +95,12 @@ Useful commands:
 
 ## Showcase highlight
 
-The current site page above presents the recorded fire-and-smoke clip. Its
-trim, hash and poster timestamp remain in the [showcase archive package](../../../docs/media/showcase/README.md)
-and [media manifest](../../../docs/media/showcase/manifest.json); the exact
-source command is retained in the [capture history](docs/showcase-history.md).
+The [Rolling capture receipt](../../../site/media/receipts/fire-3d-rolling.json) records the master, poster and web film. The [showcase archive](../../../docs/media/showcase/README.md) retains the earlier Balanced clip.
 
 For headless video, `--capture-video-orbit-degrees N` authors an eased bounded
 move over the complete frame range; use `0` for a fixed camera or omit the
 option to preserve the historical automatic orbit. `--capture-camera-distance`
-overrides the absolute capture framing. The same controls are shared with
-`explosion_3d`.
+sets the headless camera distance. `--capture-target-height` sets its orbit
+target in world units above the volume floor. Both controls apply to stills and
+films. For the tighter Rolling shot, use distance `2.04` and target height
+`1.03`. The same controls are shared with `explosion_3d`.

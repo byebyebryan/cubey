@@ -1,0 +1,274 @@
+{
+  "preset": "rolling",
+  "sourceBaseRevision": "187b2b526b6a1d4ce858810f530fd5f1d562bbc2",
+  "sourceRevision": "63c597d5646f100c3e860a7c490ac98cc9444325",
+  "sourceState": "The working-tree build that reproduced the approved dusk master byte for byte used the native sources recorded at sourceRevision.",
+  "sourceSha256": {
+    "projects/fluid/sim/pyro_3d/pyro_3d_app.cpp": "dc04ca87e6353fe2f19b0f98b24751d1e8430203d9b79110a67e1bc82b2dad49",
+    "projects/fluid/sim/pyro_3d/pyro_3d_commands.cpp": "98b54d53d11129eb3bdea6a32e45d5678dcb352378f08b811c91b4fc019aef80",
+    "projects/fluid/sim/pyro_3d/pyro_3d_config.h": "59ad5aa2e21539762710c4ad296221a4b8634948d533161a88e56f3168142ef3",
+    "projects/fluid/sim/pyro_3d/pyro_3d_project_config.h": "f4823a4b5253a69851e375455a5b7192cad059b69c6f13be5e6f45dd382f67fb",
+    "projects/fluid/sim/pyro_3d/shaders/pyro_3d_combust.comp": "d8103b3cae1b7b930010c1b3982004c4b82a733f96f2e5cbdc6824bf20d2e69f",
+    "projects/fluid/sim/pyro_3d/shaders/pyro_3d_raymarch.frag": "902afaacc957c9b3a7934d797ef13e4da573a4522964744f3e4a99162112ea93",
+    "projects/fluid/sim/pyro_3d/shaders/pyro_3d_simulation.glsl": "e5c2f9d2190ac99180a0f5efadb378c43f81cc5258696a0a6406e315ebbffa54"
+  },
+  "buildCommand": [
+    "cmake",
+    "--build",
+    "build/dev",
+    "--target",
+    "cubey_project_fire_3d"
+  ],
+  "binary": {
+    "path": "build/dev/projects/fluid/fire_3d/fire_3d",
+    "bytes": 32200080,
+    "sha256": "f9f871d5fcdffc6ec65d9532cce19632043a0cde969bf17b5521c84c9d9c3cca"
+  },
+  "shaderSha256": {
+    "atmosphere.frag.spv": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b",
+    "atmosphere.vert.spv": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87",
+    "celestial_body.frag.spv": "40f595ef01ca2561dd45c91266f5fdd80338abd1caa7f87ce72d30cad433490b",
+    "celestial_body.vert.spv": "47dbb0aa6c728135f1238f6a320f72e854194f9239d529c0a16f461660f16664",
+    "pyro_3d.vert.spv": "b341fb6518a55e8eb119c5fe66e97a531bc1ac0159ecae6dd7647599b3672405",
+    "pyro_3d_advect.comp.spv": "a97311e86a218a5c7265905eb1a3e5fa1ca196b68b395b45a96fb0cf50767f4f",
+    "pyro_3d_advect_coarse.comp.spv": "81742edcbee99ec4f6b03f4e3c78808088d25886c1a9c5c9fbb478d07dbb343d",
+    "pyro_3d_advect_correct.comp.spv": "b78551338cfaa8f010dd5bbc205fe4e26fb391bbbabe73822b70b85a47df43b3",
+    "pyro_3d_advect_correct_coarse.comp.spv": "d4dbac2c7780ae791c74e509bcbb0a27302f9529185c780804c7e4f2b714851a",
+    "pyro_3d_combust.comp.spv": "acedb8f5167e8adb065da3795ff50ad1259f0f1e5ffa690315f774b0946997f7",
+    "pyro_3d_divergence.comp.spv": "8f64ecbd3e720189c364aa2f3bc7a54b0b6a83debb30bcc4fa47210939593a15",
+    "pyro_3d_occupancy.comp.spv": "17afa51df86b60d00f304f4f8a72034be9f613fa32c0b007a12e10e95c1e97e3",
+    "pyro_3d_pressure.comp.spv": "c6add682b0f791d549e1c80d7b95bac4b4fad4f80fd8800b70ec2e958b937e10",
+    "pyro_3d_projection.comp.spv": "5b1366d14c7bf68192e5bd2738f143a7dfdfa366584405cb9175a76f3c6e2e49",
+    "pyro_3d_raymarch.frag.spv": "c991fd38b15ed9330e427da86bf64c767f448d82346a4d7320a31272bcf06c00",
+    "pyro_3d_reset.comp.spv": "1073cb6ad926a40896b7b409bf95764a21f586d50fa18840d5138cf6f9b4893a",
+    "pyro_3d_shadow.comp.spv": "5f32942b8d0890077063b5234ff527c5944ec089935f6c88ae5240bf0a48394e",
+    "terrain_backdrop.vert.spv": "d1f533bd85064290942b768aab1b98bae43ff962d27ee4255364021ab601a40d",
+    "terrain_backdrop_detail.frag.spv": "219c63bc6c615eb5c984fe468dab87d3b456792e22dc68df8d862b33e237d7e6",
+    "terrain_backdrop_material.comp.spv": "fdeb545b2ac7082e504a407dff7edd2eb45da290342927a87fa393c6154f40f4",
+    "terrain_shadow_depth.vert.spv": "d1ab5224690c3ae36443fa2d5df48eead1d39ff58b4c18b84be0a3eb37a0cf3d"
+  },
+  "deviceAndDriver": "NVIDIA GeForce RTX 5070 Ti, 620.73.04",
+  "ffmpeg": "ffmpeg version n9.1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "capture": {
+    "command": [
+      "build/dev/projects/fluid/fire_3d/fire_3d",
+      "--headless",
+      "--capture",
+      "video",
+      "--fps",
+      "60",
+      "--frames",
+      "660",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--anti-aliasing",
+      "off",
+      "--fire-burner",
+      "rolling",
+      "--grid-width",
+      "256",
+      "--grid-height",
+      "512",
+      "--grid-depth",
+      "256",
+      "--pyro-tall-domain",
+      "--pyro-coarse-flow",
+      "--pyro-ray-skipping",
+      "--capture-camera-distance",
+      "2.04",
+      "--capture-video-orbit-degrees",
+      "0",
+      "--time-of-day-mode",
+      "solar",
+      "--time-hours",
+      "18",
+      "--time-speed-hours-per-second",
+      "0",
+      "--require-validation",
+      "--output",
+      "outputs/site/fire3d-closeout/post-clock-dusk-native.mp4",
+      "--pyro-firelight",
+      "--capture-target-height",
+      "1.03"
+    ],
+    "environment": {
+      "VK_LAYER_VALIDATE_SYNC": "1"
+    },
+    "log": {
+      "path": "outputs/site/fire3d-closeout/post-clock-dusk-native.log",
+      "bytes": 217,
+      "sha256": "97a9d9b1a8abab423de17a247772f0fd73ecdf9ca581625f4c871a28d8addafa"
+    },
+    "native": {
+      "path": "outputs/site/fire3d-closeout/post-clock-dusk-native.mp4",
+      "bytes": 3257228,
+      "sha256": "d66e213d9587d85c49db98fb2141fbdd9d608a030646a0ee38e4d4a521b5bdc0"
+    },
+    "width": 1920,
+    "height": 1080,
+    "frames": 660,
+    "fps": 60,
+    "material": [
+      256,
+      512,
+      256
+    ],
+    "flow": [
+      128,
+      256,
+      128
+    ],
+    "shadow": [
+      64,
+      128,
+      64
+    ],
+    "solarHoursRetained": [
+      18,
+      18
+    ],
+    "cameraDistance": 2.04,
+    "cameraTargetHeight": 1.03,
+    "firelight": true,
+    "reviewedMaster": {
+      "path": "outputs/site/fire3d-clock/dusk-native.mp4",
+      "sha256": "d66e213d9587d85c49db98fb2141fbdd9d608a030646a0ee38e4d4a521b5bdc0",
+      "bytes": 3257228
+    }
+  },
+  "delivery": {
+    "prerollFrames": 180,
+    "fps": 30,
+    "frames": 240,
+    "posterFrameAt30Fps": 198,
+    "opticalPush": {
+      "startSeconds": 2.5,
+      "endSeconds": 7.5,
+      "endMagnification": 1.28,
+      "anchor": [
+        0.5,
+        0.9
+      ],
+      "easing": "smoothstep"
+    },
+    "commands": {
+      "film": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-y",
+        "-threads",
+        "3",
+        "-filter_threads",
+        "6",
+        "-i",
+        "outputs/site/fire3d-closeout/post-clock-dusk-native.mp4",
+        "-an",
+        "-vf",
+        "trim=start_frame=180,select='not(mod(n,2))',setpts=N/(30*TB),perspective=x0='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y0='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x1='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y1='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x2='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y2='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x3='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y3='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':sense=source:interpolation=cubic:eval=frame,scale=1280:720:flags=lanczos",
+        "-r",
+        "30",
+        "-c:v",
+        "libx264",
+        "-threads",
+        "4",
+        "-preset",
+        "slow",
+        "-crf",
+        "22",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "outputs/site/fire3d-closeout/film.mp4"
+      ],
+      "posterSource": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-y",
+        "-threads",
+        "3",
+        "-filter_threads",
+        "6",
+        "-i",
+        "outputs/site/fire3d-closeout/post-clock-dusk-native.mp4",
+        "-vf",
+        "trim=start_frame=180,select='not(mod(n,2))',setpts=N/(30*TB),perspective=x0='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y0='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x1='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y1='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x2='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y2='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x3='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y3='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':sense=source:interpolation=cubic:eval=frame,scale=1280:720:flags=lanczos,select='eq(n,198)'",
+        "-frames:v",
+        "1",
+        "-threads",
+        "1",
+        "outputs/site/fire3d-closeout/poster-source.png"
+      ],
+      "poster": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        "outputs/site/fire3d-closeout/poster-source.png",
+        "-vf",
+        "scale=1280:-2:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "84",
+        "outputs/site/fire3d-closeout/poster.webp"
+      ],
+      "thumbnail": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        "outputs/site/fire3d-closeout/poster-source.png",
+        "-vf",
+        "scale=640:-2:flags=lanczos",
+        "-frames:v",
+        "1",
+        "-c:v",
+        "libwebp",
+        "-quality",
+        "84",
+        "outputs/site/fire3d-closeout/thumbnail.webp"
+      ]
+    },
+    "posterSource": {
+      "path": "outputs/site/fire3d-closeout/poster-source.png",
+      "sha256": "6e6fffda7001987e528e15020bce3e08cb7d0d7a6e3ea5301ae369e928776339",
+      "bytes": 277154
+    },
+    "film": {
+      "path": "outputs/site/fire3d-closeout/film.mp4",
+      "sha256": "dd97675ed04dabb9e3a928c319e74db3c61950a6ede89476cb2eb57dbdbac8fb",
+      "bytes": 791322,
+      "file": "/media/fire-3d-rolling-film.mp4"
+    },
+    "poster": {
+      "path": "outputs/site/fire3d-closeout/poster.webp",
+      "sha256": "d8c805dee71a607cddceadbbc9936db4586cc350db64dd39c99a56f3152f69dd",
+      "bytes": 13748,
+      "file": "/media/fire-3d-rolling.webp"
+    },
+    "thumbnail": {
+      "path": "outputs/site/fire3d-closeout/thumbnail.webp",
+      "sha256": "2e196a3629398b1979533b4a9597b8bbe8a9050a2aa5649bb13a698d1db7e4dd",
+      "bytes": 5314,
+      "file": "/media/fire-3d-rolling-640.webp"
+    },
+    "hoverReceipt": {
+      "path": "site/media/receipts/hover-previews.json",
+      "asset": "preview-fire-3d-rolling"
+    }
+  },
+  "previousSelection": {
+    "poster": "fire-3d",
+    "film": "fire-3d-film",
+    "preview": "preview-fire-3d"
+  }
+}

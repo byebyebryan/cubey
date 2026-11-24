@@ -542,6 +542,53 @@
       }
     },
     {
+      "id": "fire-3d-rolling",
+      "file": "/media/fire-3d-rolling.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "d8c805dee71a607cddceadbbc9936db4586cc350db64dd39c99a56f3152f69dd",
+      "bytes": 13748,
+      "caption": "Two flame tongues trade height at dusk, lighting the curling smoke from below.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/fire3d-closeout/poster-source.png",
+        "sourceSha256": "6e6fffda7001987e528e15020bce3e08cb7d0d7a6e3ea5301ae369e928776339",
+        "sourceRevision": "63c597d5646f100c3e860a7c490ac98cc9444325",
+        "recipe": "site/media/receipts/fire-3d-rolling.json",
+        "note": "Frame 198 of the edited film (6.6 s), extracted from the native master before web compression."
+      },
+      "thumbnail": "/media/fire-3d-rolling-640.webp",
+      "thumbnailSha256": "2e196a3629398b1979533b4a9597b8bbe8a9050a2aa5649bb13a698d1db7e4dd",
+      "thumbnailBytes": 5314
+    },
+    {
+      "id": "fire-3d-rolling-film",
+      "file": "/media/fire-3d-rolling-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "dd97675ed04dabb9e3a928c319e74db3c61950a6ede89476cb2eb57dbdbac8fb",
+      "bytes": 791322,
+      "caption": "Two flame tongues trade height at dusk, lighting the curling smoke from below.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/site/fire3d-closeout/post-clock-dusk-native.mp4",
+        "sourceSha256": "d66e213d9587d85c49db98fb2141fbdd9d608a030646a0ee38e4d4a521b5bdc0",
+        "sourceRevision": "63c597d5646f100c3e860a7c490ac98cc9444325",
+        "recipe": "site/media/receipts/fire-3d-rolling.json",
+        "note": "Rolling burner at 18:00 with local firelight and a slow push into the plume."
+      }
+    },
+    {
       "id": "gltf-layers",
       "file": "/media/gltf-layers-capture-20261119.webp",
       "kind": "image",
@@ -2831,6 +2878,29 @@
       }
     },
     {
+      "id": "preview-fire-3d-rolling",
+      "file": "/media/preview-fire-3d-rolling.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "6fee8e239d7b838d716dbc4ef38ef9f11762f394325ba739ecb562861e04ec03",
+      "bytes": 64252,
+      "caption": "Short silent preview. Two flame tongues trade height at dusk, lighting the curling smoke from below.",
+      "credit": {
+        "label": "Cubey original media · MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/fire-3d-rolling-film.mp4",
+        "sourceSha256": "dd97675ed04dabb9e3a928c319e74db3c61950a6ede89476cb2eb57dbdbac8fb",
+        "sourceRevision": "63c597d5646f100c3e860a7c490ac98cc9444325",
+        "parentAsset": "fire-3d-rolling-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
       "id": "preview-gltf-morph",
       "file": "/media/preview-gltf-morph-capture-20261119.mp4",
       "kind": "video",
@@ -4021,9 +4091,9 @@
       "preview": "preview-water-3d-daylight"
     },
     "fire-3d": {
-      "poster": "fire-3d",
-      "film": "fire-3d-film",
-      "preview": "preview-fire-3d"
+      "poster": "fire-3d-rolling",
+      "film": "fire-3d-rolling-film",
+      "preview": "preview-fire-3d-rolling"
     },
     "terrain-water": {
       "poster": "terrain-water",

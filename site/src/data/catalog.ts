@@ -23,7 +23,7 @@ export const connections = design.connections;
 const publicScope: Record<string,string> = {
   'stanford-dragon': 'Forward hybrid transmission is a fixed-thickness scene-color approximation. Fixed-quality RT uses four spatial samples per frame without reconstruction. Sampled RT is diagnostic: one fresh sample while moving, with a 256-sample target after stopping. It is not optical ground truth; fine glass shimmer remains during motion. Shadows are disabled consistently across these three captures.',
   'water-3d': 'A tank-scale liquid experiment with a reconstructed surface and whitewater. The long tank is the rendering domain.',
-  'fire-3d': 'Fire and smoke evolve on a 3D grid. This visual study has not been validated as a physical combustion model.',
+  'fire-3d': 'The film uses the Rolling burner. In the native demo, Compact sends a passing draft through the plume, and Classic restores the original single feed. The combustion model is a visual approximation.',
   'explosion-3d': 'Uses the same fire and smoke solver as Fire 3D, with a short impulse that creates the expanding plume.',
   'water-2d': 'The native demo can switch between Striped Lightbox, Two-Ink Relief Print, Dye Ribbon and Classic while the same water keeps moving.',
   'smoke-2d': 'In Bowed Plumes, a brief rotational impulse at contact redirects the wakes. The two dyes trace how the resulting folds spread through the grid.',
