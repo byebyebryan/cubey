@@ -547,8 +547,8 @@
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "d8c805dee71a607cddceadbbc9936db4586cc350db64dd39c99a56f3152f69dd",
-      "bytes": 13748,
+      "sha256": "621fcc1494d3cff80380ff69e3e1a9bfea980464c797e8d7716731b0352b27b9",
+      "bytes": 13320,
       "caption": "Two flame tongues trade height at dusk, lighting the curling smoke from below.",
       "credit": {
         "label": "Cubey original media · MIT",
@@ -556,15 +556,15 @@
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/site/fire3d-closeout/poster-source.png",
-        "sourceSha256": "6e6fffda7001987e528e15020bce3e08cb7d0d7a6e3ea5301ae369e928776339",
+        "source": "outputs/site/fire3d-poster-review/frame-188.png",
+        "sourceSha256": "329a1c0fdc896d51e1ee9973815776b108d173a6619f0907e041dd5b0f2e4575",
         "sourceRevision": "63c597d5646f100c3e860a7c490ac98cc9444325",
         "recipe": "site/media/receipts/fire-3d-rolling.json",
-        "note": "Frame 198 of the edited film (6.6 s), extracted from the native master before web compression."
+        "note": "Frame 188 of the edited film (6.27 s), extracted from the native master before web compression."
       },
       "thumbnail": "/media/fire-3d-rolling-640.webp",
-      "thumbnailSha256": "2e196a3629398b1979533b4a9597b8bbe8a9050a2aa5649bb13a698d1db7e4dd",
-      "thumbnailBytes": 5314
+      "thumbnailSha256": "e3c5a2f009667fb42496ffbc4a5329f24fc4f03477d88a542dd021ba7e261695",
+      "thumbnailBytes": 5152
     },
     {
       "id": "fire-3d-rolling-film",

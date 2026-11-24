@@ -142,7 +142,7 @@
     "prerollFrames": 180,
     "fps": 30,
     "frames": 240,
-    "posterFrameAt30Fps": 198,
+    "posterFrameAt30Fps": 188,
     "opticalPush": {
       "startSeconds": 2.5,
       "endSeconds": 7.5,
@@ -196,12 +196,12 @@
         "-i",
         "outputs/site/fire3d-closeout/post-clock-dusk-native.mp4",
         "-vf",
-        "trim=start_frame=180,select='not(mod(n,2))',setpts=N/(30*TB),perspective=x0='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y0='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x1='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y1='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x2='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y2='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x3='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y3='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':sense=source:interpolation=cubic:eval=frame,scale=1280:720:flags=lanczos,select='eq(n,198)'",
+        "trim=start_frame=180,select='not(mod(n,2))',setpts=N/(30*TB),perspective=x0='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y0='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x1='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y1='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x2='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+0/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y2='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':x3='st(0,clip((on-75)/150,0,1));W*(0.5*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':y3='st(0,clip((on-75)/150,0,1));H*(0.9*(1-1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))+1/(1+0.28*ld(0)*ld(0)*(3-2*ld(0))))':sense=source:interpolation=cubic:eval=frame,scale=1280:720:flags=lanczos,select='eq(n,188)'",
         "-frames:v",
         "1",
         "-threads",
         "1",
-        "outputs/site/fire3d-closeout/poster-source.png"
+        "outputs/site/fire3d-poster-review/frame-188.png"
       ],
       "poster": [
         "ffmpeg",
@@ -209,7 +209,7 @@
         "error",
         "-y",
         "-i",
-        "outputs/site/fire3d-closeout/poster-source.png",
+        "outputs/site/fire3d-poster-review/frame-188.png",
         "-vf",
         "scale=1280:-2:flags=lanczos",
         "-frames:v",
@@ -218,7 +218,7 @@
         "libwebp",
         "-quality",
         "84",
-        "outputs/site/fire3d-closeout/poster.webp"
+        "outputs/site/fire3d-poster-review/poster-188.webp"
       ],
       "thumbnail": [
         "ffmpeg",
@@ -226,7 +226,7 @@
         "error",
         "-y",
         "-i",
-        "outputs/site/fire3d-closeout/poster-source.png",
+        "outputs/site/fire3d-poster-review/frame-188.png",
         "-vf",
         "scale=640:-2:flags=lanczos",
         "-frames:v",
@@ -235,13 +235,13 @@
         "libwebp",
         "-quality",
         "84",
-        "outputs/site/fire3d-closeout/thumbnail.webp"
+        "outputs/site/fire3d-poster-review/thumbnail-188.webp"
       ]
     },
     "posterSource": {
-      "path": "outputs/site/fire3d-closeout/poster-source.png",
-      "sha256": "6e6fffda7001987e528e15020bce3e08cb7d0d7a6e3ea5301ae369e928776339",
-      "bytes": 277154
+      "path": "outputs/site/fire3d-poster-review/frame-188.png",
+      "sha256": "329a1c0fdc896d51e1ee9973815776b108d173a6619f0907e041dd5b0f2e4575",
+      "bytes": 268746
     },
     "film": {
       "path": "outputs/site/fire3d-closeout/film.mp4",
@@ -250,15 +250,15 @@
       "file": "/media/fire-3d-rolling-film.mp4"
     },
     "poster": {
-      "path": "outputs/site/fire3d-closeout/poster.webp",
-      "sha256": "d8c805dee71a607cddceadbbc9936db4586cc350db64dd39c99a56f3152f69dd",
-      "bytes": 13748,
+      "path": "outputs/site/fire3d-poster-review/poster-188.webp",
+      "sha256": "621fcc1494d3cff80380ff69e3e1a9bfea980464c797e8d7716731b0352b27b9",
+      "bytes": 13320,
       "file": "/media/fire-3d-rolling.webp"
     },
     "thumbnail": {
-      "path": "outputs/site/fire3d-closeout/thumbnail.webp",
-      "sha256": "2e196a3629398b1979533b4a9597b8bbe8a9050a2aa5649bb13a698d1db7e4dd",
-      "bytes": 5314,
+      "path": "outputs/site/fire3d-poster-review/thumbnail-188.webp",
+      "sha256": "e3c5a2f009667fb42496ffbc4a5329f24fc4f03477d88a542dd021ba7e261695",
+      "bytes": 5152,
       "file": "/media/fire-3d-rolling-640.webp"
     },
     "hoverReceipt": {

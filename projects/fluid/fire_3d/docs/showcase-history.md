@@ -22,9 +22,11 @@ The edit drops the first 180 frames, then keeps every second frame at 30 fps.
 The camera holds for the first 2.5 seconds, then eases to 1.28× magnification
 at 7.5 seconds using cubic smoothstep. The crop is anchored at 50% across and
 90% down the 1920 × 1080 master for the 1280 × 720 film. The poster uses
-frame 198 (6.6 seconds), where the two flame tongues separate, and the hover
-preview uses the final 3.5 seconds. The [media receipt](../../../../site/media/receipts/fire-3d-rolling.json)
-records the native inputs and encoding commands.
+frame 188 (6.27 seconds). The left flame fans out beneath a curl of smoke,
+giving it a broader silhouette at card size than the two narrow tongues in the
+original poster (frame 198). The hover preview uses the final 3.5 seconds.
+The [media receipt](../../../../site/media/receipts/fire-3d-rolling.json) records
+the native inputs and encoding commands.
 
 ### Earlier Rolling comparisons
 
